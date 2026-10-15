@@ -1,0 +1,26 @@
+{
+  "is_this_it": {
+    "en": "Is this it?",
+    "hi": "क्या यही है?"
+  },
+  "draw": {
+    "en": "Draw",
+    "hi": "बनाओ"
+  },
+  "done": {
+    "en": "Done",
+    "hi": "हो गया"
+  },
+  "clear": {
+    "en": "Start again",
+    "hi": "फिर से"
+  },
+  "yes": {
+    "en": "Yes",
+    "hi": "हाँ"
+  },
+  "no": {
+    "en": "No",
+    "hi": "नहीं"
+  }
+}

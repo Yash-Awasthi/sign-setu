@@ -1,0 +1,19 @@
+{
+  "status": "draft: greetings need review by a fluent speaker of each language",
+  "languages": [
+    { "code": "hi", "name": "हिन्दी", "english": "Hindi", "greeting": "नमस्ते। अगर आपको यह समझ आ रहा है, तो यहाँ छुएँ।" },
+    { "code": "bn", "name": "বাংলা", "english": "Bengali", "greeting": "নমস্কার। আপনি যদি এটা বুঝতে পারেন, তাহলে এখানে ছুঁয়ে দিন।" },
+    { "code": "ne", "name": "नेपाली", "english": "Nepali", "greeting": "नमस्ते। तपाईंले यो बुझ्नुभयो भने यहाँ छुनुहोस्।" },
+    { "code": "as", "name": "অসমীয়া", "english": "Assamese", "greeting": "নমস্কাৰ। আপুনি যদি এইটো বুজি পাইছে, তেন্তে ইয়াত স্পৰ্শ কৰক।" },
+    { "code": "or", "name": "ଓଡ଼ିଆ", "english": "Odia", "greeting": "ନମସ୍କାର। ଯଦି ଆପଣ ଏହା ବୁଝୁଛନ୍ତି, ତେବେ ଏଠାରେ ଛୁଅନ୍ତୁ।" },
+    { "code": "ta", "name": "தமிழ்", "english": "Tamil", "greeting": "வணக்கம். இது உங்களுக்குப் புரிந்தால், இங்கே தொடுங்கள்." },
+    { "code": "te", "name": "తెలుగు", "english": "Telugu", "greeting": "నమస్కారం. మీకు ఇది అర్థమైతే, ఇక్కడ తాకండి." },
+    { "code": "kn", "name": "ಕನ್ನಡ", "english": "Kannada", "greeting": "ನಮಸ್ಕಾರ. ನಿಮಗೆ ಇದು ಅರ್ಥವಾದರೆ, ಇಲ್ಲಿ ಮುಟ್ಟಿ." },
+    { "code": "ml", "name": "മലയാളം", "english": "Malayalam", "greeting": "നമസ്കാരം. ഇത് നിങ്ങൾക്ക് മനസ്സിലാകുന്നുണ്ടെങ്കിൽ, ഇവിടെ തൊടുക." },
+    { "code": "mr", "name": "मराठी", "english": "Marathi", "greeting": "नमस्कार. तुम्हाला हे समजत असेल, तर इथे स्पर्श करा." },
+    { "code": "gu", "name": "ગુજરાતી", "english": "Gujarati", "greeting": "નમસ્તે. જો તમને આ સમજાય છે, તો અહીં સ્પર્શ કરો." },
+    { "code": "pa", "name": "ਪੰਜਾਬੀ", "english": "Punjabi", "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ। ਜੇ ਤੁਹਾਨੂੰ ਇਹ ਸਮਝ ਆਉਂਦਾ ਹੈ, ਤਾਂ ਇੱਥੇ ਛੂਹੋ।" },
+    { "code": "ur", "name": "اردو", "english": "Urdu", "greeting": "السلام علیکم۔ اگر آپ کو یہ سمجھ آ رہا ہے تو یہاں چھوئیں۔" },
+    { "code": "en", "name": "English", "english": "English", "greeting": "Hello. If you understand this, touch here." }
+  ]
+}
