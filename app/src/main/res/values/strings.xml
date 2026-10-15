@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sign Setu</string>
+    <string name="cancel">Cancel</string>
+    <string name="notice_aid">Sign Setu helps you communicate. It is not an interpreter, and it never records statements.</string>
+
+    <!-- Lock -->
+    <string name="lock_title">Sign Setu is locked</string>
+    <string name="lock_body">Unlock with your fingerprint or phone PIN. Session records stay encrypted until you do.</string>
+    <string name="lock_button">Unlock</string>
+    <string name="lock_prompt_title">Unlock Sign Setu</string>
+    <string name="lock_prompt_subtitle">Session records are encrypted on this phone</string>
+    <string name="lock_failed">Could not unlock. Try again.</string>
+    <string name="no_lock_title">Set a screen lock first</string>
+    <string name="no_lock_body">Sign Setu encrypts session records with your phone\'s screen lock. Set a PIN, pattern or password, then come back.</string>
+    <string name="no_lock_button">Open security settings</string>
+    <string name="return_prompt_title">Officer check</string>
+    <string name="return_prompt_subtitle">Return to the officer screen</string>
+
+    <!-- Start -->
+    <string name="start_title">New session</string>
+    <string name="start_resume_title">Unfinished session</string>
+    <string name="start_resume_body">%1$s · %2$s · started %3$s</string>
+    <string name="start_resume">Continue</string>
+    <string name="start_end">End it</string>
+    <string name="start_who">Who are you helping?</string>
+    <string name="start_language">Their language</string>
+    <string name="start_language_finder">You will find their language on the next screen.</string>
+    <string name="start_button">Start session</string>
+
+    <string name="profile_child">Young child</string>
+    <string name="profile_child_desc">Pictures, gestures and spoken audio</string>
+    <string name="profile_isl">Uses sign language</string>
+    <string name="profile_isl_desc">Pictures, captions, ISL clips and interpreter call</string>
+    <string name="profile_other">Speaks another language</string>
+    <string name="profile_other_desc">Find their language first, then pictures and audio</string>
+    <string name="profile_unsure">Not sure</string>
+    <string name="profile_unsure_desc">Pictures, Yes and No, and drawing</string>
+
+    <!-- Officer state -->
+    <string name="officer_show">Show to them</string>
+    <string name="officer_nothing_pending">Choose a question, picture or gesture</string>
+    <string name="officer_ready">Ready to show</string>
+    <string name="officer_own_question">Your own question</string>
+    <string name="officer_own_hint">Type a short question</string>
+    <string name="officer_add_pictures">Add pictures</string>
+    <string name="officer_use">Use</string>
+    <string name="officer_gestured">They made a gesture</string>
+    <string name="officer_board">Picture board</string>
+    <string name="officer_find_language">Find their language</string>
+    <string name="officer_draw">Let them draw</string>
+    <string name="officer_answers">Answers</string>
+    <string name="officer_no_answers">Their answers appear here.</string>
+    <string name="officer_see_all">Full log</string>
+    <string name="officer_log">Session log</string>
+    <string name="officer_call">Call an interpreter</string>
+    <string name="officer_more">More options</string>
+    <string name="officer_end">End session</string>
+    <string name="officer_rotate">They sit opposite me</string>
+    <string name="officer_change">Change profile or language</string>
+    <string name="officer_caption_missing">No caption in %1$s. They will see pictures only.</string>
+    <string name="officer_gesture">Gesture</string>
+    <string name="officer_pictures">%1$d pictures</string>
+
+    <string name="sensitive_title">Sensitive questions</string>
+    <string name="sensitive_body">These questions can upset a child. Ask them only when the person is calm and safe, and never start with them.</string>
+    <string name="sensitive_confirm">Show sensitive questions</string>
+
+    <string name="end_title">End this session?</string>
+    <string name="end_body">Everything recorded in this session is deleted from this phone.</string>
+    <string name="end_confirm">End and delete</string>
+
+    <!-- Log -->
+    <string name="log_shown">Shown</string>
+    <string name="log_answer">Answer</string>
+    <string name="log_drawing">Drawing</string>
+    <string name="log_gesture">Gesture confirmed</string>
+    <string name="log_unclear">Unclear</string>
+    <string name="log_language">Language chosen</string>
+    <string name="log_note">Note</string>
+    <string name="log_system">Opened</string>
+    <string name="log_note_hint">Add a note</string>
+    <string name="log_add">Add</string>
+    <string name="log_empty">Nothing recorded yet.</string>
+
+    <!-- Gesture lookup -->
+    <string name="gl_title">What did they do?</string>
+    <string name="gl_where">Where did the hand go?</string>
+    <string name="gl_what">What did the hand do?</string>
+    <string name="gl_results">Possible meanings</string>
+    <string name="gl_none">No match. Try another place or action, or use pictures.</string>
+    <string name="gl_show_back">Show back</string>
+    <string name="gl_body_map">Body map. Tap where the hand went.</string>
+
+    <string name="loc_head">Top of head</string>
+    <string name="loc_forehead">Forehead</string>
+    <string name="loc_eyes">Eyes</string>
+    <string name="loc_nose">Nose</string>
+    <string name="loc_ear">Ear</string>
+    <string name="loc_face">Cheek</string>
+    <string name="loc_mouth">Mouth</string>
+    <string name="loc_chin">Chin</string>
+    <string name="loc_chest">Chest</string>
+    <string name="loc_belly">Belly</string>
+    <string name="loc_arm">Arm or wrist</string>
+    <string name="loc_hands">Hands in front</string>
+    <string name="loc_away">Away from body</string>
+
+    <string name="act_touch">Touched</string>
+    <string name="act_stroke">Stroked</string>
+    <string name="act_point">Pointed</string>
+    <string name="act_circle">Circled</string>
+    <string name="act_flat">Flat hand</string>
+    <string name="act_fist">Fist</string>
+    <string name="act_both">Both hands</string>
+    <string name="act_move">Moved or waved</string>
+    <string name="act_head">Head moved</string>
+
+    <!-- Board -->
+    <string name="board_title">Picture board</string>
+    <string name="board_search">Search pictures</string>
+    <string name="board_all">All</string>
+    <string name="board_use">Use %1$d</string>
+
+    <!-- Show state -->
+    <string name="show_officer">Officer</string>
+    <string name="show_yes">Yes</string>
+    <string name="show_no">No</string>
+</resources>

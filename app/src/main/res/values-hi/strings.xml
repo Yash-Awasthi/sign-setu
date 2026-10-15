@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Draft Hindi: needs review by a fluent speaker under the content policy. -->
+<resources>
+    <string name="app_name">साइन सेतु</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="notice_aid">साइन सेतु बातचीत में मदद करता है। यह दुभाषिया नहीं है, और यह कभी बयान दर्ज नहीं करता।</string>
+
+    <string name="lock_title">साइन सेतु लॉक है</string>
+    <string name="lock_body">फ़िंगरप्रिंट या फ़ोन पिन से खोलें। तब तक सत्र का रिकॉर्ड एन्क्रिप्ट रहता है।</string>
+    <string name="lock_button">खोलें</string>
+    <string name="lock_prompt_title">साइन सेतु खोलें</string>
+    <string name="lock_prompt_subtitle">सत्र का रिकॉर्ड इस फ़ोन पर एन्क्रिप्ट है</string>
+    <string name="lock_failed">नहीं खुला। फिर कोशिश करें।</string>
+    <string name="no_lock_title">पहले स्क्रीन लॉक लगाएँ</string>
+    <string name="no_lock_body">साइन सेतु सत्र के रिकॉर्ड को फ़ोन के स्क्रीन लॉक से एन्क्रिप्ट करता है। पिन, पैटर्न या पासवर्ड लगाकर वापस आएँ।</string>
+    <string name="no_lock_button">सुरक्षा सेटिंग खोलें</string>
+    <string name="return_prompt_title">अधिकारी जाँच</string>
+    <string name="return_prompt_subtitle">अधिकारी स्क्रीन पर लौटें</string>
+
+    <string name="start_title">नया सत्र</string>
+    <string name="start_resume_title">अधूरा सत्र</string>
+    <string name="start_resume_body">%1$s · %2$s · %3$s बजे शुरू</string>
+    <string name="start_resume">जारी रखें</string>
+    <string name="start_end">समाप्त करें</string>
+    <string name="start_who">आप किसकी मदद कर रहे हैं?</string>
+    <string name="start_language">उनकी भाषा</string>
+    <string name="start_language_finder">अगली स्क्रीन पर उनकी भाषा पता करें।</string>
+    <string name="start_button">सत्र शुरू करें</string>
+
+    <string name="profile_child">छोटा बच्चा</string>
+    <string name="profile_child_desc">चित्र, इशारे और बोली गई आवाज़</string>
+    <string name="profile_isl">सांकेतिक भाषा जानते हैं</string>
+    <string name="profile_isl_desc">चित्र, कैप्शन, ISL वीडियो और दुभाषिया कॉल</string>
+    <string name="profile_other">दूसरी भाषा बोलते हैं</string>
+    <string name="profile_other_desc">पहले भाषा पता करें, फिर चित्र और आवाज़</string>
+    <string name="profile_unsure">पता नहीं</string>
+    <string name="profile_unsure_desc">चित्र, हाँ और नहीं, और चित्र बनाना</string>
+
+    <string name="officer_show">उन्हें दिखाएँ</string>
+    <string name="officer_nothing_pending">कोई सवाल, चित्र या इशारा चुनें</string>
+    <string name="officer_ready">दिखाने के लिए तैयार</string>
+    <string name="officer_own_question">अपना सवाल</string>
+    <string name="officer_own_hint">छोटा सवाल लिखें</string>
+    <string name="officer_add_pictures">चित्र जोड़ें</string>
+    <string name="officer_use">इस्तेमाल करें</string>
+    <string name="officer_gestured">उन्होंने इशारा किया</string>
+    <string name="officer_board">चित्र बोर्ड</string>
+    <string name="officer_find_language">उनकी भाषा पता करें</string>
+    <string name="officer_draw">उन्हें चित्र बनाने दें</string>
+    <string name="officer_answers">जवाब</string>
+    <string name="officer_no_answers">उनके जवाब यहाँ दिखेंगे।</string>
+    <string name="officer_see_all">पूरा रिकॉर्ड</string>
+    <string name="officer_log">सत्र रिकॉर्ड</string>
+    <string name="officer_call">दुभाषिया बुलाएँ</string>
+    <string name="officer_more">और विकल्प</string>
+    <string name="officer_end">सत्र समाप्त करें</string>
+    <string name="officer_rotate">वे मेरे सामने बैठे हैं</string>
+    <string name="officer_change">प्रोफ़ाइल या भाषा बदलें</string>
+    <string name="officer_caption_missing">%1$s में कैप्शन नहीं है। उन्हें केवल चित्र दिखेंगे।</string>
+    <string name="officer_gesture">इशारा</string>
+    <string name="officer_pictures">%1$d चित्र</string>
+
+    <string name="sensitive_title">संवेदनशील सवाल</string>
+    <string name="sensitive_body">ये सवाल बच्चे को परेशान कर सकते हैं। तभी पूछें जब व्यक्ति शांत और सुरक्षित हो, और कभी इनसे शुरुआत न करें।</string>
+    <string name="sensitive_confirm">संवेदनशील सवाल दिखाएँ</string>
+
+    <string name="end_title">यह सत्र समाप्त करें?</string>
+    <string name="end_body">इस सत्र का सारा रिकॉर्ड इस फ़ोन से मिट जाएगा।</string>
+    <string name="end_confirm">समाप्त करें और मिटाएँ</string>
+
+    <string name="log_shown">दिखाया</string>
+    <string name="log_answer">जवाब</string>
+    <string name="log_drawing">चित्र</string>
+    <string name="log_gesture">इशारा पक्का</string>
+    <string name="log_unclear">अस्पष्ट</string>
+    <string name="log_language">भाषा चुनी</string>
+    <string name="log_note">टिप्पणी</string>
+    <string name="log_system">खोला</string>
+    <string name="log_note_hint">टिप्पणी जोड़ें</string>
+    <string name="log_add">जोड़ें</string>
+    <string name="log_empty">अभी कुछ दर्ज नहीं हुआ।</string>
+
+    <string name="gl_title">उन्होंने क्या किया?</string>
+    <string name="gl_where">हाथ कहाँ गया?</string>
+    <string name="gl_what">हाथ ने क्या किया?</string>
+    <string name="gl_results">संभावित अर्थ</string>
+    <string name="gl_none">कोई मेल नहीं। दूसरी जगह या क्रिया चुनें, या चित्र इस्तेमाल करें।</string>
+    <string name="gl_show_back">वापस दिखाएँ</string>
+    <string name="gl_body_map">शरीर का नक्शा। जहाँ हाथ गया, वहाँ छुएँ।</string>
+
+    <string name="loc_head">सिर का ऊपरी भाग</string>
+    <string name="loc_forehead">माथा</string>
+    <string name="loc_eyes">आँखें</string>
+    <string name="loc_nose">नाक</string>
+    <string name="loc_ear">कान</string>
+    <string name="loc_face">गाल</string>
+    <string name="loc_mouth">मुँह</string>
+    <string name="loc_chin">ठोड़ी</string>
+    <string name="loc_chest">छाती</string>
+    <string name="loc_belly">पेट</string>
+    <string name="loc_arm">बाँह या कलाई</string>
+    <string name="loc_hands">सामने हाथ</string>
+    <string name="loc_away">शरीर से दूर</string>
+
+    <string name="act_touch">छुआ</string>
+    <string name="act_stroke">फेरा</string>
+    <string name="act_point">इशारा किया</string>
+    <string name="act_circle">गोल घुमाया</string>
+    <string name="act_flat">खुली हथेली</string>
+    <string name="act_fist">मुट्ठी</string>
+    <string name="act_both">दोनों हाथ</string>
+    <string name="act_move">हिलाया</string>
+    <string name="act_head">सिर हिलाया</string>
+
+    <string name="board_title">चित्र बोर्ड</string>
+    <string name="board_search">चित्र खोजें</string>
+    <string name="board_all">सभी</string>
+    <string name="board_use">%1$d इस्तेमाल करें</string>
+
+    <string name="show_officer">अधिकारी</string>
+    <string name="show_yes">हाँ</string>
+    <string name="show_no">नहीं</string>
+</resources>

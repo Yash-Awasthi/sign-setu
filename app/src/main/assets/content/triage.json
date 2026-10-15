@@ -1,0 +1,71 @@
+{
+  "groups": [
+    { "id": "safety", "label": { "en": "Safety", "hi": "सुरक्षा" } },
+    { "id": "health", "label": { "en": "Health", "hi": "स्वास्थ्य" } },
+    { "id": "needs", "label": { "en": "Needs", "hi": "ज़रूरतें" } },
+    { "id": "identity", "label": { "en": "Identity", "hi": "पहचान" } },
+    { "id": "family", "label": { "en": "Family", "hi": "परिवार" } },
+    { "id": "location", "label": { "en": "Location", "hi": "जगह" } },
+    { "id": "sensitive", "label": { "en": "Sensitive", "hi": "संवेदनशील" }, "sensitive": true }
+  ],
+  "questions": [
+    { "id": "s1", "group": "safety", "cards": ["police"], "lexicon": "police.salute",
+      "text": { "en": "I am a police officer. I am here to help you.", "hi": "मैं पुलिस अधिकारी हूँ। मैं आपकी मदद के लिए यहाँ हूँ।" } },
+    { "id": "s2", "group": "safety", "cards": ["pain"],
+      "text": { "en": "Are you hurt?", "hi": "क्या आपको चोट लगी है?" } },
+    { "id": "s3", "group": "safety", "cards": ["mother", "father", "brother", "sister", "person"],
+      "text": { "en": "Is someone with you?", "hi": "क्या आपके साथ कोई है?" } },
+    { "id": "s4", "group": "safety", "cards": ["okay", "scared"],
+      "text": { "en": "Do you feel safe here?", "hi": "क्या आप यहाँ सुरक्षित महसूस करते हैं?" } },
+
+    { "id": "h1", "group": "health", "cards": ["head", "eye", "ear", "mouth", "throat", "stomach", "back", "arm", "leg", "foot"],
+      "text": { "en": "Does it hurt anywhere? Show me where.", "hi": "क्या कहीं दर्द है? मुझे दिखाइए कहाँ।" } },
+    { "id": "h2", "group": "health", "cards": ["doctor"],
+      "text": { "en": "Do you need a doctor?", "hi": "क्या आपको डॉक्टर चाहिए?" } },
+    { "id": "h3", "group": "health", "cards": ["sick", "okay"],
+      "text": { "en": "Do you feel unwell?", "hi": "क्या आपकी तबीयत ठीक नहीं है?" } },
+    { "id": "h4", "group": "health", "cards": ["medicine"],
+      "text": { "en": "Do you take any medicine?", "hi": "क्या आप कोई दवा लेते हैं?" } },
+
+    { "id": "n1", "group": "needs", "cards": ["water"], "lexicon": "water.thumb",
+      "text": { "en": "Do you want water?", "hi": "क्या आपको पानी चाहिए?" } },
+    { "id": "n2", "group": "needs", "cards": ["food"], "lexicon": "eat.fingers",
+      "text": { "en": "Are you hungry?", "hi": "क्या आपको भूख लगी है?" } },
+    { "id": "n3", "group": "needs", "cards": ["toilet"], "lexicon": "toilet.finger",
+      "text": { "en": "Do you need the toilet?", "hi": "क्या आपको शौचालय जाना है?" } },
+    { "id": "n4", "group": "needs", "cards": ["cold", "hot", "okay"],
+      "text": { "en": "Are you cold?", "hi": "क्या आपको ठंड लग रही है?" } },
+    { "id": "n5", "group": "needs", "cards": ["rest"], "lexicon": "sleep.palms",
+      "text": { "en": "Do you want to rest?", "hi": "क्या आप आराम करना चाहते हैं?" } },
+
+    { "id": "i1", "group": "identity", "cards": ["draw"],
+      "text": { "en": "Can you show me your name? You can write or draw it.", "hi": "क्या आप अपना नाम दिखा सकते हैं? आप उसे लिख या बना सकते हैं।" } },
+    { "id": "i2", "group": "identity", "cards": ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9", "n10"],
+      "text": { "en": "How old are you? Show me with your fingers.", "hi": "आपकी उम्र कितनी है? उँगलियों से दिखाइए।" } },
+    { "id": "i3", "group": "identity", "cards": ["school"], "lexicon": "school.write",
+      "text": { "en": "Do you go to school?", "hi": "क्या आप स्कूल जाते हैं?" } },
+
+    { "id": "f1", "group": "family", "cards": ["mother", "father", "grandmother", "grandfather", "brother", "sister"],
+      "text": { "en": "Who do you live with?", "hi": "आप किसके साथ रहते हैं?" } },
+    { "id": "f2", "group": "family", "cards": ["mother"], "lexicon": "mother.bindi",
+      "text": { "en": "Is your mother nearby?", "hi": "क्या आपकी माँ आस-पास हैं?" } },
+    { "id": "f3", "group": "family", "cards": ["father"], "lexicon": "father.moustache",
+      "text": { "en": "Is your father nearby?", "hi": "क्या आपके पिता आस-पास हैं?" } },
+    { "id": "f4", "group": "family", "cards": ["phone", "draw"],
+      "text": { "en": "Do you know a phone number? You can write it.", "hi": "क्या आपको कोई फ़ोन नंबर याद है? आप उसे लिख सकते हैं।" } },
+
+    { "id": "l1", "group": "location", "cards": ["home", "village", "road", "shop", "school", "hospital"],
+      "text": { "en": "Can you show me where you live?", "hi": "क्या आप मुझे दिखा सकते हैं कि आप कहाँ रहते हैं?" } },
+    { "id": "l2", "group": "location", "cards": ["walk", "bus", "train", "car", "auto"],
+      "text": { "en": "How did you come here?", "hi": "आप यहाँ कैसे आए?" } },
+    { "id": "l3", "group": "location", "cards": ["home"], "lexicon": "home.roof",
+      "text": { "en": "Is your home far from here?", "hi": "क्या आपका घर यहाँ से दूर है?" } },
+
+    { "id": "x1", "group": "sensitive", "cards": ["draw"],
+      "text": { "en": "Can you show me what happened? You can draw it.", "hi": "क्या आप मुझे दिखा सकते हैं कि क्या हुआ? आप उसे बना सकते हैं।" } },
+    { "id": "x2", "group": "sensitive", "cards": [],
+      "text": { "en": "Has someone hurt you?", "hi": "क्या किसी ने आपको चोट पहुँचाई है?" } },
+    { "id": "x3", "group": "sensitive", "cards": ["scared"],
+      "text": { "en": "Are you afraid of someone?", "hi": "क्या आप किसी से डरते हैं?" } }
+  ]
+}
