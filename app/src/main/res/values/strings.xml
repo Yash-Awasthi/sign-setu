@@ -67,7 +67,7 @@
     <string name="sensitive_confirm">Show sensitive questions</string>
 
     <string name="end_title">End this session?</string>
-    <string name="end_body">Everything recorded in this session is deleted from this phone.</string>
+    <string name="end_body">Everything recorded in this session is deleted from this phone. Export a password-protected report first if the case file needs it.</string>
     <string name="end_confirm">End and delete</string>
 
     <!-- Log -->
@@ -126,4 +126,77 @@
     <string name="show_officer">Officer</string>
     <string name="show_yes">Yes</string>
     <string name="show_no">No</string>
+    <string name="show_replay">Play again</string>
+
+    <!-- Export -->
+    <string name="end_export">Export report</string>
+    <string name="end_no_export">End without export</string>
+    <string name="export_working">Preparing the encrypted report…</string>
+    <string name="export_title">Report ready</string>
+    <string name="export_body">The report is encrypted. Give this password separately from the file, for example by reading it out. It is shown only once.</string>
+    <string name="export_password">Password</string>
+    <string name="export_share">Share report</string>
+    <string name="export_finish">Finish and delete session</string>
+    <string name="export_failed">Could not create the report. The session is unchanged.</string>
+    <string name="ok">OK</string>
+    <string name="report_title">Sign Setu: communication notes</string>
+    <string name="report_disclaimer">Produced by a communication aid. These notes are not a statement and not a record of the person\'s own words. Answers may be wrong; confirm anything important through an interpreter or other reliable means.</string>
+    <string name="report_started">Started</string>
+    <string name="report_exported">Exported</string>
+    <string name="report_profile">Profile</string>
+    <string name="report_language">Their language</string>
+    <string name="report_time">Time</string>
+    <string name="report_event">Event</string>
+    <string name="report_detail">Detail</string>
+    <string name="report_in_reply">In reply to</string>
+    <string name="report_page">Page %1$d of %2$d</string>
+    <string name="report_drawing">Drawing</string>
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="close">Close</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_interpreter">Interpreter call</string>
+    <string name="settings_interpreter_app">Messaging app</string>
+    <string name="settings_not_set">Not set</string>
+    <string name="settings_whatsapp">WhatsApp</string>
+    <string name="settings_sandes">Sandes</string>
+    <string name="settings_interpreter_contact">Interpreter contact</string>
+    <string name="settings_contact_whatsapp_hint">Phone number given by your department</string>
+    <string name="settings_contact_sandes_hint">Contact name as saved in Sandes</string>
+    <string name="settings_contact_invalid">Enter a 10-digit mobile number, or the full number with country code.</string>
+    <string name="settings_records">Session records</string>
+    <string name="settings_retention">Delete automatically after</string>
+    <string name="settings_hours">%1$d hours</string>
+    <string name="settings_retention_note">Sessions older than this are deleted even if nobody ended them.</string>
+    <string name="settings_app_language">App language</string>
+    <string name="settings_app_language_summary">Language of the officer screens</string>
+    <string name="settings_clear">Delete all data</string>
+    <string name="settings_clear_summary">Destroys the encryption key. Every session on this phone becomes unreadable.</string>
+    <string name="settings_clear_title">Delete all data?</string>
+    <string name="settings_clear_body">Every session on this phone is deleted and cannot be recovered. Settings are kept.</string>
+    <string name="settings_clear_confirm">Delete everything</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s, built %2$s</string>
+    <string name="settings_licences">Open-source licences</string>
+    <string name="settings_licences_summary">Symbols, voices and libraries in this app</string>
+
+    <string name="call_missing">%1$s is not installed on this phone.</string>
+    <string name="call_sandes_hint">In Sandes, call %1$s.</string>
+
+    <string name="start_expired_title">Update required</string>
+    <string name="start_expired_body">This version is more than 180 days old and cannot start new sessions. Install the current version from your department. An unfinished session can still be continued, exported and ended.</string>
+    <string name="start_rooted">This phone looks rooted or runs a test build. Session records may not be safe on it. Use a department phone if you can.</string>
+
+    <string name="intro_step">Step %1$d of %2$d</string>
+    <string name="intro_next">Next</string>
+    <string name="intro_done">Get started</string>
+    <string name="intro_aid_title">A communication aid</string>
+    <string name="intro_aid_body">Sign Setu helps you talk with young children, deaf people and people who speak another language, using pictures, captions, recorded speech and gestures.\n\nIt is not an interpreter. For anything that will become a statement, call a qualified interpreter.</string>
+    <string name="intro_private_title">Nothing leaves this phone</string>
+    <string name="intro_private_body">The app has no internet access. Session records are encrypted with your screen lock, and deleted when the session ends or after 24 hours at most.\n\nA report leaves the phone only when you export and share it, and it is protected by a password you give separately.</string>
+    <string name="intro_pinning_title">Turn on app pinning</string>
+    <string name="intro_pinning_body">When you hand the phone over, Sign Setu pins itself so the person cannot open other apps.\n\nIn your phone\'s security settings, turn on App pinning and \"Ask for PIN before unpinning\".</string>
+    <string name="key_reset_title">Earlier sessions were deleted</string>
+    <string name="key_reset_body">The phone screen lock was removed or changed, so Android deleted the key that protected earlier session records. They could not be opened and have been deleted. New sessions work as normal.</string>
 </resources>

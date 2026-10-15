@@ -13,6 +13,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import kotlinx.coroutines.flow.Flow
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 // No table has a field for a subject's name, address, phone number or photograph (02-architecture §6).
 
@@ -95,10 +96,19 @@ abstract class SessionDatabase : RoomDatabase() {
     abstract fun dao(): SessionDao
 
     companion object {
+        const val FILE_NAME = "session.db"
+
         fun open(context: Context, key: ByteArray): SessionDatabase {
             System.loadLibrary("sqlcipher")
-            return Room.databaseBuilder(context, SessionDatabase::class.java, "session.db")
+            return Room.databaseBuilder(context, SessionDatabase::class.java, FILE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(key))
+                // Purged rows are overwritten in place, and no write-ahead log keeps old pages around (SEC-08).
+                .setJournalMode(JournalMode.TRUNCATE)
+                .addCallback(object : Callback() {
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        db.query("PRAGMA secure_delete = ON").use { it.moveToFirst() }
+                    }
+                })
                 .build()
         }
     }

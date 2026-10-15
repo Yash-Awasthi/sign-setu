@@ -3,7 +3,10 @@ package app.signsetu.data.session
 import android.content.Context
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
+import java.security.GeneralSecurityException
+import javax.crypto.AEADBadTagException
 import java.io.File
 import java.security.KeyStore
 import java.security.SecureRandom
@@ -19,36 +22,57 @@ import javax.crypto.spec.GCMParameterSpec
 class DatabaseKey(private val context: Context) {
     private val wrapped = File(context.noBackupFilesDir, "dek.bin")
 
-    /** Call only after a successful device-credential or biometric prompt. */
-    fun unwrap(): ByteArray {
+    class Unwrapped(val key: ByteArray, val reset: Boolean)
+
+    /**
+     * Call only after a successful device-credential or biometric prompt.
+     * When the screen lock was removed or reset, Android has deleted or corrupted the KEK and stored sessions can never
+     * be read again; they are destroyed and a fresh key is made, so the officer is not locked out for good.
+     */
+    fun unwrap(): Unwrapped = try {
+        open()
+    } catch (e: GeneralSecurityException) {
+        if (e !is KeyPermanentlyInvalidatedException && e !is AEADBadTagException) throw e
+        destroy()
+        Unwrapped(open().key, reset = true)
+    }
+
+    private fun open(): Unwrapped {
         val kek = kek()
         if (!wrapped.exists()) {
+            // A new DEK cannot read a database written under an old one.
+            val lost = context.deleteDatabase(DB_NAME)
             val dek = ByteArray(32).also { SecureRandom().nextBytes(it) }
             val cipher = Cipher.getInstance(TRANSFORM).apply { init(Cipher.ENCRYPT_MODE, kek) }
             wrapped.writeBytes(cipher.iv + cipher.doFinal(dek))
-            return dek
+            return Unwrapped(dek, reset = lost)
         }
         val bytes = wrapped.readBytes()
         val cipher = Cipher.getInstance(TRANSFORM).apply {
             init(Cipher.DECRYPT_MODE, kek, GCMParameterSpec(128, bytes, 0, IV_LEN))
         }
-        return cipher.doFinal(bytes, IV_LEN, bytes.size - IV_LEN)
+        return Unwrapped(cipher.doFinal(bytes, IV_LEN, bytes.size - IV_LEN), reset = false)
     }
 
     /** Destroys both keys: every stored session becomes unreadable (Clear all data). */
     fun destroy() {
+        context.deleteDatabase(DB_NAME)
         wrapped.delete()
-        keystore().deleteEntry(ALIAS)
-        context.deleteDatabase("session.db")
+        runCatching { keystore().deleteEntry(ALIAS) }
     }
 
     private fun kek(): SecretKey {
-        (keystore().getEntry(ALIAS, null) as? KeyStore.SecretKeyEntry)?.let { return it.secretKey }
+        val keystore = keystore()
+        // An entry Android can no longer decrypt (screen lock reset) is as good as missing.
+        runCatching { (keystore.getEntry(ALIAS, null) as? KeyStore.SecretKeyEntry)?.secretKey }.getOrNull()?.let { return it }
+        runCatching { keystore.deleteEntry(ALIAS) }
         val spec = KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setKeySize(256)
             .setUserAuthenticationRequired(true)
+            // Enrolling another fingerprint needs the device PIN, which unlocks the app anyway.
+            .setInvalidatedByBiometricEnrollment(false)
             .apply {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     setUserAuthenticationParameters(
@@ -71,6 +95,7 @@ class DatabaseKey(private val context: Context) {
 
     private companion object {
         const val ALIAS = "signsetu.kek"
+        const val DB_NAME = SessionDatabase.FILE_NAME
         const val TRANSFORM = "AES/GCM/NoPadding"
         const val IV_LEN = 12
         const val AUTH_WINDOW_SECONDS = 30

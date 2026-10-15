@@ -27,7 +27,11 @@ data class SessionEvent(
     val drawingId: Long?,
 )
 
-class SessionRepository(private val dao: SessionDao, private val clock: () -> Long = System::currentTimeMillis) {
+class SessionRepository(
+    private val dao: SessionDao,
+    private val onSessionStarted: suspend (Long) -> Unit = {},
+    private val clock: () -> Long = System::currentTimeMillis,
+) {
 
     suspend fun openSession(): Session? = dao.openSession()?.toModel()
 
@@ -35,7 +39,9 @@ class SessionRepository(private val dao: SessionDao, private val clock: () -> Lo
 
     suspend fun start(profile: Profile, subjectLang: String): String {
         val id = UUID.randomUUID().toString()
-        dao.insertSession(SessionEntity(id, clock(), null, profile.name, subjectLang))
+        val now = clock()
+        dao.insertSession(SessionEntity(id, now, null, profile.name, subjectLang))
+        onSessionStarted(now)
         return id
     }
 

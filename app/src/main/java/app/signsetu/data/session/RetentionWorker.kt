@@ -1,0 +1,38 @@
+package app.signsetu.data.session
+
+import android.content.Context
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+import app.signsetu.SignSetuApp
+import java.util.concurrent.TimeUnit
+
+/**
+ * The database key can only be used after the officer authenticates, so a background job cannot delete single rows.
+ * When even the newest session is past the retention period, every session is, and the job destroys the key and the
+ * database file instead (SEC-08). Older sessions inside a still-current set are purged at the next unlock.
+ */
+class RetentionWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        val container = (applicationContext as SignSetuApp).container
+        val settings = container.settings.current()
+        val newest = settings.newestSessionAt
+        if (newest > 0 && System.currentTimeMillis() - newest > settings.retentionHours * 3_600_000L) {
+            container.clearAllData()
+            container.settings.setNewestSessionAt(0L)
+        }
+        return Result.success()
+    }
+
+    companion object {
+        fun schedule(context: Context) {
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "retention",
+                ExistingPeriodicWorkPolicy.KEEP,
+                PeriodicWorkRequestBuilder<RetentionWorker>(1, TimeUnit.HOURS).build(),
+            )
+        }
+    }
+}

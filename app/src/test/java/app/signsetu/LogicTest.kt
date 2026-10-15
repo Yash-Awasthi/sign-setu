@@ -7,6 +7,7 @@ import app.signsetu.data.content.LexiconEntry
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.SessionEvent
+import app.signsetu.data.settings.whatsappNumber
 import app.signsetu.ui.session.withQuestions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -56,5 +57,15 @@ class LogicTest {
         assertEquals("Water?", paired[1].second)
         assertNull("a language choice is not an answer to the last question", paired[3].second)
         assertNull("notes are never paired", paired[4].second)
+    }
+
+    @Test
+    fun whatsappNumbersBecomeInternational() {
+        assertEquals("919876543210", whatsappNumber("98765 43210"))
+        assertEquals("919876543210", whatsappNumber("09876543210"))
+        assertEquals("919876543210", whatsappNumber("+91-98765-43210"))
+        assertEquals("447700900123", whatsappNumber("+44 7700 900123"))
+        assertNull(whatsappNumber("Interpreter desk"))
+        assertNull(whatsappNumber("12345"))
     }
 }

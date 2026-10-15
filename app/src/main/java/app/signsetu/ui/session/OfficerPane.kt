@@ -1,5 +1,19 @@
 package app.signsetu.ui.session
 
+import android.content.res.Resources
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.window.DialogProperties
+import app.signsetu.data.session.SessionEvent
+import app.signsetu.export.ReportText
+import java.text.DateFormat
+import java.util.Date
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +34,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
@@ -56,12 +71,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import java.io.File
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -82,6 +101,8 @@ fun OfficerPane(
     ui: SessionUi,
     vm: SessionViewModel,
     officerLang: String,
+    onCallInterpreter: (() -> Unit)?,
+    onShare: (File) -> Unit,
     onEndSession: () -> Unit,
 ) {
     val content = vm.content
@@ -91,6 +112,9 @@ fun OfficerPane(
     var menu by remember { mutableStateOf(false) }
     var askSensitive by remember { mutableStateOf(false) }
     var askEnd by remember { mutableStateOf(false) }
+    var export by remember { mutableStateOf<ExportState?>(null) }
+    val scope = rememberCoroutineScope()
+    val res = LocalContext.current.resources
     var ownText by rememberSaveable { mutableStateOf("") }
     val attached = remember { mutableStateListOf<String>() }
 
@@ -108,6 +132,11 @@ fun OfficerPane(
                     }
                 },
                 actions = {
+                    onCallInterpreter?.let { call ->
+                        IconButton(onClick = call) {
+                            Icon(Icons.Filled.Call, contentDescription = stringResource(R.string.officer_call))
+                        }
+                    }
                     IconButton(onClick = { sheet = Sheet.LOG }) {
                         Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.officer_log))
                     }
@@ -289,11 +318,29 @@ fun OfficerPane(
             title = { Text(stringResource(R.string.end_title)) },
             text = { Text(stringResource(R.string.end_body)) },
             confirmButton = {
-                TextButton(onClick = { askEnd = false; onEndSession() }) {
-                    Text(stringResource(R.string.end_confirm), color = MaterialTheme.colorScheme.error)
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Button(modifier = Modifier.fillMaxWidth(), onClick = {
+                    askEnd = false
+                    export = ExportState.Working
+                    scope.launch {
+                        export = runCatching { vm.exportReport(reportText(res, ui, content)) { eventDetail(res, it) } }
+                            .fold({ (file, pass) -> ExportState.Ready(file, pass) }, { ExportState.Failed })
+                    }
+                }) { Text(stringResource(R.string.end_export)) }
+                OutlinedButton(onClick = { askEnd = false; onEndSession() }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.end_no_export), color = MaterialTheme.colorScheme.error)
+                }
+                TextButton(onClick = { askEnd = false }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.cancel)) }
                 }
             },
-            dismissButton = { TextButton(onClick = { askEnd = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+    export?.let { state ->
+        ExportDialog(
+            state = state,
+            onShare = { (state as? ExportState.Ready)?.let { onShare(it.file) } },
+            onFinish = { (state as? ExportState.Ready)?.file?.delete(); export = null; onEndSession() },
+            onDismiss = { export = null },
         )
     }
 }
@@ -389,4 +436,99 @@ private fun describe(p: Pending, content: ContentBundle, lang: String): String =
     is Pending.ShowBack -> "${stringResource(R.string.officer_gesture)}: ${p.entry.label.pick(lang) ?: p.entry.id}"
     Pending.LanguageFinder -> stringResource(R.string.officer_find_language)
     Pending.Drawing -> stringResource(R.string.officer_draw)
+}
+
+private sealed interface ExportState {
+    data object Working : ExportState
+    data class Ready(val file: File, val passphrase: String) : ExportState
+    data object Failed : ExportState
+}
+
+private fun reportText(res: Resources, ui: SessionUi, content: ContentBundle): ReportText {
+    val time = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+    val language = content.language(ui.session.subjectLang)
+    return ReportText(
+        title = res.getString(R.string.report_title),
+        disclaimer = res.getString(R.string.report_disclaimer),
+        header = listOf(
+            res.getString(R.string.report_started) to time.format(Date(ui.session.startedAt)),
+            res.getString(R.string.report_exported) to time.format(Date()),
+            res.getString(R.string.report_profile) to res.getString(profileTitle(ui.session.profile)),
+            res.getString(R.string.report_language) to (language?.let { "${it.english} (${it.name})" } ?: ui.session.subjectLang),
+        ),
+        time = res.getString(R.string.report_time),
+        event = res.getString(R.string.report_event),
+        detail = res.getString(R.string.report_detail),
+        inReplyTo = res.getString(R.string.report_in_reply),
+        page = { n, total -> res.getString(R.string.report_page, n, total) },
+        eventLabel = { res.getString(it.label()) },
+        formatTime = { DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it)) },
+    )
+}
+
+private fun eventDetail(res: Resources, e: SessionEvent): String = when {
+    e.text == SYSTEM_LANGUAGE_FINDER -> res.getString(R.string.officer_find_language)
+    e.text == SYSTEM_DRAWING -> res.getString(R.string.officer_draw)
+    e.drawingId != null -> res.getString(R.string.report_drawing)
+    else -> e.text.orEmpty()
+}
+
+@Composable
+private fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () -> Unit, onDismiss: () -> Unit) {
+    when (state) {
+        ExportState.Working -> AlertDialog(
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+                    CircularProgressIndicator(Modifier.size(32.dp))
+                    Text(stringResource(R.string.export_working))
+                }
+            },
+            confirmButton = {},
+        )
+        is ExportState.Ready -> AlertDialog(
+            // The password is shown once; the dialog closes only through its own buttons.
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+            icon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+            title = { Text(stringResource(R.string.export_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                    Text(stringResource(R.string.export_body))
+                    Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = MaterialTheme.shapes.medium) {
+                        Column(Modifier.fillMaxWidth().padding(Spacing.md), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                stringResource(R.string.export_password),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                state.passphrase,
+                                style = MaterialTheme.typography.headlineSmall.copy(fontFamily = FontFamily.Monospace),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = 28.sp),
+                                // Read out character by character, as the officer would.
+                                modifier = Modifier.semantics { contentDescription = state.passphrase.toCharArray().joinToString(" ") },
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = onShare) {
+                    Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(stringResource(R.string.export_share), modifier = Modifier.padding(start = Spacing.sm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onFinish) { Text(stringResource(R.string.export_finish), color = MaterialTheme.colorScheme.error) }
+            },
+        )
+        ExportState.Failed -> AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(R.string.export_failed)) },
+            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) } },
+        )
+    }
 }
