@@ -16,13 +16,13 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | ID | Control | Source |
 | --- | --- | --- |
 | SEC-01 | Session database encrypted with SQLCipher; random 256-bit key wrapped by an AES key in Android Keystore (hardware-backed where available). | CERT-In 6.2.3, 6.2.4; MASVS-STORAGE-1 |
-| SEC-02 | Drawings stored only inside the encrypted database; export files only in app-private cache, deleted after sharing. | MASVS-STORAGE-1 |
+| SEC-02 | Drawings stored only inside the encrypted database; export files only in app-private cache, deleted when the officer finishes the session, on Clear all data, and at every unlock. | MASVS-STORAGE-1 |
 | SEC-03 | `android:allowBackup="false"`; `dataExtractionRules` (API 31+) and `fullBackupContent` (API 29-30) exclude everything. | MASVS-STORAGE-2 |
 | SEC-04 | No personal data in Logcat; release builds strip `Log` calls with R8; no crash SDK. | CERT-In 6.2.5 |
 | SEC-05 | Note fields disable autocorrect and request no personalised learning where the keyboard supports it. | MASVS-STORAGE-2 |
 | SEC-06 | Copy disabled on log entries; subject data never placed on the clipboard. | MASVS-STORAGE-2 |
 | SEC-07 | DataStore holds settings only, no personal data. | MASVS-STORAGE-1 |
-| SEC-08 | Sessions purged on end or retention expiry (WorkManager and at next open, whichever is first); database compacted with `VACUUM`. | DPDP section 8(7) |
+| SEC-08 | Sessions purged on end or retention expiry (WorkManager and at next open, whichever is first); `secure_delete` overwrites purged rows and the rollback journal is truncated, so no write-ahead log keeps old pages. | DPDP section 8(7) |
 
 ### 2.2 Cryptography
 
@@ -85,7 +85,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | Key | Where | Rotation | Loss impact |
 | --- | --- | --- | --- |
 | Database key (DEK) | Generated on the phone, wrapped by the KEK | On Clear all data | Sessions unrecoverable (acceptable: short-lived data) |
-| Key-encryption key (KEK) | Android Keystore, non-exportable, auth-bound | On reinstall | Same |
+| Key-encryption key (KEK) | Android Keystore, non-exportable, auth-bound; not invalidated by enrolling a fingerprint | On reinstall, or when Android drops it because the screen lock was removed or reset | Same; the app then deletes the unreadable database, makes new keys and tells the officer once, instead of refusing to unlock |
 | Export passphrase | Shown once to the officer | Per export | Report unreadable |
 | Release signing key | Release manager and second custodian, offline | On compromise (APK Signature Scheme v3 rotation) | Installed apps cannot be updated without the backup |
 

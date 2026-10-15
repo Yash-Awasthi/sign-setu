@@ -15,7 +15,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -63,7 +69,10 @@ import java.util.Date
 fun StartScreen(
     repo: SessionRepository,
     content: ContentBundle,
+    expired: Boolean,
+    rooted: Boolean,
     onOpenSession: (String) -> Unit,
+    onSettings: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var refresh by remember { mutableStateOf(0) }
@@ -74,7 +83,17 @@ fun StartScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
-        topBar = { LargeTopAppBar(title = { Text(stringResource(R.string.start_title)) }, scrollBehavior = scroll) },
+        topBar = {
+            LargeTopAppBar(
+                title = { Text(stringResource(R.string.start_title)) },
+                actions = {
+                    IconButton(onClick = onSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title))
+                    }
+                },
+                scrollBehavior = scroll,
+            )
+        },
         bottomBar = {
             Surface(tonalElevation = 3.dp) {
                 Button(
@@ -82,7 +101,7 @@ fun StartScreen(
                         val p = profile ?: return@Button
                         scope.launch { onOpenSession(repo.start(p, lang)) }
                     },
-                    enabled = profile != null,
+                    enabled = profile != null && !expired,
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
@@ -100,6 +119,22 @@ fun StartScreen(
                 .padding(horizontal = Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
+            if (expired) {
+                Notice(
+                    title = stringResource(R.string.start_expired_title),
+                    body = stringResource(R.string.start_expired_body),
+                    container = MaterialTheme.colorScheme.errorContainer,
+                    content = MaterialTheme.colorScheme.onErrorContainer,
+                )
+            }
+            if (rooted) {
+                Notice(
+                    title = null,
+                    body = stringResource(R.string.start_rooted),
+                    container = MaterialTheme.colorScheme.tertiaryContainer,
+                    content = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
             open?.let { session ->
                 ResumeCard(
                     session = session,
@@ -142,6 +177,19 @@ fun StartScreen(
                 modifier = Modifier.padding(vertical = Spacing.sm),
             )
             Spacer(Modifier.height(Spacing.lg))
+        }
+    }
+}
+
+@Composable
+private fun Notice(title: String?, body: String, container: Color, content: Color) {
+    Surface(color = container, contentColor = content, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(Spacing.lg), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Icon(Icons.Filled.Warning, contentDescription = null)
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                title?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
+                Text(body, style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
 }

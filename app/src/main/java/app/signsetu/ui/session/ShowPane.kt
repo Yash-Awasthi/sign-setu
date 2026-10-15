@@ -28,8 +28,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,9 +62,11 @@ import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.pick
+import app.signsetu.data.session.Profile
 import app.signsetu.ui.components.AnswerButtons
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.PictureCard
+import app.signsetu.ui.components.rememberSpeechPlayer
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.Spacing
 import java.io.ByteArrayOutputStream
@@ -79,6 +84,13 @@ fun ShowPane(
 ) {
     val lang = ui.session.subjectLang
     var drawing by remember(ui.pending) { mutableStateOf(ui.pending == Pending.Drawing) }
+    val speech = rememberSpeechPlayer()
+    val profile = ui.session.profile
+    val audio = speechFor(ui.pending, content, lang)
+    // Speech plays by itself only for subjects who hear and may not read; deaf ISL users never get sound (NFR-24).
+    LaunchedEffect(ui.pending, lang) {
+        if (audio != null && profile in AutoSpeech) speech.play(audio)
+    }
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -90,12 +102,47 @@ fun ShowPane(
             val pending = ui.pending
             when {
                 drawing -> DrawingContent(content, lang, onDone = onDrawing)
-                pending == Pending.LanguageFinder -> LanguageFinder(content, ui.chosenLanguage, onLanguage)
+                pending == Pending.LanguageFinder -> LanguageFinder(content, ui.chosenLanguage) { code ->
+                    onLanguage(code)
+                    content.greetingAudio(code)?.let(speech::play)
+                }
                 pending is Pending.ShowBack -> ShowBackContent(pending, content, lang, ui.answeredYes, onYesNo)
                 pending != null -> QuestionContent(pending, content, lang, ui, onCard, onYesNo, onDraw = { drawing = true })
+                else -> Finished(content.subjectText("done", lang), Modifier.align(Alignment.Center))
             }
             OfficerHandle(onOfficer, Modifier.align(Alignment.TopEnd))
+            if (audio != null && profile != Profile.ISL_USER && !drawing) {
+                ReplayButton(onClick = { speech.play(audio) }, modifier = Modifier.align(Alignment.TopStart))
+            }
         }
+    }
+}
+
+private val AutoSpeech = setOf(Profile.YOUNG_CHILD, Profile.OTHER_LANGUAGE)
+
+/** Shown after the subject finishes a drawing, until the officer takes the phone back. */
+@Composable
+private fun Finished(label: String?, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+        Surface(shape = CircleShape, color = LocalAnswerColors.current.yesContainer, modifier = Modifier.size(144.dp)) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Check, contentDescription = label, tint = LocalAnswerColors.current.onYesContainer, modifier = Modifier.size(96.dp))
+            }
+        }
+        label?.let { Text(it, style = MaterialTheme.typography.headlineMedium) }
+    }
+}
+
+private fun speechFor(pending: Pending?, content: ContentBundle, lang: String): String? = when (pending) {
+    is Pending.Ask -> content.questionAudio(pending.question.id, lang)
+    is Pending.ShowBack -> content.subjectAudio("is_this_it", lang)
+    else -> null
+}
+
+@Composable
+private fun ReplayButton(onClick: () -> Unit, modifier: Modifier) {
+    FilledTonalIconButton(onClick = onClick, modifier = modifier.size(56.dp)) {
+        Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.show_replay), modifier = Modifier.size(32.dp))
     }
 }
 
@@ -135,7 +182,7 @@ private fun QuestionContent(
     val drawable = "draw" in cardIds
     val pictures = cardIds.filter { it != "draw" }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(56.dp))
         if (caption != null) {
             Text(
                 caption,
@@ -186,7 +233,7 @@ private fun ShowBackContent(pending: Pending.ShowBack, content: ContentBundle, l
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.xl),
     ) {
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(56.dp))
         // Yes and No stay anchored at the bottom on every subject screen, so they are always in the same place.
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             Surface(
@@ -218,7 +265,7 @@ private fun LanguageFinder(content: ContentBundle, chosen: String?, onLanguage: 
         columns = GridCells.Adaptive(150.dp),
         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
-        modifier = Modifier.fillMaxSize().padding(top = 48.dp),
+        modifier = Modifier.fillMaxSize().padding(top = 64.dp),
     ) {
         items(content.languages, key = { it.code }) { l ->
             val selected = chosen == l.code
@@ -249,7 +296,7 @@ private fun DrawingContent(content: ContentBundle, lang: String, onDone: (ByteAr
     val paper = MaterialTheme.colorScheme.surfaceContainerLowest
 
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(56.dp))
         Surface(
             shape = MaterialTheme.shapes.large,
             color = paper,

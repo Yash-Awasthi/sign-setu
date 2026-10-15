@@ -224,7 +224,7 @@ Status: Proposed, Accepted, Superseded.
 
 **Decision.** Export a PDF encrypted with AES-256 under a strong one-time passphrase shared out of band. Any PDF reader opens it. SEC-12 is amended accordingly.
 
-**Consequences.** Adds one library (see [reuse map](09-open-source.md)). PDF password key derivation is weaker than Argon2id, so the passphrase must be long and random (for example six random words).
+**Consequences.** Adds one library (see [reuse map](09-open-source.md)). PDF password key derivation is weaker than Argon2id, so the passphrase must be long and random: 16 characters from a 32-symbol alphabet without look-alike characters (80 bits).
 
 ---
 

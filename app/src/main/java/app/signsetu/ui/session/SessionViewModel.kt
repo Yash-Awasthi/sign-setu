@@ -21,6 +21,10 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import app.signsetu.export.ReportRow
+import app.signsetu.export.ReportText
+import app.signsetu.export.SessionReport
+import java.io.File
 
 /** What the officer has prepared but not yet shown (FR-15). */
 @Immutable
@@ -70,6 +74,7 @@ class SessionViewModel(
     private val repo: SessionRepository,
     val content: ContentBundle,
     private val officerLang: String,
+    private val report: SessionReport,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(Local())
@@ -161,7 +166,8 @@ class SessionViewModel(
     fun submitDrawing(png: ByteArray) {
         viewModelScope.launch {
             repo.log(sessionId, EventType.ANSWER_DRAWING, EventSource.SUBJECT, drawingPng = png)
-            local.update { it.copy(pending = null, mode = Mode.OFFICER) }
+            // The subject still holds the phone; only the officer handle, with re-authentication, leaves Show (FR-61).
+            local.update { it.copy(pending = null) }
         }
     }
 
@@ -184,6 +190,12 @@ class SessionViewModel(
     }
 
     suspend fun drawing(id: Long): ByteArray? = repo.drawing(id)
+
+    /** Builds the encrypted report from everything logged so far; returns the file and its one-time passphrase. */
+    suspend fun exportReport(text: ReportText, detail: (SessionEvent) -> String): Pair<File, String> {
+        val rows = (ui.value?.events ?: emptyList()).withQuestions().map { (e, q) -> ReportRow(e, q, detail(e)) }
+        return report.export(rows, text) { repo.drawing(it) }
+    }
 
     fun endSession(onDone: () -> Unit) {
         viewModelScope.launch {

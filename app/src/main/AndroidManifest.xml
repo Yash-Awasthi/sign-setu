@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Sandes (NIC) is opened for the interpreter call; package visibility needs it declared (API 30+). -->
+    <queries>
+        <package android:name="in.nic.gimkerala" />
+    </queries>
+
     <application
         android:name=".SignSetuApp"
         android:allowBackup="false"
@@ -27,14 +32,13 @@
         </activity>
 
         <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.exports"
             android:exported="false"
-            tools:node="merge">
+            android:grantUriPermissions="true">
             <meta-data
-                android:name="androidx.work.WorkManagerInitializer"
-                android:value="androidx.startup"
-                tools:node="remove" />
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/export_paths" />
         </provider>
     </application>
 </manifest>

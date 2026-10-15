@@ -93,7 +93,7 @@ API-level details for authentication are in [security](04-security.md) SEC-21 an
 
 ## 9. Build and release
 
-- `applicationId` is chosen at project creation; the department confirms the final identifier before the first signed release, because it cannot change afterwards.
+- The `applicationId` is `in.signsetu`. The code namespace is `app.signsetu`, because `in` is a Kotlin keyword. The department confirms the identifier before the first signed release, because it cannot change afterwards.
 - `BuildConfig.BUILD_EPOCH_DAY` is set at build time for the build-expiry check (FR-67).
 - Release builds: R8 full mode, Baseline Profile for cold start and the first question, `debuggable=false`, no logging.
 - Signing, SBOM, scanning and release steps are in [governance/11-devsecops-release.md](governance/11-devsecops-release.md).

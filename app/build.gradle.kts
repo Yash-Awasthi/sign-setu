@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.work.runtime.ktx)
     implementation(libs.biometric)
     implementation(libs.media3.exoplayer)
+    implementation(libs.pdfbox.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
 

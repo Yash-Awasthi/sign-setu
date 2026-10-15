@@ -65,7 +65,7 @@
     <string name="sensitive_confirm">संवेदनशील सवाल दिखाएँ</string>
 
     <string name="end_title">यह सत्र समाप्त करें?</string>
-    <string name="end_body">इस सत्र का सारा रिकॉर्ड इस फ़ोन से मिट जाएगा।</string>
+    <string name="end_body">इस सत्र का सारा रिकॉर्ड इस फ़ोन से मिट जाएगा। अगर केस फ़ाइल में ज़रूरत हो, तो पहले पासवर्ड वाली रिपोर्ट निकाल लें।</string>
     <string name="end_confirm">समाप्त करें और मिटाएँ</string>
 
     <string name="log_shown">दिखाया</string>
@@ -120,4 +120,76 @@
     <string name="show_officer">अधिकारी</string>
     <string name="show_yes">हाँ</string>
     <string name="show_no">नहीं</string>
+    <string name="show_replay">फिर से सुनाएँ</string>
+
+    <string name="end_export">रिपोर्ट निर्यात करें</string>
+    <string name="end_no_export">बिना निर्यात समाप्त करें</string>
+    <string name="export_working">एन्क्रिप्टेड रिपोर्ट तैयार हो रही है…</string>
+    <string name="export_title">रिपोर्ट तैयार</string>
+    <string name="export_body">रिपोर्ट एन्क्रिप्टेड है। यह पासवर्ड फ़ाइल से अलग दें, जैसे बोलकर। यह केवल एक बार दिखेगा।</string>
+    <string name="export_password">पासवर्ड</string>
+    <string name="export_share">रिपोर्ट भेजें</string>
+    <string name="export_finish">पूरा करें और सत्र मिटाएँ</string>
+    <string name="export_failed">रिपोर्ट नहीं बन सकी। सत्र में कोई बदलाव नहीं हुआ।</string>
+    <string name="ok">ठीक है</string>
+    <string name="report_title">साइन सेतु: बातचीत के नोट्स</string>
+    <string name="report_disclaimer">यह एक संचार सहायक से बना है। ये नोट्स बयान नहीं हैं और व्यक्ति के अपने शब्दों का रिकॉर्ड नहीं हैं। जवाब गलत हो सकते हैं; ज़रूरी बातें दुभाषिया या दूसरे भरोसेमंद तरीके से पक्की करें।</string>
+    <string name="report_started">शुरू</string>
+    <string name="report_exported">निर्यात</string>
+    <string name="report_profile">प्रोफ़ाइल</string>
+    <string name="report_language">उनकी भाषा</string>
+    <string name="report_time">समय</string>
+    <string name="report_event">घटना</string>
+    <string name="report_detail">विवरण</string>
+    <string name="report_in_reply">जवाब में</string>
+    <string name="report_page">पृष्ठ %1$d / %2$d</string>
+    <string name="report_drawing">चित्र</string>
+    <string name="back">वापस</string>
+    <string name="save">सेव करें</string>
+    <string name="close">बंद करें</string>
+
+    <string name="settings_title">सेटिंग्स</string>
+    <string name="settings_interpreter">दुभाषिया कॉल</string>
+    <string name="settings_interpreter_app">मैसेजिंग ऐप</string>
+    <string name="settings_not_set">सेट नहीं</string>
+    <string name="settings_whatsapp">WhatsApp</string>
+    <string name="settings_sandes">संदेस</string>
+    <string name="settings_interpreter_contact">दुभाषिया का संपर्क</string>
+    <string name="settings_contact_whatsapp_hint">विभाग का दिया हुआ फ़ोन नंबर</string>
+    <string name="settings_contact_sandes_hint">संदेस में सेव किया गया संपर्क नाम</string>
+    <string name="settings_contact_invalid">10 अंकों का मोबाइल नंबर, या देश कोड के साथ पूरा नंबर डालें।</string>
+    <string name="settings_records">सत्र के रिकॉर्ड</string>
+    <string name="settings_retention">अपने-आप मिटाएँ, इतने समय बाद</string>
+    <string name="settings_hours">%1$d घंटे</string>
+    <string name="settings_retention_note">इससे पुराने सत्र मिट जाते हैं, भले ही किसी ने उन्हें खत्म न किया हो।</string>
+    <string name="settings_app_language">ऐप की भाषा</string>
+    <string name="settings_app_language_summary">अधिकारी वाली स्क्रीन की भाषा</string>
+    <string name="settings_clear">सारा डेटा मिटाएँ</string>
+    <string name="settings_clear_summary">एन्क्रिप्शन कुंजी नष्ट हो जाती है। इस फ़ोन का कोई भी सत्र पढ़ा नहीं जा सकेगा।</string>
+    <string name="settings_clear_title">सारा डेटा मिटाएँ?</string>
+    <string name="settings_clear_body">इस फ़ोन के सारे सत्र मिट जाएँगे और वापस नहीं आएँगे। सेटिंग्स बनी रहेंगी।</string>
+    <string name="settings_clear_confirm">सब मिटाएँ</string>
+    <string name="settings_about">ऐप के बारे में</string>
+    <string name="settings_version">संस्करण %1$s, %2$s को बना</string>
+    <string name="settings_licences">ओपन-सोर्स लाइसेंस</string>
+    <string name="settings_licences_summary">इस ऐप के चिह्न, आवाज़ें और लाइब्रेरी</string>
+
+    <string name="call_missing">%1$s इस फ़ोन पर इंस्टॉल नहीं है।</string>
+    <string name="call_sandes_hint">संदेस में %1$s को कॉल करें।</string>
+
+    <string name="start_expired_title">अपडेट ज़रूरी है</string>
+    <string name="start_expired_body">यह संस्करण 180 दिन से पुराना है और नया सत्र शुरू नहीं कर सकता। अपने विभाग से नया संस्करण इंस्टॉल करें। अधूरा सत्र अब भी जारी रखा, एक्सपोर्ट किया और खत्म किया जा सकता है।</string>
+    <string name="start_rooted">यह फ़ोन रूटेड लगता है या टेस्ट बिल्ड पर चल रहा है। इस पर सत्र के रिकॉर्ड शायद सुरक्षित न रहें। हो सके तो विभाग का फ़ोन इस्तेमाल करें।</string>
+
+    <string name="intro_step">चरण %1$d / %2$d</string>
+    <string name="intro_next">आगे</string>
+    <string name="intro_done">शुरू करें</string>
+    <string name="intro_aid_title">बातचीत में मदद करने वाला ऐप</string>
+    <string name="intro_aid_body">साइन सेतु छोटे बच्चों, बधिर लोगों और दूसरी भाषा बोलने वालों से बात करने में मदद करता है: तस्वीरें, कैप्शन, रिकॉर्ड की गई आवाज़ और इशारे।\n\nयह दुभाषिया नहीं है। जो बात बयान बनेगी, उसके लिए योग्य दुभाषिया बुलाएँ।</string>
+    <string name="intro_private_title">कुछ भी इस फ़ोन से बाहर नहीं जाता</string>
+    <string name="intro_private_body">ऐप में इंटरनेट नहीं है। सत्र के रिकॉर्ड आपके स्क्रीन लॉक से एन्क्रिप्ट रहते हैं, और सत्र खत्म होने पर या ज़्यादा से ज़्यादा 24 घंटे में मिट जाते हैं।\n\nरिपोर्ट फ़ोन से तभी बाहर जाती है जब आप उसे एक्सपोर्ट करके शेयर करें, और वह उस पासवर्ड से सुरक्षित रहती है जो आप अलग से देते हैं।</string>
+    <string name="intro_pinning_title">ऐप पिनिंग चालू करें</string>
+    <string name="intro_pinning_body">जब आप फ़ोन सामने वाले को देते हैं, साइन सेतु खुद को पिन कर लेता है ताकि वे दूसरे ऐप न खोल सकें।\n\nफ़ोन की सुरक्षा सेटिंग्स में ऐप पिनिंग और \"अनपिन करने से पहले PIN पूछें\" चालू करें।</string>
+    <string name="key_reset_title">पिछले सत्र मिटा दिए गए</string>
+    <string name="key_reset_body">फ़ोन का स्क्रीन लॉक हटाया या बदला गया, इसलिए Android ने पिछले सत्र के रिकॉर्ड की सुरक्षा वाली कुंजी मिटा दी। वे खोले नहीं जा सकते थे और मिटा दिए गए हैं। नए सत्र सामान्य रूप से चलेंगे।</string>
 </resources>

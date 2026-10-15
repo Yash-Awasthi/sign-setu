@@ -36,6 +36,8 @@ class MainActivity : FragmentActivity(), DeviceGuard {
         if (!BuildConfig.DEBUG) {
             window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         }
+        // Drops taps that pass through an overlay drawn by another app (SEC-45).
+        window.decorView.filterTouchesWhenObscured = true
         enableEdgeToEdge()
         val container = (application as SignSetuApp).container
         setContent { AppRoot(container, this) }

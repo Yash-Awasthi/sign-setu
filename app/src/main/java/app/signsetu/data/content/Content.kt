@@ -71,7 +71,14 @@ data class ContentBundle(
     val subjectUi: Map<String, Localized>,
     /** Files whose hash did not match the manifest; never shown to a subject (SEC-54). */
     val rejected: Set<String>,
+    /** Every verified file in the bundle, relative to `assets/content/`. */
+    val files: Set<String> = emptySet(),
 ) {
+    private fun audio(path: String) = path.takeIf { it in files }
+    fun questionAudio(questionId: String, lang: String) = audio("audio/$lang/$questionId.ogg")
+    fun greetingAudio(lang: String) = audio("audio/greet/$lang.ogg")
+    fun subjectAudio(key: String, lang: String) = audio("audio/$lang/$key.ogg")
+
     fun language(code: String): Language? = languages.firstOrNull { it.code == code }
     fun subjectText(key: String, lang: String): String? = subjectUi[key]?.pick(lang)
     fun hasCardImage(id: String) = "cards/$id.webp" !in rejected
@@ -113,6 +120,7 @@ class ContentRepository(private val assets: AssetManager) {
             languages = languages.languages,
             subjectUi = subjectUi,
             rejected = rejected,
+            files = manifest.files.keys - rejected,
         ).also { bundle = it }
     }
 
