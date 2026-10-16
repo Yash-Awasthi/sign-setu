@@ -2,6 +2,9 @@
   "status": "draft: greetings need review by a fluent speaker of each language",
   "languages": [
     { "code": "hi", "name": "हिन्दी", "english": "Hindi", "greeting": "नमस्ते। अगर आपको यह समझ आ रहा है, तो यहाँ छुएँ।" },
+    { "code": "hne", "name": "छत्तीसगढ़ी", "english": "Chhattisgarhi", "greeting": "जय जोहार। अगर तोला ए समझ म आवत हे, त इहाँ छू।" },
+    { "code": "gon", "name": "गोंडी", "english": "Gondi", "greeting": "सेवा जोहार।" },
+    { "code": "hlb", "name": "हल्बी", "english": "Halbi", "greeting": "जोहार।" },
     { "code": "bn", "name": "বাংলা", "english": "Bengali", "greeting": "নমস্কার। আপনি যদি এটা বুঝতে পারেন, তাহলে এখানে ছুঁয়ে দিন।" },
     { "code": "ne", "name": "नेपाली", "english": "Nepali", "greeting": "नमस्ते। तपाईंले यो बुझ्नुभयो भने यहाँ छुनुहोस्।" },
     { "code": "as", "name": "অসমীয়া", "english": "Assamese", "greeting": "নমস্কাৰ। আপুনি যদি এইটো বুজি পাইছে, তেন্তে ইয়াত স্পৰ্শ কৰক।" },

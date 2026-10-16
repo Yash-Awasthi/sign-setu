@@ -54,7 +54,7 @@ Risk = likelihood x impact, each rated Low (1), Medium (2), High (3). Score 6-9 
 | T-18 | Overlay app | T | Tapjacking tricks officer into export or clear | 1 | 2 | Low | SEC-45 on every window the app opens; verified ST-14 | Low |
 | T-19 | Rooted phone | E | Root bypasses sandbox and Keystore | 1 | 3 | Medium | SEC-63 (warning); key attestation from release 1.1 (SEC-61) | Medium |
 | T-20 | P5 | R | Officer disputes what was asked or answered | 2 | 2 | Medium | Timestamped event log (FR-30); export | Low |
-| T-21 | Stage | E | Subject leaves the app or opens the officer side | 2 | 3 | High | Screen pinning from the first Show (SEC-46); return only with the officer's credential (SEC-21) | Low |
+| T-21 | Stage | E | Subject leaves the app or opens the officer side | 2 | 3 | High | Screen pinning from the first Show (SEC-46); return by a tap on the small officer handle, plus the officer's credential where the department turns it on (SEC-46, D-23) | Medium; Low with the credential setting on |
 | T-22 | Build | T | An old build with known flaws stays in use | 2 | 2 | Medium | Build expiry after 180 days (SEC-64) | Low |
 
 ## 4. Abuse and harm cases

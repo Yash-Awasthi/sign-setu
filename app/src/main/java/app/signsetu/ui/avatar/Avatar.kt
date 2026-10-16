@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -117,7 +118,13 @@ fun Avatar(
     }
 }
 
-private fun DrawScope.drawCharacter(b: Build, look: Look, pose: Pose, time: Float, child: Boolean) {
+private fun DrawScope.drawCharacter(b: Build, look: Look, still: Pose, time: Float, child: Boolean) {
+    // A resting body is never quite still: a slow sway, a drifting head and now and then a glance aside.
+    val pose = still.copy(
+        lean = still.lean + sin(time * 2f * PI.toFloat() / 6.5f) * 0.06f,
+        tilt = still.tilt + sin(time * 2f * PI.toFloat() / 8.3f) * 1.4f,
+        turn = still.turn + glanceAt(time),
+    )
     val unit = size.height / 200f
     val ox = (size.width - 200f * unit) / 2f
     val breath = sin(time * 2f * PI.toFloat() / 3.8f) * 0.7f
@@ -145,6 +152,13 @@ private fun DrawScope.drawCharacter(b: Build, look: Look, pose: Pose, time: Floa
     }
 }
 
+private fun glanceAt(time: Float): Float {
+    val phase = time % 9f
+    if (phase < 5f || phase > 6.4f) return 0f
+    val side = if ((time / 9f).toInt() % 2 == 0) 1f else -1f
+    return side * 0.28f * sin((phase - 5f) / 1.4f * PI.toFloat())
+}
+
 private fun blinkAt(time: Float): Float {
     if (time == 0f) return 1f
     val phase = time % 4.3f
@@ -162,7 +176,8 @@ private fun DrawScope.drawTorso(b: Build, look: Look, lift: Float, child: Boolea
         cubicTo(c + sh + 12f, top + 4f, c + sh + 10f, b.shoulderY + 30f, c + sh + 12f, 214f)
         close()
     }
-    drawPath(torso, look.top)
+    drawPath(torso, Brush.verticalGradient(listOf(lerp(look.top, Color.White, 0.14f), look.top, look.topShade), startY = top, endY = 214f))
+    drawPath(torso, look.line, style = Stroke(1.1f), alpha = 0.22f)
     // Soft fold shadows give the top some volume without lines.
     drawOval(look.topShade, Offset(c - sh - 6f, b.shoulderY + 26f), Size(14f, 60f), alpha = 0.55f)
     drawOval(look.topShade, Offset(c + sh - 8f, b.shoulderY + 26f), Size(14f, 60f), alpha = 0.55f)
@@ -196,7 +211,13 @@ private fun DrawScope.drawHead(b: Build, look: Look, pose: Pose, blink: Float, c
         drawOval(look.skin, Offset(ex - 6.5f, earY - 8.5f), Size(13f, 17f))
         drawOval(look.skinShade, Offset(ex - 3f + s * 0.5f, earY - 5f), Size(6f, 10f), alpha = 0.7f)
     }
-    drawOval(look.skin, Offset(hx - b.headRx, hy - b.headRy), Size(b.headRx * 2, b.headRy * 2))
+    val headLight = Brush.radialGradient(
+        listOf(lerp(look.skin, Color.White, 0.13f), look.skin, lerp(look.skin, look.skinShade, 0.7f)),
+        center = Offset(hx - b.headRx * 0.28f, hy - b.headRy * 0.32f),
+        radius = b.headRy * 1.35f,
+    )
+    drawOval(headLight, Offset(hx - b.headRx, hy - b.headRy), Size(b.headRx * 2, b.headRy * 2))
+    drawOval(look.line, Offset(hx - b.headRx, hy - b.headRy), Size(b.headRx * 2, b.headRy * 2), style = Stroke(1.1f), alpha = 0.28f)
 
     drawHair(b, look, child, pose.turn)
 
@@ -232,7 +253,9 @@ private fun DrawScope.drawHead(b: Build, look: Look, pose: Pose, blink: Float, c
         if (child) {
             val rx = 6.2f
             val ry = 7.6f * open
-            drawOval(look.iris, Offset(ex - rx, eyeY - ry), Size(rx * 2, ry * 2))
+            val iris = Brush.radialGradient(listOf(lerp(look.iris, Color(0xFF9A6A45), 0.55f), look.iris), center = Offset(ex, eyeY + ry * 0.35f), radius = rx * 1.3f)
+            drawOval(iris, Offset(ex - rx, eyeY - ry), Size(rx * 2, ry * 2))
+            if (open > 0.5f) drawArc(look.hair, 215f, 110f, false, Offset(ex - rx - 0.6f, eyeY - ry - 0.8f), Size(rx * 2 + 1.2f, ry * 2 + 1.2f), style = Stroke(1.2f, cap = StrokeCap.Round))
             drawCircle(Color.White, 2.1f * open.coerceAtMost(1f), Offset(ex + 2.2f, eyeY - 2.6f * open))
             drawCircle(Color.White, 1f * open.coerceAtMost(1f), Offset(ex - 2.2f, eyeY + 2.8f * open))
         } else {
@@ -282,7 +305,7 @@ private fun DrawScope.drawHair(b: Build, look: Look, child: Boolean, turn: Float
             quadraticTo(hx - rx + 10f, b.headY - 10f, hx - rx + 3f, b.headY - 12f)
             close()
         }
-        drawPath(hair, look.hair)
+        drawPath(hair, Brush.verticalGradient(listOf(look.hairShine, look.hair, look.hair), startY = top - 20f, endY = b.headY))
         // A small tuft on top makes the silhouette friendly and unmistakably a child.
         val tuft = Path().apply {
             moveTo(hx - 2f, top + 2f); quadraticTo(hx + 4f, top - 11f, hx + 12f, top - 6f)
@@ -299,7 +322,7 @@ private fun DrawScope.drawHair(b: Build, look: Look, child: Boolean, turn: Float
             quadraticTo(hx - rx + 6f, b.headY - 22f, hx - rx + 2f, b.headY - 12f)
             close()
         }
-        drawPath(hair, look.hair)
+        drawPath(hair, Brush.verticalGradient(listOf(look.hairShine, look.hair, look.hair), startY = top - 15f, endY = b.headY))
         drawLine(look.hairShine, Offset(hx - 8f, top + 4f), Offset(hx - 16f, b.headY - 24f), 1.6f, StrokeCap.Round)
     }
 }

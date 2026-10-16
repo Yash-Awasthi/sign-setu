@@ -13,8 +13,7 @@ It helps you talk. It is NOT an interpreter. It never records a statement.
    Wait. Never ask what happened first.
 4. They answer with YES, NO, I DON'T KNOW, STOP, a picture or a drawing.
 5. STOP means pause: check they are comfortable, offer water or rest.
-6. To take the phone back, tap the small lock at the top right of their
-   screen and use your fingerprint or PIN.
+6. To take the phone back, tap the small lock at the top right of their screen.
 7. Done: menu > END SESSION. Export the report only if the case needs it,
    and give the password separately from the file.
 8. Phone lost? Tell your supervisor now.
@@ -31,18 +30,19 @@ Child in distress: Childline 1098 or 112.
 
 | Task | How |
 | --- | --- |
-| Start | Open the app and unlock with your fingerprint or phone PIN. An **Unfinished session** card offers **Continue** or **End it**. |
+| Start | Open the app; if you have just unlocked the phone it opens straight away, otherwise use your fingerprint or phone PIN. An **Unfinished session** card offers **Continue** or **End it**. |
 | Who you are helping | Tap a face: **Young child**, **Signs** (sign language users, adult character, no sound), **Other language** (they choose their language first), or **Not sure**. Then choose **Their language** and tap **Start session**. Allow the camera when asked: it shows them their own hands and records nothing. |
 | The stage | The phone faces them. The character gestures or signs, a speech bubble shows the words in their language, the picture is held up, and their hands appear in the mirror below with the answer cards. **Yes**, **No**, **I don't know** and **Stop** are always there. The app stays pinned so they cannot open other apps. |
 | Replay | The play button repeats the question; **½×** repeats it slowly. |
-| Take the phone back | Tap the small lock at the top right of the stage, then your fingerprint or PIN. |
+| Take the phone back | Tap the small lock at the top right of the stage. If your department turned on **Screen lock to leave the stage**, your fingerprint or PIN is asked as well. |
 | Their answer | Every answer gets the same small nod and "okay". You see it as **Latest answer**; the full list is in **Session log**. |
-| Preset question | Tap a group (Safety, Health, Needs, Identity, Family, Location), tap a question, check the bar at the bottom, tap **Show to them**. The hand and speaker marks on a question show that a gesture and a recording exist. |
+| Preset question | Tap a group (Safety, Health, Needs, Identity, Family, Location) above the composer, tap a suggestion card, check **Ready to show**, tap the send button. The hand and speaker marks on a card show that a gesture and a recording exist. Shown questions and their answers build up as a conversation above. |
 | Sensitive questions | The **Sensitive** group is locked until you confirm. Ask only when the person is calm and safe, and never first. |
 | Phrases | **Phrases** group: pick a sentence ("Do you want ...?"), then the picture it is about. The character signs the sentence in parts. |
 | Pictures | **Pictures** opens the board: categories, search and your **Favourites** (tap the star). Pick one or more and tap **Use**. |
-| Your own question | **Type**: write a short question and add pictures if you like. They see your words and the pictures; the character does not sign typed words. |
-| They made a gesture | **They gestured**: tap where the hand went and what it did, then the likely meaning. They see it with "Is this it?"; only their **Yes** records the meaning. |
+| Your own question | Type in the composer at the bottom and tap send. The character signs, gestures or spells it word by word and holds up pictures; the toggles above the composer choose Signs, Gestures, Spell and Pictures. **+** then **Add pictures** attaches answer pictures. |
+| They write an answer | On the stage they tap **Write**, type, and tap **Done**. Their words appear in your conversation as a typed answer. A young child does not get the button. |
+| They made a gesture | **+**, then **They gestured**: tap where the hand went and what it did, then the likely meaning. They see it with "Is this it?"; only their **Yes** records the meaning. |
 | Drawing | **Draw**: they draw with a finger and tap done; the drawing is kept with the session. |
 | Find their language | **Language**: they see greetings in many languages and tap theirs. |
 | They sit opposite you | Menu, **They sit opposite me**: the stage turns upside down for them. |

@@ -37,7 +37,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | ID | Control |
 | --- | --- |
 | SEC-20 | The app requires a secure device lock and refuses to store sessions without one (`KeyguardManager.isDeviceSecure()`). |
-| SEC-21 | Opening the app and viewing past sessions require BiometricPrompt: `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` on API 30+; `BIOMETRIC_WEAK or DEVICE_CREDENTIAL` on API 29, where the strong combination is unsupported. Re-lock after 5 minutes in the background. |
+| SEC-21 | Opening the app and viewing past sessions require BiometricPrompt: `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` on API 30+; `BIOMETRIC_WEAK or DEVICE_CREDENTIAL` on API 29, where the strong combination is unsupported. Re-lock after 5 minutes in the background. The app first tries the Keystore key silently: within its 30-second window after the officer unlocks the phone it opens without a second prompt (D-23). |
 | SEC-22 | The key-encryption key is bound to user authentication: `setUserAuthenticationParameters` (time-bound) on API 30+; `setUserAuthenticationValidityDurationSeconds` on API 29. |
 
 ### 2.4 Network
@@ -58,7 +58,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | SEC-44 | No notifications containing subject data. | NFR-37 |
 | SEC-45 | `filterTouchesWhenObscured` on every window the app opens (the activity, and each dialog, sheet and menu), so Show, export and clear actions ignore touches that come through another app's overlay. | MASVS-PLATFORM-3 |
 | SEC-47 | Camera: only Preview is bound, plus ImageAnalysis when a hand model is installed; no ImageCapture or VideoCapture; frames are never written anywhere and the analysis bitmap is recycled after each frame; the camera runs only while the stage is on screen; CAMERA is requested from the officer at session start, never on the stage; the officer and the department can turn the mirror off. | MASVS-PLATFORM-1, DPDP section 8 |
-| SEC-46 | Screen pinning (`startLockTask`) from the first Show state until the session ends; first run guides the officer to turn on app pinning with "ask for PIN before unpinning". Leaving the Show state for the Officer state requires BiometricPrompt. | FR-61 |
+| SEC-46 | Screen pinning (`startLockTask`) from the first Show state until the session ends; first run guides the officer to turn on app pinning with "ask for PIN before unpinning". Leaving the Show state for the Officer state is one tap on the officer handle, with BiometricPrompt as well when the department turns it on (D-23). | FR-61 |
 
 ### 2.6 Code and supply chain
 

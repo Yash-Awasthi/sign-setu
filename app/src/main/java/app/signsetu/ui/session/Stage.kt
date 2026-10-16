@@ -1,5 +1,18 @@
 package app.signsetu.ui.session
 
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import android.graphics.Bitmap
 import android.graphics.Paint
 import androidx.core.graphics.createBitmap
@@ -101,6 +114,13 @@ import app.signsetu.camera.CameraMirror
 import app.signsetu.camera.HandTracker
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.pick
+import app.signsetu.data.content.planText
+import app.signsetu.ui.avatar.Timeline
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import app.signsetu.data.session.Profile
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.Character
@@ -134,6 +154,7 @@ fun Stage(
     onYesNo: (Boolean) -> Unit,
     onLanguage: (String) -> Unit,
     onDrawing: (ByteArray) -> Unit,
+    onWritten: (String) -> Unit,
     onOfficer: () -> Unit,
 ) {
     val stage = LocalStageColors.current
@@ -141,6 +162,9 @@ fun Stage(
     val profile = ui.session.profile
     val pending = ui.pending
     var drawing by remember(pending) { mutableStateOf(pending == Pending.Drawing) }
+    var writing by remember(pending) { mutableStateOf(false) }
+    // A young child is not asked to write; anyone else, signers above all, can answer in their own words.
+    val canWrite = pending != null && profile != Profile.YOUNG_CHILD
     var replays by remember(pending) { mutableIntStateOf(0) }
     var slow by remember(pending) { mutableStateOf(false) }
     var reacting by remember { mutableStateOf(false) }
@@ -156,18 +180,52 @@ fun Stage(
     val item = describeItem(pending, content, lang)
     val gestureId = when {
         reacting -> "okay"
-        drawing -> "school.write"
+        drawing || writing -> "school.write"
         pending is Pending.Ask -> pending.question.gesture ?: pending.question.lexicon
         pending is Pending.ShowBack -> pending.entry.id
-        pending is Pending.FreeText || pending is Pending.Cards -> "ask"
-        pending is Pending.PhraseAsk -> null
+        pending is Pending.Cards -> "ask"
+        pending is Pending.PhraseAsk || pending is Pending.FreeText -> null
         pending == Pending.LanguageFinder -> "wave"
         else -> "namaste"
     }
-    val gesture = if (pending is Pending.PhraseAsk && gestureId == null) content.gestureFor(pending.phrase, pending.slot) else gestureId?.let { content.gestures[it] }
+    val plan = remember(pending, content) { (pending as? Pending.FreeText)?.let { content.planText(it.text, it.modes) } }
+    val gesture = when {
+        gestureId != null -> content.gestures[gestureId]
+        pending is Pending.PhraseAsk -> content.gestureFor(pending.phrase, pending.slot)
+        pending is Pending.FreeText -> plan?.gesture ?: content.gestures["ask"]
+        else -> null
+    }
+    // Follows the character through typed text, so the word being signed is lit and its picture or letters shown.
+    val playClock = remember(pending) { mutableFloatStateOf(-1f) }
+    val beatSpeed = if (slow) 0.5f else gestureSpeed
+    LaunchedEffect(plan, replays, slow, reacting) {
+        playClock.floatValue = -1f
+        if (plan == null || reacting) return@LaunchedEffect
+        val start = withFrameNanos { it }
+        val end = (plan.beats.lastOrNull()?.end ?: 0f) + Timeline.LEAD_IN
+        while (playClock.floatValue < end) {
+            withFrameNanos { now -> playClock.floatValue = (now - start) / 1e9f * beatSpeed }
+        }
+        playClock.floatValue = -1f
+    }
+    val beat by remember(plan) {
+        derivedStateOf {
+            val t = playClock.floatValue - Timeline.LEAD_IN
+            plan?.beats?.lastOrNull { t >= it.start && t < it.end }
+        }
+    }
+    val letter by remember(plan) {
+        derivedStateOf {
+            val b = beat
+            val letters = b?.letters ?: return@derivedStateOf -1
+            val t = playClock.floatValue - Timeline.LEAD_IN
+            ((t - b.start) / (b.end - b.start) * letters.length).toInt().coerceIn(0, letters.length - 1)
+        }
+    }
     val caption = when {
         reacting -> content.subjectText("okay", lang)
         drawing -> content.subjectText("draw", lang)
+        writing -> content.subjectText("write", lang)
         pending == null -> content.language(lang)?.hello
         // Greeting back in the language they picked tells them the tap was understood.
         pending == Pending.LanguageFinder -> ui.chosenLanguage?.let { content.language(it)?.hello }
@@ -183,7 +241,7 @@ fun Stage(
                 .graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f },
         ) {
             val preferred = when {
-                drawing -> 0.36f
+                drawing || writing -> 0.36f
                 pending == Pending.LanguageFinder -> 0.36f
                 item.choices.isNotEmpty() -> 0.44f
                 else -> 0.52f
@@ -218,8 +276,24 @@ fun Stage(
                         transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.92f)) togetherWith fadeOut() },
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp, start = 52.dp, end = 52.dp),
                         label = "caption",
-                    ) { text -> if (text != null) Bubble(text, large = largeCaptions, compact = !roomy) }
-                    item.held?.let { id ->
+                    ) { text -> if (text != null) Bubble(text, large = largeCaptions, compact = !roomy, highlight = beat?.range?.takeIf { text == item.caption }) }
+                    val spelled = beat?.letters
+                    val shownCard = beat?.card
+                    if (spelled != null) {
+                        LetterTile(
+                            spelled,
+                            letter,
+                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 20.dp),
+                        )
+                    } else if (shownCard != null) {
+                        key(shownCard) {
+                            HeldCard(
+                                shownCard,
+                                content.cards[shownCard]?.label?.pick(lang),
+                                Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 20.dp).popIn(rememberPopIn(0)),
+                            )
+                        }
+                    } else item.held?.let { id ->
                         key(id) {
                             HeldCard(
                                 id,
@@ -249,6 +323,7 @@ fun Stage(
             ) {
                 when {
                     drawing -> DrawingPanel(content, lang, onDone = onDrawing, modifier = Modifier.weight(1f))
+                    writing -> WritingPanel(content, lang, onDone = { onWritten(it); writing = false; reacting = true }, modifier = Modifier.weight(1f))
                     pending == Pending.LanguageFinder -> LanguageGrid(content, ui.chosenLanguage, Modifier.weight(1f)) { code ->
                         onLanguage(code)
                         content.greetingAudio(code)?.let { speech.play(it) }
@@ -260,11 +335,13 @@ fun Stage(
                             choices = item.choices,
                             numbers = item.numbers,
                             canDraw = item.canDraw,
+                            canWrite = canWrite,
                             chosenCard = ui.answeredCard,
                             content = content,
                             lang = lang,
                             onCard = onCard,
                             onDraw = { drawing = true },
+                            onWrite = { writing = true },
                             modifier = Modifier.weight(1f),
                         )
                         if (pending != null) {
@@ -355,8 +432,14 @@ private object BubbleShape : Shape {
 }
 
 @Composable
-internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = false) {
+internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = false, highlight: IntRange? = null) {
     val stage = LocalStageColors.current
+    val styled = buildAnnotatedString {
+        append(text)
+        highlight?.takeIf { it.last < text.length }?.let {
+            addStyle(SpanStyle(background = stage.highlight, fontWeight = FontWeight.Bold), it.first, it.last + 1)
+        }
+    }
     Surface(
         shape = BubbleShape,
         color = stage.bubble,
@@ -365,7 +448,7 @@ internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = fal
         modifier = Modifier.widthIn(max = 340.dp),
     ) {
         Text(
-            text,
+            styled,
             style = when {
                 large -> MaterialTheme.typography.headlineMedium
                 compact -> MaterialTheme.typography.titleMedium
@@ -393,6 +476,34 @@ private fun HeldCard(cardId: String, label: String?, modifier: Modifier) {
             label?.let {
                 Text(it, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color(0xFF2B2118))
             }
+        }
+    }
+}
+
+/** The word being fingerspelled, its current letter large, so a reader can follow the hands. */
+@Composable
+private fun LetterTile(letters: String, current: Int, modifier: Modifier) {
+    Surface(shape = RoundedCornerShape(22.dp), color = Color.White, shadowElevation = 8.dp, modifier = modifier.rotate(-5f).widthIn(min = 108.dp, max = 160.dp)) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                letters.getOrNull(current)?.uppercase() ?: "",
+                fontFamily = Baloo,
+                fontWeight = FontWeight.Bold,
+                fontSize = 56.sp,
+                lineHeight = 60.sp,
+                color = Color(0xFF2B2118),
+            )
+            Text(
+                buildAnnotatedString {
+                    letters.uppercase().forEachIndexed { i, c ->
+                        withStyle(SpanStyle(color = if (i == current) Color(0xFF2B2118) else Color(0xFFB8A99A), fontWeight = if (i == current) FontWeight.Bold else FontWeight.Normal)) { append(c) }
+                    }
+                },
+                style = MaterialTheme.typography.titleMedium,
+                letterSpacing = 2.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -445,11 +556,13 @@ private fun MirrorWindow(
     choices: List<String>,
     numbers: Boolean,
     canDraw: Boolean,
+    canWrite: Boolean,
     chosenCard: String?,
     content: ContentBundle,
     lang: String,
     onCard: (String) -> Unit,
     onDraw: () -> Unit,
+    onWrite: () -> Unit,
     modifier: Modifier,
 ) {
     val stage = LocalStageColors.current
@@ -468,7 +581,7 @@ private fun MirrorWindow(
         } else {
             MirrorPlaceholder()
         }
-        if (choices.isNotEmpty() || canDraw) key(choices) {
+        if (choices.isNotEmpty() || canDraw || canWrite) key(choices) {
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -497,7 +610,10 @@ private fun MirrorWindow(
                         }
                     }
                 }
-                if (canDraw) DrawButton(content.subjectText("draw", lang), onDraw)
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    if (canDraw) PillButton(Icons.Filled.Create, content.subjectText("draw", lang), onDraw, Modifier.weight(1f))
+                    if (canWrite) PillButton(Icons.Filled.Edit, content.subjectText("write", lang), onWrite, Modifier.weight(1f))
+                }
             }
         }
     }
@@ -563,10 +679,10 @@ private fun NumberButton(digit: String, chosen: Boolean, onClick: () -> Unit, mo
 }
 
 @Composable
-private fun DrawButton(label: String?, onClick: () -> Unit) {
-    PressableSurface(onClick = onClick, shape = RoundedCornerShape(50), color = Color(0xFFFFE7BF), modifier = Modifier.fillMaxWidth().height(52.dp)) {
+private fun PillButton(icon: ImageVector, label: String?, onClick: () -> Unit, modifier: Modifier) {
+    PressableSurface(onClick = onClick, shape = RoundedCornerShape(50), color = Color(0xFFFFE7BF), modifier = modifier.height(52.dp)) {
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Create, contentDescription = null, tint = Color(0xFF3D2700))
+            Icon(icon, contentDescription = null, tint = Color(0xFF3D2700))
             label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Color(0xFF3D2700), modifier = Modifier.padding(start = Spacing.sm)) }
         }
     }
@@ -701,6 +817,41 @@ private fun LanguageGrid(content: ContentBundle, chosen: String?, modifier: Modi
 }
 
 private class DrawStroke(val points: List<Offset>)
+
+/** The subject's own words, typed large on the stage; the keyboard opens at once and Done sends them. */
+@Composable
+private fun WritingPanel(content: ContentBundle, lang: String, onDone: (String) -> Unit, modifier: Modifier) {
+    var text by rememberSaveable { mutableStateOf("") }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    val answer = LocalAnswerColors.current
+    val send = { if (text.isNotBlank()) onDone(text) }
+    Column(modifier.imePadding(), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Surface(shape = RoundedCornerShape(28.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.weight(1f).fillMaxWidth()) {
+            BasicTextField(
+                value = text,
+                onValueChange = { text = it },
+                textStyle = MaterialTheme.typography.headlineSmall.copy(color = Color(0xFF2B2118)),
+                // SEC-05: nothing the subject writes is learned or suggested by the keyboard.
+                keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { send() }),
+                cursorBrush = SolidColor(Color(0xFF2B2118)),
+                modifier = Modifier.fillMaxSize().padding(20.dp).focusRequester(focus),
+            )
+        }
+        PressableSurface(
+            onClick = send,
+            shape = RoundedCornerShape(50),
+            color = if (text.isNotBlank()) answer.yes else Color(0xFFBFD8CB),
+            modifier = Modifier.fillMaxWidth().height(64.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYes)
+                content.subjectText("done", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = answer.onYes, modifier = Modifier.padding(start = Spacing.sm)) }
+            }
+        }
+    }
+}
 
 @Composable
 private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArray) -> Unit, modifier: Modifier) {

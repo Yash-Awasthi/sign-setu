@@ -86,8 +86,9 @@ fun AppRoot(container: AppContainer, guard: DeviceGuard) {
             when {
                 s == null -> Box(Modifier.fillMaxSize())
                 !s.firstRunDone -> FirstRunScreen(c?.gestures.orEmpty(), onDone = { scope.launch { container.settings.setFirstRunDone() } })
+                // The key stays usable for a short while after the phone itself is unlocked, so try that before prompting.
                 r == null -> LockScreen(onUnlock = { onFailed ->
-                    guard.unlock(title, subtitle, { container.unlockAsync(onFailed) }, onFailed)
+                    container.unlockAsync(onFailed = { guard.unlock(title, subtitle, { container.unlockAsync(onFailed) }, onFailed) })
                 })
                 c == null -> Box(Modifier.fillMaxSize())
                 else -> Navigation(r, c, s, guard, container)
@@ -164,7 +165,10 @@ private fun SessionRoute(
     // The officer can turn the mirror off for one person, for example a child upset by seeing themself.
     var cameraOn by rememberSaveable { mutableStateOf(settings.cameraEnabled) }
     val state = ui ?: return
-    val backToOfficer = { guard.confirmOfficer(title, subtitle, cancel) { vm.returnToOfficer() } }
+    // A long press on the handle is the officer's way back; the screen lock is asked too only if the department wants it (D-23).
+    val backToOfficer = {
+        if (settings.pinToLeaveStage) guard.confirmOfficer(title, subtitle, cancel) { vm.returnToOfficer() } else vm.returnToOfficer()
+    }
 
     // From the first Show until the session ends, the app stays pinned so a subject cannot reach other apps (FR-61).
     LaunchedEffect(state.mode) {
@@ -175,6 +179,8 @@ private fun SessionRoute(
         }
     }
     ImmersiveWhile(activity, state.mode == Mode.SHOW)
+    // Leaving the session by Back skips onEndSession, so the pin would otherwise outlive the screen.
+    DisposableEffect(Unit) { onDispose { guard.unpin() } }
 
     when (state.mode) {
         Mode.OFFICER -> OfficerPane(
@@ -206,7 +212,8 @@ private fun SessionRoute(
             },
         )
         Mode.SHOW -> {
-            BackHandler(onBack = backToOfficer)
+            // Back would let a subject leave the stage with one tap; only the held handle leaves it.
+            BackHandler { if (settings.pinToLeaveStage) backToOfficer() }
             SubjectTheme {
                 Stage(
                     ui = state,
@@ -219,6 +226,7 @@ private fun SessionRoute(
                     onYesNo = vm::answerYesNo,
                     onLanguage = vm::chooseLanguage,
                     onDrawing = vm::submitDrawing,
+                    onWritten = vm::answerText,
                     onOfficer = backToOfficer,
                 )
             }

@@ -25,7 +25,8 @@ class DatabaseKey(private val context: Context) {
     class Unwrapped(val key: ByteArray, val reset: Boolean)
 
     /**
-     * Call only after a successful device-credential or biometric prompt.
+     * Works for a short window after the officer unlocks the phone or passes a prompt; otherwise throws
+     * UserNotAuthenticatedException and nothing is changed.
      * When the screen lock was removed or reset, Android has deleted or corrupted the KEK and stored sessions can never
      * be read again; they are destroyed and a fresh key is made, so the officer is not locked out for good.
      */

@@ -1,5 +1,6 @@
 package app.signsetu.ui.start
 
+import app.signsetu.ui.components.BrandButton
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,7 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -106,9 +105,9 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit) {
                     }
                 }
                 if (index > 0) TextButton(onClick = { index-- }) { Text(stringResource(R.string.back)) }
-                Button(
+                BrandButton(
                     onClick = { if (last) onDone() else index++ },
-                    modifier = Modifier.heightIn(min = 48.dp).padding(start = Spacing.sm),
+                    modifier = Modifier.padding(start = Spacing.sm).height(48.dp),
                 ) { Text(stringResource(if (last) R.string.intro_done else R.string.intro_next)) }
             }
         },

@@ -3,11 +3,83 @@ package app.signsetu.ui.theme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// Officer side: deep teal ink on warm paper. Fixed palette (no dynamic colour) so every phone looks the same in
-// training and in the field.
+// Officer side: slate text on cool paper with an indigo brand. Fixed palette (no dynamic colour) so every phone looks
+// the same in training and in the field.
 internal val OfficerLight = lightColorScheme(
+    primary = Color(0xFF4F46E5),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFE0E7FF),
+    onPrimaryContainer = Color(0xFF1E1B4B),
+    inversePrimary = Color(0xFFA5B4FC),
+    secondary = Color(0xFF1E3A8A),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFEEF2FF),
+    onSecondaryContainer = Color(0xFF1E3A8A),
+    tertiary = Color(0xFFC2410C),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFFFEDD5),
+    onTertiaryContainer = Color(0xFF7C2D12),
+    error = Color(0xFFDC2626),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFEE2E2),
+    onErrorContainer = Color(0xFF7F1D1D),
+    background = Color(0xFFF1F5F9),
+    onBackground = Color(0xFF1E293B),
+    surface = Color(0xFFF8FAFC),
+    onSurface = Color(0xFF1E293B),
+    surfaceVariant = Color(0xFFF1F5F9),
+    onSurfaceVariant = Color(0xFF64748B),
+    outline = Color(0xFF94A3B8),
+    outlineVariant = Color(0xFFE2E8F0),
+    inverseSurface = Color(0xFF1E293B),
+    inverseOnSurface = Color(0xFFF1F5F9),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF8FAFC),
+    surfaceContainer = Color(0xFFFFFFFF),
+    surfaceContainerHigh = Color(0xFFF1F5F9),
+    surfaceContainerHighest = Color(0xFFE2E8F0),
+)
+
+internal val OfficerDark = darkColorScheme(
+    primary = Color(0xFFA5B4FC),
+    onPrimary = Color(0xFF1E1B4B),
+    primaryContainer = Color(0xFF3730A3),
+    onPrimaryContainer = Color(0xFFE0E7FF),
+    inversePrimary = Color(0xFF4F46E5),
+    secondary = Color(0xFF93C5FD),
+    onSecondary = Color(0xFF172554),
+    secondaryContainer = Color(0xFF1E293B),
+    onSecondaryContainer = Color(0xFFC7D2FE),
+    tertiary = Color(0xFFFDBA74),
+    onTertiary = Color(0xFF431407),
+    tertiaryContainer = Color(0xFF7C2D12),
+    onTertiaryContainer = Color(0xFFFFEDD5),
+    error = Color(0xFFF87171),
+    onError = Color(0xFF450A0A),
+    errorContainer = Color(0xFF7F1D1D),
+    onErrorContainer = Color(0xFFFEE2E2),
+    background = Color(0xFF0F172A),
+    onBackground = Color(0xFFE2E8F0),
+    surface = Color(0xFF0F172A),
+    onSurface = Color(0xFFE2E8F0),
+    surfaceVariant = Color(0xFF1E293B),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    outline = Color(0xFF64748B),
+    outlineVariant = Color(0xFF334155),
+    inverseSurface = Color(0xFFE2E8F0),
+    inverseOnSurface = Color(0xFF1E293B),
+    surfaceContainerLowest = Color(0xFF0B1220),
+    surfaceContainerLow = Color(0xFF131C2E),
+    surfaceContainer = Color(0xFF1E293B),
+    surfaceContainerHigh = Color(0xFF263449),
+    surfaceContainerHighest = Color(0xFF334155),
+)
+
+// The stage: warm paper and teal, the room the subject sees. Kept apart from the officer palette on purpose.
+internal val StageScheme = lightColorScheme(
     primary = Color(0xFF1C6E74),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFCDEDEA),
@@ -42,52 +114,21 @@ internal val OfficerLight = lightColorScheme(
     surfaceContainerHighest = Color(0xFFE6DDD0),
 )
 
-internal val OfficerDark = darkColorScheme(
-    primary = Color(0xFF86D4D3),
-    onPrimary = Color(0xFF003736),
-    primaryContainer = Color(0xFF00504F),
-    onPrimaryContainer = Color(0xFFCDEDEA),
-    inversePrimary = Color(0xFF1C6E74),
-    secondary = Color(0xFFFFB94C),
-    onSecondary = Color(0xFF482A00),
-    secondaryContainer = Color(0xFF673E00),
-    onSecondaryContainer = Color(0xFFFFDDA8),
-    tertiary = Color(0xFFFFB4A6),
-    onTertiary = Color(0xFF5F160A),
-    tertiaryContainer = Color(0xFF7E2B1F),
-    onTertiaryContainer = Color(0xFFFFDAD3),
-    error = Color(0xFFF2B8B5),
-    onError = Color(0xFF601410),
-    errorContainer = Color(0xFF8C1D18),
-    onErrorContainer = Color(0xFFF9DEDC),
-    background = Color(0xFF16130F),
-    onBackground = Color(0xFFEAE1D7),
-    surface = Color(0xFF16130F),
-    onSurface = Color(0xFFEAE1D7),
-    surfaceVariant = Color(0xFF4F4539),
-    onSurfaceVariant = Color(0xFFD3C4B3),
-    outline = Color(0xFF9C8F7F),
-    outlineVariant = Color(0xFF4F4539),
-    inverseSurface = Color(0xFFEAE1D7),
-    inverseOnSurface = Color(0xFF34302A),
-    surfaceContainerLowest = Color(0xFF110E0A),
-    surfaceContainerLow = Color(0xFF1F1B16),
-    surfaceContainer = Color(0xFF231F1A),
-    surfaceContainerHigh = Color(0xFF2E2924),
-    surfaceContainerHighest = Color(0xFF39342E),
+/** The officer header and main buttons: the indigo brand gradient, the same in both themes. */
+@Immutable
+data class InkColors(
+    val band: Color, val onBand: Color, val onBandMuted: Color, val chip: Color, val chipSelected: Color, val onChipSelected: Color,
+    val brush: Brush,
 )
 
-/** The officer header band: always deep ink, in both themes, so the officer side is never mistaken for the stage. */
-@Immutable
-data class InkColors(val band: Color, val onBand: Color, val onBandMuted: Color, val chip: Color, val chipSelected: Color, val onChipSelected: Color)
-
 internal val Ink = InkColors(
-    band = Color(0xFF143C44),
-    onBand = Color(0xFFF4FBFA),
-    onBandMuted = Color(0xFFA9C9CA),
-    chip = Color(0xFF1F4E57),
-    chipSelected = Color(0xFFFFC56B),
-    onChipSelected = Color(0xFF2C1800),
+    band = Color(0xFF1E3A8A),
+    onBand = Color(0xFFFFFFFF),
+    onBandMuted = Color(0xBFFFFFFF),
+    chip = Color(0x2EFFFFFF),
+    chipSelected = Color(0xFFFFFFFF),
+    onChipSelected = Color(0xFF1E3A8A),
+    brush = Brush.linearGradient(listOf(Color(0xFF1E3A8A), Color(0xFF3B4FD8), Color(0xFF6366F1))),
 )
 
 /** The subject stage: a warm, calm room for the character. Stays warm at night, only dimmer. */
@@ -106,6 +147,8 @@ data class StageColors(
     val onHandle: Color,
     /** Wordmark and icons drawn straight on the backdrop. */
     val title: Color,
+    /** Behind the word the character is signing; the bubble stays light in both themes. */
+    val highlight: Color = Color(0xFFFFD98A),
 )
 
 internal val StageLight = StageColors(

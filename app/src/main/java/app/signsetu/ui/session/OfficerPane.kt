@@ -2,21 +2,14 @@ package app.signsetu.ui.session
 
 import android.app.Activity
 import android.content.res.Resources
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,27 +23,32 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
@@ -63,33 +61,37 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -98,15 +100,18 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.core.view.WindowCompat
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.Question
+import app.signsetu.data.content.SignMode
 import app.signsetu.data.content.pick
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
@@ -114,6 +119,8 @@ import app.signsetu.data.session.SessionEvent
 import app.signsetu.export.ReportText
 import app.signsetu.ui.avatar.MiniFace
 import app.signsetu.ui.components.CardImage
+import app.signsetu.ui.components.FilterObscuredTouches
+import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.start.profileTitle
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalInk
@@ -123,19 +130,16 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
-import app.signsetu.ui.components.GuardedAlertDialog
-import app.signsetu.ui.components.FilterObscuredTouches
 
-private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, LOG, CHANGE, TYPE }
+private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, LOG, CHANGE }
 
 /** The phrase bank sits beside the triage groups as one more group (FR-62). */
 private const val PHRASES = "phrases"
 
 /**
- * The officer's side of the phone: everything secondary to the stage. One screen, no page scroll: groups on top,
- * a handful of questions, other ways to ask, the latest answer, and the Show button.
+ * The officer's side of the phone, laid out like a messaging app: the conversation so far in the middle, prepared
+ * questions as suggestions above a composer, and Send to show the subject (FR-15).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OfficerPane(
     ui: SessionUi,
@@ -155,6 +159,7 @@ fun OfficerPane(
     val subjectLanguage = content.language(subjectLang)
     var sheet by rememberSaveable { mutableStateOf<Sheet?>(null) }
     var menu by remember { mutableStateOf(false) }
+    var tools by rememberSaveable { mutableStateOf(false) }
     var askSensitive by remember { mutableStateOf(false) }
     var askEnd by remember { mutableStateOf(false) }
     var export by remember { mutableStateOf<ExportState?>(null) }
@@ -164,9 +169,11 @@ fun OfficerPane(
     val res = LocalResources.current
     val attached = remember { mutableStateListOf<String>() }
     var ownText by rememberSaveable { mutableStateOf("") }
+    val modes = rememberSaveable(ui.session.profile, saver = listSaver(save = { l -> l.map { it.name } }, restore = { l -> l.map(SignMode::valueOf).toMutableStateList() })) {
+        defaultModes(ui.session.profile).toMutableStateList()
+    }
 
-    val answers = ui.events.withQuestions().filter { it.first.type in AnswerEvents }
-    val latest = answers.lastOrNull()
+    val answers = ui.events.count { it.type in AnswerEvents }
     // A request to stop stays on screen until the officer acknowledges it or shows something new.
     val lastStop = ui.events.lastOrNull { it.type == EventType.QUESTION_SHOWN || it.cardId == "stop" }?.takeIf { it.cardId == "stop" }
 
@@ -179,159 +186,118 @@ fun OfficerPane(
         controller?.isAppearanceLightStatusBars = false
         onDispose { before?.let { controller.isAppearanceLightStatusBars = it } }
     }
-    Surface(color = MaterialTheme.colorScheme.background) { Column(Modifier.fillMaxSize()) {
-        Surface(color = ink.band, contentColor = ink.onBand, shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)) {
-            Column(Modifier.statusBarsPadding().padding(bottom = Spacing.md)) {
-                Row(Modifier.fillMaxWidth().padding(start = Spacing.lg, end = Spacing.xs, top = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                    Row(
-                        Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable(onClickLabel = stringResource(R.string.officer_change), role = Role.Button) { sheet = Sheet.CHANGE }
-                            .padding(vertical = Spacing.xs),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        MiniFace(characterFor(ui.session.profile), 44.dp, Color(0xFFFFDDBE))
-                        Column(Modifier.padding(start = Spacing.md)) {
-                            Text(stringResource(profileTitle(ui.session.profile)), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(
-                                subjectLanguage?.let { "${it.name} · ${it.english}" } ?: subjectLang,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = ink.onBandMuted,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                    onCallInterpreter?.let { call ->
-                        IconButton(onClick = call) { Icon(Icons.Filled.Call, contentDescription = stringResource(R.string.officer_call)) }
-                    }
-                    IconButton(onClick = { sheet = Sheet.LOG }) {
-                        BadgedBox(badge = { if (answers.isNotEmpty()) Badge { Text("${answers.size}") } }) {
-                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.officer_log))
-                        }
-                    }
-                    Box {
-                        IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.officer_more)) }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            FilterObscuredTouches()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.officer_change)) },
-                                leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
-                                onClick = { menu = false; sheet = Sheet.CHANGE },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.officer_rotate)) },
-                                leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = null) },
-                                trailingIcon = { Checkbox(checked = ui.rotated, onCheckedChange = null) },
-                                onClick = { vm.toggleRotation() },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.officer_camera)) },
-                                leadingIcon = { Icon(painterResource(R.drawable.ic_videocam), contentDescription = null) },
-                                trailingIcon = { Switch(checked = cameraOn, onCheckedChange = null) },
-                                onClick = { onCameraOn(!cameraOn) },
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.officer_end), color = MaterialTheme.colorScheme.error) },
-                                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                                onClick = { menu = false; askEnd = true },
-                            )
-                        }
+
+    val send = {
+        if (ownText.isNotBlank()) {
+            vm.prepare(Pending.FreeText(ownText.trim(), attached.toList(), modes.toSet()))
+            ownText = ""
+            attached.clear()
+        }
+        tools = false
+        vm.show()
+    }
+
+    Surface(color = MaterialTheme.colorScheme.background) { Column(Modifier.fillMaxSize().imePadding()) {
+        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp), shadowElevation = 6.dp) {
+            Row(
+                Modifier.background(ink.brush).statusBarsPadding().fillMaxWidth().padding(start = Spacing.lg, end = Spacing.xs, top = Spacing.sm, bottom = Spacing.md),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable(onClickLabel = stringResource(R.string.officer_change), role = Role.Button) { sheet = Sheet.CHANGE }
+                        .padding(vertical = Spacing.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    MiniFace(characterFor(ui.session.profile), 44.dp, Color(0xFFFFDDBE))
+                    Column(Modifier.padding(start = Spacing.md)) {
+                        Text(stringResource(profileTitle(ui.session.profile)), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(subjectLanguage?.let { "${it.name} · ${it.english}" } ?: subjectLang, style = MaterialTheme.typography.bodySmall, color = ink.onBandMuted, maxLines = 1)
                     }
                 }
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    contentPadding = PaddingValues(horizontal = Spacing.lg),
-                    modifier = Modifier.padding(top = Spacing.sm),
-                ) {
-                    items(content.groups.filterNot { it.sensitive }, key = { it.id }) { g ->
-                        GroupChip(g.label.pick(officerLang) ?: g.id, ui.selectedGroup == g.id, locked = false) { vm.selectGroup(g.id) }
+                onCallInterpreter?.let { call ->
+                    IconButton(onClick = call) { Icon(Icons.Filled.Call, contentDescription = stringResource(R.string.officer_call)) }
+                }
+                IconButton(onClick = { sheet = Sheet.LOG }) {
+                    BadgedBox(badge = { if (answers > 0) Badge { Text("$answers") } }) {
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.officer_log))
                     }
-                    if (content.phrases.isNotEmpty()) {
-                        item(key = PHRASES) {
-                            GroupChip(stringResource(R.string.officer_phrases), ui.selectedGroup == PHRASES, locked = false) { vm.selectGroup(PHRASES) }
-                        }
-                    }
-                    // Sensitive groups stay last and locked until confirmed (FR-12).
-                    items(content.groups.filter { it.sensitive }, key = { it.id }) { g ->
-                        val locked = !ui.sensitiveUnlocked
-                        GroupChip(
-                            label = g.label.pick(officerLang) ?: g.id,
-                            selected = ui.selectedGroup == g.id,
-                            locked = locked,
-                            onClick = { if (locked) askSensitive = true else vm.selectGroup(g.id) },
+                }
+                Box {
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.officer_more)) }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        FilterObscuredTouches()
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.officer_change)) },
+                            leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
+                            onClick = { menu = false; sheet = Sheet.CHANGE },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.officer_rotate)) },
+                            leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = null) },
+                            trailingIcon = { Checkbox(checked = ui.rotated, onCheckedChange = null) },
+                            onClick = { vm.toggleRotation() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.officer_camera)) },
+                            leadingIcon = { Icon(painterResource(R.drawable.ic_videocam), contentDescription = null) },
+                            trailingIcon = { Switch(checked = cameraOn, onCheckedChange = null) },
+                            onClick = { onCameraOn(!cameraOn) },
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.officer_end), color = MaterialTheme.colorScheme.error) },
+                            leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                            onClick = { menu = false; askEnd = true },
                         )
                     }
                 }
             }
         }
 
-        // At large font sizes (NFR-22) the panel becomes one scrolling column; otherwise it fits one screen.
-        val largeText = LocalDensity.current.fontScale > 1.3f
-        val questions = content.questions.filter { it.group == ui.selectedGroup }
-        val actions: @Composable () -> Unit = {
-            ActionButton(painterResource(R.drawable.ic_hand), stringResource(R.string.action_gesture), wide = largeText) { sheet = Sheet.GESTURE }
-            ActionButton(painterResource(R.drawable.ic_grid), stringResource(R.string.action_board), wide = largeText) { sheet = Sheet.BOARD_SHOW }
-            ActionButton(rememberVectorPainter(Icons.Filled.Create), stringResource(R.string.action_draw), ui.pending == Pending.Drawing, largeText) {
-                vm.prepare(Pending.Drawing)
-            }
-            ActionButton(painterResource(R.drawable.ic_translate), stringResource(R.string.action_language), ui.pending == Pending.LanguageFinder, largeText) {
-                vm.prepare(Pending.LanguageFinder)
-            }
-            ActionButton(painterResource(R.drawable.ic_keyboard), stringResource(R.string.action_type), ui.pending is Pending.FreeText, largeText) { sheet = Sheet.TYPE }
-        }
-        Column(Modifier.weight(1f).padding(horizontal = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            AnimatedVisibility(lastStop != null && lastStop.id != stopSeen, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            Transcript(ui.events, ui.session.profile, Modifier.fillMaxSize())
+            // The scope-free overload: inside this Box the Column's AnimatedVisibility does not apply.
+            androidx.compose.animation.AnimatedVisibility(
+                lastStop != null && lastStop.id != stopSeen,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+                modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = Spacing.lg),
+            ) {
                 StopBanner(onOk = { stopSeen = lastStop?.id })
             }
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(if (largeText) 1 else 2),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md),
-                contentPadding = PaddingValues(top = Spacing.md, bottom = if (largeText) Spacing.md else 0.dp),
-                modifier = Modifier.weight(1f),
-            ) {
-                if (ui.selectedGroup == PHRASES) {
-                    items(content.phrases, key = { it.id }) { p ->
-                        PromptTile(
-                            cardId = p.slots.firstOrNull()?.card,
-                            title = p.label.pick(officerLang) ?: p.id,
-                            caption = p.label.pick(subjectLang),
-                            showCaption = subjectLang != officerLang,
-                            missingLang = content.language(subjectLang)?.english ?: subjectLang,
-                            hasGesture = true,
-                            hasAudio = ui.session.profile != Profile.ISL_USER && p.slots.any { content.phraseAudio(p, it, subjectLang) != null },
-                            selected = (ui.pending as? Pending.PhraseAsk)?.phrase?.id == p.id,
-                            onSelect = { phrase = p },
-                        )
-                    }
-                }
-                items(questions, key = { it.id }) { q ->
-                    QuestionTile(
-                        question = q,
-                        content = content,
-                        officerLang = officerLang,
-                        subjectLang = subjectLang,
-                        profile = ui.session.profile,
-                        selected = (ui.pending as? Pending.Ask)?.question?.id == q.id,
-                        onSelect = { vm.prepare(Pending.Ask(q)) },
-                    )
-                }
-                if (largeText) {
-                    item(span = { GridItemSpan(maxLineSpan) }) { AskAnotherWay(scrolls = true, actions) }
-                    latest?.let { (e, question) ->
-                        item(span = { GridItemSpan(maxLineSpan) }) { LatestAnswer(e, question, onClick = { sheet = Sheet.LOG }) }
-                    }
-                }
-            }
-            if (!largeText) {
-                AskAnotherWay(scrolls = false, actions)
-                latest?.let { (e, question) -> LatestAnswer(e, question, onClick = { sheet = Sheet.LOG }) }
-            }
         }
 
-        ShowBar(ui.pending, content, officerLang, subjectLang, ui.session.profile, onShow = vm::show, onClear = { vm.prepare(null) })
+        Dock(
+            ui = ui,
+            content = content,
+            officerLang = officerLang,
+            text = ownText,
+            onText = { ownText = it },
+            modes = modes,
+            onMode = { if (!modes.remove(it)) modes.add(it) },
+            attached = attached,
+            tools = tools,
+            onTools = { tools = it },
+            onGroup = { g -> if (g.sensitive && !ui.sensitiveUnlocked) askSensitive = true else vm.selectGroup(g.id) },
+            onPhrases = { vm.selectGroup(PHRASES) },
+            onQuestion = { q -> vm.prepare(if ((ui.pending as? Pending.Ask)?.question?.id == q.id) null else Pending.Ask(q)) },
+            onPhrase = { phrase = it },
+            onTool = { tool ->
+                tools = false
+                when (tool) {
+                    Tool.GESTURE -> sheet = Sheet.GESTURE
+                    Tool.BOARD -> sheet = Sheet.BOARD_SHOW
+                    Tool.ATTACH -> sheet = Sheet.BOARD_ATTACH
+                    Tool.DRAW -> vm.prepare(Pending.Drawing)
+                    Tool.LANGUAGE -> vm.prepare(Pending.LanguageFinder)
+                }
+            },
+            onClear = { vm.prepare(null) },
+            onSend = send,
+        )
     } }
 
     phrase?.let { p ->
@@ -339,20 +305,10 @@ fun OfficerPane(
     }
     when (sheet) {
         Sheet.BOARD_SHOW -> BoardSheet(content, officerLang, emptyList(), favourites, onFavourite, onUse = { vm.prepare(Pending.Cards(it)); sheet = null }, onDismiss = { sheet = null })
-        Sheet.BOARD_ATTACH -> BoardSheet(content, officerLang, attached.toList(), favourites, onFavourite, onUse = { attached.clear(); attached.addAll(it); sheet = Sheet.TYPE }, onDismiss = { sheet = Sheet.TYPE })
+        Sheet.BOARD_ATTACH -> BoardSheet(content, officerLang, attached.toList(), favourites, onFavourite, onUse = { attached.clear(); attached.addAll(it); sheet = null }, onDismiss = { sheet = null })
         Sheet.GESTURE -> GestureSheet(content, officerLang, onPick = { vm.prepare(Pending.ShowBack(it)); sheet = null }, onDismiss = { sheet = null })
         Sheet.LOG -> LogSheet(ui.events, onAddNote = vm::addNote, onDismiss = { sheet = null })
         Sheet.CHANGE -> ChangeSheet(content, ui.session.profile, subjectLang, onProfile = vm::setProfile, onLanguage = vm::setSubjectLang, onDismiss = { sheet = null })
-        Sheet.TYPE -> TypeSheet(
-            text = ownText,
-            onText = { ownText = it },
-            attached = attached,
-            content = content,
-            lang = officerLang,
-            onAddPictures = { sheet = Sheet.BOARD_ATTACH },
-            onUse = { vm.prepare(Pending.FreeText(ownText.trim(), attached.toList())); sheet = null },
-            onDismiss = { sheet = null },
-        )
         null -> Unit
     }
 
@@ -404,17 +360,334 @@ fun OfficerPane(
     }
 }
 
+/** The conversation so far: what was shown on the right, the subject's answers on the left, newest at the bottom. */
 @Composable
-private fun GroupChip(label: String, selected: Boolean, locked: Boolean, onClick: () -> Unit) {
+private fun Transcript(events: List<SessionEvent>, profile: Profile, modifier: Modifier) {
+    if (events.isEmpty()) {
+        Column(modifier.padding(Spacing.xxl), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            MiniFace(characterFor(profile), 72.dp, Color(0xFFFFDDBE))
+            Text(
+                stringResource(R.string.chat_empty_title),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = Spacing.lg),
+            )
+            Text(
+                stringResource(R.string.chat_empty_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = Spacing.xs),
+            )
+        }
+        return
+    }
+    val newestFirst = remember(events) { events.asReversed() }
+    LazyColumn(
+        modifier,
+        reverseLayout = true,
+        contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        items(newestFirst, key = { it.id }) { e ->
+            Box(Modifier.animateItem()) {
+                when (e.type) {
+                    EventType.QUESTION_SHOWN -> Shown(e)
+                    EventType.NOTE -> Aside(e.text.orEmpty(), note = true)
+                    EventType.SYSTEM -> Aside(systemText(e.text), note = false)
+                    else -> Answered(e, profile)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun systemText(text: String?) = when (text) {
+    SYSTEM_LANGUAGE_FINDER -> stringResource(R.string.officer_find_language)
+    SYSTEM_DRAWING -> stringResource(R.string.officer_draw)
+    else -> text.orEmpty()
+}
+
+private fun timeOf(e: SessionEvent) = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))
+
+@Composable
+private fun Shown(e: SessionEvent) {
     val ink = LocalInk.current
+    Column(Modifier.fillMaxWidth().padding(start = 48.dp), horizontalAlignment = Alignment.End) {
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 6.dp))
+                .background(ink.brush)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+        ) {
+            Text(e.text ?: "—", style = MaterialTheme.typography.bodyLarge, color = Color.White)
+        }
+        Text(
+            "${stringResource(e.type.label())} · ${timeOf(e)}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp, end = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun Answered(e: SessionEvent, profile: Profile) {
+    val colors = MaterialTheme.colorScheme
+    val answer = LocalAnswerColors.current
+    val well = when {
+        e.cardId == "yes" -> answer.yesContainer
+        e.cardId == "no" -> answer.noContainer
+        e.type == EventType.ANSWER_UNCLEAR -> colors.tertiaryContainer
+        else -> PictureWell
+    }
+    Row(Modifier.fillMaxWidth().padding(end = 48.dp), verticalAlignment = Alignment.Bottom) {
+        MiniFace(characterFor(profile), 28.dp, Color(0xFFFFDDBE))
+        Column(Modifier.padding(start = Spacing.sm)) {
+            Surface(
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 6.dp, bottomEnd = 20.dp),
+                color = colors.surfaceContainerLowest,
+                shadowElevation = 1.dp,
+            ) {
+                Row(Modifier.padding(start = 8.dp, end = 14.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = well, modifier = Modifier.size(40.dp)) {
+                        when {
+                            e.cardId != null -> CardImage(e.cardId, Modifier.padding(5.dp))
+                            e.drawingId != null -> Icon(Icons.Filled.Create, contentDescription = null, modifier = Modifier.padding(10.dp))
+                            e.type == EventType.ANSWER_TEXT -> Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.padding(10.dp))
+                            else -> Icon(painterResource(R.drawable.ic_hand), contentDescription = null, modifier = Modifier.padding(10.dp))
+                        }
+                    }
+                    Text(
+                        e.text ?: stringResource(e.type.label()),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(start = 10.dp),
+                    )
+                }
+            }
+            Text(
+                "${stringResource(e.type.label())} · ${timeOf(e)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp, start = 4.dp),
+            )
+        }
+    }
+}
+
+/** Notes and system steps sit between the two sides, like dates in a chat. */
+@Composable
+private fun Aside(text: String, note: Boolean) {
+    val colors = MaterialTheme.colorScheme
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Surface(
+            shape = RoundedCornerShape(50),
+            color = if (note) colors.tertiaryContainer else colors.surfaceContainerHighest,
+            contentColor = if (note) colors.onTertiaryContainer else colors.onSurfaceVariant,
+        ) {
+            Text(text, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+        }
+    }
+}
+
+private enum class Tool { GESTURE, BOARD, DRAW, LANGUAGE, ATTACH }
+
+/** Suggestions, other ways to ask, and the composer: everything the officer reaches with a thumb. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Dock(
+    ui: SessionUi,
+    content: ContentBundle,
+    officerLang: String,
+    text: String,
+    onText: (String) -> Unit,
+    modes: List<SignMode>,
+    onMode: (SignMode) -> Unit,
+    attached: List<String>,
+    tools: Boolean,
+    onTools: (Boolean) -> Unit,
+    onGroup: (app.signsetu.data.content.Group) -> Unit,
+    onPhrases: () -> Unit,
+    onQuestion: (Question) -> Unit,
+    onPhrase: (Phrase) -> Unit,
+    onTool: (Tool) -> Unit,
+    onClear: () -> Unit,
+    onSend: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val typing = text.isNotEmpty()
+    val pending = ui.pending
+    val subjectLang = ui.session.subjectLang
+    val wide = LocalDensity.current.fontScale > 1.3f
+    Surface(color = colors.surfaceContainerLowest, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), shadowElevation = 12.dp) {
+        Column(Modifier.navigationBarsPadding().padding(top = Spacing.md)) {
+            AnimatedVisibility(!typing, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                Column {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(horizontal = Spacing.lg)) {
+                        items(content.groups.filterNot { it.sensitive }, key = { it.id }) { g ->
+                            CategoryChip(g.label.pick(officerLang) ?: g.id, ui.selectedGroup == g.id, locked = false) { onGroup(g) }
+                        }
+                        if (content.phrases.isNotEmpty()) {
+                            item(key = PHRASES) { CategoryChip(stringResource(R.string.officer_phrases), ui.selectedGroup == PHRASES, locked = false, onClick = onPhrases) }
+                        }
+                        // Sensitive groups stay last and locked until confirmed (FR-12).
+                        items(content.groups.filter { it.sensitive }, key = { it.id }) { g ->
+                            CategoryChip(g.label.pick(officerLang) ?: g.id, ui.selectedGroup == g.id, locked = !ui.sensitiveUnlocked) { onGroup(g) }
+                        }
+                    }
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.md),
+                    ) {
+                        if (ui.selectedGroup == PHRASES) {
+                            items(content.phrases, key = { it.id }) { p ->
+                                Suggestion(
+                                    cardId = p.slots.firstOrNull()?.card,
+                                    title = p.label.pick(officerLang) ?: p.id,
+                                    caption = p.label.pick(subjectLang)?.takeIf { subjectLang != officerLang },
+                                    hasGesture = true,
+                                    hasAudio = ui.session.profile != Profile.ISL_USER && p.slots.any { content.phraseAudio(p, it, subjectLang) != null },
+                                    selected = (pending as? Pending.PhraseAsk)?.phrase?.id == p.id,
+                                    wide = wide,
+                                    onClick = { onPhrase(p) },
+                                )
+                            }
+                        }
+                        items(content.questions.filter { it.group == ui.selectedGroup }, key = { it.id }) { q ->
+                            Suggestion(
+                                cardId = q.cards.firstOrNull(),
+                                title = q.text.pick(officerLang) ?: q.text.values.first(),
+                                caption = q.text.pick(subjectLang)?.takeIf { subjectLang != officerLang },
+                                missing = if (q.text.pick(subjectLang) == null) stringResource(R.string.officer_caption_missing, content.language(subjectLang)?.english ?: subjectLang) else null,
+                                hasGesture = content.gestureFor(q) != null,
+                                hasAudio = content.questionAudio(q.id, subjectLang) != null && ui.session.profile != Profile.ISL_USER,
+                                selected = (pending as? Pending.Ask)?.question?.id == q.id,
+                                wide = wide,
+                                onClick = { onQuestion(q) },
+                            )
+                        }
+                    }
+                }
+            }
+
+            AnimatedVisibility(tools, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.sm), horizontalArrangement = Arrangement.SpaceBetween) {
+                    ToolButton(painterResource(R.drawable.ic_hand), stringResource(R.string.action_gesture), pending is Pending.ShowBack) { onTool(Tool.GESTURE) }
+                    ToolButton(painterResource(R.drawable.ic_grid), stringResource(if (typing) R.string.officer_add_pictures else R.string.action_board), pending is Pending.Cards) {
+                        onTool(if (typing) Tool.ATTACH else Tool.BOARD)
+                    }
+                    ToolButton(rememberVectorPainter(Icons.Filled.Create), stringResource(R.string.action_draw), pending == Pending.Drawing) { onTool(Tool.DRAW) }
+                    ToolButton(painterResource(R.drawable.ic_translate), stringResource(R.string.action_language), pending == Pending.LanguageFinder) { onTool(Tool.LANGUAGE) }
+                }
+            }
+
+            if (typing || attached.isNotEmpty()) {
+                FlowRow(
+                    Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    ModeLabels.forEach { (mode, label) -> ModeChip(stringResource(label), mode in modes) { onMode(mode) } }
+                    attached.forEach { id ->
+                        Surface(shape = RoundedCornerShape(50), color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = Modifier.height(32.dp)) {
+                            Row(Modifier.padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                CardImage(id, Modifier.size(20.dp))
+                                Text(content.cards[id]?.label?.pick(officerLang) ?: id, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 4.dp))
+                            }
+                        }
+                    }
+                }
+            } else if (pending != null) {
+                Ready(pending, content, officerLang, subjectLang, ui.session.profile, onClear)
+            }
+
+            Composer(
+                text = text,
+                onText = onText,
+                tools = tools,
+                onTools = { onTools(!tools) },
+                canSend = text.isNotBlank() || pending != null,
+                onSend = onSend,
+            )
+        }
+    }
+}
+
+/** What Send will show, with what the subject will get (FR-15, FR-17). */
+@Composable
+private fun Ready(pending: Pending, content: ContentBundle, officerLang: String, subjectLang: String, profile: Profile, onClear: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = colors.primaryContainer,
+        contentColor = colors.onPrimaryContainer,
+        modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm).fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(start = Spacing.md, top = Spacing.sm, bottom = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.chat_ready), style = MaterialTheme.typography.labelSmall, color = colors.primary)
+                Text(describe(pending, content, officerLang), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (pending is Pending.Ask) MediaSummary(pending.question, content, subjectLang, profile)
+            }
+            IconButton(onClick = onClear) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel)) }
+        }
+    }
+}
+
+@Composable
+private fun Composer(text: String, onText: (String) -> Unit, tools: Boolean, onTools: () -> Unit, canSend: Boolean, onSend: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val ink = LocalInk.current
+    val turn by animateFloatAsState(if (tools) 45f else 0f, label = "tools")
+    Row(Modifier.fillMaxWidth().padding(start = Spacing.sm, end = Spacing.md, bottom = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onTools, modifier = Modifier.size(48.dp)) {
+            Surface(shape = CircleShape, color = if (tools) colors.primary else colors.secondaryContainer, contentColor = if (tools) colors.onPrimary else colors.onSecondaryContainer, modifier = Modifier.size(40.dp)) {
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.officer_ask_another), modifier = Modifier.padding(8.dp).rotate(turn))
+            }
+        }
+        Surface(shape = RoundedCornerShape(26.dp), color = colors.surfaceContainerHigh, modifier = Modifier.weight(1f).padding(horizontal = 4.dp)) {
+            BasicTextField(
+                value = text,
+                onValueChange = onText,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface),
+                // SEC-05: the keyboard should not learn or suggest from what is typed about a subject.
+                keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
+                cursorBrush = SolidColor(colors.primary),
+                maxLines = 4,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = Spacing.lg, vertical = 13.dp),
+                decorationBox = { field ->
+                    if (text.isEmpty()) Text(stringResource(R.string.quick_hint), style = MaterialTheme.typography.bodyLarge, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    field()
+                },
+            )
+        }
+        Box(
+            Modifier
+                .padding(start = 4.dp)
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(if (canSend) ink.brush else SolidColor(colors.surfaceContainerHighest))
+                .clickable(enabled = canSend, role = Role.Button, onClickLabel = stringResource(R.string.officer_show), onClick = onSend),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.officer_show), tint = if (canSend) Color.White else colors.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun CategoryChip(label: String, selected: Boolean, locked: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
-        color = if (selected) ink.chipSelected else ink.chip,
-        contentColor = if (selected) ink.onChipSelected else ink.onBand,
-        modifier = Modifier.height(40.dp).semantics { this.selected = selected },
+        color = if (selected) colors.primary else colors.surfaceContainerHigh,
+        contentColor = if (selected) colors.onPrimary else colors.onSurfaceVariant,
+        modifier = Modifier.height(36.dp).semantics { this.selected = selected },
     ) {
-        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (locked) Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(14.dp))
             Text(label, style = MaterialTheme.typography.labelLarge)
         }
@@ -422,80 +695,62 @@ private fun GroupChip(label: String, selected: Boolean, locked: Boolean, onClick
 }
 
 @Composable
-private fun QuestionTile(
-    question: Question,
-    content: ContentBundle,
-    officerLang: String,
-    subjectLang: String,
-    profile: Profile,
-    selected: Boolean,
-    onSelect: () -> Unit,
-) {
-    PromptTile(
-        cardId = question.cards.firstOrNull(),
-        title = question.text.pick(officerLang) ?: question.text.values.first(),
-        caption = question.text.pick(subjectLang),
-        showCaption = subjectLang != officerLang,
-        missingLang = content.language(subjectLang)?.english ?: subjectLang,
-        hasGesture = content.gestureFor(question) != null,
-        hasAudio = content.questionAudio(question.id, subjectLang) != null && profile != Profile.ISL_USER,
-        selected = selected,
-        onSelect = onSelect,
-    )
+private fun ModeChip(label: String, on: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = if (on) colors.primary else colors.surfaceContainerHigh,
+        contentColor = if (on) colors.onPrimary else colors.onSurfaceVariant,
+        modifier = Modifier.height(32.dp).semantics { selected = on },
+    ) {
+        Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (on) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(14.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium)
+        }
+    }
 }
 
-/** Something the officer can show: its picture, its words, and what the subject will get (FR-17). */
+/** A prepared question or phrase: its picture, its words, and what the subject will get (FR-17). */
 @Composable
-private fun PromptTile(
+private fun Suggestion(
     cardId: String?,
     title: String,
     caption: String?,
-    showCaption: Boolean,
-    missingLang: String,
     hasGesture: Boolean,
     hasAudio: Boolean,
     selected: Boolean,
-    onSelect: () -> Unit,
+    wide: Boolean,
+    onClick: () -> Unit,
+    missing: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
-        onClick = onSelect,
-        shape = RoundedCornerShape(22.dp),
-        color = if (selected) colors.primaryContainer else colors.surfaceContainerLowest,
-        border = if (selected) BorderStroke(2.dp, colors.primary) else BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.6f)),
-        shadowElevation = if (selected) 0.dp else 1.dp,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 104.dp).semantics { this.selected = selected },
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = if (selected) colors.primaryContainer else colors.surfaceContainerHigh,
+        border = if (selected) BorderStroke(2.dp, colors.primary) else null,
+        modifier = Modifier.width(if (wide) 280.dp else 208.dp).height(if (wide) 156.dp else 116.dp).semantics { this.selected = selected },
     ) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(12.dp), color = PictureWell, modifier = Modifier.size(34.dp)) {
-                    cardId?.let { CardImage(it, Modifier.padding(4.dp)) }
+                Surface(shape = RoundedCornerShape(10.dp), color = PictureWell, modifier = Modifier.size(30.dp)) {
+                    cardId?.let { CardImage(it, Modifier.padding(3.dp)) }
                 }
                 Spacer(Modifier.weight(1f))
-                // What the subject will get, so a missing gesture or recording is never a surprise (FR-17).
                 if (hasGesture) MediaDot(painterResource(R.drawable.ic_hand), stringResource(R.string.officer_has_gesture))
                 if (hasAudio) MediaDot(painterResource(R.drawable.ic_volume), stringResource(R.string.officer_has_audio))
                 if (selected) {
-                    Surface(shape = CircleShape, color = colors.primary, modifier = Modifier.padding(start = 4.dp).size(22.dp)) {
+                    Surface(shape = CircleShape, color = colors.primary, modifier = Modifier.padding(start = 4.dp).size(20.dp)) {
                         Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.padding(3.dp))
                     }
                 }
             }
-            Text(
-                title,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
             when {
-                caption == null -> Text(
-                    stringResource(R.string.officer_caption_missing, missingLang),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.tertiary,
-                    maxLines = 2,
-                )
-                showCaption -> Text(caption, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                !hasGesture && !hasAudio -> Text(stringResource(R.string.officer_media_missing), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                missing != null -> Text(missing, style = MaterialTheme.typography.bodySmall, color = colors.tertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                caption != null -> Text(caption, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                !hasGesture && !hasAudio -> Text(stringResource(R.string.officer_media_missing), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 1)
             }
         }
     }
@@ -503,39 +758,24 @@ private fun PromptTile(
 
 @Composable
 private fun MediaDot(painter: Painter, name: String) {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.padding(start = 4.dp).size(24.dp).semantics { contentDescription = name }) {
+    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.padding(start = 4.dp).size(22.dp).semantics { contentDescription = name }) {
         Icon(painter, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.padding(4.dp))
     }
 }
 
 @Composable
-private fun AskAnotherWay(scrolls: Boolean, actions: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        // On a short screen the questions need the room more; every button below carries its own label.
-        if (with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } >= 700.dp) {
-            Text(stringResource(R.string.officer_ask_another), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        if (scrolls) {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) { actions() }
-        } else {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { actions() }
-        }
-    }
-}
-
-@Composable
-private fun ActionButton(icon: Painter, label: String, selected: Boolean = false, wide: Boolean = false, onClick: () -> Unit) {
+private fun ToolButton(icon: Painter, label: String, selected: Boolean, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Column(
         Modifier
-            .width(if (wide) 112.dp else 64.dp)
+            .widthIn(min = 64.dp)
             .clip(RoundedCornerShape(16.dp))
             .clickable(role = Role.Button, onClick = onClick)
             .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Surface(
-            shape = RoundedCornerShape(18.dp),
+            shape = CircleShape,
             color = if (selected) colors.primary else colors.secondaryContainer,
             contentColor = if (selected) colors.onPrimary else colors.onSecondaryContainer,
             modifier = Modifier.size(52.dp),
@@ -545,10 +785,10 @@ private fun ActionButton(icon: Painter, label: String, selected: Boolean = false
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
-            maxLines = if (wide) 2 else 1,
+            maxLines = 1,
             textAlign = TextAlign.Center,
-            autoSize = if (wide) null else TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 12.sp),
-            modifier = Modifier.padding(top = 4.dp),
+            autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 12.sp),
+            modifier = Modifier.padding(top = 4.dp).width(76.dp),
         )
     }
 }
@@ -556,7 +796,7 @@ private fun ActionButton(icon: Painter, label: String, selected: Boolean = false
 @Composable
 private fun StopBanner(onOk: () -> Unit) {
     val answer = LocalAnswerColors.current
-    Surface(shape = RoundedCornerShape(20.dp), color = answer.pause, contentColor = answer.onPause, modifier = Modifier.padding(top = Spacing.md)) {
+    Surface(shape = MaterialTheme.shapes.large, color = answer.pause, contentColor = answer.onPause, shadowElevation = 4.dp, modifier = Modifier.padding(top = Spacing.md)) {
         Row(Modifier.padding(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
             CardImage("stop", Modifier.size(40.dp))
             Column(Modifier.weight(1f).padding(horizontal = Spacing.md)) {
@@ -564,86 +804,6 @@ private fun StopBanner(onOk: () -> Unit) {
                 Text(stringResource(R.string.officer_stop_body), style = MaterialTheme.typography.bodySmall)
             }
             TextButton(onClick = onOk) { Text(stringResource(R.string.ok), color = answer.onPause) }
-        }
-    }
-}
-
-@Composable
-private fun LatestAnswer(e: SessionEvent, question: String?, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    val answerColors = LocalAnswerColors.current
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = colors.surfaceContainerLowest,
-        border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.6f)),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(Modifier.padding(horizontal = Spacing.md, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            val tint = when (e.cardId) {
-                "yes" -> answerColors.yesContainer
-                "no" -> answerColors.noContainer
-                else -> PictureWell
-            }
-            Surface(shape = RoundedCornerShape(12.dp), color = tint, modifier = Modifier.size(40.dp)) {
-                e.cardId?.let { CardImage(it, Modifier.padding(5.dp)) }
-            }
-            Column(Modifier.weight(1f).padding(start = Spacing.md)) {
-                Text(
-                    "${stringResource(R.string.officer_latest)} · ${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.onSurfaceVariant,
-                )
-                Text(
-                    e.text ?: stringResource(e.type.label()),
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                question?.takeIf { it != e.text }?.let {
-                    Text(stringResource(R.string.officer_in_reply, it), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShowBar(
-    pending: Pending?,
-    content: ContentBundle,
-    officerLang: String,
-    subjectLang: String,
-    profile: Profile,
-    onShow: () -> Unit,
-    onClear: () -> Unit,
-) {
-    val colors = MaterialTheme.colorScheme
-    Surface(color = colors.surfaceContainer, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), modifier = Modifier.padding(top = Spacing.md)) {
-        Column(Modifier.navigationBarsPadding().padding(horizontal = Spacing.lg, vertical = Spacing.md)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = 40.dp)) {
-                Text(
-                    pending?.let { describe(it, content, officerLang) } ?: stringResource(R.string.officer_nothing_pending),
-                    style = if (pending == null) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleSmall,
-                    color = if (pending == null) colors.onSurfaceVariant else colors.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                if (pending != null) {
-                    IconButton(onClick = onClear) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel)) }
-                }
-            }
-            if (pending is Pending.Ask) MediaSummary(pending.question, content, subjectLang, profile)
-            Button(
-                onClick = onShow,
-                enabled = pending != null,
-                shape = RoundedCornerShape(22.dp),
-                modifier = Modifier.fillMaxWidth().padding(top = Spacing.xs).height(60.dp),
-            ) {
-                Text(stringResource(R.string.officer_show), style = MaterialTheme.typography.titleMedium)
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.padding(start = Spacing.sm))
-            }
         }
     }
 }
@@ -662,7 +822,7 @@ private fun MediaSummary(question: Question, content: ContentBundle, subjectLang
             val name = stringResource(label)
             Surface(
                 shape = RoundedCornerShape(50),
-                color = if (present) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.tertiaryContainer,
+                color = if (present) MaterialTheme.colorScheme.surfaceContainerLowest else MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = if (present) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onTertiaryContainer,
             ) {
                 Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -689,54 +849,16 @@ private fun describe(p: Pending, content: ContentBundle, lang: String): String =
     Pending.Drawing -> stringResource(R.string.officer_draw)
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-private fun TypeSheet(
-    text: String,
-    onText: (String) -> Unit,
-    attached: List<String>,
-    content: ContentBundle,
-    lang: String,
-    onAddPictures: () -> Unit,
-    onUse: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    OfficerSheet(onDismiss) {
-        Column(Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.xxl), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            SheetTitle(stringResource(R.string.officer_own_question))
-            OutlinedTextField(
-                value = text,
-                onValueChange = onText,
-                placeholder = { Text(stringResource(R.string.officer_own_hint)) },
-                keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
-                minLines = 2,
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (attached.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    attached.forEach { id ->
-                        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-                            Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                CardImage(id, Modifier.size(24.dp))
-                                Text(content.cards[id]?.label?.pick(lang) ?: id, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 6.dp))
-                            }
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                OutlinedButton(onClick = onAddPictures, modifier = Modifier.weight(1f).height(52.dp)) {
-                    Icon(painterResource(R.drawable.ic_grid), contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(stringResource(R.string.officer_add_pictures), modifier = Modifier.padding(start = Spacing.sm))
-                }
-                Button(onClick = onUse, enabled = text.isNotBlank(), modifier = Modifier.weight(1f).height(52.dp)) {
-                    Text(stringResource(R.string.officer_use))
-                }
-            }
-        }
-    }
-}
+/** Profiles that sign get ISL signs and spelling; everyone else gets everyday gestures. Both get pictures. */
+private fun defaultModes(profile: Profile) =
+    if (profile == Profile.ISL_USER) listOf(SignMode.SIGNS, SignMode.SPELL, SignMode.PICTURES) else listOf(SignMode.GESTURES, SignMode.PICTURES)
+
+private val ModeLabels = listOf(
+    SignMode.SIGNS to R.string.mode_signs,
+    SignMode.GESTURES to R.string.mode_gestures,
+    SignMode.SPELL to R.string.mode_spell,
+    SignMode.PICTURES to R.string.mode_pictures,
+)
 
 private sealed interface ExportState {
     data object Working : ExportState

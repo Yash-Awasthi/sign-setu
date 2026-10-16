@@ -32,6 +32,8 @@ data class AppSettings(
     val largeCaptions: Boolean = false,
     /** Gestures play at three-quarter speed by default (FR-51). */
     val slowGestures: Boolean = false,
+    /** Leaving the stage asks for the screen lock as well as a long press; a department can turn it on (D-23). */
+    val pinToLeaveStage: Boolean = false,
     /** Picture-board cards the officer starred; card IDs only. */
     val favourites: Set<String> = emptySet(),
 ) {
@@ -55,6 +57,7 @@ class SettingsStore(private val context: Context) {
         val camera = booleanPreferencesKey("camera_enabled")
         val largeCaptions = booleanPreferencesKey("large_captions")
         val slowGestures = booleanPreferencesKey("slow_gestures")
+        val pinToLeave = booleanPreferencesKey("pin_to_leave_stage")
         val favourites = stringSetPreferencesKey("favourites")
     }
 
@@ -72,6 +75,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setCameraEnabled(on: Boolean) = context.store.edit { it[Keys.camera] = on }
     suspend fun setLargeCaptions(on: Boolean) = context.store.edit { it[Keys.largeCaptions] = on }
     suspend fun setSlowGestures(on: Boolean) = context.store.edit { it[Keys.slowGestures] = on }
+    suspend fun setPinToLeaveStage(on: Boolean) = context.store.edit { it[Keys.pinToLeave] = on }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -86,6 +90,7 @@ class SettingsStore(private val context: Context) {
         cameraEnabled = this[Keys.camera] ?: true,
         largeCaptions = this[Keys.largeCaptions] ?: false,
         slowGestures = this[Keys.slowGestures] ?: false,
+        pinToLeaveStage = this[Keys.pinToLeave] ?: false,
         favourites = this[Keys.favourites].orEmpty(),
     )
 }

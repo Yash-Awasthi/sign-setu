@@ -1,5 +1,7 @@
 package app.signsetu.ui.start
 
+import app.signsetu.ui.components.BrandButton
+import androidx.compose.foundation.background
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -149,7 +151,7 @@ fun StartScreen(
         }
         Surface(
             color = MaterialTheme.colorScheme.background,
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             shadowElevation = 8.dp,
             modifier = Modifier.fillMaxWidth().heightIn(max = sheetMax),
         ) {
@@ -188,11 +190,10 @@ fun StartScreen(
                         LanguagePicker(content, lang, onPick = { lang = it }, label = stringResource(R.string.start_language))
                     }
                 }
-                Button(
+                BrandButton(
                     onClick = onStart,
                     enabled = profile != null && !expired && !content.damaged,
-                    shape = RoundedCornerShape(22.dp),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = Spacing.md).height(60.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md).height(56.dp),
                 ) {
                     Text(stringResource(R.string.start_button), style = MaterialTheme.typography.titleMedium)
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.padding(start = Spacing.sm))
@@ -270,7 +271,7 @@ private fun ProfileBadge(profile: Profile, modifier: Modifier) {
 
 @Composable
 private fun Notice(title: String?, body: String, container: Color, content: Color) {
-    Surface(color = container, contentColor = content, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = container, contentColor = content, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(horizontal = Spacing.md, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Warning, contentDescription = null, modifier = Modifier.size(20.dp))
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -284,8 +285,8 @@ private fun Notice(title: String?, body: String, container: Color, content: Colo
 @Composable
 private fun ResumeCard(session: Session, languageName: String, onResume: () -> Unit, onEnd: () -> Unit) {
     val ink = LocalInk.current
-    Surface(color = ink.band, contentColor = ink.onBand, shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 6.dp)) {
+    Surface(color = Color.Transparent, contentColor = ink.onBand, shape = MaterialTheme.shapes.extraLarge, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.background(ink.brush).padding(start = Spacing.lg, end = 10.dp, top = Spacing.lg, bottom = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             MiniFace(characterFor(session.profile), 40.dp, Color(0xFFFFDDBE))
             Column(Modifier.weight(1f).padding(start = Spacing.md)) {
@@ -305,7 +306,7 @@ private fun ResumeCard(session: Session, languageName: String, onResume: () -> U
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onEnd) { Text(stringResource(R.string.start_end), color = ink.onBandMuted) }
-            Button(onClick = onResume, shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = ink.chipSelected, contentColor = ink.onChipSelected)) {
+            Button(onClick = onResume, shape = RoundedCornerShape(50), colors = ButtonDefaults.buttonColors(containerColor = ink.chipSelected, contentColor = ink.onChipSelected)) {
                 Text(stringResource(R.string.start_resume))
             }
         }
@@ -327,7 +328,7 @@ fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) ->
             label = label?.let { { Text(it) } },
             leadingIcon = { Icon(painterResource(R.drawable.ic_translate), contentDescription = null) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            shape = RoundedCornerShape(18.dp),
+            shape = MaterialTheme.shapes.medium,
             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

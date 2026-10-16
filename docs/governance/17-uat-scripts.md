@@ -8,12 +8,12 @@ Run by department officers on department phones with the release candidate. One 
 | UAT-02 Lost child | Airplane mode on. Choose Young child and Hindi; start; show "I am a police officer", "Are you hurt?", "Do you want water?"; subject answers with Yes, No and a picture | Each question appears at once with the character, caption, picture and speech; officer sees each answer with its time; nothing needs a network |
 | UAT-03 Sensitive gate | Try to open the Sensitive group | Needs a deliberate confirmation; no sensitive question on the first screen |
 | UAT-04 Deaf subject | Choose Signs; show "Are you hurt?"; subject answers No; officer uses They gestured for a gesture the subject makes and shows it back | Adult character, no sound; show-back asks "Is this it?" and only Yes records the meaning |
-| UAT-05 Own words | Type "Where is your home?" with the home picture; show it | Caption and picture shown; the character does not sign the typed words; nothing reaches the subject before Show |
+| UAT-05 Own words | In the type box, type "Where is Ravi's home?"; leave the default toggles; tap Send | The stage shows the caption with each word lit in turn: the asking sign for "Where", "Ravi" spelled letter by letter with the letter shown, the home sign with the home picture; nothing reaches the subject before Send |
 | UAT-06 Phrase | Phrases, "Do you want ...?", water; show it | The full sentence appears with the picture; the character signs it in parts |
 | UAT-07 Stop and don't know | Subject taps I don't know, then Stop | Both logged; Stop shows the officer a banner with guidance until acknowledged |
 | UAT-08 Drawing | Subject draws a house and finishes | Drawing appears in the session log |
 | UAT-09 Language finder | Choose Other language; start; subject taps their language | Their greeting plays; back on the officer panel the session is in that language |
-| UAT-10 Back to officer | On the stage, try Home, Back and recents; then use the lock button with fingerprint or PIN | The subject cannot leave the stage; only the officer's credential returns to the panel |
+| UAT-10 Back to officer | On the stage, try Home, Back and recents; then tap the lock | The subject cannot leave the stage by Home, Back or recents; the lock returns to the panel; with Screen lock to leave the stage on, the fingerprint or PIN is asked as well |
 | UAT-11 Interruptions | Take a phone call mid-session; leave the app for six minutes; reopen | Session intact; app asks for unlock |
 | UAT-12 Interpreter | Call an interpreter from the panel | Messaging app opens at the department contact; no session details are sent |
 | UAT-13 Export and end | End session; export; share the report; give the password separately; finish | Report opens only with the password; session gone from the phone |

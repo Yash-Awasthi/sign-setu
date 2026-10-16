@@ -20,7 +20,7 @@ Logic with branches (retention, show-back, build expiry, export) is written test
 | --- | --- | --- |
 | TC-01 | Fresh install: first run, no device lock set; app refuses to store sessions until a lock exists | FR-50, SEC-20 |
 | TC-02 | Choose each profile; Show state content matches §3 of the UX document | FR-60, FR-11 |
-| TC-03 | Show and Officer states; rotate 180 degrees; return requires biometric or credential | FR-02, FR-03, FR-61 |
+| TC-03 | Show and Officer states; rotate 180 degrees; Back on the stage stays; a tap on the handle returns; with the setting on, return also asks for the credential | FR-02, FR-03, FR-61 |
 | TC-04 | App pinning on: subject cannot leave the app; pinning ends with the session | FR-61, SEC-46 |
 | TC-05 | Every triage question shows within 300 ms with its cards, caption and profile content | FR-11, NFR-02 |
 | TC-06 | Sensitive questions need a second deliberate tap | FR-12 |

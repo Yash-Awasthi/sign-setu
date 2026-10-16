@@ -45,6 +45,7 @@ data class HandShape(
             "WALK_A" to HandShape(0.55f, 0f, 0.45f, 1f, 1f, 1f, 0.4f),
             "WALK_B" to HandShape(0.55f, 0.45f, 0f, 1f, 1f, 1f, 0.4f),
             "RUB" to HandShape(0.7f, 0.55f, 0.55f, 0.6f, 0.65f, 0.9f, -0.6f),
+            "HOOK" to HandShape(0.55f, 0.5f, 1f, 1f, 1f, 1f),
         )
     }
 }
@@ -131,6 +132,36 @@ data class HandPose(
     val elbowOut: Float,
     val prop: String? = null,
 )
+
+/**
+ * A point on this hand in character space: "wrist", "palm", "thumb" or a fingertip ("index" to "pinky").
+ * Mirrors the frontal layout in Avatar.drawHand; a hand that follows its forearm (NaN angle) is taken as upright.
+ */
+fun HandPose.point(part: String, side: Side, handScale: Float): Pair<Float, Float> {
+    val pw = 13f
+    val thumbSide = if (roll > 0f) -side.sign else side.sign
+    val curls = shape.curls
+    val (hx, hy) = when (part) {
+        "wrist" -> 0f to 0f
+        "palm" -> 0f to -6f
+        "thumb" -> {
+            val a = Math.toRadians((thumbSide * (52f - shape.thumbAcross * 112f)).toDouble())
+            val len = 8.8f * (1f - 0.4f * curls[0])
+            (thumbSide * (pw / 2f - 0.5f) + sin(a).toFloat() * len) to (-3f - cos(a).toFloat() * len)
+        }
+        else -> {
+            val k = listOf("index", "middle", "ring", "pinky").indexOf(part).coerceAtLeast(0)
+            val len = floatArrayOf(9.2f, 10.2f, 9.6f, 7.7f)[k] * (1f - 0.8f * curls[k + 1])
+            // Seen from the side the fingers stack on the hand's centre line; the extra 1.5 is the rounded tip.
+            val across = if (abs(roll) < 0.35f) 0f else thumbSide * (pw / 2f - 1.8f - k * (pw - 3.6f) / 3f)
+            across to (-12f - len)
+        }
+    }
+    val a = Math.toRadians((if (angle.isNaN()) 0f else angle).toDouble())
+    val rx = (hx * cos(a) - hy * sin(a)).toFloat() * handScale
+    val ry = (hx * sin(a) + hy * cos(a)).toFloat() * handScale
+    return (x + rx) to (y + ry)
+}
 
 data class Pose(
     val r: HandPose, val l: HandPose,
@@ -257,8 +288,17 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
     }
 
     private fun blend(a: Frame, b: Frame, f: Float): Pose {
-        val r = hand(a.r, b.r, f, Side.R)
-        val l = hand(a.l, b.l, f, Side.L, r)
+        // The hand placed on the other one is solved second; fingerspelling places the right hand on the left.
+        val rFollows = a.r.at in OTHER_HAND || b.r.at in OTHER_HAND
+        val r: HandPose
+        val l: HandPose
+        if (rFollows) {
+            l = hand(a.l, b.l, f, Side.L)
+            r = hand(a.r, b.r, f, Side.R, l)
+        } else {
+            r = hand(a.r, b.r, f, Side.R)
+            l = hand(a.l, b.l, f, Side.L, r)
+        }
         return Pose(
             r = r, l = l,
             face = a.face.lerp(b.face, f),
@@ -294,7 +334,7 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
     private fun resolve(k: HandKey, side: Side, other: HandPose?): Pair<Float, Float> {
         val base = when {
             k.at == "rest" -> build.rest(side)
-            k.at == "wrist_opp" && other != null -> other.x to other.y
+            k.at in OTHER_HAND && other != null -> other.point(k.at.removeSuffix("_opp"), if (side == Side.R) Side.L else Side.R, build.handScale)
             else -> build.anchor(k.at, side) ?: build.rest(side)
         }
         // +dx is outward: towards the viewer's left for the right hand.
@@ -314,6 +354,8 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
     }
 
     companion object {
+        /** Anchors on the other hand: its wrist, palm centre, or a fingertip. */
+        val OTHER_HAND = setOf("wrist_opp", "palm_opp", "thumb_opp", "index_opp", "middle_opp", "ring_opp", "pinky_opp")
         const val LEAD_IN = 0.35f
         const val LEAD_OUT = 0.45f
 

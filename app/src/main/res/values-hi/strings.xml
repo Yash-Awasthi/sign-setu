@@ -36,11 +36,7 @@
     <string name="profile_unsure_desc">चित्र, हाँ और नहीं, और चित्र बनाना</string>
 
     <string name="officer_show">उन्हें दिखाएँ</string>
-    <string name="officer_nothing_pending">कोई सवाल, चित्र या इशारा चुनें</string>
-    <string name="officer_own_question">अपना सवाल</string>
-    <string name="officer_own_hint">छोटा सवाल लिखें</string>
     <string name="officer_add_pictures">चित्र जोड़ें</string>
-    <string name="officer_use">इस्तेमाल करें</string>
     <string name="officer_find_language">उनकी भाषा पता करें</string>
     <string name="officer_draw">उन्हें चित्र बनाने दें</string>
     <string name="officer_log">सत्र रिकॉर्ड</string>
@@ -194,10 +190,7 @@
     <string name="action_board">तस्वीरें</string>
     <string name="action_draw">चित्र</string>
     <string name="action_language">भाषा</string>
-    <string name="action_type">लिखें</string>
     <string name="officer_ask_another">दूसरे तरीके से पूछें</string>
-    <string name="officer_latest">आखिरी जवाब</string>
-    <string name="officer_in_reply">“%1$s” पर</string>
     <string name="officer_stop_title">उन्होंने रुकने को कहा</string>
     <string name="officer_stop_body">रुकिए। देखिए कि वे सहज हैं, पानी या आराम दीजिए, और तैयार होने पर ही आगे बढ़िए।</string>
     <string name="officer_has_gesture">पात्र इशारा दिखाता है</string>
@@ -227,4 +220,15 @@
     <string name="start_damaged_body">ऐप की इस कॉपी के सवाल या चित्र स्वीकृत सामग्री से मेल नहीं खाते, इसलिए नया सत्र शुरू नहीं हो सकता। अपने विभाग से नया संस्करण इंस्टॉल करें।</string>
     <string name="start_media_rejected">कुछ चित्र, आवाज़ें या इशारे जाँच में विफल रहे और हटा दिए गए हैं।</string>
     <string name="officer_phrases">वाक्य</string>
+    <string name="quick_hint">कुछ भी लिखें और दिखाएँ</string>
+    <string name="mode_signs">संकेत</string>
+    <string name="mode_gestures">इशारे</string>
+    <string name="mode_spell">वर्तनी</string>
+    <string name="mode_pictures">चित्र</string>
+    <string name="settings_pin_to_leave">स्टेज छोड़ने के लिए स्क्रीन लॉक</string>
+    <string name="settings_pin_to_leave_summary">लॉक पर टैप करने से स्टेज बंद होता है। चालू होने पर फ़िंगरप्रिंट या पिन भी पूछा जाता है।</string>
+    <string name="chat_empty_title">बातचीत शुरू करें</string>
+    <string name="chat_empty_body">नीचे से सवाल चुनें या कुछ भी लिखें। आप जो दिखाते हैं और उनके जवाब यहाँ दिखेंगे।</string>
+    <string name="chat_ready">दिखाने के लिए तैयार</string>
+    <string name="log_typed">लिखा हुआ जवाब</string>
 </resources>

@@ -36,12 +36,13 @@ val LocalAnswerColors = staticCompositionLocalOf { AnswerLight }
 val LocalStageColors = staticCompositionLocalOf { StageLight }
 val LocalInk = staticCompositionLocalOf { Ink }
 
+// Icon wells 12, buttons and fields 14, cards 20, hero cards and sheets 24.
 private val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
     small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(32.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )
 
 @OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
@@ -92,5 +93,5 @@ fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
 /** The stage keeps the light scheme in both themes; only its backdrop dims at night (03-ux §6). */
 @Composable
 fun SubjectTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = OfficerLight, typography = SubjectType, shapes = AppShapes, content = content)
+    MaterialTheme(colorScheme = StageScheme, typography = SubjectType, shapes = AppShapes, content = content)
 }

@@ -8,6 +8,7 @@ import app.signsetu.data.content.LexiconEntry
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.PhraseSlot
 import app.signsetu.data.content.Question
+import app.signsetu.data.content.SignMode
 import app.signsetu.data.content.pick
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
@@ -33,7 +34,7 @@ import java.io.File
 @Immutable
 sealed interface Pending {
     data class Ask(val question: Question) : Pending
-    data class FreeText(val text: String, val cardIds: List<String>) : Pending
+    data class FreeText(val text: String, val cardIds: List<String>, val modes: Set<SignMode> = emptySet()) : Pending
     data class Cards(val cardIds: List<String>) : Pending
     data class ShowBack(val entry: LexiconEntry) : Pending
     data class PhraseAsk(val phrase: Phrase, val slot: PhraseSlot) : Pending
@@ -181,6 +182,12 @@ class SessionViewModel(
         viewModelScope.launch {
             repo.log(sessionId, EventType.LANGUAGE_CHOSEN, EventSource.SUBJECT, code, text = content.language(code)?.english)
         }
+    }
+
+    /** The subject wrote their own answer on the stage; it is logged as typed, never interpreted. */
+    fun answerText(text: String) {
+        if (text.isBlank()) return
+        viewModelScope.launch { repo.log(sessionId, EventType.ANSWER_TEXT, EventSource.SUBJECT, ui.value?.session?.subjectLang, text = text.trim()) }
     }
 
     fun submitDrawing(png: ByteArray) {
