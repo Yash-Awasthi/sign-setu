@@ -231,4 +231,18 @@
     <string name="chat_empty_body">नीचे से सवाल चुनें या कुछ भी लिखें। आप जो दिखाते हैं और उनके जवाब यहाँ दिखेंगे।</string>
     <string name="chat_ready">दिखाने के लिए तैयार</string>
     <string name="log_typed">लिखा हुआ जवाब</string>
+    <string name="ai_suggest">सहायक</string>
+    <string name="ai_working">सोच रहा है…</string>
+    <string name="ai_caption">%1$s में: मशीन अनुवाद, जाँचा नहीं गया</string>
+    <string name="ai_meaning">जिसका अर्थ है</string>
+    <string name="ai_none">सहायक इसमें मदद नहीं कर सका; यह लिखे अनुसार दिखेगा।</string>
+    <string name="settings_assistant">फ़ोन पर सहायक</string>
+    <string name="settings_assistant_ready">इंस्टॉल है। लिखे गए वाक्य का उनकी भाषा में अनुवाद और वापस, सिर्फ़ इसी फ़ोन पर।</string>
+    <string name="settings_assistant_missing">इंस्टॉल नहीं है। विभाग से मिली मॉडल फ़ाइल इंपोर्ट करें।</string>
+    <string name="settings_assistant_memory">कम से कम 3 GB मेमोरी वाला फ़ोन चाहिए।</string>
+    <string name="settings_assistant_unsupported">इस फ़ोन पर उपलब्ध नहीं।</string>
+    <string name="settings_assistant_import">मॉडल फ़ाइल इंपोर्ट करें</string>
+    <string name="settings_assistant_importing">फ़ाइल जाँच कर इंपोर्ट हो रही है…</string>
+    <string name="settings_assistant_bad">यह फ़ाइल इस ऐप का जाना-पहचाना मॉडल नहीं है; कुछ इंस्टॉल नहीं हुआ।</string>
+    <string name="settings_assistant_remove">मॉडल हटाएँ</string>
 </resources>

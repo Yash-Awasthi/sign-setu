@@ -189,6 +189,8 @@ fun Stage(
         else -> "namaste"
     }
     val plan = remember(pending, content) { (pending as? Pending.FreeText)?.let { content.planText(it.text, it.modes) } }
+    // Word highlighting follows the planned words, so it shows only when the caption is those same words.
+    val highlightable = (pending as? Pending.FreeText)?.caption == null
     val gesture = when {
         gestureId != null -> content.gestures[gestureId]
         pending is Pending.PhraseAsk -> content.gestureFor(pending.phrase, pending.slot)
@@ -276,7 +278,7 @@ fun Stage(
                         transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.92f)) togetherWith fadeOut() },
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp, start = 52.dp, end = 52.dp),
                         label = "caption",
-                    ) { text -> if (text != null) Bubble(text, large = largeCaptions, compact = !roomy, highlight = beat?.range?.takeIf { text == item.caption }) }
+                    ) { text -> if (text != null) Bubble(text, large = largeCaptions, compact = !roomy, highlight = beat?.range?.takeIf { highlightable && text == item.caption }) }
                     val spelled = beat?.letters
                     val shownCard = beat?.card
                     if (spelled != null) {
@@ -377,7 +379,7 @@ private fun answerAreaHeight(item: StageItem): Dp {
 private fun describeItem(pending: Pending?, content: ContentBundle, lang: String): StageItem {
     val (caption, cards) = when (pending) {
         is Pending.Ask -> pending.question.text.pick(lang) to pending.question.cards
-        is Pending.FreeText -> pending.text to pending.cardIds
+        is Pending.FreeText -> (pending.caption ?: pending.text) to pending.cardIds
         is Pending.Cards -> null to pending.cardIds
         is Pending.ShowBack -> content.subjectText("is_this_it", lang) to emptyList()
         is Pending.PhraseAsk -> pending.slot.text.pick(lang) to listOf(pending.slot.card)

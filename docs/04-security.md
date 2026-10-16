@@ -45,7 +45,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | ID | Control |
 | --- | --- |
 | SEC-30 | Release 1 declares no INTERNET permission; the build fails if the merged manifest contains it. |
-| SEC-31 to SEC-34 | Release 1.1 only: TLS 1.2+, certificate pinning to the project gateway, server-side validation, partner keys only in the gateway (see [archive/06-security-architecture.md](archive/06-security-architecture.md)). |
+| SEC-31 to SEC-34 | Release 1.1 only: TLS 1.2+, certificate pinning to the project gateway, server-side validation, partner keys only in the gateway. |
 
 ### 2.5 Platform interaction
 
@@ -80,6 +80,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | SEC-62 | Release signing key generated offline, held by the release manager with a second custodian and an offline backup in department custody; APK Signature Scheme v3. |
 | SEC-63 | Rooted or test-key device: warn the officer and disable session history; do not block the app in an emergency [confirm with department]. |
 | SEC-64 | Build expiry: new sessions refused 180 days after the build date (FR-67), because personal phones have no device management. |
+| SEC-65 | The assistant model is imported from a file, never downloaded; it is kept only if its SHA-256 is on the app's allow-list, computed while copying, so no other file reaches the native parser. Each request starts from an empty context and nothing typed is stored by the assistant. | D-24 |
 
 ## 3. Key management
 

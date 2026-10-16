@@ -1,5 +1,9 @@
 package app.signsetu.ui.settings
 
+import androidx.compose.runtime.remember
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import app.signsetu.assistant.ModelStore
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.graphics.Color
@@ -74,7 +78,7 @@ private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> Unit) {
+fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit) {
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
@@ -82,6 +86,21 @@ fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> U
     var dialog by rememberSaveable { mutableStateOf<Dialog?>(null) }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val notSet = stringResource(R.string.settings_not_set)
+    var modelState by remember { mutableStateOf(models.state()) }
+    var importing by remember { mutableStateOf(false) }
+    var badModel by remember { mutableStateOf(false) }
+    // The department hands out the model as a file; it is copied in and checked, never downloaded (D-24).
+    val pickModel = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            importing = true
+            badModel = false
+            scope.launch {
+                badModel = !models.import(uri)
+                modelState = models.state()
+                importing = false
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -141,6 +160,37 @@ fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> U
                     trailingContent = { Switch(checked = s.pinToLeaveStage, onCheckedChange = null) },
                     modifier = Modifier.toggleable(s.pinToLeaveStage, role = Role.Switch) { on -> scope.launch { store.setPinToLeaveStage(on) } },
                 )
+            }
+            Group(R.string.settings_assistant) {
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            stringResource(
+                                when {
+                                    importing -> R.string.settings_assistant_importing
+                                    badModel -> R.string.settings_assistant_bad
+                                    else -> when (modelState) {
+                                        ModelStore.State.READY -> R.string.settings_assistant_ready
+                                        ModelStore.State.NOT_INSTALLED -> R.string.settings_assistant_missing
+                                        ModelStore.State.TOO_LITTLE_MEMORY -> R.string.settings_assistant_memory
+                                        ModelStore.State.UNSUPPORTED -> R.string.settings_assistant_unsupported
+                                    }
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (badModel) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                        )
+                    },
+                    colors = ItemColors,
+                )
+                if (!importing && modelState == ModelStore.State.NOT_INSTALLED) {
+                    Item(stringResource(R.string.settings_assistant_import), "") { pickModel.launch(arrayOf("*/*")) }
+                }
+                if (!importing && modelState == ModelStore.State.READY) {
+                    Item(stringResource(R.string.settings_assistant_remove), "", destructive = true) {
+                        scope.launch { models.remove(); modelState = models.state() }
+                    }
+                }
             }
             Group(R.string.settings_records) {
                 Item(
@@ -272,7 +322,7 @@ private fun Item(title: String, summary: String, note: String? = null, destructi
         headlineContent = { Text(title, color = if (destructive) colors.error else colors.onSurface) },
         supportingContent = {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(summary)
+                if (summary.isNotEmpty()) Text(summary)
                 note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
             }
         },

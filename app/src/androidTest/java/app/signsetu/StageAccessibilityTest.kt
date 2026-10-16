@@ -81,7 +81,7 @@ class StageAccessibilityTest(private val dark: Boolean) {
         )
         show {
             SubjectTheme {
-                Stage(ui, content, tracker = null, cameraOn = false, largeCaptions = false, gestureSpeed = 1f, {}, {}, {}, {}, {})
+                Stage(ui, content, tracker = null, cameraOn = false, largeCaptions = false, gestureSpeed = 1f, {}, {}, {}, {}, {}, {})
             }
         }
     }

@@ -77,4 +77,12 @@ class LogicTest {
         assertNull(whatsappNumber("Interpreter desk"))
         assertNull(whatsappNumber("12345"))
     }
+
+    @Test
+    fun assistantTranslatesOnlyWhenTheSubjectReadsSomethingElse() {
+        assertTrue(app.signsetu.assistant.needsTranslation("are you hungry?", "hi"))
+        assertTrue(app.signsetu.assistant.needsTranslation("are you hungry?", "or"))
+        assertFalse(app.signsetu.assistant.needsTranslation("क्या तुम भूखे हो?", "hi"))
+        assertFalse(app.signsetu.assistant.needsTranslation("are you hungry?", "en"))
+    }
 }

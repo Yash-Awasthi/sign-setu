@@ -46,7 +46,7 @@ CI runners use least-privilege tokens; signing credentials are not available to 
 ## 5. Signing and keys
 
 - The release signing key is generated offline and held encrypted by the release manager with a second custodian; an offline backup stays in department custody. Losing it means installed apps cannot be updated, so the backup is mandatory.
-- From release 1.1, gateway TLS certificate pins: ship a backup pin in every release; rotate before expiry (see [security architecture](../archive/06-security-architecture.md) §3).
+- From release 1.1, gateway TLS certificate pins: ship a backup pin in every release; rotate before expiry .
 
 ## 6. Release process
 

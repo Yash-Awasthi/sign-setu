@@ -158,7 +158,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-12 Subject profiles decide what the subject sees and hears
 
-**Status:** Accepted 16 October 2026 (see [critical review](archive/22-critical-review.md) C-1, C-7)
+**Status:** Accepted 16 October 2026
 
 **Context.** Most deaf children do not know ISL; hearing children may speak another language and be unable to read. One ISL-first output serves neither.
 
@@ -287,7 +287,7 @@ Status: Proposed, Accepted, Superseded.
 
 **Context.** Officers in Chhattisgarh, including its Naxal-affected districts, need to say things the triage set and phrase bank do not cover, and reaching a prepared question took several taps. Free text shown only as a caption reaches nobody who cannot read. Grammatical text-to-ISL translation does not exist offline at no cost.
 
-**Decision.** The composer at the bottom of the officer panel takes any text; Send shows it at once. The character plays it word by word, under four toggles the officer sets per person: **Signs** plays the ISL sign for a word, **Gestures** the everyday gesture a child who does not sign understands, **Spell** fingerspells any other word with the two-handed ISL alphabet (Hindi is first written in Latin letters, as Deaf signers spell it), and **Pictures** holds up the word's picture. Signers start with Signs, Spell and Pictures; everyone else with Gestures and Pictures. A question mark adds the asking face. The word being played is lit in the caption, and a spelled word shows its current letter beside the character. The vocabulary (`words.json`) lists each word in English, Hindi, Hindi in Latin letters and common Chhattisgarhi and Gondi forms; the alphabet, digits and new signs are generated into `signs.json` by `tools/content/build_signs.py`. Chhattisgarhi, Gondi and Halbi join the language finder as text only.
+**Decision.** The composer at the bottom of the officer panel takes any text; Send shows it at once. The character plays it word by word, under four toggles the officer sets per person: **Signs** plays the ISL sign for a word (or, if it has none, its everyday gesture, which signers read faster than spelling), **Gestures** the everyday gesture a child who does not sign understands, **Spell** fingerspells any other word with the two-handed ISL alphabet (Hindi is first written in Latin letters, as Deaf signers spell it), and **Pictures** holds up the word's picture. Signers start with Signs, Spell and Pictures; everyone else with Gestures and Pictures. A question mark adds the asking face. The word being played is lit in the caption, and a spelled word shows its current letter beside the character. The vocabulary (`words.json`) lists each word in English, Hindi, Hindi in Latin letters and common Chhattisgarhi and Gondi forms; the alphabet, digits and new signs are generated into `signs.json` by `tools/content/build_signs.py`. Chhattisgarhi, Gondi and Halbi join the language finder as text only.
 
 **Consequences.** Word-by-word signing is not ISL grammar, so the stage presents it as words, not sentences, and prepared questions stay the first choice. Every letter, digit, sign and vocabulary entry is a draft until the ISL and language reviewers sign it off in the content review record; the new languages need native speakers for their greetings and any recordings. The Type sheet is removed; pictures for a typed question are attached from the type box.
 
@@ -304,3 +304,16 @@ Status: Proposed, Accepted, Superseded.
 **Consequences.** One prompt per session at most: the phone's own unlock when pinning ends. A subject who discovers the held press can open the officer panel of their own session; departments that judge this a risk turn the setting on. Threat T-21's controls and test TC-03 change accordingly.
 
 **Amendment.** At the product owner's direction a single tap on the handle replaces the held press. The handle stays small and out of the way; a subject who taps it reaches the officer panel of their own session, which raises T-21 to Medium unless the department turns the credential setting on.
+
+---
+
+## D-24 An optional on-device model translates typed text, with a back-translation
+
+**Status:** Accepted 16 October 2026; brings FR-68 forward from release 1.1 without a network
+
+**Context.** Officers type in English or Hindi; many subjects read another language, and in the Naxal-affected districts there is often no network, so a cloud service such as Bhashini cannot be relied on. Small language models now run on mid-range phones, but they make translation mistakes, and a wrong question in a child interview can mislead.
+
+**Decision.** An optional model file runs on the phone through llama.cpp. The assistant translates the officer's typed text into the subject's language and then back into English; the officer sees both, marked "machine translation, not checked", and chooses whether to show the caption. The character still signs the officer's own words. The model is Gemma 3 1B (Q4_K_M), imported from a file the department hands out and accepted only by its SHA-256; the app never downloads it and gains no network permission. It is offered only on phones with about 3 GB of memory or more. Details: [on-device assistant](12-on-device-assistant.md).
+
+**Consequences.** The release APK grows by 5.9 MB; with the model loaded a session exceeds the 300 MB memory target, so it loads on first use and is freed when the app locks. The Gemma licence is not OSI open source; a fully open model can replace it by hash. Language reviewers spot-check output per pilot language. Asking the model to put sentences in ISL order was tried and dropped: it produced wrong output, and the rule-based word matching of D-22 stays.
+

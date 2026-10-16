@@ -13,18 +13,20 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | [04-security.md](04-security.md) | Security controls (MASVS L2, CERT-In), keys, threats in scope |
 | [05-avatar-and-gestures.md](05-avatar-and-gestures.md) | Gesture and ISL lexicons, the two characters, clip pipeline, validation |
 | [06-test-plan.md](06-test-plan.md) | Functional, performance, security, accessibility tests; testing with children |
-| [07-decisions.md](07-decisions.md) | Decision log D-01 to D-21 |
-| [08-plan.md](08-plan.md) | Gated delivery phases and phase 0 status |
+| [07-decisions.md](07-decisions.md) | Decision log D-01 to D-24 |
+| [08-plan.md](08-plan.md) | Release path: the four gates to production, and pilot success criteria |
 | [09-open-source.md](09-open-source.md) | Reusable open-source components per module, with licences |
 | [10-test-report.md](10-test-report.md) | Phase 1 test results against the test plan, with open items |
 | [11-hand-model-integration.md](11-hand-model-integration.md) | Contract for the partner team's hand model: interface, input, output, budgets, packaging, acceptance |
+| [12-on-device-assistant.md](12-on-device-assistant.md) | The optional on-device translation assistant: model, installation, budgets |
+| [13-product-overview.md](13-product-overview.md) | One reference for explaining the product: features, mechanisms, character, camera direction, export, stack, frontend, readiness |
+| [14-presentation-script.md](14-presentation-script.md) | Spoken walk-through with demonstration steps and likely questions |
 
 ## Other folders
 
 | Folder | Contents |
 | --- | --- |
 | [governance/](governance/README.md) | Compliance pack for the department, legal adviser and CERT-In auditor: threat model, DPIA, compliance matrix, risk register, release process, incident response, UAT, user guide, training, audit scope, policies, agreements, forms |
-| [archive/](archive/) | Superseded drafts and research, kept for reference |
 | [tools/](tools/) | Generator for `system-design.html` |
 
 ## Conventions

@@ -1,6 +1,6 @@
 # 05. Avatar and Gesture Design
 
-Status: Accepted (D-12, D-13, D-14, D-20, D-21). Replaces the skeleton avatar in D-03. Release 1 draws both characters in code (D-21, section 5.7). Background and evidence are in the [critical review](archive/22-critical-review.md).
+Status: Accepted (D-12, D-13, D-14, D-20, D-21). Replaces the skeleton avatar in D-03. Release 1 draws both characters in code (D-21, section 5.7).
 
 ## 1. Answers in brief
 

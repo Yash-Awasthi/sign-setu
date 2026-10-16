@@ -51,8 +51,9 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
         val entry = words[word]
         val start = t
         val card = if (SignMode.PICTURES in modes) entry?.card ?: word.toIntOrNull()?.takeIf { it in 1..10 }?.let { "n$it" } else null
+        // A signer reads an everyday gesture far faster than a spelled word, so Signs falls back to it before spelling.
         val motion = entry?.sign?.takeIf { SignMode.SIGNS in modes }?.let(gestures::get)
-            ?: entry?.gesture?.takeIf { SignMode.GESTURES in modes }?.let(gestures::get)
+            ?: entry?.gesture?.takeIf { SignMode.GESTURES in modes || SignMode.SIGNS in modes }?.let(gestures::get)
         var letters: String? = null
         when {
             motion != null -> add(motion)

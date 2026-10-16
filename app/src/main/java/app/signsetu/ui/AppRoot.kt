@@ -1,5 +1,12 @@
 package app.signsetu.ui
 
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.ExperimentalComposeUiApi
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.EditorInfo
+import app.signsetu.assistant.ModelStore
+import app.signsetu.assistant.Assistant
 import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
@@ -78,7 +85,7 @@ fun AppRoot(container: AppContainer, guard: DeviceGuard) {
     val title = stringResource(R.string.lock_prompt_title)
     val subtitle = stringResource(R.string.lock_prompt_subtitle)
 
-    CompositionLocalProvider(LocalContentRepository provides container.content) {
+    CompositionLocalProvider(LocalContentRepository provides container.content) { NoPersonalisedLearning {
         SignSetuTheme {
             val r = repo
             val c = content
@@ -103,7 +110,27 @@ fun AppRoot(container: AppContainer, guard: DeviceGuard) {
                 )
             }
         }
-    }
+    } }
+}
+
+/**
+ * SEC-05: every text field in the app asks the keyboard not to learn from what is typed, since it is about a subject.
+ * Compose has no keyboard option for this, so the flag is added to each input connection as it is created.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun NoPersonalisedLearning(content: @Composable () -> Unit) {
+    InterceptPlatformTextInput(
+        interceptor = { request, next ->
+            next.startInputMethod(object : PlatformTextInputMethodRequest {
+                override fun createInputConnection(outAttributes: EditorInfo): InputConnection =
+                    request.createInputConnection(outAttributes).also {
+                        outAttributes.imeOptions = outAttributes.imeOptions or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+                    }
+            })
+        },
+        content = content,
+    )
 }
 
 @Composable
@@ -127,12 +154,13 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                 )
             }
             entry<SettingsKey> {
-                SettingsScreen(container.settings, onBack = { backStack.removeLastOrNull() }, onClearAll = container::clearAllData)
+                SettingsScreen(container.settings, container.models, onBack = { backStack.removeLastOrNull() }, onClearAll = container::clearAllData)
             }
             entry<SessionKey> { key ->
                 SessionRoute(
                     key.id, repo, content, settings, guard, container.report, container.handTracker,
                     onFavourite = { id -> scope.launch { container.settings.toggleFavourite(id) } },
+                    assistant = container.assistant.takeIf { container.models.state() == ModelStore.State.READY },
                     onClosed = { backStack.removeLastOrNull() },
                 )
             }
@@ -149,6 +177,7 @@ private fun SessionRoute(
     guard: DeviceGuard,
     report: SessionReport,
     tracker: HandTracker?,
+    assistant: Assistant?,
     onFavourite: (String) -> Unit,
     onClosed: () -> Unit,
 ) {
@@ -191,6 +220,7 @@ private fun SessionRoute(
             onCameraOn = { cameraOn = it },
             favourites = settings.favourites,
             onFavourite = onFavourite,
+            assistant = assistant,
             onCallInterpreter = if (settings.interpreterConfigured) {
                 {
                     guard.unpin()

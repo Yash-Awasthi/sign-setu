@@ -21,6 +21,16 @@ android {
         versionName = "0.1.0"
         buildConfigField("long", "BUILD_EPOCH_DAY", "${LocalDate.now().toEpochDay()}L")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // The on-device assistant (D-24) runs only on 64-bit phones; the x86_64 build serves the emulator.
+        externalNativeBuild { cmake { abiFilters += listOf("arm64-v8a", "x86_64"); arguments += "-DCMAKE_BUILD_TYPE=Release" } }
+    }
+
+    ndkVersion = "27.1.12297006"
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     // The officer picks the app language in Settings, so every language must ship in every install.

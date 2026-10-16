@@ -281,6 +281,7 @@ fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss:
                     placeholder = { Text(stringResource(R.string.log_note_hint)) },
                     // SEC-05: the keyboard should not learn or suggest from what is noted about a subject.
                     keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.weight(1f),
                 )
                 Button(

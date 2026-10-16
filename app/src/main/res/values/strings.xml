@@ -238,4 +238,18 @@
     <string name="chat_empty_body">Pick a question below or type anything. What you show and their answers appear here.</string>
     <string name="chat_ready">Ready to show</string>
     <string name="log_typed">Typed answer</string>
+    <string name="ai_suggest">Assistant</string>
+    <string name="ai_working">Thinking…</string>
+    <string name="ai_caption">In %1$s: machine translation, not checked</string>
+    <string name="ai_meaning">Which means</string>
+    <string name="ai_none">The assistant could not help with this; it will be shown as typed.</string>
+    <string name="settings_assistant">On-device assistant</string>
+    <string name="settings_assistant_ready">Installed. Translates typed text into their language and back, on this phone only.</string>
+    <string name="settings_assistant_missing">Not installed. Import the model file your department gives you.</string>
+    <string name="settings_assistant_memory">Needs a phone with at least 3 GB of memory.</string>
+    <string name="settings_assistant_unsupported">Not available on this phone.</string>
+    <string name="settings_assistant_import">Import model file</string>
+    <string name="settings_assistant_importing">Checking and importing the file…</string>
+    <string name="settings_assistant_bad">That file is not a model this app knows; nothing was installed.</string>
+    <string name="settings_assistant_remove">Remove the model</string>
 </resources>

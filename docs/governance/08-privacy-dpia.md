@@ -15,7 +15,7 @@ The app processes personal data of people in a vulnerable situation, most often 
 | Data principals | Subjects (lost, rescued or kidnapped persons, often children, often persons with disabilities); officers |
 | Purpose | Communicate with a subject who cannot communicate in words, to ensure their safety, meet immediate needs and identify their family, in the course of police duties |
 | Not purposes | Formal statements, evidence collection, identification of suspects, profiling, analytics |
-| Data | See [DFD data inventory](../archive/04-data-flow-diagrams.md#data-inventory) |
+| Data | See [system design](../system-design.html) data dictionary (Tables 4 and 5) |
 | Storage | Encrypted on the officer's phone only; no server |
 | Retention | Until exported or the auto-delete period ends (default 24 hours) |
 | Recipients | Officer; export recipients chosen by the officer under the SOP (case file, CWC) |
