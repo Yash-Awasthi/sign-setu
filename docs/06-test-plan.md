@@ -8,7 +8,7 @@
 | UI | Officer and Show flows | Compose UI tests on the API 29 emulator | Every change |
 | Device | Release build on real phones | Scripts below, Macrobenchmark | End of each phase |
 | Security | MASVS L2 checks, static analysis, dependency and secret scans | Lint, Semgrep, OSV-Scanner, gitleaks, MobSF static | Every change (static); phase 2 (full) |
-| Accessibility | IS 17802 / WCAG 2.1 AA on the officer panel | Accessibility Scanner, TalkBack | Phase 1 end, phase 2 |
+| Accessibility | IS 17802 / WCAG 2.1 AA on the officer panel | Accessibility Test Framework in instrumented tests (the Accessibility Scanner engine), TalkBack | Every pull request; TalkBack at phase 1 end and phase 2 |
 | Content | Translations, clips, gestures, audio | Reviewers per the content policy | Phase 2 |
 | Acceptance | Department testers | [governance/17-uat-scripts.md](governance/17-uat-scripts.md) | Phase 2 end |
 
@@ -60,7 +60,7 @@ Release build on the API 29 emulator with 3 GB RAM, then on a real Android 10 ph
 | RD-02 | Low storage during export | Clear message; session intact |
 | RD-03 | Battery saver, dark mode, 200% font | App fully usable |
 | RD-04 | Device lock removed while sessions exist | Sessions unreadable; app explains and offers Clear |
-| RD-05 | Corrupted content file | Hash check fails; picture and caption fallback; officer told |
+| RD-05 | Corrupted content file | Hash check fails; a failed picture, sound or gesture is left out and the rest still works; a failed text file stops new sessions; the officer is told |
 
 ## 5. Security
 
@@ -85,7 +85,7 @@ ST-06 and ST-11 (attestation, gateway fuzzing) apply from release 1.1.
 
 | ID | Test | Requirement |
 | --- | --- | --- |
-| AT-01 | Accessibility Scanner on every screen: no target or contrast failures | NFR-20, NFR-21 |
+| AT-01 | Accessibility checks (Accessibility Test Framework or Scanner) on every screen: no label, target or contrast failures | NFR-20, NFR-21 |
 | AT-02 | 200% font scale: officer panel usable | NFR-22 |
 | AT-03 | TalkBack: complete triage flow as officer | NFR-23 |
 | AT-04 | Every supported script renders without clipping | NFR-25 |

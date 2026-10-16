@@ -23,6 +23,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // The officer picks the app language in Settings, so every language must ship in every install.
+    bundle { language { enableSplit = false } }
+
     buildTypes {
         release {
             // Officers' phones are ARM; x86 libraries only serve the emulator in debug builds.
@@ -128,4 +131,5 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.compose.ui.test.junit4.accessibility)
 }

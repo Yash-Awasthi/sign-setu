@@ -2,7 +2,10 @@ package app.signsetu.ui.session
 
 import android.graphics.Bitmap
 import android.graphics.Paint
+import androidx.core.graphics.createBitmap
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -47,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -80,6 +84,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -104,6 +110,7 @@ import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Spacing
 import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.delay
 
 /** Profiles whose subjects hear the questions without the officer pressing play (03-ux §3). */
 private val AutoSpeech = setOf(Profile.YOUNG_CHILD, Profile.OTHER_LANGUAGE)
@@ -152,10 +159,11 @@ fun Stage(
         pending is Pending.Ask -> pending.question.gesture ?: pending.question.lexicon
         pending is Pending.ShowBack -> pending.entry.id
         pending is Pending.FreeText || pending is Pending.Cards -> "ask"
+        pending is Pending.PhraseAsk -> null
         pending == Pending.LanguageFinder -> "wave"
         else -> "namaste"
     }
-    val gesture = gestureId?.let { content.gestures[it] }
+    val gesture = if (pending is Pending.PhraseAsk && gestureId == null) content.gestureFor(pending.phrase, pending.slot) else gestureId?.let { content.gestures[it] }
     val caption = when {
         reacting -> content.subjectText("okay", lang)
         drawing -> content.subjectText("draw", lang)
@@ -190,6 +198,7 @@ fun Stage(
                         gesture = gesture,
                         playKey = if (reacting) "react:${ui.answeredCard}:${ui.answeredYes}" else Triple(pending, replays, ui.chosenLanguage),
                         speed = if (slow) 0.5f else gestureSpeed,
+                        glance = pending != null && !drawing && !reacting,
                         onFinished = { reacting = false },
                         modifier = Modifier
                             .fillMaxHeight(0.76f)
@@ -203,11 +212,13 @@ fun Stage(
                         label = "caption",
                     ) { text -> if (text != null) Bubble(text, large = largeCaptions) }
                     item.held?.let { id ->
-                        HeldCard(
-                            id,
-                            content.cards[id]?.label?.pick(lang),
-                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 20.dp),
-                        )
+                        key(id) {
+                            HeldCard(
+                                id,
+                                content.cards[id]?.label?.pick(lang),
+                                Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 20.dp).popIn(rememberPopIn(150)),
+                            )
+                        }
                     }
                     OfficerHandle(onOfficer, Modifier.align(Alignment.TopEnd))
                     val replayable = gesture != null || (audio != null && profile != Profile.ISL_USER)
@@ -273,6 +284,7 @@ private fun describeItem(pending: Pending?, content: ContentBundle, lang: String
         is Pending.FreeText -> pending.text to pending.cardIds
         is Pending.Cards -> null to pending.cardIds
         is Pending.ShowBack -> content.subjectText("is_this_it", lang) to emptyList()
+        is Pending.PhraseAsk -> pending.slot.text.pick(lang) to listOf(pending.slot.card)
         else -> null to emptyList()
     }
     val pictures = cards.filter { it != "draw" && it in content.cards }
@@ -370,7 +382,7 @@ private fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
             .padding(6.dp)
             .size(48.dp)
             .clip(CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Surface(shape = CircleShape, color = stage.handle, modifier = Modifier.size(34.dp)) {
@@ -383,17 +395,18 @@ private fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
 private fun ReplayControls(onReplay: () -> Unit, onSlow: () -> Unit, modifier: Modifier) {
     Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.85f), shadowElevation = 2.dp, modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onReplay), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onReplay), contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.show_replay), tint = Color(0xFF2B2118), modifier = Modifier.size(28.dp))
             }
             val slowName = stringResource(R.string.show_slow)
-            Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onSlow).semantics { contentDescription = slowName }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onSlow).semantics { contentDescription = slowName }, contentAlignment = Alignment.Center) {
                 Text(
                     "½×",
                     fontFamily = Baloo,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = Color(0xFF2B2118),
+                    modifier = Modifier.clearAndSetSemantics { },
                 )
             }
         }
@@ -431,7 +444,7 @@ private fun MirrorWindow(
         } else {
             MirrorPlaceholder()
         }
-        if (choices.isNotEmpty() || canDraw) {
+        if (choices.isNotEmpty() || canDraw) key(choices) {
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -443,14 +456,18 @@ private fun MirrorWindow(
                 if (numbers) {
                     choices.chunked(5).forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
-                            row.forEach { id -> NumberButton(id.removePrefix("n"), chosenCard == id, { onCard(id) }, Modifier.weight(1f)) }
+                            row.forEach { id ->
+                                val delay = 40 * choices.indexOf(id)
+                                NumberButton(id.removePrefix("n"), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(delay)))
+                            }
                         }
                     }
                 } else {
                     choices.chunked(3).forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
                             row.forEach { id ->
-                                ChoiceTile(id, content.cards[id]?.label?.pick(lang), chosenCard == id, { onCard(id) }, Modifier.weight(1f))
+                                val delay = 70 * choices.indexOf(id)
+                                ChoiceTile(id, content.cards[id]?.label?.pick(lang), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(delay)))
                             }
                             repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
@@ -460,6 +477,25 @@ private fun MirrorWindow(
             }
         }
     }
+}
+
+/** Entrance for things put in front of the subject: a short rise and settle, so a new picture is noticed. */
+@Composable
+private fun rememberPopIn(delayMillis: Int): Animatable<Float, AnimationVector1D> {
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(delayMillis.toLong())
+        progress.animateTo(1f, spring(dampingRatio = 0.6f, stiffness = 380f))
+    }
+    return progress
+}
+
+private fun Modifier.popIn(progress: Animatable<Float, AnimationVector1D>) = graphicsLayer {
+    val p = progress.value
+    alpha = p.coerceIn(0f, 1f)
+    scaleX = 0.7f + 0.3f * p
+    scaleY = 0.7f + 0.3f * p
+    translationY = (1f - p) * 24.dp.toPx()
 }
 
 @Composable
@@ -497,7 +533,7 @@ private fun NumberButton(digit: String, chosen: Boolean, onClick: () -> Unit, mo
         modifier = modifier.aspectRatio(1f),
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(digit, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 26.sp, color = if (chosen) Color.White else Color(0xFF2B2118))
+            Text(digit, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 26.sp, color = if (chosen) answer.onSelection else Color(0xFF2B2118))
         }
     }
 }
@@ -705,7 +741,7 @@ private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArra
 private fun renderPng(strokes: List<DrawStroke>, size: IntSize, ink: Int, paper: Int): ByteArray {
     val w = size.width.coerceAtLeast(1)
     val h = size.height.coerceAtLeast(1)
-    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val bitmap = createBitmap(w, h)
     val canvas = android.graphics.Canvas(bitmap)
     canvas.drawColor(paper)
     val density = android.content.res.Resources.getSystem().displayMetrics.density

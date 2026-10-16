@@ -10,6 +10,7 @@ import android.graphics.pdf.PdfDocument
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import androidx.core.graphics.withTranslation
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.SessionEvent
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
@@ -91,10 +92,7 @@ class SessionReport(private val context: Context) {
             StaticLayout.Builder.obtain(s, 0, s.length, paint, width).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
 
         fun draw(layout: StaticLayout, x: Float, top: Float) {
-            canvas!!.save()
-            canvas!!.translate(x, top)
-            layout.draw(canvas!!)
-            canvas!!.restore()
+            canvas!!.withTranslation(x, top) { layout.draw(this) }
         }
 
         newPage()

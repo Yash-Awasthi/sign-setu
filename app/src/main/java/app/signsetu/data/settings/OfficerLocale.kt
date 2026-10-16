@@ -2,6 +2,7 @@ package app.signsetu.data.settings
 
 import android.content.Context
 import android.content.res.Configuration
+import androidx.core.content.edit
 import java.util.Locale
 
 /**
@@ -18,7 +19,7 @@ object OfficerLocale {
     fun get(context: Context): String = context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(KEY, "").orEmpty()
 
     fun set(context: Context, tag: String) {
-        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit().putString(KEY, tag).apply()
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit { putString(KEY, tag) }
     }
 
     fun wrap(base: Context): Context {

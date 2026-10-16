@@ -104,6 +104,8 @@ data class StageColors(
     val onWindow: Color,
     val handle: Color,
     val onHandle: Color,
+    /** Wordmark and icons drawn straight on the backdrop. */
+    val title: Color,
 )
 
 internal val StageLight = StageColors(
@@ -118,6 +120,7 @@ internal val StageLight = StageColors(
     onWindow = Color(0xFFF5EFE8),
     handle = Color(0x33000000),
     onHandle = Color(0xFF5B4C3E),
+    title = Color(0xFF143C44),
 )
 
 internal val StageDark = StageColors(
@@ -132,7 +135,11 @@ internal val StageDark = StageColors(
     onWindow = Color(0xFFF5EFE8),
     handle = Color(0x33FFFFFF),
     onHandle = Color(0xFFE7D8C8),
+    title = Color(0xFFF6E7D6),
 )
+
+/** Behind every symbol, in both themes: the symbols have dark outlines drawn for a light ground. */
+val PictureWell = Color(0xFFFFF8EF)
 
 /** Answer colours: also told apart by icon and position, never by colour alone (NFR-21). */
 @Immutable
@@ -150,6 +157,7 @@ data class AnswerColors(
     val pause: Color,
     val onPause: Color,
     val selection: Color,
+    val onSelection: Color,
 )
 
 internal val AnswerLight = AnswerColors(
@@ -166,6 +174,7 @@ internal val AnswerLight = AnswerColors(
     pause = Color(0xFFFFE7BF),
     onPause = Color(0xFF3D2700),
     selection = Color(0xFF1C6E74),
+    onSelection = Color(0xFFFFFFFF),
 )
 
 internal val AnswerDark = AnswerColors(
@@ -182,4 +191,5 @@ internal val AnswerDark = AnswerColors(
     pause = Color(0xFF5C3F00),
     onPause = Color(0xFFFFE7BF),
     selection = Color(0xFF86D4D3),
+    onSelection = Color(0xFF003736),
 )

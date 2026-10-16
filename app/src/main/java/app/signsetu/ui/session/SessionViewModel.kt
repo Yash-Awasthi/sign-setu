@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.LexiconEntry
+import app.signsetu.data.content.Phrase
+import app.signsetu.data.content.PhraseSlot
 import app.signsetu.data.content.Question
 import app.signsetu.data.content.pick
 import app.signsetu.data.session.EventSource
@@ -34,6 +36,7 @@ sealed interface Pending {
     data class FreeText(val text: String, val cardIds: List<String>) : Pending
     data class Cards(val cardIds: List<String>) : Pending
     data class ShowBack(val entry: LexiconEntry) : Pending
+    data class PhraseAsk(val phrase: Phrase, val slot: PhraseSlot) : Pending
     data object LanguageFinder : Pending
     data object Drawing : Pending
 }
@@ -134,6 +137,10 @@ class SessionViewModel(
             is Pending.ShowBack -> repo.log(
                 sessionId, EventType.QUESTION_SHOWN, EventSource.SHOW_BACK, lang,
                 text = pending.entry.label.pick(officerLang), cardId = pending.entry.card, lexiconId = pending.entry.id,
+            )
+            is Pending.PhraseAsk -> repo.log(
+                sessionId, EventType.QUESTION_SHOWN, EventSource.PHRASE, lang,
+                text = pending.slot.text.pick(officerLang), cardId = pending.slot.card,
             )
             Pending.LanguageFinder -> repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_LANGUAGE_FINDER)
             Pending.Drawing -> repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_DRAWING)

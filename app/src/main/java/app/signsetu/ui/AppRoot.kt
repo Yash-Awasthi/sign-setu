@@ -2,8 +2,8 @@ package app.signsetu.ui
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -233,7 +233,7 @@ private fun callInterpreter(activity: Activity, settings: AppSettings) {
     val intent = if (sandes) {
         activity.packageManager.getLaunchIntentForPackage(SANDES_PACKAGE)
     } else {
-        whatsappNumber(settings.interpreterContact)?.let { Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$it")) }
+        whatsappNumber(settings.interpreterContact)?.let { Intent(Intent.ACTION_VIEW, "https://wa.me/$it".toUri()) }
     }
     val opened = intent != null && runCatching { activity.startActivity(intent) }.isSuccess
     val message = when {

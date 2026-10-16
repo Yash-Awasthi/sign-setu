@@ -122,8 +122,10 @@ fun StartScreen(
         Unit
     }
 
+    // A notice or an unfinished session takes room from the stage, so the sheet still fits without scrolling.
+    val stageWeight = if (open != null || rooted || expired || content.rejected.isNotEmpty()) 0.28f else 0.36f
     Column(Modifier.fillMaxSize()) {
-        Box(Modifier.weight(0.36f).fillMaxWidth()) {
+        Box(Modifier.weight(stageWeight).fillMaxWidth()) {
             Backdrop(Modifier.fillMaxSize())
             Box(Modifier.fillMaxSize().statusBarsPadding()) {
                 Avatar(
@@ -133,8 +135,8 @@ fun StartScreen(
                     modifier = Modifier.fillMaxHeight(0.80f).aspectRatio(1f).align(Alignment.BottomCenter),
                 )
                 Row(Modifier.fillMaxWidth().padding(start = Spacing.lg, top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = ink.band, modifier = Modifier.weight(1f))
-                    IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title), tint = ink.band) }
+                    Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = LocalStageColors.current.title, modifier = Modifier.weight(1f))
+                    IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title), tint = LocalStageColors.current.title) }
                 }
                 content.language(lang)?.hello?.let {
                     Box(Modifier.align(Alignment.TopEnd).padding(top = 56.dp, end = 28.dp)) { Bubble(it) }
@@ -145,7 +147,7 @@ fun StartScreen(
             color = MaterialTheme.colorScheme.background,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
             shadowElevation = 8.dp,
-            modifier = Modifier.weight(0.64f).fillMaxWidth(),
+            modifier = Modifier.weight(1f - stageWeight).fillMaxWidth(),
         ) {
             Column(Modifier.fillMaxSize().navigationBarsPadding()) {
                 Column(
@@ -153,6 +155,11 @@ fun StartScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     if (expired) Notice(stringResource(R.string.start_expired_title), stringResource(R.string.start_expired_body), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
+                    if (content.damaged) {
+                        Notice(stringResource(R.string.start_damaged_title), stringResource(R.string.start_damaged_body), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
+                    } else if (content.rejected.isNotEmpty()) {
+                        Notice(null, stringResource(R.string.start_media_rejected), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                    }
                     if (rooted) Notice(null, stringResource(R.string.start_rooted), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                     open?.let { session ->
                         ResumeCard(
@@ -179,7 +186,7 @@ fun StartScreen(
                 }
                 Button(
                     onClick = onStart,
-                    enabled = profile != null && !expired,
+                    enabled = profile != null && !expired && !content.damaged,
                     shape = RoundedCornerShape(22.dp),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = Spacing.md).height(60.dp),
                 ) {

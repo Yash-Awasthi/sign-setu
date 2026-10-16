@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -129,7 +130,7 @@ fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> U
             Header(R.string.settings_records)
             Item(
                 stringResource(R.string.settings_retention),
-                stringResource(R.string.settings_hours, s.retentionHours),
+                pluralStringResource(R.plurals.settings_hours, s.retentionHours, s.retentionHours),
                 note = stringResource(R.string.settings_retention_note),
             ) { dialog = Dialog.RETENTION }
             Item(stringResource(R.string.settings_clear), stringResource(R.string.settings_clear_summary), destructive = true) {
@@ -178,7 +179,7 @@ fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> U
             title = stringResource(R.string.settings_retention),
             options = AppSettings.RETENTION_CHOICES,
             selected = s.retentionHours,
-            label = { stringResource(R.string.settings_hours, it) },
+            label = { pluralStringResource(R.plurals.settings_hours, it, it) },
             onPick = { scope.launch { store.setRetentionHours(it) }; dialog = null },
             onDismiss = { dialog = null },
         )
@@ -247,7 +248,7 @@ private fun Item(title: String, summary: String, note: String? = null, destructi
                 note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
             }
         },
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
     )
 }
 

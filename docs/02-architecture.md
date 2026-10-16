@@ -53,18 +53,22 @@ One Gradle module, organised by feature. Process numbers refer to the [system de
 
 ```
 assets/content/
-  manifest.json        content version, languages, SHA-256 of every file
-  triage.json          questions: id, group, sensitive, captions{lang}, cards[], lexicon_id?, isl_clip?, audio{lang}?
-  lexicon.json         gesture and ISL entries (schema in 05-avatar-and-gestures.md §5.2)
-  gestures.json        character keyframes per gesture, written against named contact points (D-21)
-  phrases.json         phrase-bank templates with typed slots
-  greetings.json       language finder: language, label in its own script, audio file
-  cards/<id>.webp      picture cards
-  clips/<set>/<id>.mp4 480x480 H.264, silent; sets: child, adult, isl
-  audio/<lang>/<id>.ogg Opus, 16 kHz mono
+  manifest.json          content version and the SHA-256 of every file
+  triage.json            groups (sensitive flag) and questions: id, group, text{lang}, cards[], lexicon?, gesture?
+  cards.json             picture board categories and cards: id, category, label{lang}
+  lexicon.json           gesture and ISL entries (schema in 05-avatar-and-gestures.md §5.2)
+  gestures.json          character keyframes per gesture, written against named contact points (D-21)
+  languages.json         language finder: code, name in its own script, English name, greeting
+  subject_ui.json        words the stage shows the subject (Yes, No, Stop, draw), per language
+  phrases.json           phrase bank: sentence patterns, their signs, and per slot the picture, its sign and the full sentence
+  cards/<id>.webp        picture cards
+  audio/<lang>/<id>.ogg  question audio, Opus, 16 kHz mono
+  audio/greet/<lang>.ogg language finder greetings
 ```
 
-- The app checks the manifest hashes at first start after install or update and refuses to show content that fails, falling back to the picture card and caption.
+Later releases add `clips/<set>/<id>.mp4` (480x480 H.264, silent; sets child, adult and ISL).
+
+- The app checks every file against the manifest hashes each time it loads the content, and never parses or shows a file that fails. A failed picture, recording or gesture file is left out and the rest still works; a failed text file stops new sessions, because the subject could otherwise be shown wrong words. Either way the officer sees a notice on the home screen (SEC-54).
 - All approved languages ship in the APK. Recorded audio is about 6 KB per question, so 22 languages fit within the size budget; video clips are the main cost (estimates in [avatar and gestures](05-avatar-and-gestures.md) §5.5).
 - Interface strings use Android resources; subject-facing content uses the bundle, so content changes do not touch code.
 

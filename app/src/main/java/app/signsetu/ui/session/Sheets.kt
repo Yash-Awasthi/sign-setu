@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,7 +41,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -70,6 +73,8 @@ import app.signsetu.data.content.BodyLocation
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.HandAction
 import app.signsetu.data.content.LexiconEntry
+import app.signsetu.data.content.Phrase
+import app.signsetu.data.content.PhraseSlot
 import app.signsetu.data.content.pick
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
@@ -78,11 +83,33 @@ import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.PictureCard
 import app.signsetu.ui.start.LanguagePicker
 import app.signsetu.ui.start.profileTitle
+import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
 import java.text.DateFormat
 import java.util.Date
 
 private const val FAVOURITES = "*favourites"
+
+/** Fills a phrase-bank sentence: the officer picks what it is about (FR-62). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PhraseSheet(phrase: Phrase, content: ContentBundle, lang: String, onPick: (PhraseSlot) -> Unit, onDismiss: () -> Unit) {
+    OfficerSheet(onDismiss) {
+        Column(Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.lg)) {
+            SheetTitle(phrase.label.pick(lang) ?: phrase.id)
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                contentPadding = PaddingValues(top = Spacing.md),
+            ) {
+                items(phrase.slots, key = { it.card }) { slot ->
+                    PictureCard(slot.card, content.cards[slot.card]?.label?.pick(lang), onClick = { onPick(slot) }, minSize = 104.dp)
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +130,7 @@ fun BoardSheet(
         (category == null || c.category == category || (category == FAVOURITES && c.id in favourites)) &&
             (query.isBlank() || c.label.values.any { it.contains(query.trim(), ignoreCase = true) })
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    OfficerSheet(onDismiss) {
         Column(Modifier.fillMaxHeight(0.92f).padding(horizontal = Spacing.lg)) {
             SheetTitle(stringResource(R.string.board_title))
             OutlinedTextField(
@@ -144,11 +171,16 @@ fun BoardSheet(
                             minSize = 104.dp,
                         )
                         val starred = card.id in favourites
-                        IconButton(onClick = { onFavourite(card.id) }, modifier = Modifier.align(Alignment.TopStart).size(40.dp)) {
+                        IconToggleButton(
+                            checked = starred,
+                            onCheckedChange = { onFavourite(card.id) },
+                            modifier = Modifier.align(Alignment.TopStart).padding(start = 6.dp, top = 6.dp).size(48.dp),
+                        ) {
                             Icon(
                                 Icons.Filled.Star,
                                 contentDescription = stringResource(R.string.board_favourite),
-                                tint = if (starred) Color(0xFFF2A72E) else MaterialTheme.colorScheme.outlineVariant,
+                                // Both at least 3:1 on the picture well (NFR-21).
+                                tint = if (starred) Color(0xFFB86E00) else Color(0xFF8A7760),
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -170,7 +202,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry) ->
     var location by rememberSaveable { mutableStateOf<BodyLocation?>(null) }
     var action by rememberSaveable { mutableStateOf<HandAction?>(null) }
     val results = content.lookup(location, action)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    OfficerSheet(onDismiss) {
         LazyColumn(
             Modifier.fillMaxHeight(0.92f),
             contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.xxl),
@@ -223,7 +255,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry) ->
 @Composable
 fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss: () -> Unit) {
     var note by rememberSaveable { mutableStateOf("") }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    OfficerSheet(onDismiss) {
         Column(Modifier.fillMaxHeight(0.92f).padding(horizontal = Spacing.lg).imePadding()) {
             SheetTitle(stringResource(R.string.officer_log))
             if (events.isEmpty()) {
@@ -231,7 +263,7 @@ fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss:
             } else {
                 LazyColumn(Modifier.weight(1f), reverseLayout = true) {
                     items(events.withQuestions().asReversed(), key = { it.first.id }) { (e, question) ->
-                        EventRow(e, question)
+                        EventRow(e, question = question)
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
@@ -274,7 +306,7 @@ fun List<SessionEvent>.withQuestions(): List<Pair<SessionEvent, String?>> {
 val AnswerEvents = setOf(EventType.ANSWER_CARD, EventType.ANSWER_DRAWING, EventType.ANSWER_GESTURE, EventType.ANSWER_UNCLEAR, EventType.LANGUAGE_CHOSEN)
 
 @Composable
-fun EventRow(e: SessionEvent, question: String? = null, modifier: Modifier = Modifier) {
+fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? = null) {
     ListItem(
         overlineContent = {
             Text("${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))}  ·  ${stringResource(e.type.label())}")
@@ -289,7 +321,9 @@ fun EventRow(e: SessionEvent, question: String? = null, modifier: Modifier = Mod
             )
         },
         supportingContent = question?.takeIf { it != e.text }?.let { q -> { Text(q, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
-        leadingContent = e.cardId?.let { id -> { CardImage(id, Modifier.size(40.dp)) } },
+        leadingContent = e.cardId?.let { id ->
+            { Surface(shape = RoundedCornerShape(12.dp), color = PictureWell, modifier = Modifier.size(40.dp)) { CardImage(id, Modifier.padding(4.dp)) } }
+        },
         modifier = modifier,
     )
 }
@@ -304,7 +338,7 @@ fun ChangeSheet(
     onLanguage: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    OfficerSheet(onDismiss, expanded = false) {
         Column(
             Modifier.padding(horizontal = Spacing.lg).navigationBarsPadding().padding(bottom = Spacing.xl),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -328,6 +362,18 @@ fun ChangeSheet(
             LanguagePicker(content, subjectLang, onPick = onLanguage)
         }
     }
+}
+
+/** Every officer sheet. Material's drag handle is 32 dp wide, so it sits in a 48 dp touch area (NFR-20). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OfficerSheet(onDismiss: () -> Unit, expanded: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = expanded),
+        dragHandle = { Box(Modifier.sizeIn(minWidth = 48.dp), contentAlignment = Alignment.Center) { BottomSheetDefaults.DragHandle() } },
+        content = content,
+    )
 }
 
 @Composable
