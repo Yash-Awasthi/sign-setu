@@ -1,0 +1,289 @@
+{
+  "version": 1,
+  "note": "Keyframes for the two characters. Hands are R and L of the character; dx is outward, angle 0 is fingers up and positive tips outward; roll 1 palm to viewer, 0 thumb side, -1 back of hand. Every entry is a candidate until reviewed (05-avatar-and-gestures section 3).",
+  "gestures": [
+    {"id": "okay", "keys": [
+      {"t": 0.0, "face": "smile", "head": {"nod": 0}},
+      {"t": 0.3, "head": {"nod": 0.6}},
+      {"t": 0.6, "head": {"nod": 0}, "face": "happy"},
+      {"t": 1.1}
+    ]},
+    {"id": "namaste", "keys": [
+      {"t": 0.0, "R": {"at": "chest", "dy": -10, "dx": 2, "touch": "palm", "shape": "FLAT", "roll": 0, "angle": -8}, "L": {"at": "chest", "dy": -10, "dx": 2, "touch": "palm", "shape": "FLAT", "roll": 0, "angle": -8}, "face": "smile"},
+      {"t": 0.35, "R": {"at": "chest", "dy": -10, "dx": -1, "touch": "palm", "shape": "FLAT", "roll": 0, "angle": -4}, "L": {"at": "chest", "dy": -10, "dx": -1, "touch": "palm", "shape": "FLAT", "roll": 0, "angle": -4}, "head": {"nod": 0.6}},
+      {"t": 0.9, "head": {"nod": 0}, "face": "happy"},
+      {"t": 1.5}
+    ]},
+    {"id": "wave", "keys": [
+      {"t": 0.0, "R": {"at": "shoulder", "dx": 26, "dy": -58, "shape": "OPEN", "roll": 1, "angle": 10}, "face": "happy"},
+      {"t": 0.25, "R": {"at": "shoulder", "dx": 26, "dy": -58, "shape": "OPEN", "roll": 1, "angle": -15}},
+      {"t": 0.5, "R": {"at": "shoulder", "dx": 26, "dy": -58, "shape": "OPEN", "roll": 1, "angle": 15}},
+      {"t": 0.75, "R": {"at": "shoulder", "dx": 26, "dy": -58, "shape": "OPEN", "roll": 1, "angle": -15}},
+      {"t": 1.0, "R": {"at": "shoulder", "dx": 26, "dy": -58, "shape": "OPEN", "roll": 1, "angle": 10}, "head": {"tilt": -5}},
+      {"t": 1.4}
+    ]},
+    {"id": "ask", "keys": [
+      {"t": 0.0, "R": {"at": "front", "dx": 18, "dy": -4, "shape": "FLAT", "roll": 0.7, "angle": 70}, "L": {"at": "front", "dx": 18, "dy": -4, "shape": "FLAT", "roll": 0.7, "angle": 70}, "face": "ask", "head": {"tilt": 6}, "body": {"shrug": 0.6}},
+      {"t": 0.6, "R": {"at": "front", "dx": 20, "dy": -8, "shape": "FLAT", "roll": 0.8, "angle": 75}, "L": {"at": "front", "dx": 20, "dy": -8, "shape": "FLAT", "roll": 0.8, "angle": 75}},
+      {"t": 1.4, "body": {"shrug": 0.2}}
+    ]},
+    {"id": "show_me", "keys": [
+      {"t": 0.0, "R": {"at": "chest", "dx": 4, "dy": 4, "shape": "FLAT", "roll": 0.6, "angle": 100}, "L": {"at": "chest", "dx": 4, "dy": 4, "shape": "FLAT", "roll": 0.6, "angle": 100}, "face": "ask"},
+      {"t": 0.6, "R": {"at": "front", "dx": 22, "dy": 22, "shape": "OPEN", "roll": 0.9, "angle": 150}, "L": {"at": "front", "dx": 22, "dy": 22, "shape": "OPEN", "roll": 0.9, "angle": 150}, "face": "smile"},
+      {"t": 1.4}
+    ]},
+    {"id": "thumbs_up", "keys": [
+      {"t": 0.0, "R": {"at": "shoulder", "dx": -4, "dy": -18, "elbow": "down", "shape": "THUMB", "roll": 0, "angle": 0}, "face": "happy"},
+      {"t": 0.3, "R": {"at": "shoulder", "dx": -4, "dy": -24, "elbow": "down", "shape": "THUMB", "roll": 0, "angle": 0}, "head": {"nod": 0.4}},
+      {"t": 0.8, "head": {"nod": 0}},
+      {"t": 1.4}
+    ]},
+    {"id": "count", "keys": [
+      {"t": 0.0, "R": {"at": "shoulder", "dx": 8, "dy": -40, "elbow": "down", "shape": "POINT", "roll": 1, "angle": 0}, "face": "smile"},
+      {"t": 0.6, "R": {"at": "shoulder", "dx": 8, "dy": -40, "elbow": "down", "shape": "TWO", "roll": 1, "angle": 0}},
+      {"t": 1.2, "R": {"at": "shoulder", "dx": 8, "dy": -40, "elbow": "down", "shape": "THREE", "roll": 1, "angle": 0}},
+      {"t": 1.8, "R": {"at": "shoulder", "dx": 8, "dy": -40, "elbow": "down", "shape": "FOUR", "roll": 1, "angle": 0}},
+      {"t": 2.4, "R": {"at": "shoulder", "dx": 8, "dy": -40, "elbow": "down", "shape": "OPEN", "roll": 1, "angle": 0}, "face": "ask"},
+      {"t": 3.2}
+    ]},
+    {"id": "sick.forehead", "keys": [
+      {"t": 0.0, "R": {"at": "forehead", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -75, "dx": 4, "dy": -6}, "face": "concern", "head": {"tilt": -4}},
+      {"t": 1.2, "R": {"at": "forehead", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -78, "dx": 2, "dy": -6}},
+      {"t": 1.6}
+    ]},
+    {"id": "medicine.pill", "keys": [
+      {"t": 0.0, "R": {"at": "mouth", "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -35, "dy": 12}, "face": "neutral"},
+      {"t": 0.45, "R": {"at": "mouth", "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -35, "dy": 2}, "face": "round"},
+      {"t": 0.9, "R": {"at": "mouth", "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -35, "dy": 12}, "face": "smile"},
+      {"t": 1.3}
+    ]},
+
+    {"id": "me.chest", "keys": [
+      {"t": 0.0, "R": {"at": "chest", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -78, "dx": 6}, "face": "gentle"},
+      {"t": 0.5, "R": {"at": "chest", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -78, "dx": 6, "dy": 2}, "head": {"nod": 0.3}},
+      {"t": 1.1, "head": {"nod": 0}},
+      {"t": 1.4}
+    ]},
+    {"id": "you.palm", "keys": [
+      {"t": 0.0, "R": {"at": "front", "dx": 6, "dy": -10, "shape": "FLAT", "roll": 0.9, "angle": 20}, "face": "smile"},
+      {"t": 0.5, "R": {"at": "front", "dx": 4, "dy": -18, "shape": "FLAT", "roll": 1, "angle": 35}, "head": {"tilt": 4}},
+      {"t": 1.3}
+    ]},
+    {"id": "mother.bindi", "keys": [
+      {"t": 0.0, "R": {"at": "forehead", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -40, "dy": 10, "dx": 4}, "face": "smile"},
+      {"t": 0.45, "R": {"at": "forehead", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -40}},
+      {"t": 1.1, "R": {"at": "forehead", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -40}},
+      {"t": 1.4}
+    ]},
+    {"id": "mother.sindoor", "keys": [
+      {"t": 0.0, "R": {"at": "hairline", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -25, "dy": 6}, "face": "smile"},
+      {"t": 0.5, "R": {"at": "head_top", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -10, "dy": 4}},
+      {"t": 0.8, "R": {"at": "hairline", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -25, "dy": 6}},
+      {"t": 1.3, "R": {"at": "head_top", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -10, "dy": 4}},
+      {"t": 1.6}
+    ]},
+    {"id": "mother.headcover", "keys": [
+      {"t": 0.0, "R": {"at": "head_top", "touch": "palm", "dx": 10, "shape": "FLAT", "roll": -1, "angle": -40}, "L": {"at": "head_top", "touch": "palm", "dx": 10, "shape": "FLAT", "roll": -1, "angle": -40}, "face": "smile"},
+      {"t": 0.7, "R": {"at": "ear", "touch": "palm", "dx": 6, "shape": "FLAT", "roll": -1, "angle": -5}, "L": {"at": "ear", "touch": "palm", "dx": 6, "shape": "FLAT", "roll": -1, "angle": -5}},
+      {"t": 1.2, "R": {"at": "shoulder", "touch": "palm", "dy": -8, "shape": "FLAT", "roll": -1, "angle": 5}, "L": {"at": "shoulder", "touch": "palm", "dy": -8, "shape": "FLAT", "roll": -1, "angle": 5}},
+      {"t": 1.6}
+    ]},
+    {"id": "mother.nosering", "keys": [
+      {"t": 0.0, "R": {"at": "nose_side", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -55, "dy": 8, "dx": 4}, "face": "smile"},
+      {"t": 0.45, "R": {"at": "nose_side", "touch": "tip", "shape": "POINT", "roll": 0, "angle": -55}},
+      {"t": 1.1},
+      {"t": 1.4}
+    ]},
+    {"id": "father.moustache", "keys": [
+      {"t": 0.0, "R": {"at": "mouth", "dy": -6, "dx": -2, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -80}, "face": "smile"},
+      {"t": 0.4, "R": {"at": "mouth", "dy": -7, "dx": 9, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -70}},
+      {"t": 0.6, "R": {"at": "mouth", "dy": -6, "dx": -2, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -80}},
+      {"t": 1.0, "R": {"at": "mouth", "dy": -7, "dx": 9, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -70}},
+      {"t": 1.4}
+    ]},
+    {"id": "father.beard", "keys": [
+      {"t": 0.0, "R": {"at": "chin", "dy": -4, "touch": "palm", "shape": "CUP", "roll": -0.6, "angle": -85}, "face": "smile"},
+      {"t": 0.45, "R": {"at": "chin", "dy": 10, "touch": "palm", "shape": "CUP", "roll": -0.6, "angle": -85}},
+      {"t": 0.7, "R": {"at": "chin", "dy": -4, "touch": "palm", "shape": "CUP", "roll": -0.6, "angle": -85}},
+      {"t": 1.15, "R": {"at": "chin", "dy": 10, "touch": "palm", "shape": "CUP", "roll": -0.6, "angle": -85}},
+      {"t": 1.5}
+    ]},
+    {"id": "father.turban", "keys": [
+      {"t": 0.0, "R": {"at": "temple", "touch": "palm", "dx": 6, "shape": "FLAT", "roll": -1, "angle": -15}, "face": "smile"},
+      {"t": 0.4, "R": {"at": "head_top", "touch": "palm", "dy": -4, "shape": "FLAT", "roll": -1, "angle": -70}},
+      {"t": 0.8, "R": {"at": "temple_opp", "touch": "palm", "dx": -6, "shape": "FLAT", "roll": -1, "angle": -110}},
+      {"t": 1.2, "R": {"at": "head_top", "touch": "palm", "dy": -4, "shape": "FLAT", "roll": -1, "angle": -70}},
+      {"t": 1.6, "R": {"at": "temple", "touch": "palm", "dx": 6, "shape": "FLAT", "roll": -1, "angle": -15}},
+      {"t": 1.9}
+    ]},
+    {"id": "grandparent.stick", "keys": [
+      {"t": 0.0, "R": {"at": "low", "dx": 18, "dy": -14, "shape": "FIST", "roll": 0, "angle": 0, "prop": "stick"}, "face": "gentle", "body": {"hunch": 0.7, "lean": -0.2}},
+      {"t": 0.5, "R": {"at": "low", "dx": 18, "dy": -10, "shape": "FIST", "roll": 0, "angle": 0, "prop": "stick"}, "body": {"hunch": 0.8, "lean": -0.2}},
+      {"t": 1.0, "R": {"at": "low", "dx": 18, "dy": -14, "shape": "FIST", "roll": 0, "angle": 0, "prop": "stick"}, "body": {"hunch": 0.7, "lean": -0.2}},
+      {"t": 1.5, "R": {"at": "low", "dx": 18, "dy": -10, "shape": "FIST", "roll": 0, "angle": 0, "prop": "stick"}, "body": {"hunch": 0.8, "lean": -0.2}},
+      {"t": 1.9}
+    ]},
+    {"id": "baby.rock", "keys": [
+      {"t": 0.0, "R": {"at": "chest", "dy": 20, "dx": 12, "touch": "palm", "shape": "FLAT", "roll": 0.6, "angle": -100}, "L": {"at": "chest", "dy": 10, "dx": 10, "touch": "palm", "shape": "FLAT", "roll": 0.6, "angle": -80}, "face": "smile"},
+      {"t": 0.5, "body": {"lean": -0.6}, "head": {"tilt": -8}},
+      {"t": 1.0, "body": {"lean": 0.6}, "head": {"tilt": 8}},
+      {"t": 1.5, "body": {"lean": -0.6}, "head": {"tilt": -8}},
+      {"t": 2.0, "body": {"lean": 0}, "head": {"tilt": 0}},
+      {"t": 2.2}
+    ]},
+    {"id": "sibling.rakhi", "keys": [
+      {"t": 0.0, "L": {"at": "front", "dx": 4, "dy": -6, "shape": "FIST", "roll": -1, "angle": -80}, "R": {"at": "front", "dx": 14, "dy": -14, "shape": "PINCH", "roll": 0, "angle": -60}, "face": "smile"},
+      {"t": 0.4, "R": {"at": "wrist_opp", "dy": -6, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -100}},
+      {"t": 0.7, "R": {"at": "wrist_opp", "dy": 2, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -70}},
+      {"t": 1.0, "R": {"at": "wrist_opp", "dy": -6, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -100}},
+      {"t": 1.3, "R": {"at": "wrist_opp", "dy": 2, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -70}},
+      {"t": 1.7}
+    ]},
+    {"id": "home.roof", "keys": [
+      {"t": 0.0, "R": {"at": "front", "dy": -52, "dx": -1, "touch": "tip", "shape": "FLAT", "roll": -0.6, "angle": -45}, "L": {"at": "front", "dy": -52, "dx": -1, "touch": "tip", "shape": "FLAT", "roll": -0.6, "angle": -45}, "face": "smile"},
+      {"t": 0.5, "R": {"at": "front", "dy": -52, "dx": -1, "touch": "tip", "shape": "FLAT", "roll": -0.6, "angle": -45}, "L": {"at": "front", "dy": -52, "dx": -1, "touch": "tip", "shape": "FLAT", "roll": -0.6, "angle": -45}},
+      {"t": 1.1, "R": {"at": "front", "dy": -38, "dx": 16, "touch": "tip", "shape": "FLAT", "roll": -0.6, "angle": -45}, "L": {"at": "front", "dy": -38, "dx": 16, "touch": "tip", "shape": "FLAT", "roll": -0.6, "angle": -45}},
+      {"t": 1.5}
+    ]},
+    {"id": "eat.fingers", "keys": [
+      {"t": 0.0, "R": {"at": "mouth", "touch": "tip", "shape": "BUNCH", "roll": 0.2, "angle": -25, "dy": 14}, "face": "neutral"},
+      {"t": 0.35, "R": {"at": "mouth", "touch": "tip", "shape": "BUNCH", "roll": 0.2, "angle": -25, "dy": 3}, "face": "round"},
+      {"t": 0.7, "R": {"at": "mouth", "touch": "tip", "shape": "BUNCH", "roll": 0.2, "angle": -25, "dy": 14}, "face": "neutral"},
+      {"t": 1.05, "R": {"at": "mouth", "touch": "tip", "shape": "BUNCH", "roll": 0.2, "angle": -25, "dy": 3}, "face": "round"},
+      {"t": 1.4, "face": "smile"}
+    ]},
+    {"id": "hungry.belly", "keys": [
+      {"t": 0.0, "R": {"at": "belly", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -75, "dx": 4, "dy": -4}, "face": "gentle"},
+      {"t": 0.3, "R": {"at": "belly", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -75, "dx": -4, "dy": 0}},
+      {"t": 0.6, "R": {"at": "belly", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -75, "dx": 4, "dy": 4}},
+      {"t": 0.9, "R": {"at": "belly", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -75, "dx": 10, "dy": 0}},
+      {"t": 1.2, "R": {"at": "belly", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -75, "dx": 4, "dy": -4}},
+      {"t": 1.5, "R": {"at": "belly", "touch": "palm", "shape": "FLAT", "roll": -1, "angle": -75, "dx": -4, "dy": 0}},
+      {"t": 1.8}
+    ]},
+    {"id": "water.thumb", "keys": [
+      {"t": 0.0, "R": {"at": "mouth", "touch": "palm", "shape": "THUMB", "roll": 0, "angle": 0, "dx": 6, "dy": 18}, "face": "neutral"},
+      {"t": 0.45, "R": {"at": "mouth", "touch": "palm", "shape": "THUMB", "roll": 0, "angle": -45, "dx": 4, "dy": 14}, "face": "round", "head": {"nod": -0.4}},
+      {"t": 1.0, "R": {"at": "mouth", "touch": "palm", "shape": "THUMB", "roll": 0, "angle": -45, "dx": 4, "dy": 14}},
+      {"t": 1.3, "head": {"nod": 0}, "face": "smile"}
+    ]},
+    {"id": "water.cup", "keys": [
+      {"t": 0.0, "R": {"at": "mouth", "touch": "palm", "shape": "CUP", "roll": 0.3, "angle": -20, "dy": 16}, "face": "neutral"},
+      {"t": 0.45, "R": {"at": "mouth", "touch": "palm", "shape": "CUP", "roll": 0.3, "angle": -55, "dy": 8}, "face": "round", "head": {"nod": -0.3}},
+      {"t": 1.0},
+      {"t": 1.3, "head": {"nod": 0}, "face": "smile"}
+    ]},
+    {"id": "toilet.finger", "keys": [
+      {"t": 0.0, "R": {"at": "front", "dx": 12, "dy": -36, "shape": "PINKY", "roll": 1, "angle": 0}, "face": "gentle"},
+      {"t": 0.4, "R": {"at": "front", "dx": 12, "dy": -36, "shape": "PINKY", "roll": 1, "angle": 10}},
+      {"t": 0.7, "R": {"at": "front", "dx": 12, "dy": -36, "shape": "PINKY", "roll": 1, "angle": -10}},
+      {"t": 1.0, "R": {"at": "front", "dx": 12, "dy": -36, "shape": "PINKY", "roll": 1, "angle": 5}},
+      {"t": 1.4}
+    ]},
+    {"id": "sleep.palms", "keys": [
+      {"t": 0.0, "R": {"at": "cheek", "touch": "palm", "dx": 8, "dy": 4, "shape": "FLAT", "roll": 0, "angle": 15}, "L": {"at": "cheek_opp", "touch": "palm", "dx": -12, "dy": 6, "shape": "FLAT", "roll": 0, "angle": -15}, "face": "sleepy", "head": {"tilt": -16}},
+      {"t": 1.4},
+      {"t": 1.7, "head": {"tilt": 0}, "face": "smile"}
+    ]},
+    {"id": "pain.point", "keys": [
+      {"t": 0.0, "R": {"at": "arm_opp", "dy": -6, "touch": "tip", "shape": "POINT", "roll": 0, "angle": -85}, "face": "wince"},
+      {"t": 0.6, "R": {"at": "arm_opp", "dy": -4, "touch": "palm", "shape": "CLAW", "roll": -1, "angle": -85}},
+      {"t": 1.0, "R": {"at": "arm_opp", "dy": -2, "touch": "palm", "shape": "CLAW", "roll": -1, "angle": -85}},
+      {"t": 1.4, "R": {"at": "arm_opp", "dy": -4, "touch": "palm", "shape": "CLAW", "roll": -1, "angle": -85}, "face": "concern"},
+      {"t": 1.7}
+    ]},
+    {"id": "cold.hug", "keys": [
+      {"t": 0.0, "R": {"at": "shoulder_opp", "dy": 18, "touch": "palm", "shape": "CUP", "roll": -1, "angle": -95}, "L": {"at": "shoulder_opp", "dy": 24, "touch": "palm", "shape": "CUP", "roll": -1, "angle": -95}, "face": "cold", "body": {"shrug": 0.7, "shiver": 1}},
+      {"t": 1.4, "body": {"shrug": 0.7, "shiver": 1}},
+      {"t": 1.7, "body": {"shrug": 0, "shiver": 0}}
+    ]},
+    {"id": "hot.fan", "keys": [
+      {"t": 0.0, "R": {"at": "cheek", "dx": 16, "dy": 2, "shape": "FLAT", "roll": 0.1, "angle": -10}, "face": "hot"},
+      {"t": 0.25, "R": {"at": "cheek", "dx": 16, "dy": 2, "shape": "FLAT", "roll": 0.1, "angle": -40}},
+      {"t": 0.5, "R": {"at": "cheek", "dx": 16, "dy": 2, "shape": "FLAT", "roll": 0.1, "angle": -10}},
+      {"t": 0.75, "R": {"at": "cheek", "dx": 16, "dy": 2, "shape": "FLAT", "roll": 0.1, "angle": -40}},
+      {"t": 1.0, "R": {"at": "cheek", "dx": 16, "dy": 2, "shape": "FLAT", "roll": 0.1, "angle": -10}},
+      {"t": 1.25, "R": {"at": "cheek", "dx": 16, "dy": 2, "shape": "FLAT", "roll": 0.1, "angle": -40}},
+      {"t": 1.6}
+    ]},
+    {"id": "scared.cover", "keys": [
+      {"t": 0.0, "R": {"at": "eye", "touch": "palm", "dy": 2, "shape": "FLAT", "roll": -1, "angle": -15}, "L": {"at": "eye", "touch": "palm", "dy": 2, "shape": "FLAT", "roll": -1, "angle": -15}, "face": "concern"},
+      {"t": 1.1},
+      {"t": 1.4, "face": "gentle"}
+    ]},
+    {"id": "yes.nod", "keys": [
+      {"t": 0.0, "face": "smile", "head": {"nod": 0}},
+      {"t": 0.25, "head": {"nod": 1}},
+      {"t": 0.5, "head": {"nod": -0.2}},
+      {"t": 0.75, "head": {"nod": 1}},
+      {"t": 1.0, "head": {"nod": -0.2}},
+      {"t": 1.25, "head": {"nod": 0}}
+    ]},
+    {"id": "no.shake", "keys": [
+      {"t": 0.0, "R": {"at": "front", "dx": 8, "dy": -34, "shape": "POINT", "roll": 1, "angle": 12}, "face": "gentle", "head": {"turn": 0}},
+      {"t": 0.25, "R": {"at": "front", "dx": 8, "dy": -34, "shape": "POINT", "roll": 1, "angle": -12}, "head": {"turn": -0.8}},
+      {"t": 0.5, "R": {"at": "front", "dx": 8, "dy": -34, "shape": "POINT", "roll": 1, "angle": 12}, "head": {"turn": 0.8}},
+      {"t": 0.75, "R": {"at": "front", "dx": 8, "dy": -34, "shape": "POINT", "roll": 1, "angle": -12}, "head": {"turn": -0.8}},
+      {"t": 1.0, "R": {"at": "front", "dx": 8, "dy": -34, "shape": "POINT", "roll": 1, "angle": 12}, "head": {"turn": 0}},
+      {"t": 1.3}
+    ]},
+    {"id": "walk.fingers", "keys": [
+      {"t": 0.0, "L": {"at": "front", "dx": 6, "dy": -4, "shape": "FLAT", "roll": 0, "angle": -88}, "R": {"at": "front", "dx": 18, "dy": -16, "touch": "tip", "shape": "WALK_A", "roll": -1, "angle": 175}, "face": "smile"},
+      {"t": 0.3, "R": {"at": "front", "dx": 12, "dy": -16, "touch": "tip", "shape": "WALK_B", "roll": -1, "angle": 175}},
+      {"t": 0.6, "R": {"at": "front", "dx": 6, "dy": -16, "touch": "tip", "shape": "WALK_A", "roll": -1, "angle": 175}},
+      {"t": 0.9, "R": {"at": "front", "dx": 0, "dy": -16, "touch": "tip", "shape": "WALK_B", "roll": -1, "angle": 175}},
+      {"t": 1.2, "R": {"at": "front", "dx": -6, "dy": -16, "touch": "tip", "shape": "WALK_A", "roll": -1, "angle": 175}},
+      {"t": 1.6}
+    ]},
+    {"id": "train.arm", "keys": [
+      {"t": 0.0, "R": {"at": "side", "dx": 6, "dy": -6, "shape": "FIST", "roll": 0, "angle": -60, "elbow": "down"}, "face": "smile"},
+      {"t": 0.3, "R": {"at": "side", "dx": 0, "dy": -16, "shape": "FIST", "roll": 0, "angle": -80, "elbow": "down"}},
+      {"t": 0.6, "R": {"at": "side", "dx": -6, "dy": -6, "shape": "FIST", "roll": 0, "angle": -60, "elbow": "down"}},
+      {"t": 0.9, "R": {"at": "side", "dx": 0, "dy": 4, "shape": "FIST", "roll": 0, "angle": -40, "elbow": "down"}},
+      {"t": 1.2, "R": {"at": "side", "dx": 6, "dy": -6, "shape": "FIST", "roll": 0, "angle": -60, "elbow": "down"}},
+      {"t": 1.5, "R": {"at": "side", "dx": 0, "dy": -16, "shape": "FIST", "roll": 0, "angle": -80, "elbow": "down"}},
+      {"t": 1.8, "R": {"at": "side", "dx": -6, "dy": -6, "shape": "FIST", "roll": 0, "angle": -60, "elbow": "down"}},
+      {"t": 2.1}
+    ]},
+    {"id": "vehicle.steer", "keys": [
+      {"t": 0.0, "R": {"at": "front", "dx": 18, "dy": -20, "shape": "FIST", "roll": 0, "angle": -20}, "L": {"at": "front", "dx": 18, "dy": -20, "shape": "FIST", "roll": 0, "angle": -20}, "face": "smile"},
+      {"t": 0.45, "R": {"at": "front", "dx": 14, "dy": -30, "shape": "FIST", "roll": 0, "angle": -40}, "L": {"at": "front", "dx": 20, "dy": -10, "shape": "FIST", "roll": 0, "angle": 0}, "head": {"tilt": -4}},
+      {"t": 0.9, "R": {"at": "front", "dx": 20, "dy": -10, "shape": "FIST", "roll": 0, "angle": 0}, "L": {"at": "front", "dx": 14, "dy": -30, "shape": "FIST", "roll": 0, "angle": -40}, "head": {"tilt": 4}},
+      {"t": 1.35, "R": {"at": "front", "dx": 18, "dy": -20, "shape": "FIST", "roll": 0, "angle": -20}, "L": {"at": "front", "dx": 18, "dy": -20, "shape": "FIST", "roll": 0, "angle": -20}, "head": {"tilt": 0}},
+      {"t": 1.7}
+    ]},
+    {"id": "phone.ear", "keys": [
+      {"t": 0.0, "R": {"at": "ear", "touch": "palm", "dx": 2, "dy": 10, "shape": "Y", "roll": -1, "angle": -100}, "face": "smile", "head": {"tilt": -6}},
+      {"t": 1.2},
+      {"t": 1.5, "head": {"tilt": 0}}
+    ]},
+    {"id": "money.rub", "keys": [
+      {"t": 0.0, "R": {"at": "front", "dx": 12, "dy": -28, "shape": "BUNCH", "roll": 0.1, "angle": 0}, "face": "neutral"},
+      {"t": 0.2, "R": {"at": "front", "dx": 12, "dy": -28, "shape": "RUB", "roll": 0.1, "angle": 0}},
+      {"t": 0.4, "R": {"at": "front", "dx": 12, "dy": -28, "shape": "BUNCH", "roll": 0.1, "angle": 0}},
+      {"t": 0.6, "R": {"at": "front", "dx": 12, "dy": -28, "shape": "RUB", "roll": 0.1, "angle": 0}},
+      {"t": 0.8, "R": {"at": "front", "dx": 12, "dy": -28, "shape": "BUNCH", "roll": 0.1, "angle": 0}},
+      {"t": 1.2}
+    ]},
+    {"id": "school.write", "keys": [
+      {"t": 0.0, "L": {"at": "front", "dx": 4, "dy": -6, "shape": "FLAT", "roll": 0.9, "angle": -70}, "R": {"at": "front", "dx": 10, "dy": -24, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -150}, "face": "smile"},
+      {"t": 0.3, "R": {"at": "front", "dx": 4, "dy": -22, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -150}},
+      {"t": 0.55, "R": {"at": "front", "dx": 10, "dy": -19, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -150}},
+      {"t": 0.8, "R": {"at": "front", "dx": 2, "dy": -17, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -150}},
+      {"t": 1.05, "R": {"at": "front", "dx": 8, "dy": -14, "touch": "tip", "shape": "PINCH", "roll": 0, "angle": -150}},
+      {"t": 1.4}
+    ]},
+    {"id": "police.salute", "keys": [
+      {"t": 0.0, "R": {"at": "temple", "touch": "tip", "dx": -2, "dy": 2, "shape": "SALUTE", "roll": -0.8, "angle": -72}, "face": "smile"},
+      {"t": 0.5, "head": {"nod": 0.3}},
+      {"t": 1.2, "head": {"nod": 0}, "face": "happy"},
+      {"t": 1.5}
+    ]},
+    {"id": "doctor.listen", "keys": [
+      {"t": 0.0, "R": {"at": "ear", "touch": "tip", "dx": -2, "shape": "TWO", "roll": 0, "angle": -20}, "L": {"at": "ear", "touch": "tip", "dx": -2, "shape": "TWO", "roll": 0, "angle": -20}, "face": "smile"},
+      {"t": 0.5},
+      {"t": 1.1, "R": {"at": "chest", "touch": "tip", "dx": 4, "shape": "TWO", "roll": 0, "angle": -30}, "L": {"at": "chest", "touch": "tip", "dx": 4, "shape": "TWO", "roll": 0, "angle": -30}},
+      {"t": 1.6}
+    ]}
+  ]
+}

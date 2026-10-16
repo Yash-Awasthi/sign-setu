@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import app.signsetu.ui.avatar.Gesture
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -26,6 +27,8 @@ data class Question(
     val text: Localized,
     val cards: List<String> = emptyList(),
     val lexicon: String? = null,
+    /** Character animation; defaults to the lexicon entry's. */
+    val gesture: String? = null,
 )
 
 @Immutable @Serializable
@@ -52,13 +55,17 @@ data class LexiconEntry(
 )
 
 @Immutable @Serializable
-data class Language(val code: String, val name: String, val english: String, val greeting: String)
+data class Language(val code: String, val name: String, val english: String, val greeting: String) {
+    /** The salutation alone ("नमस्ते"), without the language finder's instruction that follows it. */
+    val hello: String get() = greeting.split('।', '.', '۔').first().trim()
+}
 
 @Serializable private data class TriageFile(val groups: List<Group>, val questions: List<Question>)
 @Serializable private data class CardsFile(val categories: List<CardCategory>, val cards: List<Card>)
 @Serializable private data class LexiconFile(val entries: List<LexiconEntry>)
 @Serializable private data class LanguagesFile(val languages: List<Language>)
 @Serializable private data class Manifest(val files: Map<String, String>)
+@Serializable private data class GesturesFile(val gestures: List<Gesture>)
 
 @Immutable
 data class ContentBundle(
@@ -73,7 +80,10 @@ data class ContentBundle(
     val rejected: Set<String>,
     /** Every verified file in the bundle, relative to `assets/content/`. */
     val files: Set<String> = emptySet(),
+    val gestures: Map<String, Gesture> = emptyMap(),
 ) {
+    fun gestureFor(q: Question): Gesture? = (q.gesture ?: q.lexicon)?.let { gestures[it] }
+
     private fun audio(path: String) = path.takeIf { it in files }
     fun questionAudio(questionId: String, lang: String) = audio("audio/$lang/$questionId.ogg")
     fun greetingAudio(lang: String) = audio("audio/greet/$lang.ogg")
@@ -111,6 +121,8 @@ class ContentRepository(private val assets: AssetManager) {
         val lexicon = json.decodeFromString<LexiconFile>(read("lexicon.json"))
         val languages = json.decodeFromString<LanguagesFile>(read("languages.json"))
         val subjectUi = json.decodeFromString<Map<String, Localized>>(read("subject_ui.json"))
+        // A tampered animation file means no animation, never a wrong one (SEC-54).
+        val gestures = if ("gestures.json" in rejected) emptyList() else json.decodeFromString<GesturesFile>(read("gestures.json")).gestures
         ContentBundle(
             groups = triage.groups,
             questions = triage.questions,
@@ -121,6 +133,7 @@ class ContentRepository(private val assets: AssetManager) {
             subjectUi = subjectUi,
             rejected = rejected,
             files = manifest.files.keys - rejected,
+            gestures = gestures.associateBy { it.id },
         ).also { bundle = it }
     }
 

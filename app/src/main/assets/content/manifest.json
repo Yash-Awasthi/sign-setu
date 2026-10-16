@@ -68,7 +68,7 @@
   "audio/hi/x1.ogg": "a50d21e63f30fbdad4bf8f547b3312c799ebdfd14294968d802b8f1c6c65d3fd",
   "audio/hi/x2.ogg": "6fd875df19160ed8cbf697f30997596ea331c846d68cf3c096adddcdf50caafa",
   "audio/hi/x3.ogg": "e15b92ebe256840a6f968d1b471058610687f581c0709f55cfec093dc35fb303",
-  "cards.json": "7f620796bada8841e2a5db9796fa575d9aa26293606f0423df9af827359c377f",
+  "cards.json": "b52e7ed698a7a9e581fe259d25fca5d8977432f42e67c42b36c7f6d43f0afc5d",
   "cards/arm.webp": "d8383f3eaee556e379722f4f95b3a55ced3bd8ff161e8b34524c4500107b0c9e",
   "cards/auto.webp": "84a1170122f2be7b427fcd1370c279dad1e496f1fef15ef3b68e25c30e85da43",
   "cards/baby.webp": "906122faa43f5a82df10091a355a7db3ce34d2abb2e88605dadcb3cf0aacb7c8",
@@ -78,6 +78,7 @@
   "cards/car.webp": "29340721a2c81ad6cae6b2b508289a6c160fac5891de47f80e781c879c11e015",
   "cards/cold.webp": "5df28f9a3b9f172eb7a7c42f873ccbc66089061c4982367d7254642f75567186",
   "cards/doctor.webp": "d67e262e1992a9cb8b59e5dc4dfccd56624b46e27b36653e03c5f9de10cafd67",
+  "cards/dont_know.webp": "6f55f108f8dd3862972783a9765bbda3a2539c932701a7845e184f2ca869020a",
   "cards/draw.webp": "c7c6eb0b267dfacdce03dfe322d99fcba8dc76e02d3c4d62332a1e5aa34904bd",
   "cards/ear.webp": "28462abdfb4b8a1bb270b16c6d86a93aa80f41a3b10cf0e50bb2731ae8941da9",
   "cards/eye.webp": "95fc2a9a594024a883a679c500fc4002861647652effc91d3f28c3d752f0caed",
@@ -120,6 +121,7 @@
   "cards/sick.webp": "573991be7aaf8f3171974b8b292d4f82377dcb4b6bc1f8b2898f41b46cc18d5f",
   "cards/sister.webp": "604dbb2a091485df5b12fe77ffcf840c5a5827132e3128b0617c3fb3f0b6ad02",
   "cards/stomach.webp": "0e7ed0131c7671f3cbe10d9f7d1656dbc768a410d96c22a248364c1720821ac9",
+  "cards/stop.webp": "2bfe8948d63c509242ec395c114c7c1b68012371f4b2088f70f2b248f62f43ff",
   "cards/throat.webp": "8a508ee8daac61c6c17808904a9898e6c973afcd02f5badda10171ff43bfdad1",
   "cards/toilet.webp": "af39ddf600ab36d8d34dc50d3a51efe01d039498d7d8490a930dae2b5d024081",
   "cards/train.webp": "c283f6910ab597f4491f3918ad85e1a6f87b23c938523cd0096fa0735e0bd485",
@@ -127,10 +129,11 @@
   "cards/walk.webp": "49640b62f9556fab591f2f2866c59f94798a863cb5003cce4f2ec8ce81758a6f",
   "cards/water.webp": "2d677abf1a81fb209852b1a45eeffb68ed9cb433bb1f1f90311fabbd3c58bb84",
   "cards/yes.webp": "9be469993d15ed6990e7efcf64dd167891bb10ac55a8f5a0682adb3d32bb2975",
+  "gestures.json": "44c44ce43092ce43413416ca0c69ddddf9ee61b5300e03a3262bd2f7ceb98cc6",
   "languages.json": "5d3ad499c8431910ad06c58152a8f7f1cee3e0847601e67039920127954c01f6",
   "lexicon.json": "3a38f1fa5bb67d5a4b7fe824b6b62cb56c64f3366434d49ab8051df1451d3558",
-  "subject_ui.json": "ed6999b1cebf121efba37243e1145140a8376b898471a7ac1bddab8828fe0223",
-  "triage.json": "c390c511a5c2cf7889eaa2ba727f418eff88e14e924f8fb4ce39d214c4f5a119"
+  "subject_ui.json": "0e8e60b212e228612b5f0d7d7b4a8a59c2d7651791bdb7475b53a98894e97e51",
+  "triage.json": "ca9febaaeb84a644220e4672832d7f38288210d697caf22e97cb904618ff4e20"
  },
  "version": 1
 }

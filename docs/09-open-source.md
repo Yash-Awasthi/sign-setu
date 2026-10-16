@@ -45,11 +45,15 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | sherpa-onnx, Vosk | Apache-2.0 | Ship (optional pack) | Offline speech recognition so officer audio never leaves the phone |
 | Language identification (v1.1) | IndicLID (Bhashini and AI4Bharat) | See model card | Ship (via gateway) or Reference | Text language identification for 22+ Indic languages; no audio language identification service was found |
 | Storage and crypto | SQLCipher for Android | BSD-style | Ship | Room 3 supported from 4.18.0 |
-| Export | PdfBox-Android | Apache-2.0 | Ship | AES-256 password-protected PDF export (D-17); last updated 2024, so watch advisories |
+| Export | PdfBox-Android | Apache-2.0 | Ship | AES-256 password-protected PDF export (D-17); last updated 2024, so watch advisories. Its BouncyCastle is held at 1.86 by a build constraint because 1.72 has known critical vulnerabilities |
 | | zip4j | Apache-2.0 | Alternative | AES-256 zip; recipients need 7-Zip, so PDF is preferred |
 | Gateway attestation (v1.1) | android/keyattestation | Apache-2.0 | Ship (gateway) | Google's verification library; handles both attestation roots and revocation |
 | Networking (v1.1) | OkHttp, kotlinx.serialization | Apache-2.0 | Ship | Already planned |
 | Drawing canvas | Compose Canvas | Platform | Ship | No library needed |
+| Characters (D-21) | Compose Canvas | Platform | Ship | 2D rig and keyframes drawn in code; no animation library |
+| Camera mirror (D-20) | CameraX (camera-camera2, camera-lifecycle, camera-compose) | Apache-2.0 | Ship | Preview only; ImageAnalysis when the partner hand model is present |
+| Type | Baloo 2 (Ek Type) | SIL OFL 1.1 | Ship (font) | Latin and Devanagari; licence text kept with the font |
+| Icons | Material Icons (selected vectors) | Apache-2.0 | Ship (assets) | Hand, grid, translate, keyboard, camera, volume, pin |
 | Interpreter call (D-16) | Sandes (NIC) or WhatsApp, opened by intent or link | Government service; third-party app | Ship (hand-off only) | Video call happens in the messenger, not in this app; no library needed |
 | | Jitsi Meet | Apache-2.0 | Not chosen | Would need a self-hosted server, which has a running cost |
 | Screen pinning | `Activity.startLockTask` | Platform | Ship | No library needed |

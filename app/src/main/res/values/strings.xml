@@ -186,7 +186,7 @@
 
     <string name="start_expired_title">Update required</string>
     <string name="start_expired_body">This version is more than 180 days old and cannot start new sessions. Install the current version from your department. An unfinished session can still be continued, exported and ended.</string>
-    <string name="start_rooted">This phone looks rooted or runs a test build. Session records may not be safe on it. Use a department phone if you can.</string>
+    <string name="start_rooted">This phone looks rooted. Session records may not be safe on it.</string>
 
     <string name="intro_step">Step %1$d of %2$d</string>
     <string name="intro_next">Next</string>
@@ -199,4 +199,40 @@
     <string name="intro_pinning_body">When you hand the phone over, Sign Setu pins itself so the person cannot open other apps.\n\nIn your phone\'s security settings, turn on App pinning and \"Ask for PIN before unpinning\".</string>
     <string name="key_reset_title">Earlier sessions were deleted</string>
     <string name="key_reset_body">The phone screen lock was removed or changed, so Android deleted the key that protected earlier session records. They could not be opened and have been deleted. New sessions work as normal.</string>
+    <string name="show_slow">Play slowly</string>
+    <string name="action_gesture">They gestured</string>
+    <string name="action_board">Pictures</string>
+    <string name="action_draw">Draw</string>
+    <string name="action_language">Language</string>
+    <string name="action_type">Type</string>
+    <string name="officer_ask_another">Ask another way</string>
+    <string name="officer_latest">Latest answer</string>
+    <string name="officer_in_reply">to “%1$s”</string>
+    <string name="officer_stop_title">They asked to stop</string>
+    <string name="officer_stop_body">Pause. Check they are comfortable, offer water or a rest, and go on only when they are ready.</string>
+    <string name="officer_has_gesture">Character shows a gesture</string>
+    <string name="officer_has_audio">Recorded speech in their language</string>
+    <string name="officer_media_missing">Picture and caption only</string>
+    <string name="officer_camera">Camera mirror</string>
+    <string name="officer_stage">Back to the stage</string>
+    <string name="settings_stage">Stage</string>
+    <string name="settings_camera">Camera mirror</string>
+    <string name="settings_camera_summary">Shows the person their own hands on the stage. Nothing is recorded or saved.</string>
+    <string name="home_greeting_hint">Choose who you are helping, then start.</string>
+    <string name="camera_rationale">The camera is only a mirror for their hands. Nothing is recorded or saved.</string>
+    <string name="profile_isl_short">Signs</string>
+    <string name="profile_other_short">Other language</string>
+    <string name="settings_large_captions">Large captions</string>
+    <string name="settings_large_captions_summary">Bigger words on the stage for people who read slowly</string>
+    <string name="settings_slow_gestures">Slower gestures</string>
+    <string name="settings_slow_gestures_summary">The character signs at three-quarter speed</string>
+    <string name="settings_lang_system">Same as the phone</string>
+    <string name="lang_english">English</string>
+    <string name="lang_hindi">हिन्दी</string>
+    <string name="board_favourites">Favourites</string>
+    <string name="board_favourite">Favourite</string>
+    <string name="media_caption">Caption</string>
+    <string name="media_audio">Audio</string>
+    <string name="media_gesture">Gesture</string>
+    <string name="media_missing">%1$s not available</string>
 </resources>

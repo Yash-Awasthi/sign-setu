@@ -20,7 +20,8 @@ class SpeechPlayer(context: Context) {
     }
 
     /** [path] is relative to the content bundle, e.g. `audio/hi/n1.ogg`. */
-    fun play(path: String) {
+    fun play(path: String, speed: Float = 1f) {
+        player.setPlaybackSpeed(speed)
         player.setMediaItem(MediaItem.fromUri("asset:///content/$path"))
         player.prepare()
         player.play()

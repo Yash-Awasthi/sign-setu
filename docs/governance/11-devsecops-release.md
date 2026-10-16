@@ -25,13 +25,13 @@ Every pull request runs:
 2. Unit tests and Compose UI tests.
 3. Android Lint with security checks as errors.
 4. Static analysis (Semgrep with Kotlin/Android rules or MobSF static scan).
-5. Dependency vulnerability scan (OSV-Scanner or OWASP Dependency-Check); fail on critical or high.
-6. Gradle dependency verification (checksums) must pass.
+5. Dependency vulnerability scan: `osv-scanner scan source --lockfile app/gradle.lockfile`; fail on critical or high in anything that ships (the release runtime classpath).
+6. Gradle dependency verification (`gradle/verification-metadata.xml`) and locking (`app/gradle.lockfile`) must pass; after a deliberate dependency change, regenerate both with `--write-verification-metadata sha256` and `--write-locks` and review the diff.
 7. Secret scan.
 
 Release builds additionally:
 
-8. Generate SBOM in CycloneDX format.
+8. Generate the CycloneDX SBOM of shipped components: `python tools/security/sbom.py <path to syft>`.
 9. Record SHA-256 of the AAB and APKs.
 10. Archive the SBOM, hashes, test report and scan results as the release record.
 

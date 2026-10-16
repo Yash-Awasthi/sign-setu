@@ -47,7 +47,7 @@ Risk = likelihood x impact, each rated Low (1), Medium (2), High (3). Score 6-9 
 | T-13 | P6 F11 | T | Malformed or malicious partner response crashes app or shows wrong content | 2 | 2 | Medium | SEC-54, fallbacks | Low |
 | T-14 | Build | T | Compromised dependency or build pipeline | 1 | 3 | Medium | SEC-50, SEC-51, SEC-52, protected branch | Low |
 | T-15 | A5 | S | Signing key stolen; malicious update | 1 | 3 | Medium | SEC-62, two custodians, offline backup | Low |
-| T-16 | P4 | I | Camera left on; subject or bystanders captured | 1 | 2 | Low | SEC-70, SEC-73, auto-off after 60 seconds of no hands | Low |
+| T-16 | P4 | I | Camera mirror shows or keeps images of the subject or bystanders | 1 | 2 | Low | SEC-47 (preview only, nothing stored, runs only on the stage, officer and department can turn it off), SEC-40 | Low |
 | T-17 | Other apps | I | Exported component or intent leaks data | 1 | 3 | Medium | SEC-41 | Low |
 | T-18 | Overlay app | T | Tapjacking tricks officer into export or clear | 1 | 2 | Low | SEC-45 | Low |
 | T-19 | Rooted phone | E | Root bypasses sandbox and Keystore | 1 | 3 | Medium | SEC-61, SEC-63 | Medium |

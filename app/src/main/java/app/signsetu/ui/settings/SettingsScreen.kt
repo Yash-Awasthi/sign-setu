@@ -1,9 +1,7 @@
 package app.signsetu.ui.settings
 
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
+import android.app.Activity
+import app.signsetu.data.settings.OfficerLocale
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +30,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -64,7 +64,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES }
+private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +105,27 @@ fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> U
             }
 
             HorizontalDivider(Modifier.padding(vertical = Spacing.sm))
+            Header(R.string.settings_stage)
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_camera)) },
+                supportingContent = { Text(stringResource(R.string.settings_camera_summary)) },
+                trailingContent = { Switch(checked = s.cameraEnabled, onCheckedChange = null) },
+                modifier = Modifier.toggleable(s.cameraEnabled, role = Role.Switch) { on -> scope.launch { store.setCameraEnabled(on) } },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_large_captions)) },
+                supportingContent = { Text(stringResource(R.string.settings_large_captions_summary)) },
+                trailingContent = { Switch(checked = s.largeCaptions, onCheckedChange = null) },
+                modifier = Modifier.toggleable(s.largeCaptions, role = Role.Switch) { on -> scope.launch { store.setLargeCaptions(on) } },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_slow_gestures)) },
+                supportingContent = { Text(stringResource(R.string.settings_slow_gestures_summary)) },
+                trailingContent = { Switch(checked = s.slowGestures, onCheckedChange = null) },
+                modifier = Modifier.toggleable(s.slowGestures, role = Role.Switch) { on -> scope.launch { store.setSlowGestures(on) } },
+            )
+
+            HorizontalDivider(Modifier.padding(vertical = Spacing.sm))
             Header(R.string.settings_records)
             Item(
                 stringResource(R.string.settings_retention),
@@ -117,19 +138,17 @@ fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> U
 
             HorizontalDivider(Modifier.padding(vertical = Spacing.sm))
             Header(R.string.settings_about)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Item(stringResource(R.string.settings_app_language), stringResource(R.string.settings_app_language_summary)) {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.fromParts("package", context.packageName, null)),
-                    )
-                }
-            }
+            Item(stringResource(R.string.settings_app_language), stringResource(languageName(OfficerLocale.get(context)))) { dialog = Dialog.LANGUAGE }
             Item(stringResource(R.string.settings_licences), stringResource(R.string.settings_licences_summary)) { dialog = Dialog.LICENCES }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.app_name)) },
                 supportingContent = {
                     val built = LocalDate.ofEpochDay(BuildConfig.BUILD_EPOCH_DAY).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
-                    Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, built))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, built))
+                        // FR-52: the notice appears in About as well as on first run.
+                        Text(stringResource(R.string.notice_aid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 },
             )
         }
@@ -175,8 +194,27 @@ fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> U
             dismissButton = { TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.cancel)) } },
         )
         Dialog.LICENCES -> LicencesDialog(onDismiss = { dialog = null })
+        Dialog.LANGUAGE -> ChoiceDialog(
+            title = stringResource(R.string.settings_app_language),
+            options = OfficerLocale.CHOICES,
+            selected = OfficerLocale.get(context),
+            label = { stringResource(languageName(it)) },
+            onPick = { tag ->
+                dialog = null
+                OfficerLocale.set(context, tag)
+                (context as? Activity)?.recreate()
+            },
+            onDismiss = { dialog = null },
+        )
         null -> Unit
     }
+}
+
+@StringRes
+fun languageName(tag: String) = when (tag) {
+    "en" -> R.string.lang_english
+    "hi" -> R.string.lang_hindi
+    else -> R.string.settings_lang_system
 }
 
 @StringRes

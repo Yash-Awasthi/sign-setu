@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -25,6 +26,14 @@ data class AppSettings(
     val interpreterContact: String = "",
     /** Start time of the newest session; lets the purge worker shred everything without the officer's key. */
     val newestSessionAt: Long = 0L,
+    /** The live mirror on the stage; a department can turn it off (D-20). */
+    val cameraEnabled: Boolean = true,
+    /** Larger captions on the stage, for people who read slowly (FR-51). */
+    val largeCaptions: Boolean = false,
+    /** Gestures play at three-quarter speed by default (FR-51). */
+    val slowGestures: Boolean = false,
+    /** Picture-board cards the officer starred; card IDs only. */
+    val favourites: Set<String> = emptySet(),
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -43,6 +52,10 @@ class SettingsStore(private val context: Context) {
         val interpreterApp = stringPreferencesKey("interpreter_app")
         val interpreterContact = stringPreferencesKey("interpreter_contact")
         val newestSession = longPreferencesKey("newest_session_at")
+        val camera = booleanPreferencesKey("camera_enabled")
+        val largeCaptions = booleanPreferencesKey("large_captions")
+        val slowGestures = booleanPreferencesKey("slow_gestures")
+        val favourites = stringSetPreferencesKey("favourites")
     }
 
     val settings: Flow<AppSettings> = context.store.data.map { it.toSettings() }
@@ -56,6 +69,13 @@ class SettingsStore(private val context: Context) {
         it[Keys.interpreterContact] = contact.trim()
     }
     suspend fun setNewestSessionAt(time: Long) = context.store.edit { it[Keys.newestSession] = time }
+    suspend fun setCameraEnabled(on: Boolean) = context.store.edit { it[Keys.camera] = on }
+    suspend fun setLargeCaptions(on: Boolean) = context.store.edit { it[Keys.largeCaptions] = on }
+    suspend fun setSlowGestures(on: Boolean) = context.store.edit { it[Keys.slowGestures] = on }
+    suspend fun toggleFavourite(cardId: String) = context.store.edit {
+        val now = it[Keys.favourites].orEmpty()
+        it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
+    }
 
     private fun Preferences.toSettings() = AppSettings(
         firstRunDone = this[Keys.firstRun] ?: false,
@@ -63,6 +83,10 @@ class SettingsStore(private val context: Context) {
         interpreterApp = this[Keys.interpreterApp]?.let { runCatching { InterpreterApp.valueOf(it) }.getOrNull() } ?: InterpreterApp.NONE,
         interpreterContact = this[Keys.interpreterContact] ?: "",
         newestSessionAt = this[Keys.newestSession] ?: 0L,
+        cameraEnabled = this[Keys.camera] ?: true,
+        largeCaptions = this[Keys.largeCaptions] ?: false,
+        slowGestures = this[Keys.slowGestures] ?: false,
+        favourites = this[Keys.favourites].orEmpty(),
     )
 }
 

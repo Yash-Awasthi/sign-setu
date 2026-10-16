@@ -46,19 +46,32 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
+import android.app.Activity
+import androidx.compose.material3.FilterChip
+import app.signsetu.data.settings.OfficerLocale
+import app.signsetu.ui.settings.languageName
+import app.signsetu.ui.avatar.Avatar
+import app.signsetu.ui.avatar.Character
+import app.signsetu.ui.avatar.Gesture
+import app.signsetu.ui.session.Backdrop
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import app.signsetu.ui.theme.Spacing
 
-private class Step(@StringRes val title: Int, @StringRes val body: Int, val icon: @Composable () -> Painter)
+private class Step(@StringRes val title: Int, @StringRes val body: Int, val gesture: String, val icon: @Composable () -> Painter)
 
 private val STEPS = listOf(
-    Step(R.string.intro_aid_title, R.string.intro_aid_body) { rememberVectorPainter(Icons.Filled.Info) },
-    Step(R.string.intro_private_title, R.string.intro_private_body) { rememberVectorPainter(Icons.Filled.Lock) },
-    Step(R.string.intro_pinning_title, R.string.intro_pinning_body) { painterResource(R.drawable.ic_pin) },
+    Step(R.string.intro_aid_title, R.string.intro_aid_body, "namaste") { rememberVectorPainter(Icons.Filled.Info) },
+    Step(R.string.intro_private_title, R.string.intro_private_body, "me.chest") { rememberVectorPainter(Icons.Filled.Lock) },
+    Step(R.string.intro_pinning_title, R.string.intro_pinning_body, "you.palm") { painterResource(R.drawable.ic_pin) },
 )
 
 /** Shown once, before the first unlock (FR-61: first run guides the officer to turn on app pinning). */
 @Composable
-fun FirstRunScreen(onDone: () -> Unit) {
+fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit) {
     var index by rememberSaveable { mutableIntStateOf(0) }
     val step = STEPS[index]
     val last = index == STEPS.lastIndex
@@ -106,10 +119,19 @@ fun FirstRunScreen(onDone: () -> Unit) {
                 .padding(horizontal = Spacing.xl),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
-            Spacer(Modifier.size(Spacing.xxl * 2))
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(72.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(step.icon(), contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(36.dp))
+            Spacer(Modifier.size(Spacing.lg))
+            Box(Modifier.fillMaxWidth().height(230.dp).clip(RoundedCornerShape(32.dp))) {
+                Backdrop(Modifier.fillMaxSize())
+                Avatar(
+                    character = Character.CHILD,
+                    gesture = gestures[step.gesture],
+                    playKey = index,
+                    modifier = Modifier.fillMaxHeight(0.94f).aspectRatio(1f).align(Alignment.BottomCenter),
+                )
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.padding(14.dp).size(48.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(step.icon(), contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
+                    }
                 }
             }
             Text(
@@ -123,6 +145,19 @@ fun FirstRunScreen(onDone: () -> Unit) {
                 modifier = Modifier.semantics { heading() },
             )
             Text(stringResource(step.body), style = MaterialTheme.typography.bodyLarge)
+            if (index == 0) {
+                // FR-50: the officer picks the language of the app before anything else.
+                val current = OfficerLocale.get(context)
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    OfficerLocale.CHOICES.forEach { tag ->
+                        FilterChip(
+                            selected = current == tag,
+                            onClick = { OfficerLocale.set(context, tag); (context as? Activity)?.recreate() },
+                            label = { Text(stringResource(languageName(tag))) },
+                        )
+                    }
+                }
+            }
             if (last) {
                 OutlinedButton(onClick = { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) }) {
                     Text(stringResource(R.string.no_lock_button))

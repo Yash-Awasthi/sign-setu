@@ -28,7 +28,7 @@ The app processes personal data of people in a vulnerable situation, most often 
 | Questions and answers | Yes, core purpose | Short-lived; no identity fields required |
 | Notes | Yes, officer must record what they learnt | Free text; SOP limits to what is needed |
 | Drawings | Yes, alternative answer path | Saved only on officer action |
-| Camera images | Needed to recognise signs | Never stored; reduced to landmarks on the phone; only while recognition is on |
+| Camera images | Needed for the stage mirror so the subject sees their own hands (D-20); later for the partner hand model | Shown live only; never stored, recorded or sent; analysed on the phone only when a hand model is installed; officer and department can turn the mirror off |
 | Landmarks | Needed by recognition service | Sent only when hands are visible; partner must not store |
 | Voice audio | Needed for voice questions | Officer's voice; only while button held; not stored |
 | Name, address, photo of subject | Not needed by the app | No fields for them; SOP says record identity in official systems, not the app |
