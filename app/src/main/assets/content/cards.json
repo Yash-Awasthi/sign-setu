@@ -1,73 +1,549 @@
 {
   "categories": [
-    { "id": "answers", "label": { "en": "Answers", "hi": "जवाब" } },
-    { "id": "needs", "label": { "en": "Needs", "hi": "ज़रूरतें" } },
-    { "id": "body", "label": { "en": "Body", "hi": "शरीर" } },
-    { "id": "feelings", "label": { "en": "Feelings", "hi": "भावनाएँ" } },
-    { "id": "people", "label": { "en": "People", "hi": "लोग" } },
-    { "id": "places", "label": { "en": "Places", "hi": "जगहें" } },
-    { "id": "travel", "label": { "en": "Travel", "hi": "यात्रा" } },
-    { "id": "numbers", "label": { "en": "Numbers", "hi": "संख्या" } },
-    { "id": "things", "label": { "en": "Things", "hi": "चीज़ें" } }
+    {
+      "id": "answers",
+      "label": {
+        "en": "Answers",
+        "hi": "जवाब"
+      }
+    },
+    {
+      "id": "needs",
+      "label": {
+        "en": "Needs",
+        "hi": "ज़रूरतें"
+      }
+    },
+    {
+      "id": "body",
+      "label": {
+        "en": "Body",
+        "hi": "शरीर"
+      }
+    },
+    {
+      "id": "feelings",
+      "label": {
+        "en": "Feelings",
+        "hi": "भावनाएँ"
+      }
+    },
+    {
+      "id": "people",
+      "label": {
+        "en": "People",
+        "hi": "लोग"
+      }
+    },
+    {
+      "id": "places",
+      "label": {
+        "en": "Places",
+        "hi": "जगहें"
+      }
+    },
+    {
+      "id": "travel",
+      "label": {
+        "en": "Travel",
+        "hi": "यात्रा"
+      }
+    },
+    {
+      "id": "numbers",
+      "label": {
+        "en": "Numbers",
+        "hi": "संख्या"
+      }
+    },
+    {
+      "id": "things",
+      "label": {
+        "en": "Things",
+        "hi": "चीज़ें"
+      }
+    }
   ],
   "cards": [
-    { "id": "yes", "category": "answers", "label": { "en": "Yes", "hi": "हाँ" } },
-    { "id": "no", "category": "answers", "label": { "en": "No", "hi": "नहीं" } },
-    { "id": "water", "category": "needs", "label": { "en": "Water", "hi": "पानी" } },
-    { "id": "food", "category": "needs", "label": { "en": "Food", "hi": "खाना" } },
-    { "id": "toilet", "category": "needs", "label": { "en": "Toilet", "hi": "शौचालय" } },
-    { "id": "rest", "category": "needs", "label": { "en": "Rest", "hi": "आराम" } },
-    { "id": "cold", "category": "needs", "label": { "en": "Cold", "hi": "ठंड" } },
-    { "id": "hot", "category": "needs", "label": { "en": "Hot", "hi": "गर्मी" } },
-    { "id": "doctor", "category": "needs", "label": { "en": "Doctor", "hi": "डॉक्टर" } },
-    { "id": "medicine", "category": "needs", "label": { "en": "Medicine", "hi": "दवा" } },
-    { "id": "pain", "category": "body", "label": { "en": "Pain", "hi": "दर्द" } },
-    { "id": "sick", "category": "body", "label": { "en": "Unwell", "hi": "बीमार" } },
-    { "id": "head", "category": "body", "label": { "en": "Head", "hi": "सिर" } },
-    { "id": "eye", "category": "body", "label": { "en": "Eye", "hi": "आँख" } },
-    { "id": "ear", "category": "body", "label": { "en": "Ear", "hi": "कान" } },
-    { "id": "mouth", "category": "body", "label": { "en": "Mouth", "hi": "मुँह" } },
-    { "id": "throat", "category": "body", "label": { "en": "Throat", "hi": "गला" } },
-    { "id": "stomach", "category": "body", "label": { "en": "Stomach", "hi": "पेट" } },
-    { "id": "back", "category": "body", "label": { "en": "Back", "hi": "पीठ" } },
-    { "id": "arm", "category": "body", "label": { "en": "Arm", "hi": "हाथ" } },
-    { "id": "leg", "category": "body", "label": { "en": "Leg", "hi": "पैर" } },
-    { "id": "foot", "category": "body", "label": { "en": "Foot", "hi": "पंजा" } },
-    { "id": "okay", "category": "feelings", "label": { "en": "Okay", "hi": "ठीक" } },
-    { "id": "sad", "category": "feelings", "label": { "en": "Sad", "hi": "उदास" } },
-    { "id": "scared", "category": "feelings", "label": { "en": "Scared", "hi": "डर" } },
-    { "id": "person", "category": "people", "label": { "en": "Person", "hi": "व्यक्ति" } },
-    { "id": "mother", "category": "people", "label": { "en": "Mother", "hi": "माँ" } },
-    { "id": "father", "category": "people", "label": { "en": "Father", "hi": "पिता" } },
-    { "id": "grandmother", "category": "people", "label": { "en": "Grandmother", "hi": "दादी / नानी" } },
-    { "id": "grandfather", "category": "people", "label": { "en": "Grandfather", "hi": "दादा / नाना" } },
-    { "id": "brother", "category": "people", "label": { "en": "Brother", "hi": "भाई" } },
-    { "id": "sister", "category": "people", "label": { "en": "Sister", "hi": "बहन" } },
-    { "id": "baby", "category": "people", "label": { "en": "Baby", "hi": "छोटा बच्चा" } },
-    { "id": "police", "category": "people", "label": { "en": "Police", "hi": "पुलिस" } },
-    { "id": "home", "category": "places", "label": { "en": "Home", "hi": "घर" } },
-    { "id": "village", "category": "places", "label": { "en": "Village", "hi": "गाँव" } },
-    { "id": "school", "category": "places", "label": { "en": "School", "hi": "स्कूल" } },
-    { "id": "shop", "category": "places", "label": { "en": "Shop", "hi": "दुकान" } },
-    { "id": "hospital", "category": "places", "label": { "en": "Hospital", "hi": "अस्पताल" } },
-    { "id": "road", "category": "places", "label": { "en": "Road", "hi": "सड़क" } },
-    { "id": "walk", "category": "travel", "label": { "en": "Walking", "hi": "पैदल" } },
-    { "id": "bus", "category": "travel", "label": { "en": "Bus", "hi": "बस" } },
-    { "id": "train", "category": "travel", "label": { "en": "Train", "hi": "ट्रेन" } },
-    { "id": "car", "category": "travel", "label": { "en": "Car", "hi": "कार" } },
-    { "id": "auto", "category": "travel", "label": { "en": "Auto", "hi": "ऑटो" } },
-    { "id": "phone", "category": "things", "label": { "en": "Phone", "hi": "फ़ोन" } },
-    { "id": "money", "category": "things", "label": { "en": "Money", "hi": "पैसे" } },
-    { "id": "draw", "category": "things", "label": { "en": "Draw or write", "hi": "बनाओ या लिखो" } },
-    { "id": "n1", "category": "numbers", "label": { "en": "1", "hi": "१" } },
-    { "id": "n2", "category": "numbers", "label": { "en": "2", "hi": "२" } },
-    { "id": "n3", "category": "numbers", "label": { "en": "3", "hi": "३" } },
-    { "id": "n4", "category": "numbers", "label": { "en": "4", "hi": "४" } },
-    { "id": "n5", "category": "numbers", "label": { "en": "5", "hi": "५" } },
-    { "id": "n6", "category": "numbers", "label": { "en": "6", "hi": "६" } },
-    { "id": "n7", "category": "numbers", "label": { "en": "7", "hi": "७" } },
-    { "id": "n8", "category": "numbers", "label": { "en": "8", "hi": "८" } },
-    { "id": "n9", "category": "numbers", "label": { "en": "9", "hi": "९" } },
-    { "id": "n10", "category": "numbers", "label": { "en": "10", "hi": "१०" } }
+    {
+      "id": "yes",
+      "category": "answers",
+      "label": {
+        "en": "Yes",
+        "hi": "हाँ"
+      }
+    },
+    {
+      "id": "no",
+      "category": "answers",
+      "label": {
+        "en": "No",
+        "hi": "नहीं"
+      }
+    },
+    {
+      "id": "dont_know",
+      "category": "answers",
+      "label": {
+        "en": "I don't know",
+        "hi": "पता नहीं"
+      }
+    },
+    {
+      "id": "stop",
+      "category": "answers",
+      "label": {
+        "en": "Stop",
+        "hi": "रुको"
+      }
+    },
+    {
+      "id": "water",
+      "category": "needs",
+      "label": {
+        "en": "Water",
+        "hi": "पानी"
+      }
+    },
+    {
+      "id": "food",
+      "category": "needs",
+      "label": {
+        "en": "Food",
+        "hi": "खाना"
+      }
+    },
+    {
+      "id": "toilet",
+      "category": "needs",
+      "label": {
+        "en": "Toilet",
+        "hi": "शौचालय"
+      }
+    },
+    {
+      "id": "rest",
+      "category": "needs",
+      "label": {
+        "en": "Rest",
+        "hi": "आराम"
+      }
+    },
+    {
+      "id": "cold",
+      "category": "needs",
+      "label": {
+        "en": "Cold",
+        "hi": "ठंड"
+      }
+    },
+    {
+      "id": "hot",
+      "category": "needs",
+      "label": {
+        "en": "Hot",
+        "hi": "गर्मी"
+      }
+    },
+    {
+      "id": "doctor",
+      "category": "needs",
+      "label": {
+        "en": "Doctor",
+        "hi": "डॉक्टर"
+      }
+    },
+    {
+      "id": "medicine",
+      "category": "needs",
+      "label": {
+        "en": "Medicine",
+        "hi": "दवा"
+      }
+    },
+    {
+      "id": "pain",
+      "category": "body",
+      "label": {
+        "en": "Pain",
+        "hi": "दर्द"
+      }
+    },
+    {
+      "id": "sick",
+      "category": "body",
+      "label": {
+        "en": "Unwell",
+        "hi": "बीमार"
+      }
+    },
+    {
+      "id": "head",
+      "category": "body",
+      "label": {
+        "en": "Head",
+        "hi": "सिर"
+      }
+    },
+    {
+      "id": "eye",
+      "category": "body",
+      "label": {
+        "en": "Eye",
+        "hi": "आँख"
+      }
+    },
+    {
+      "id": "ear",
+      "category": "body",
+      "label": {
+        "en": "Ear",
+        "hi": "कान"
+      }
+    },
+    {
+      "id": "mouth",
+      "category": "body",
+      "label": {
+        "en": "Mouth",
+        "hi": "मुँह"
+      }
+    },
+    {
+      "id": "throat",
+      "category": "body",
+      "label": {
+        "en": "Throat",
+        "hi": "गला"
+      }
+    },
+    {
+      "id": "stomach",
+      "category": "body",
+      "label": {
+        "en": "Stomach",
+        "hi": "पेट"
+      }
+    },
+    {
+      "id": "back",
+      "category": "body",
+      "label": {
+        "en": "Back",
+        "hi": "पीठ"
+      }
+    },
+    {
+      "id": "arm",
+      "category": "body",
+      "label": {
+        "en": "Arm",
+        "hi": "हाथ"
+      }
+    },
+    {
+      "id": "leg",
+      "category": "body",
+      "label": {
+        "en": "Leg",
+        "hi": "पैर"
+      }
+    },
+    {
+      "id": "foot",
+      "category": "body",
+      "label": {
+        "en": "Foot",
+        "hi": "पंजा"
+      }
+    },
+    {
+      "id": "okay",
+      "category": "feelings",
+      "label": {
+        "en": "Okay",
+        "hi": "ठीक"
+      }
+    },
+    {
+      "id": "sad",
+      "category": "feelings",
+      "label": {
+        "en": "Sad",
+        "hi": "उदास"
+      }
+    },
+    {
+      "id": "scared",
+      "category": "feelings",
+      "label": {
+        "en": "Scared",
+        "hi": "डर"
+      }
+    },
+    {
+      "id": "person",
+      "category": "people",
+      "label": {
+        "en": "Person",
+        "hi": "व्यक्ति"
+      }
+    },
+    {
+      "id": "mother",
+      "category": "people",
+      "label": {
+        "en": "Mother",
+        "hi": "माँ"
+      }
+    },
+    {
+      "id": "father",
+      "category": "people",
+      "label": {
+        "en": "Father",
+        "hi": "पिता"
+      }
+    },
+    {
+      "id": "grandmother",
+      "category": "people",
+      "label": {
+        "en": "Grandmother",
+        "hi": "दादी / नानी"
+      }
+    },
+    {
+      "id": "grandfather",
+      "category": "people",
+      "label": {
+        "en": "Grandfather",
+        "hi": "दादा / नाना"
+      }
+    },
+    {
+      "id": "brother",
+      "category": "people",
+      "label": {
+        "en": "Brother",
+        "hi": "भाई"
+      }
+    },
+    {
+      "id": "sister",
+      "category": "people",
+      "label": {
+        "en": "Sister",
+        "hi": "बहन"
+      }
+    },
+    {
+      "id": "baby",
+      "category": "people",
+      "label": {
+        "en": "Baby",
+        "hi": "छोटा बच्चा"
+      }
+    },
+    {
+      "id": "police",
+      "category": "people",
+      "label": {
+        "en": "Police",
+        "hi": "पुलिस"
+      }
+    },
+    {
+      "id": "home",
+      "category": "places",
+      "label": {
+        "en": "Home",
+        "hi": "घर"
+      }
+    },
+    {
+      "id": "village",
+      "category": "places",
+      "label": {
+        "en": "Village",
+        "hi": "गाँव"
+      }
+    },
+    {
+      "id": "school",
+      "category": "places",
+      "label": {
+        "en": "School",
+        "hi": "स्कूल"
+      }
+    },
+    {
+      "id": "shop",
+      "category": "places",
+      "label": {
+        "en": "Shop",
+        "hi": "दुकान"
+      }
+    },
+    {
+      "id": "hospital",
+      "category": "places",
+      "label": {
+        "en": "Hospital",
+        "hi": "अस्पताल"
+      }
+    },
+    {
+      "id": "road",
+      "category": "places",
+      "label": {
+        "en": "Road",
+        "hi": "सड़क"
+      }
+    },
+    {
+      "id": "walk",
+      "category": "travel",
+      "label": {
+        "en": "Walking",
+        "hi": "पैदल"
+      }
+    },
+    {
+      "id": "bus",
+      "category": "travel",
+      "label": {
+        "en": "Bus",
+        "hi": "बस"
+      }
+    },
+    {
+      "id": "train",
+      "category": "travel",
+      "label": {
+        "en": "Train",
+        "hi": "ट्रेन"
+      }
+    },
+    {
+      "id": "car",
+      "category": "travel",
+      "label": {
+        "en": "Car",
+        "hi": "कार"
+      }
+    },
+    {
+      "id": "auto",
+      "category": "travel",
+      "label": {
+        "en": "Auto",
+        "hi": "ऑटो"
+      }
+    },
+    {
+      "id": "phone",
+      "category": "things",
+      "label": {
+        "en": "Phone",
+        "hi": "फ़ोन"
+      }
+    },
+    {
+      "id": "money",
+      "category": "things",
+      "label": {
+        "en": "Money",
+        "hi": "पैसे"
+      }
+    },
+    {
+      "id": "draw",
+      "category": "things",
+      "label": {
+        "en": "Draw or write",
+        "hi": "बनाओ या लिखो"
+      }
+    },
+    {
+      "id": "n1",
+      "category": "numbers",
+      "label": {
+        "en": "1",
+        "hi": "१"
+      }
+    },
+    {
+      "id": "n2",
+      "category": "numbers",
+      "label": {
+        "en": "2",
+        "hi": "२"
+      }
+    },
+    {
+      "id": "n3",
+      "category": "numbers",
+      "label": {
+        "en": "3",
+        "hi": "३"
+      }
+    },
+    {
+      "id": "n4",
+      "category": "numbers",
+      "label": {
+        "en": "4",
+        "hi": "४"
+      }
+    },
+    {
+      "id": "n5",
+      "category": "numbers",
+      "label": {
+        "en": "5",
+        "hi": "५"
+      }
+    },
+    {
+      "id": "n6",
+      "category": "numbers",
+      "label": {
+        "en": "6",
+        "hi": "६"
+      }
+    },
+    {
+      "id": "n7",
+      "category": "numbers",
+      "label": {
+        "en": "7",
+        "hi": "७"
+      }
+    },
+    {
+      "id": "n8",
+      "category": "numbers",
+      "label": {
+        "en": "8",
+        "hi": "८"
+      }
+    },
+    {
+      "id": "n9",
+      "category": "numbers",
+      "label": {
+        "en": "9",
+        "hi": "९"
+      }
+    },
+    {
+      "id": "n10",
+      "category": "numbers",
+      "label": {
+        "en": "10",
+        "hi": "१०"
+      }
+    }
   ]
 }

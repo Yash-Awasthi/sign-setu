@@ -202,7 +202,7 @@ scope = table("Table 1. Release scope", ["Capability", "Release"], [
 
 principles = table("Table 2. Design principles", ["Principle", "How the design applies it"], [
     ["Offline first", "The complete v1 flow runs without a network; the v1 build declares no INTERNET permission."],
-    ["Data minimisation", "No identity fields. No camera or audio capture in v1. Only session events, notes and drawings are stored."],
+    ["Data minimisation", "No identity fields. No camera or audio capture in v1: the camera is a live mirror on the stage and nothing from it is stored. Only session events, notes and drawings are stored."],
     ["Device-local storage", "Session data is encrypted at rest (SQLCipher, AES-256) under a key wrapped by Android Keystore and excluded from backup and device transfer."],
     ["Officer in the loop", "Nothing reaches the subject panel without officer confirmation. A gesture meaning is logged only after the subject confirms it by show-back."],
     ["Least privilege", "Only the launcher activity is exported. No analytics, advertising or crash-reporting SDKs. Permissions are limited to those in use."],

@@ -22,5 +22,17 @@
   "no": {
     "en": "No",
     "hi": "नहीं"
+  },
+  "dont_know": {
+    "en": "I don't know",
+    "hi": "पता नहीं"
+  },
+  "stop": {
+    "en": "Stop",
+    "hi": "रुको"
+  },
+  "okay": {
+    "en": "Okay",
+    "hi": "ठीक है"
   }
 }

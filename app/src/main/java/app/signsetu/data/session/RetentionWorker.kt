@@ -7,6 +7,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.signsetu.SignSetuApp
+import app.signsetu.allSessionsExpired
 import java.util.concurrent.TimeUnit
 
 /**
@@ -18,8 +19,7 @@ class RetentionWorker(context: Context, params: WorkerParameters) : CoroutineWor
     override suspend fun doWork(): Result {
         val container = (applicationContext as SignSetuApp).container
         val settings = container.settings.current()
-        val newest = settings.newestSessionAt
-        if (newest > 0 && System.currentTimeMillis() - newest > settings.retentionHours * 3_600_000L) {
+        if (allSessionsExpired(System.currentTimeMillis(), settings.newestSessionAt, settings.retentionHours)) {
             container.clearAllData()
             container.settings.setNewestSessionAt(0L)
         }

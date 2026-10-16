@@ -1,6 +1,6 @@
 # 05. Avatar and Gesture Design
 
-Status: Accepted (D-12, D-13, D-14). Replaces the skeleton avatar in D-03. Background and evidence are in the [critical review](archive/22-critical-review.md).
+Status: Accepted (D-12, D-13, D-14, D-20, D-21). Replaces the skeleton avatar in D-03. Release 1 draws both characters in code (D-21, section 5.7). Background and evidence are in the [critical review](archive/22-critical-review.md).
 
 ## 1. Answers in brief
 
@@ -134,7 +134,7 @@ Raw footage of the performer is kept only until the clip is approved, then delet
 
 | Stage | When | What the subject sees | New code or dependencies |
 | --- | --- | --- | --- |
-| 0. Gesture cards | Phase 1 | Static illustrations of the child character doing each gesture, with a motion arrow, beside the picture card. The same art goes on the printed quick card so officers can do the gestures themselves | None; images in the card set |
+| 0. Code-drawn characters (built) | Phase 1 | Both characters drawn live on a 2D rig, playing `gestures.json` keyframes with jointed fingers and facial expression, beside the picture card (D-21, section 5.7) | None; Compose Canvas |
 | 1. Pre-rendered clips | Phase 2 | Short videos of each lexicon entry on each character, rendered offline in Blender; phrase-bank sentences played as a gapless playlist of clips; slow-speed replay | None beyond Media3 ExoPlayer, already planned |
 | 2. Real-time 3D | After the pilot, only if needed | Same clips played live on the rig, with blended transitions and any camera angle; enables a large lexicon without large downloads | Filament (or SceneView) for glTF skinning and morph targets |
 
@@ -170,7 +170,7 @@ When the subject makes a gesture the officer does not understand:
 5. Officer picks the likely one and taps **Show back**: the subject sees the gesture and picture with "Is this it?" and Yes/No cards.
 6. Only a confirmed match is logged as an answer; unconfirmed lookups are logged as "unclear gesture".
 
-This works offline, needs no camera and no model, and works with home signs, because the confirmation step catches mismatches. Camera recognition stays LATER, for ISL users only, on-device, and always followed by the same Show back step.
+This works offline, needs no model, and works with home signs, because the confirmation step catches mismatches. The officer's list shows each candidate as the character's pose with its picture. The stage's camera mirror (D-20) lets the subject see their own hands; when the partner team's hand model is installed, its suggestions enter this same list and still end with Show back.
 
 ## 7. Fallback chain
 
@@ -243,3 +243,12 @@ These are planning estimates; measure the first 20 clips and re-plan. Stage 0 ca
 - Gesture ambiguity: https://folklore.usc.edu/confusing-gestures/, https://madrascourier.com/?p=26828
 - Tools: https://github.com/vrm-c/vrm-specification, https://github.com/yeemachine/kalidokit, https://github.com/google/filament, https://github.com/saturday06/VRM-Addon-for-Blender
 - VRoid Studio terms: https://vroid.com/en/studio/guidelines, https://vroid.pixiv.help/hc/en-us/articles/4405813333657-Can-I-use-the-models-created-with-VRoid-Studio-Stable-Ver-for-commercial-purposes
+
+## 5.7 The code-drawn rig (release 1)
+
+- **Space.** Each character lives in a 200 by 200 unit square, facing the viewer; the character's right hand appears on the viewer's left. Proportions (head, shoulders, arm lengths, hand size) differ per character; the child's hands are drawn about 1.6 times life size so fingers read on a small screen.
+- **Arms.** A key gives a target for the wrist, palm or index fingertip at a named contact point (`forehead`, `mouth`, `chin`, `cheek`, `ear`, `chest`, `belly`, `shoulder`, `front`, ...) with an offset; the elbow is solved from the two bone lengths, bending outward unless the key says otherwise.
+- **Hands.** Five fingers of three joints. A hand shape (`FLAT`, `POINT`, `BUNCH`, `PINKY`, `Y`, `CUP`, `PINCH`, counting shapes and others) sets each finger's curl; `roll` shows the palm, the thumb side or the back of the hand. Shapes blend between keys, so fingers move rather than jump.
+- **Face and body.** Brows (raise, worry, frown), eyes (open, smile, blink), mouth (smile, open, round), head tilt, nod and turn, body lean, shrug, hunch and shiver. Questions without a lexicon entry use a gentle asking face, not an invented sign.
+- **Playback.** A gesture eases in from rest and back to rest; it plays once on the officer's action and on replay; slow replay is half speed (FR-18). The character breathes and blinks between gestures unless the phone's "remove animations" setting is on.
+- **Review.** Debug builds include a gallery of every gesture on both characters, frozen at the moment of contact, for the reviewers in section 8. Every entry remains a candidate until reviewed.

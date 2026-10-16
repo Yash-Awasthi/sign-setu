@@ -1,5 +1,24 @@
 package app.signsetu.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import app.signsetu.ui.avatar.Avatar
+import app.signsetu.ui.avatar.Character
+import app.signsetu.ui.session.Backdrop
+import app.signsetu.ui.theme.Baloo
+import app.signsetu.ui.theme.LocalInk
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
@@ -47,46 +66,70 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
     }
     LaunchedEffect(secure) { if (secure) onUnlock { failed = true } }
 
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-        Column(
-            Modifier.safeDrawingPadding().padding(Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    val ink = LocalInk.current
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Box(Modifier.weight(0.42f).fillMaxWidth()) {
+            Backdrop(Modifier.fillMaxSize())
+            Box(Modifier.fillMaxSize().statusBarsPadding()) {
+                Avatar(Character.CHILD, gesture = null, playKey = null, modifier = Modifier.fillMaxHeight(0.8f).aspectRatio(1f).align(Alignment.BottomCenter))
+                Text(
+                    stringResource(R.string.app_name),
+                    fontFamily = Baloo,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 24.sp,
+                    color = ink.band,
+                    modifier = Modifier.padding(start = Spacing.lg, top = Spacing.md),
+                )
+            }
+        }
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            shadowElevation = 8.dp,
+            modifier = Modifier.weight(0.58f).fillMaxWidth().offset(y = (-24).dp),
         ) {
-            Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.primaryContainer) {
-                Icon(Icons.Filled.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(Spacing.xl).size(40.dp))
+            Column(
+                Modifier.navigationBarsPadding().padding(horizontal = Spacing.xl, vertical = Spacing.xl),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Surface(shape = CircleShape, color = ink.band, modifier = Modifier.size(56.dp)) {
+                    Icon(Icons.Filled.Lock, contentDescription = null, tint = ink.chipSelected, modifier = Modifier.padding(14.dp))
+                }
+                Text(
+                    stringResource(if (secure) R.string.lock_title else R.string.no_lock_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    stringResource(if (secure) R.string.lock_body else R.string.no_lock_body),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                if (failed && secure) {
+                    Text(stringResource(R.string.lock_failed), color = MaterialTheme.colorScheme.error)
+                }
+                Spacer(Modifier.weight(1f))
+                Button(
+                    onClick = {
+                        if (secure) {
+                            failed = false
+                            onUnlock { failed = true }
+                        } else {
+                            context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS))
+                        }
+                    },
+                    shape = RoundedCornerShape(22.dp),
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                ) { Text(stringResource(if (secure) R.string.lock_button else R.string.no_lock_button), style = MaterialTheme.typography.titleMedium) }
+                Text(
+                    stringResource(R.string.notice_aid),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
             }
-            Text(
-                stringResource(if (secure) R.string.lock_title else R.string.no_lock_title),
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                stringResource(if (secure) R.string.lock_body else R.string.no_lock_body),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            if (failed && secure) {
-                Text(stringResource(R.string.lock_failed), color = MaterialTheme.colorScheme.error)
-            }
-            Button(
-                onClick = {
-                    if (secure) {
-                        failed = false
-                        onUnlock { failed = true }
-                    } else {
-                        context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS))
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            ) { Text(stringResource(if (secure) R.string.lock_button else R.string.no_lock_button)) }
-            Text(
-                stringResource(R.string.notice_aid),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }

@@ -1,6 +1,8 @@
 package app.signsetu
 
 import android.app.ActivityManager
+import android.content.Context
+import app.signsetu.data.settings.OfficerLocale
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -28,6 +30,10 @@ interface DeviceGuard {
 }
 
 class MainActivity : FragmentActivity(), DeviceGuard {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(OfficerLocale.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

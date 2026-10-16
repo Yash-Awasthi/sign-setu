@@ -25,9 +25,12 @@ The data flow diagrams, element catalogue and trust boundaries are in the [syste
 | Background work | WorkManager | Retention purge |
 | App lock | androidx.biometric BiometricPrompt, KeyguardManager | Device credential or strong biometric |
 | PDF export | Android PdfDocument to compose, PdfBox-Android to encrypt (AES-256) | Readable in any PDF reader |
+| Characters | Compose Canvas, 2D rig, keyframes in `gestures.json` (D-21) | No video files; one gesture file plays on both characters |
+| Camera mirror | CameraX 1.6: Preview, and ImageAnalysis only when a hand model is present (D-20) | Nothing captured or stored |
+| Type | Baloo 2 (SIL OFL), bundled, for headings and subject captions in Latin and Devanagari | Friendly, legible at arm's length; other scripts use the system Noto fonts |
 | Build | Gradle wrapper, version catalog, R8 full mode, Baseline Profile, dependency verification | Size, startup, supply chain |
 
-Not used: networking libraries, dependency-injection frameworks, Firebase or any Google Play services, analytics or crash SDKs, WebView, camera or microphone APIs. Exact versions are pinned in the version catalog when the project is created.
+Not used: networking libraries, dependency-injection frameworks, Firebase or any Google Play services, analytics or crash SDKs, WebView, microphone APIs, and camera capture or recording (the camera is a mirror only, D-20). Exact versions are pinned in the version catalog when the project is created.
 
 ## 4. Packages
 
@@ -41,6 +44,8 @@ One Gradle module, organised by feature. Process numbers refer to the [system de
 | `content` | Loads and validates the content bundle; resolves a request and profile into a render set; lexicon search for gesture lookup | 3.1, D2 | FR-11, FR-17, FR-62, FR-65 |
 | `session` | Session state, event log, end and purge, retention worker | 4.0 | FR-05, FR-06, FR-30, FR-33, FR-34 |
 | `export` | PDF report, passphrase, share sheet, interpreter hand-off | 5.0 | FR-32, FR-64 |
+| `ui.avatar` | 2D rig, the two characters, keyframe playback | 3.1 | FR-11, FR-18, FR-66 |
+| `camera` | Camera mirror; `HandTracker` interface for the partner model, created by `HandTrackers` per build type (release: the partner model; debug: a stand-in hand) | 3.1 | FR-69, FR-22 |
 | `storage` | Room database, SQLCipher key handling, DataStore | D1, D3, D4 | NFR-30 |
 | `security` | App lock, FLAG_SECURE, build expiry, root warning | 1.0 | FR-67, NFR-31, NFR-32 |
 
@@ -51,6 +56,7 @@ assets/content/
   manifest.json        content version, languages, SHA-256 of every file
   triage.json          questions: id, group, sensitive, captions{lang}, cards[], lexicon_id?, isl_clip?, audio{lang}?
   lexicon.json         gesture and ISL entries (schema in 05-avatar-and-gestures.md §5.2)
+  gestures.json        character keyframes per gesture, written against named contact points (D-21)
   phrases.json         phrase-bank templates with typed slots
   greetings.json       language finder: language, label in its own script, audio file
   cards/<id>.webp      picture cards
@@ -106,7 +112,7 @@ API-level details for authentication are in [security](04-security.md) SEC-21 an
 | Preset under 300 ms (NFR-02) | First-screen cards preloaded; one ExoPlayer instance reused; clips stored uncompressed in the APK so they play without extraction |
 | Smooth clips (NFR-03) | 480x480 H.264 at source frame rate; hardware decode |
 | APK under 30 MB (NFR-05) | WebP cards, Opus audio, short clips; size checked in CI |
-| Memory under 300 MB (NFR-06) | No camera, single player, cards loaded lazily |
+| Memory under 300 MB (NFR-06) | Camera preview only (no analysis without a hand model), single player, cards loaded lazily |
 
 ## 11. Release 1.1 (not built in release 1)
 

@@ -55,7 +55,7 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | ID | Requirement | Priority |
 | --- | --- | --- |
 | FR-10 | Preset triage questions are grouped: safety, health, needs, identity, family, location. | MUST |
-| FR-11 | A preset question shows in the Show state with its picture cards and caption, plus by profile the gesture card or clip, human ISL clip, or recorded audio. No network is used. | MUST |
+| FR-11 | A preset question shows in the Show state with its picture cards and caption, plus by profile the character performing the gesture, a human ISL clip, or recorded audio. No network is used. | MUST |
 | FR-12 | Sensitive questions ("what happened", "who hurt you") sit behind a deliberate second tap and never appear on the first screen. | MUST |
 | FR-13 | The officer can type a free-text question. It is shown as a caption with officer-chosen picture cards and is never signed. | MUST |
 | FR-15 | Nothing reaches the Show state until the officer confirms it. | MUST |
@@ -72,7 +72,9 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | --- | --- | --- |
 | FR-20 | Yes and No are always available as large cards during a question. | MUST |
 | FR-21 | When the subject taps a card, the officer sees the card and its label in the officer language. | MUST |
-| FR-24 | The subject can draw on a canvas with pen, eraser and clear; the officer can save the drawing to notes. | MUST |
+| FR-24 | The subject can draw on a canvas with a finger, start again, and finish; the drawing is logged as the answer. | MUST |
+| FR-69 | Below the character, the stage shows a live mirror of the subject's hands from the front camera. Nothing is captured, recorded or stored. The officer can turn it off for one person; the department can turn it off in settings (D-20). | MUST |
+| FR-70 | During any question the subject can also answer "I don't know" or "Stop". "Stop" is shown to the officer prominently, with guidance to pause. | MUST |
 | FR-65 | Gesture lookup: the officer records where the hand went (body location) and what it did (hand action); the app lists matching lexicon entries with picture and clip. | MUST |
 | FR-66 | Show-back: the officer sends a candidate meaning to the Show state with "Is this it?" and Yes/No. Only Yes logs the meaning; anything else is logged as unclear. | MUST |
 
@@ -101,7 +103,7 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | --- | --- | --- |
 | FR-14 | Voice question with editable transcript (Bhashini through the project gateway). | 1.1 |
 | FR-68 | Machine translation of free-text captions, marked as unreviewed. | 1.1 |
-| FR-22 | On-device ISL sign recognition for ISL users, rear camera, always followed by show-back. | After pilot |
+| FR-22 | On-device hand and sign recognition, from the partner team's model through the `HandTracker` interface (D-20), always followed by show-back. | After pilot |
 
 Withdrawn from earlier drafts: FR-01 (split screen, replaced by FR-03), FR-04 (divider), FR-16 (free text signed by a skeleton avatar), FR-23 (camera confidence display), FR-25 (echo, replaced by FR-66), FR-40 to FR-43 (network and permission fallbacks; release 1 uses neither).
 
@@ -126,7 +128,7 @@ Withdrawn from earlier drafts: FR-01 (split screen, replaced by FR-03), FR-04 (d
 | NFR-31 | Opening the app and past sessions require device credential or strong biometric. | MUST |
 | NFR-32 | Screenshots, screen recording and recents thumbnails blocked. | MUST |
 | NFR-33 | No session data in backups or device transfer. | MUST |
-| NFR-34 | Release 1 declares no INTERNET, CAMERA or RECORD_AUDIO permission. | MUST |
+| NFR-34 | Release 1 declares no INTERNET, RECORD_AUDIO or LOCATION permission. CAMERA is declared only for the stage mirror (D-20). | MUST |
 | NFR-36 | No third-party analytics, advertising or crash-reporting SDKs. | MUST |
 | NFR-37 | No personal data in logs, crash traces or notifications. | MUST |
 | NFR-40 | Under 1 crash per 100 sessions in the pilot. | MUST |

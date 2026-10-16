@@ -52,7 +52,11 @@ import app.signsetu.ui.components.LocalContentRepository
 import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.OfficerPane
 import app.signsetu.ui.session.SessionViewModel
-import app.signsetu.ui.session.ShowPane
+import app.signsetu.ui.session.Stage
+import app.signsetu.camera.HandTracker
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import app.signsetu.ui.start.StartScreen
 import app.signsetu.ui.theme.SignSetuTheme
 import app.signsetu.ui.theme.SubjectTheme
@@ -80,7 +84,7 @@ fun AppRoot(container: AppContainer, guard: DeviceGuard) {
             val s = settings
             when {
                 s == null -> Box(Modifier.fillMaxSize())
-                !s.firstRunDone -> FirstRunScreen(onDone = { scope.launch { container.settings.setFirstRunDone() } })
+                !s.firstRunDone -> FirstRunScreen(c?.gestures.orEmpty(), onDone = { scope.launch { container.settings.setFirstRunDone() } })
                 r == null -> LockScreen(onUnlock = { onFailed ->
                     guard.unlock(title, subtitle, { container.unlockAsync(onFailed) }, onFailed)
                 })
@@ -103,6 +107,7 @@ fun AppRoot(container: AppContainer, guard: DeviceGuard) {
 @Composable
 private fun Navigation(repo: SessionRepository, content: ContentBundle, settings: AppSettings, guard: DeviceGuard, container: AppContainer) {
     val backStack = rememberNavBackStack(StartKey)
+    val scope = rememberCoroutineScope()
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
@@ -114,6 +119,7 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                     content = content,
                     expired = container.buildExpired,
                     rooted = container.deviceLooksRooted,
+                    cameraWanted = settings.cameraEnabled,
                     onOpenSession = { id -> backStack.add(SessionKey(id)) },
                     onSettings = { backStack.add(SettingsKey) },
                 )
@@ -122,7 +128,11 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                 SettingsScreen(container.settings, onBack = { backStack.removeLastOrNull() }, onClearAll = container::clearAllData)
             }
             entry<SessionKey> { key ->
-                SessionRoute(key.id, repo, content, settings, guard, container.report, onClosed = { backStack.removeLastOrNull() })
+                SessionRoute(
+                    key.id, repo, content, settings, guard, container.report, container.handTracker,
+                    onFavourite = { id -> scope.launch { container.settings.toggleFavourite(id) } },
+                    onClosed = { backStack.removeLastOrNull() },
+                )
             }
         },
     )
@@ -136,6 +146,8 @@ private fun SessionRoute(
     settings: AppSettings,
     guard: DeviceGuard,
     report: SessionReport,
+    tracker: HandTracker?,
+    onFavourite: (String) -> Unit,
     onClosed: () -> Unit,
 ) {
     val officerLang = if (LocalConfiguration.current.locales[0].language == "hi") "hi" else "en"
@@ -148,6 +160,8 @@ private fun SessionRoute(
     val title = stringResource(R.string.return_prompt_title)
     val subtitle = stringResource(R.string.return_prompt_subtitle)
     val cancel = stringResource(R.string.cancel)
+    // The officer can turn the mirror off for one person, for example a child upset by seeing themself.
+    var cameraOn by rememberSaveable { mutableStateOf(settings.cameraEnabled) }
     val state = ui ?: return
     val backToOfficer = { guard.confirmOfficer(title, subtitle, cancel) { vm.returnToOfficer() } }
 
@@ -162,6 +176,10 @@ private fun SessionRoute(
             ui = state,
             vm = vm,
             officerLang = officerLang,
+            cameraOn = cameraOn,
+            onCameraOn = { cameraOn = it },
+            favourites = settings.favourites,
+            onFavourite = onFavourite,
             onCallInterpreter = if (settings.interpreterConfigured) {
                 {
                     guard.unpin()
@@ -185,9 +203,13 @@ private fun SessionRoute(
         Mode.SHOW -> {
             BackHandler(onBack = backToOfficer)
             SubjectTheme {
-                ShowPane(
+                Stage(
                     ui = state,
                     content = content,
+                    tracker = tracker,
+                    cameraOn = cameraOn,
+                    largeCaptions = settings.largeCaptions,
+                    gestureSpeed = if (settings.slowGestures) 0.75f else 1f,
                     onCard = vm::answerCard,
                     onYesNo = vm::answerYesNo,
                     onLanguage = vm::chooseLanguage,

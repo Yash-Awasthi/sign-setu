@@ -10,10 +10,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.signsetu.R
 
 @Immutable
 object Spacing {
@@ -26,34 +30,56 @@ object Spacing {
 }
 
 /** Minimum size of a subject-facing card (NFR-20). */
-val SubjectCardMin: Dp = 112.dp
+val SubjectCardMin: Dp = 96.dp
 
 val LocalAnswerColors = staticCompositionLocalOf { AnswerLight }
+val LocalStageColors = staticCompositionLocalOf { StageLight }
+val LocalInk = staticCompositionLocalOf { Ink }
 
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp),
 )
 
-// System fonts: Android ships Noto for every Indian script, so nothing is bundled.
-private val OfficerType = Typography()
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+private fun baloo(weight: Int) = Font(R.font.baloo2, FontWeight(weight), variationSettings = FontVariation.Settings(FontVariation.weight(weight)))
 
-// Subject captions are read at arm's length by people who may read slowly: larger and looser than the default scale.
-private val SubjectType = Typography().run {
+/**
+ * Baloo 2 (SIL OFL) carries Latin and Devanagari in one rounded, friendly face for headings and subject captions.
+ * Body text stays on the system font; other Indian scripts fall back to the system Noto fonts.
+ */
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+val Baloo = FontFamily(baloo(400), baloo(500), baloo(600), baloo(700), baloo(800))
+
+private val OfficerType = Typography().run {
     copy(
-        headlineMedium = headlineMedium.copy(fontSize = 30.sp, lineHeight = 40.sp, fontWeight = FontWeight.Medium),
-        headlineSmall = headlineSmall.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Medium),
-        titleLarge = titleLarge.copy(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Medium),
-        labelLarge = TextStyle(fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium),
+        displaySmall = displaySmall.copy(fontFamily = Baloo, fontWeight = FontWeight.Bold),
+        headlineLarge = headlineLarge.copy(fontFamily = Baloo, fontWeight = FontWeight.Bold),
+        headlineMedium = headlineMedium.copy(fontFamily = Baloo, fontWeight = FontWeight.Bold),
+        headlineSmall = headlineSmall.copy(fontFamily = Baloo, fontWeight = FontWeight.SemiBold),
+        titleLarge = titleLarge.copy(fontFamily = Baloo, fontWeight = FontWeight.SemiBold),
+        titleMedium = titleMedium.copy(fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 17.sp),
+        labelLarge = labelLarge.copy(fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
     )
 }
 
+// Subject captions are read at arm's length by people who may read slowly: larger and looser than the default scale.
+private val SubjectType = OfficerType.copy(
+    headlineMedium = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 34.sp),
+    headlineSmall = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp),
+    titleLarge = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 26.sp),
+    labelLarge = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 22.sp),
+)
+
 @Composable
 fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalAnswerColors provides if (dark) AnswerDark else AnswerLight) {
+    CompositionLocalProvider(
+        LocalAnswerColors provides if (dark) AnswerDark else AnswerLight,
+        LocalStageColors provides if (dark) StageDark else StageLight,
+    ) {
         MaterialTheme(
             colorScheme = if (dark) OfficerDark else OfficerLight,
             typography = OfficerType,
@@ -63,14 +89,8 @@ fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
     }
 }
 
+/** The stage keeps the light scheme in both themes; only its backdrop dims at night (03-ux §6). */
 @Composable
-fun SubjectTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalAnswerColors provides if (dark) AnswerDark else AnswerLight) {
-        MaterialTheme(
-            colorScheme = if (dark) SubjectDark else SubjectLight,
-            typography = SubjectType,
-            shapes = AppShapes,
-            content = content,
-        )
-    }
+fun SubjectTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = OfficerLight, typography = SubjectType, shapes = AppShapes, content = content)
 }

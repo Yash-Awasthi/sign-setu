@@ -24,6 +24,8 @@ android {
 
     buildTypes {
         release {
+            // Officers' phones are ARM; x86 libraries only serve the emulator in debug builds.
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -77,8 +79,13 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.work.runtime.ktx)
     implementation(libs.biometric)
+    // biometric 1.1.0 brings a fragment library too old for permission requests through ActivityResult.
+    implementation(libs.androidx.fragment)
     implementation(libs.media3.exoplayer)
     implementation(libs.pdfbox.android)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
 

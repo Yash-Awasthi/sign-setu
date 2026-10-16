@@ -14,6 +14,8 @@ import app.signsetu.data.session.RetentionWorker
 import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.data.settings.SettingsStore
+import app.signsetu.camera.HandTracker
+import app.signsetu.camera.HandTrackers
 import app.signsetu.export.SessionReport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,15 +46,17 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver {
     val settings = SettingsStore(app)
     val report = SessionReport(app)
 
+    /** The partner team's hand-detection model, created per build type; without one the stage shows a plain mirror (D-20). */
+    val handTracker: HandTracker? by lazy { HandTrackers.create(app) }
+
     /** SEC-63: warn only; blocking would fail an officer in an emergency. */
     val deviceLooksRooted: Boolean by lazy {
         Build.TAGS?.contains("test-keys") == true ||
             listOf("/system/bin/su", "/system/xbin/su", "/sbin/su", "/su/bin/su").any { File(it).exists() }
     }
 
-    /** FR-67: personal phones have no device management, so an old build stops starting sessions by itself. */
     val buildExpired: Boolean
-        get() = LocalDate.now().toEpochDay() - BuildConfig.BUILD_EPOCH_DAY > BUILD_LIFETIME_DAYS
+        get() = buildExpired(LocalDate.now().toEpochDay(), BuildConfig.BUILD_EPOCH_DAY)
     private val databaseKey = DatabaseKey(app)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var database: SessionDatabase? = null
@@ -120,7 +124,6 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver {
 
     private companion object {
         const val RELOCK_AFTER_MS = 5 * 60 * 1000L
-        const val BUILD_LIFETIME_DAYS = 180
         const val TAG = "SignSetu"
     }
 }

@@ -179,7 +179,7 @@
 
     <string name="start_expired_title">अपडेट ज़रूरी है</string>
     <string name="start_expired_body">यह संस्करण 180 दिन से पुराना है और नया सत्र शुरू नहीं कर सकता। अपने विभाग से नया संस्करण इंस्टॉल करें। अधूरा सत्र अब भी जारी रखा, एक्सपोर्ट किया और खत्म किया जा सकता है।</string>
-    <string name="start_rooted">यह फ़ोन रूटेड लगता है या टेस्ट बिल्ड पर चल रहा है। इस पर सत्र के रिकॉर्ड शायद सुरक्षित न रहें। हो सके तो विभाग का फ़ोन इस्तेमाल करें।</string>
+    <string name="start_rooted">यह फ़ोन रूटेड लगता है। इस पर सत्र के रिकॉर्ड शायद सुरक्षित न रहें।</string>
 
     <string name="intro_step">चरण %1$d / %2$d</string>
     <string name="intro_next">आगे</string>
@@ -192,4 +192,40 @@
     <string name="intro_pinning_body">जब आप फ़ोन सामने वाले को देते हैं, साइन सेतु खुद को पिन कर लेता है ताकि वे दूसरे ऐप न खोल सकें।\n\nफ़ोन की सुरक्षा सेटिंग्स में ऐप पिनिंग और \"अनपिन करने से पहले PIN पूछें\" चालू करें।</string>
     <string name="key_reset_title">पिछले सत्र मिटा दिए गए</string>
     <string name="key_reset_body">फ़ोन का स्क्रीन लॉक हटाया या बदला गया, इसलिए Android ने पिछले सत्र के रिकॉर्ड की सुरक्षा वाली कुंजी मिटा दी। वे खोले नहीं जा सकते थे और मिटा दिए गए हैं। नए सत्र सामान्य रूप से चलेंगे।</string>
+    <string name="show_slow">धीरे चलाएँ</string>
+    <string name="action_gesture">इशारा किया</string>
+    <string name="action_board">तस्वीरें</string>
+    <string name="action_draw">चित्र</string>
+    <string name="action_language">भाषा</string>
+    <string name="action_type">लिखें</string>
+    <string name="officer_ask_another">दूसरे तरीके से पूछें</string>
+    <string name="officer_latest">आखिरी जवाब</string>
+    <string name="officer_in_reply">“%1$s” पर</string>
+    <string name="officer_stop_title">उन्होंने रुकने को कहा</string>
+    <string name="officer_stop_body">रुकिए। देखिए कि वे सहज हैं, पानी या आराम दीजिए, और तैयार होने पर ही आगे बढ़िए।</string>
+    <string name="officer_has_gesture">पात्र इशारा दिखाता है</string>
+    <string name="officer_has_audio">उनकी भाषा में रिकॉर्ड की गई आवाज़</string>
+    <string name="officer_media_missing">केवल तस्वीर और कैप्शन</string>
+    <string name="officer_camera">कैमरा आईना</string>
+    <string name="officer_stage">स्टेज पर वापस</string>
+    <string name="settings_stage">स्टेज</string>
+    <string name="settings_camera">कैमरा आईना</string>
+    <string name="settings_camera_summary">स्टेज पर व्यक्ति को उनके अपने हाथ दिखते हैं। कुछ भी रिकॉर्ड या सेव नहीं होता।</string>
+    <string name="home_greeting_hint">चुनिए कि आप किसकी मदद कर रहे हैं, फिर शुरू करें।</string>
+    <string name="camera_rationale">कैमरा केवल उनके हाथों का आईना है। कुछ भी रिकॉर्ड या सेव नहीं होता।</string>
+    <string name="profile_isl_short">संकेत भाषा</string>
+    <string name="profile_other_short">दूसरी भाषा</string>
+    <string name="settings_large_captions">बड़े कैप्शन</string>
+    <string name="settings_large_captions_summary">धीरे पढ़ने वालों के लिए स्टेज पर बड़े शब्द</string>
+    <string name="settings_slow_gestures">धीमे इशारे</string>
+    <string name="settings_slow_gestures_summary">पात्र तीन-चौथाई गति से इशारे करता है</string>
+    <string name="settings_lang_system">फ़ोन जैसी</string>
+    <string name="lang_english">English</string>
+    <string name="lang_hindi">हिन्दी</string>
+    <string name="board_favourites">पसंदीदा</string>
+    <string name="board_favourite">पसंदीदा</string>
+    <string name="media_caption">कैप्शन</string>
+    <string name="media_audio">आवाज़</string>
+    <string name="media_gesture">इशारा</string>
+    <string name="media_missing">%1$s उपलब्ध नहीं</string>
 </resources>

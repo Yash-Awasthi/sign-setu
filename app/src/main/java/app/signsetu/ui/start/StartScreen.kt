@@ -1,45 +1,54 @@
 package app.signsetu.ui.start
 
-import androidx.compose.foundation.BorderStroke
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -48,147 +57,213 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.signsetu.R
+import app.signsetu.camera.hasCameraPermission
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionRepository
+import app.signsetu.ui.avatar.Avatar
+import app.signsetu.ui.avatar.MiniFace
+import app.signsetu.ui.session.Backdrop
+import app.signsetu.ui.session.Bubble
+import app.signsetu.ui.session.characterFor
+import app.signsetu.ui.theme.Baloo
+import app.signsetu.ui.theme.LocalInk
+import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Home: the character greets on top; below, one quick choice of who is being helped and in which language.
+ * The session itself opens on the stage, with the camera mirror.
+ */
 @Composable
 fun StartScreen(
     repo: SessionRepository,
     content: ContentBundle,
     expired: Boolean,
     rooted: Boolean,
+    cameraWanted: Boolean,
     onOpenSession: (String) -> Unit,
     onSettings: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    var refresh by remember { mutableStateOf(0) }
+    val context = LocalContext.current
+    val ink = LocalInk.current
+    var refresh by remember { mutableIntStateOf(0) }
     val open by produceState<Session?>(null, refresh) { value = repo.openSession() }
     var profile by rememberSaveable { mutableStateOf<Profile?>(null) }
     var lang by rememberSaveable { mutableStateOf("hi") }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = { Text(stringResource(R.string.start_title)) },
-                actions = {
-                    IconButton(onClick = onSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title))
-                    }
-                },
-                scrollBehavior = scroll,
-            )
-        },
-        bottomBar = {
-            Surface(tonalElevation = 3.dp) {
-                Button(
-                    onClick = {
-                        val p = profile ?: return@Button
-                        scope.launch { onOpenSession(repo.start(p, lang)) }
-                    },
-                    enabled = profile != null && !expired,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = Spacing.lg, vertical = Spacing.md)
-                        .heightIn(min = 56.dp),
-                ) { Text(stringResource(R.string.start_button), style = MaterialTheme.typography.titleMedium) }
-            }
-        },
-    ) { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            if (expired) {
-                Notice(
-                    title = stringResource(R.string.start_expired_title),
-                    body = stringResource(R.string.start_expired_body),
-                    container = MaterialTheme.colorScheme.errorContainer,
-                    content = MaterialTheme.colorScheme.onErrorContainer,
-                )
-            }
-            if (rooted) {
-                Notice(
-                    title = null,
-                    body = stringResource(R.string.start_rooted),
-                    container = MaterialTheme.colorScheme.tertiaryContainer,
-                    content = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-            }
-            open?.let { session ->
-                ResumeCard(
-                    session = session,
-                    languageName = content.language(session.subjectLang)?.name ?: session.subjectLang,
-                    onResume = { onOpenSession(session.id) },
-                    onEnd = { scope.launch { repo.purge(session.id); refresh++ } },
-                )
-            }
+    val begin = { p: Profile -> scope.launch { onOpenSession(repo.start(p, lang)) }; Unit }
+    // The camera permission is asked of the officer here, never of the subject on the stage.
+    val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { profile?.let(begin) }
+    val onStart = {
+        profile?.let { p ->
+            if (cameraWanted && !hasCameraPermission(context)) askCamera.launch(Manifest.permission.CAMERA) else begin(p)
+        }
+        Unit
+    }
 
-            Text(
-                stringResource(R.string.start_who),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { heading() },
-            )
-            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Profile.entries.forEach { p ->
-                    ProfileOption(p, selected = profile == p, onSelect = { profile = p })
+    Column(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(0.36f).fillMaxWidth()) {
+            Backdrop(Modifier.fillMaxSize())
+            Box(Modifier.fillMaxSize().statusBarsPadding()) {
+                Avatar(
+                    character = characterFor(profile ?: Profile.YOUNG_CHILD),
+                    gesture = content.gestures["namaste"],
+                    playKey = profile,
+                    modifier = Modifier.fillMaxHeight(0.80f).aspectRatio(1f).align(Alignment.BottomCenter),
+                )
+                Row(Modifier.fillMaxWidth().padding(start = Spacing.lg, top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = ink.band, modifier = Modifier.weight(1f))
+                    IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title), tint = ink.band) }
+                }
+                content.language(lang)?.hello?.let {
+                    Box(Modifier.align(Alignment.TopEnd).padding(top = 56.dp, end = 28.dp)) { Bubble(it) }
                 }
             }
-
-            Text(
-                stringResource(R.string.start_language),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { heading() },
-            )
-            if (profile == Profile.OTHER_LANGUAGE) {
-                Text(
-                    stringResource(R.string.start_language_finder),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                LanguagePicker(content, lang, onPick = { lang = it })
+        }
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            shadowElevation = 8.dp,
+            modifier = Modifier.weight(0.64f).fillMaxWidth(),
+        ) {
+            Column(Modifier.fillMaxSize().navigationBarsPadding()) {
+                Column(
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    if (expired) Notice(stringResource(R.string.start_expired_title), stringResource(R.string.start_expired_body), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
+                    if (rooted) Notice(null, stringResource(R.string.start_rooted), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                    open?.let { session ->
+                        ResumeCard(
+                            session = session,
+                            languageName = content.language(session.subjectLang)?.name ?: session.subjectLang,
+                            onResume = { onOpenSession(session.id) },
+                            onEnd = { scope.launch { repo.purge(session.id); refresh++ } },
+                        )
+                    }
+                    Text(stringResource(R.string.start_who), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+                    Row(Modifier.selectableGroup().fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Profile.entries.forEach { p -> ProfileFace(p, content, selected = profile == p, onSelect = { profile = p }) }
+                    }
+                    Text(
+                        profile?.let { stringResource(profileDescription(it)) } ?: stringResource(R.string.home_greeting_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (profile == Profile.OTHER_LANGUAGE) {
+                        Text(stringResource(R.string.start_language_finder), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    } else {
+                        LanguagePicker(content, lang, onPick = { lang = it }, label = stringResource(R.string.start_language))
+                    }
+                }
+                Button(
+                    onClick = onStart,
+                    enabled = profile != null && !expired,
+                    shape = RoundedCornerShape(22.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = Spacing.md).height(60.dp),
+                ) {
+                    Text(stringResource(R.string.start_button), style = MaterialTheme.typography.titleMedium)
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.padding(start = Spacing.sm))
+                }
             }
+        }
+    }
+}
 
-            Text(
-                stringResource(R.string.notice_aid),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = Spacing.sm),
-            )
-            Spacer(Modifier.height(Spacing.lg))
+/** One profile as a face: quick to scan, and the face the person will meet on the stage. */
+@Composable
+private fun ProfileFace(profile: Profile, content: ContentBundle, selected: Boolean, onSelect: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val stage = LocalStageColors.current
+    val scale by animateFloatAsState(if (selected) 1.08f else 1f, spring(dampingRatio = 0.55f), label = "face")
+    Column(
+        Modifier
+            .width(78.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton)
+            .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.scale(scale)) {
+            Box(
+                Modifier
+                    .size(64.dp)
+                    .border(if (selected) 3.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant, CircleShape)
+                    .padding(4.dp),
+            ) {
+                MiniFace(
+                    characterFor(profile),
+                    56.dp,
+                    stage.skyTop,
+                    gesture = if (profile == Profile.NOT_SURE) content.gestures["ask"] else null,
+                    atSeconds = if (profile == Profile.NOT_SURE) 0.9f else null,
+                )
+            }
+            ProfileBadge(profile, Modifier.align(Alignment.BottomEnd))
+            if (selected) {
+                Surface(shape = CircleShape, color = colors.primary, modifier = Modifier.align(Alignment.TopEnd).size(22.dp)) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.padding(3.dp))
+                }
+            }
+        }
+        Text(
+            stringResource(profileShort(profile)),
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) colors.primary else colors.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            minLines = 2,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun ProfileBadge(profile: Profile, modifier: Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val icon = when (profile) {
+        Profile.ISL_USER -> R.drawable.ic_hand
+        Profile.OTHER_LANGUAGE -> R.drawable.ic_translate
+        else -> null
+    }
+    if (icon == null && profile != Profile.NOT_SURE) return
+    Surface(shape = CircleShape, color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = modifier.size(24.dp)) {
+        Box(contentAlignment = Alignment.Center) {
+            if (icon != null) Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(14.dp))
+            else Text("?", fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 14.sp)
         }
     }
 }
 
 @Composable
 private fun Notice(title: String?, body: String, container: Color, content: Color) {
-    Surface(color = container, contentColor = content, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(Spacing.lg), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            Icon(Icons.Filled.Warning, contentDescription = null)
+    Surface(color = container, contentColor = content, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(horizontal = Spacing.md, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Warning, contentDescription = null, modifier = Modifier.size(20.dp))
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                title?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
-                Text(body, style = MaterialTheme.typography.bodyMedium)
+                title?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
+                Text(body, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -196,57 +271,39 @@ private fun Notice(title: String?, body: String, container: Color, content: Colo
 
 @Composable
 private fun ResumeCard(session: Session, languageName: String, onResume: () -> Unit, onEnd: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Text(stringResource(R.string.start_resume_title), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(
-                    R.string.start_resume_body,
-                    stringResource(profileTitle(session.profile)),
-                    languageName,
-                    DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(session.startedAt)),
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onEnd) { Text(stringResource(R.string.start_end)) }
-                Button(onClick = onResume) { Text(stringResource(R.string.start_resume)) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProfileOption(profile: Profile, selected: Boolean, onSelect: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        color = if (selected) colors.primaryContainer else colors.surfaceContainerLow,
-        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant),
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton),
-    ) {
-        Row(Modifier.padding(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-            RadioButton(selected = selected, onClick = null)
-            Column(Modifier.padding(start = Spacing.md)) {
-                Text(stringResource(profileTitle(profile)), style = MaterialTheme.typography.titleMedium)
+    val ink = LocalInk.current
+    Surface(color = ink.band, contentColor = ink.onBand, shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            MiniFace(characterFor(session.profile), 40.dp, Color(0xFFFFDDBE))
+            Column(Modifier.weight(1f).padding(start = Spacing.md)) {
+                Text(stringResource(R.string.start_resume_title), style = MaterialTheme.typography.titleSmall)
                 Text(
-                    stringResource(profileDescription(profile)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onSurfaceVariant,
+                    stringResource(
+                        R.string.start_resume_body,
+                        stringResource(profileTitle(session.profile)),
+                        languageName,
+                        DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(session.startedAt)),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ink.onBandMuted,
+                    maxLines = 2,
                 )
             }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = onEnd) { Text(stringResource(R.string.start_end), color = ink.onBandMuted) }
+            Button(onClick = onResume, shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = ink.chipSelected, contentColor = ink.onChipSelected)) {
+                Text(stringResource(R.string.start_resume))
+            }
+        }
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) -> Unit, modifier: Modifier = Modifier) {
+fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) -> Unit, modifier: Modifier = Modifier, label: String? = null) {
     var expanded by remember { mutableStateOf(false) }
     val current = content.language(selected)
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
@@ -255,7 +312,10 @@ fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) ->
             onValueChange = {},
             readOnly = true,
             singleLine = true,
+            label = label?.let { { Text(it) } },
+            leadingIcon = { Icon(painterResource(R.drawable.ic_translate), contentDescription = null) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            shape = RoundedCornerShape(18.dp),
             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -277,10 +337,16 @@ fun profileTitle(p: Profile) = when (p) {
     Profile.NOT_SURE -> R.string.profile_unsure
 }
 
+private fun profileShort(p: Profile) = when (p) {
+    Profile.YOUNG_CHILD -> R.string.profile_child
+    Profile.ISL_USER -> R.string.profile_isl_short
+    Profile.OTHER_LANGUAGE -> R.string.profile_other_short
+    Profile.NOT_SURE -> R.string.profile_unsure
+}
+
 private fun profileDescription(p: Profile) = when (p) {
     Profile.YOUNG_CHILD -> R.string.profile_child_desc
     Profile.ISL_USER -> R.string.profile_isl_desc
     Profile.OTHER_LANGUAGE -> R.string.profile_other_desc
     Profile.NOT_SURE -> R.string.profile_unsure_desc
 }
-

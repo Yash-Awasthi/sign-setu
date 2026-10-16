@@ -13,9 +13,10 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | [04-security.md](04-security.md) | Security controls (MASVS L2, CERT-In), keys, threats in scope |
 | [05-avatar-and-gestures.md](05-avatar-and-gestures.md) | Gesture and ISL lexicons, the two characters, clip pipeline, validation |
 | [06-test-plan.md](06-test-plan.md) | Functional, performance, security, accessibility tests; testing with children |
-| [07-decisions.md](07-decisions.md) | Decision log D-01 to D-19 |
+| [07-decisions.md](07-decisions.md) | Decision log D-01 to D-21 |
 | [08-plan.md](08-plan.md) | Gated delivery phases and phase 0 status |
 | [09-open-source.md](09-open-source.md) | Reusable open-source components per module, with licences |
+| [10-test-report.md](10-test-report.md) | Phase 1 test results against the test plan, with open items |
 
 ## Other folders
 

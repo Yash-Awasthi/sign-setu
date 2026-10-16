@@ -182,7 +182,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-14 Officer gesture lookup replaces camera sign recognition in v1
 
-**Status:** Accepted 16 October 2026 (see critical review C-4, C-5)
+**Status:** Accepted 16 October 2026 (see critical review C-4, C-5); the camera part is superseded by D-20. Gesture lookup and show-back stay.
 
 **Context.** Public ISL datasets are adult signers; children's home signs are in no dataset. One phone's front camera cannot watch the subject while the officer reads the screen. A false "yes" is the worst failure the app can produce.
 
@@ -254,3 +254,27 @@ Status: Proposed, Accepted, Superseded.
 - The SOP requires a phone PIN that is not shared, End session after every conversation, and Clear all data and uninstall on transfer or retirement.
 
 **Consequences.** A family member who knows the phone PIN can open sessions that have not been ended or auto-deleted (R-23). If the pilot shows that phones are commonly shared, add an app-specific PIN.
+
+---
+
+## D-20 The stage: the character above, a camera mirror below
+
+**Status:** Accepted 16 October 2026; supersedes the camera part of D-14
+
+**Context.** In the field the phone faces the subject for most of a conversation, so the subject's screen is the app's home. Children who cannot speak answer with their hands, and seeing their own hands next to the character helps them copy a gesture or show one. A partner team is building an on-device hand-detection model.
+
+**Decision.** While the phone faces the subject, the screen is a stage: the character, the caption and the picture on top; a live front-camera mirror below, with Yes, No, "I don't know" and "Stop" always within reach. The camera is a mirror only: CameraX Preview, plus ImageAnalysis only when a hand model is installed; nothing is captured, recorded or stored. The officer is asked for the CAMERA permission at session start, can turn the mirror off for one person, and a department can turn it off in settings. The partner model plugs in through one interface (`HandTracker`): one upright frame in, 21-point hand landmarks out, on a background thread, with the frame discarded after each call. It is created by `HandTrackers.create()`: the release source set returns none until the model is delivered, and the debug source set offers a stand-in hand (`adb shell run-as in.signsetu touch files/demo_hands`) that checks the camera, analysis and overlay path end to end. Its output only draws an overlay; any meaning it suggests must pass show-back (FR-66).
+
+**Consequences.** CAMERA becomes the app's only dangerous permission (NFR-34, SEC-42 amended; SEC-47 added). Threat T-16 returns with new controls; the DPIA camera row changes from recognition to mirror. The officer side becomes secondary: a panel behind the officer's credential.
+
+---
+
+## D-21 Characters drawn in code for release 1
+
+**Status:** Accepted 16 October 2026; changes the delivery stages of D-13, not its characters or lexicons
+
+**Context.** Pre-rendered clips (05 §5.4 stage 1) need VRoid Studio, Blender and weeks of team time before a child sees any gesture. The app needs a moving character with readable fingers from the first pilot.
+
+**Decision.** Both characters are drawn in code with Compose Canvas on one 2D rig: jointed arms solved from a target position, hands with five fingers of three joints seen from the front, back or side, and a face with brows, eyes and mouth. Gestures are short keyframe files (`gestures.json`) written against named contact points (forehead, mouth, chest), so one file plays on both characters. The gesture lexicon, its review rules and the show-back step do not change. Debug builds include a gallery of every gesture on both characters for reviewers.
+
+**Consequences.** No video files and almost no size cost; gestures can be corrected in the file and re-reviewed in minutes. A 2D figure carries less depth than a rendered clip; reviewers judge each gesture in the gallery, and a gesture that does not read in 2D gets a rendered clip later (05 §5.4).

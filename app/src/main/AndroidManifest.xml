@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Live mirror of the subject's hands; nothing is captured or stored (D-20). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
     <!-- Sandes (NIC) is opened for the interpreter call; package visibility needs it declared (API 30+). -->
     <queries>
         <package android:name="in.nic.gimkerala" />

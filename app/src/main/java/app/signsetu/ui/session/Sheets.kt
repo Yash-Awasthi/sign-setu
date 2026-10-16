@@ -1,5 +1,12 @@
 package app.signsetu.ui.session
 
+import app.signsetu.ui.avatar.Avatar
+import app.signsetu.ui.avatar.Character
+import app.signsetu.ui.avatar.Timeline
+import app.signsetu.ui.theme.LocalStageColors
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -12,6 +19,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,12 +31,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -70,14 +81,25 @@ import app.signsetu.ui.theme.Spacing
 import java.text.DateFormat
 import java.util.Date
 
+private const val FAVOURITES = "*favourites"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BoardSheet(content: ContentBundle, lang: String, initial: List<String>, onUse: (List<String>) -> Unit, onDismiss: () -> Unit) {
+fun BoardSheet(
+    content: ContentBundle,
+    lang: String,
+    initial: List<String>,
+    favourites: Set<String>,
+    onFavourite: (String) -> Unit,
+    onUse: (List<String>) -> Unit,
+    onDismiss: () -> Unit,
+) {
     var query by rememberSaveable { mutableStateOf("") }
-    var category by rememberSaveable { mutableStateOf<String?>(null) }
+    // Favourites open first once the officer has starred any (FR-19).
+    var category by rememberSaveable { mutableStateOf(if (favourites.isNotEmpty()) FAVOURITES else null) }
     val chosen = remember { mutableStateListOf<String>().apply { addAll(initial) } }
     val cards = content.cards.values.filter { c ->
-        (category == null || c.category == category) &&
+        (category == null || c.category == category || (category == FAVOURITES && c.id in favourites)) &&
             (query.isBlank() || c.label.values.any { it.contains(query.trim(), ignoreCase = true) })
     }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
@@ -92,6 +114,14 @@ fun BoardSheet(content: ContentBundle, lang: String, initial: List<String>, onUs
                 modifier = Modifier.fillMaxWidth(),
             )
             LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(vertical = Spacing.md)) {
+                item {
+                    FilterChip(
+                        selected = category == FAVOURITES,
+                        onClick = { category = FAVOURITES },
+                        label = { Text(stringResource(R.string.board_favourites)) },
+                        leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    )
+                }
                 item { FilterChip(selected = category == null, onClick = { category = null }, label = { Text(stringResource(R.string.board_all)) }) }
                 items(content.categories, key = { it.id }) { c ->
                     FilterChip(selected = category == c.id, onClick = { category = c.id }, label = { Text(c.label.pick(lang) ?: c.id) })
@@ -104,13 +134,24 @@ fun BoardSheet(content: ContentBundle, lang: String, initial: List<String>, onUs
                 modifier = Modifier.weight(1f),
             ) {
                 items(cards, key = { it.id }) { card ->
-                    PictureCard(
-                        cardId = card.id,
-                        label = card.label.pick(lang),
-                        selected = card.id in chosen,
-                        onClick = { if (card.id in chosen) chosen.remove(card.id) else chosen.add(card.id) },
-                        minSize = 104.dp,
-                    )
+                    Box {
+                        PictureCard(
+                            cardId = card.id,
+                            label = card.label.pick(lang),
+                            selected = card.id in chosen,
+                            onClick = { if (card.id in chosen) chosen.remove(card.id) else chosen.add(card.id) },
+                            minSize = 104.dp,
+                        )
+                        val starred = card.id in favourites
+                        IconButton(onClick = { onFavourite(card.id) }, modifier = Modifier.align(Alignment.TopStart).size(40.dp)) {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = stringResource(R.string.board_favourite),
+                                tint = if (starred) Color(0xFFF2A72E) else MaterialTheme.colorScheme.outlineVariant,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
                 }
             }
             Button(
@@ -166,7 +207,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry) ->
                         ListItem(
                             headlineContent = { Text(entry.label.pick(lang) ?: entry.id) },
                             supportingContent = { Text(entry.how.pick(lang) ?: entry.how["en"].orEmpty()) },
-                            leadingContent = { CardImage(entry.card, Modifier.size(48.dp)) },
+                            leadingContent = { GesturePreview(content, entry) },
                             trailingContent = { TextButton(onClick = { onPick(entry) }) { Text(stringResource(R.string.gl_show_back)) } },
                             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         )
@@ -342,4 +383,25 @@ fun EventType.label() = when (this) {
     EventType.LANGUAGE_CHOSEN -> R.string.log_language
     EventType.NOTE -> R.string.log_note
     EventType.SYSTEM -> R.string.log_system
+}
+
+/** The character's pose at the gesture's key moment, with the picture it stands for. */
+@Composable
+private fun GesturePreview(content: ContentBundle, entry: LexiconEntry) {
+    val gesture = content.gestures[entry.id]
+    Box(Modifier.size(72.dp)) {
+        Surface(shape = RoundedCornerShape(16.dp), color = LocalStageColors.current.skyTop, modifier = Modifier.fillMaxSize()) {
+            if (gesture != null) {
+                val keys = gesture.keys.sortedBy { it.t }
+                Avatar(Character.CHILD, gesture, entry.id, Modifier.fillMaxSize(), idle = false, atSeconds = Timeline.LEAD_IN + keys[keys.size / 2].t)
+            } else {
+                CardImage(entry.card, Modifier.padding(10.dp))
+            }
+        }
+        if (gesture != null) {
+            Surface(shape = CircleShape, color = Color.White, shadowElevation = 2.dp, modifier = Modifier.align(Alignment.BottomEnd).size(28.dp)) {
+                CardImage(entry.card, Modifier.padding(4.dp))
+            }
+        }
+    }
 }

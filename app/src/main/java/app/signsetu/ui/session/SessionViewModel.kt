@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -42,6 +43,9 @@ enum class Mode { OFFICER, SHOW }
 /** Machine keys for SYSTEM events; the log shows them in the officer's language. */
 const val SYSTEM_LANGUAGE_FINDER = "language_finder"
 const val SYSTEM_DRAWING = "drawing"
+
+/** The first thing every subject sees: the officer introduces themself (03-ux §7). */
+private const val OPENING_QUESTION = "s1"
 
 @Immutable
 data class SessionUi(
@@ -85,10 +89,16 @@ class SessionViewModel(
 
     init {
         viewModelScope.launch {
-            val session = repo.openSession()
-            // A subject who speaks another language starts with the language finder (FR-63).
-            if (session?.id == sessionId && session.profile == Profile.OTHER_LANGUAGE) {
-                local.update { it.copy(pending = Pending.LanguageFinder) }
+            val session = repo.session(sessionId).first() ?: return@launch
+            // Starting a session is the officer's confirmation of its opening: the stage greets the person first,
+            // or, for someone who speaks another language, lets them find it (FR-63).
+            if (repo.events(sessionId).first().isEmpty()) {
+                val opening = if (session.profile == Profile.OTHER_LANGUAGE) {
+                    Pending.LanguageFinder
+                } else {
+                    content.questions.firstOrNull { it.id == OPENING_QUESTION }?.let { Pending.Ask(it) }
+                }
+                opening?.let { present(it, session.subjectLang) }
             }
         }
     }
@@ -105,27 +115,29 @@ class SessionViewModel(
     fun show() {
         val state = ui.value ?: return
         val pending = local.value.pending ?: return
-        val lang = state.session.subjectLang
-        viewModelScope.launch {
-            when (pending) {
-                is Pending.Ask -> repo.log(
-                    sessionId, EventType.QUESTION_SHOWN, EventSource.PRESET, lang,
-                    text = pending.question.text.pick(officerLang), lexiconId = pending.question.lexicon,
-                )
-                is Pending.FreeText -> repo.log(sessionId, EventType.QUESTION_SHOWN, EventSource.TEXT, lang, text = pending.text)
-                is Pending.Cards -> repo.log(
-                    sessionId, EventType.QUESTION_SHOWN, EventSource.BOARD, lang,
-                    text = pending.cardIds.joinToString { id -> content.cards[id]?.label?.pick(officerLang) ?: id },
-                )
-                is Pending.ShowBack -> repo.log(
-                    sessionId, EventType.QUESTION_SHOWN, EventSource.SHOW_BACK, lang,
-                    text = pending.entry.label.pick(officerLang), cardId = pending.entry.card, lexiconId = pending.entry.id,
-                )
-                Pending.LanguageFinder -> repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_LANGUAGE_FINDER)
-                Pending.Drawing -> repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_DRAWING)
-            }
-            local.update { it.copy(mode = Mode.SHOW, answeredCard = null, answeredYes = null, chosenLanguage = null) }
+        viewModelScope.launch { present(pending, state.session.subjectLang) }
+    }
+
+    private suspend fun present(pending: Pending, lang: String) {
+        local.update { it.copy(pending = pending) }
+        when (pending) {
+            is Pending.Ask -> repo.log(
+                sessionId, EventType.QUESTION_SHOWN, EventSource.PRESET, lang,
+                text = pending.question.text.pick(officerLang), lexiconId = pending.question.lexicon,
+            )
+            is Pending.FreeText -> repo.log(sessionId, EventType.QUESTION_SHOWN, EventSource.TEXT, lang, text = pending.text)
+            is Pending.Cards -> repo.log(
+                sessionId, EventType.QUESTION_SHOWN, EventSource.BOARD, lang,
+                text = pending.cardIds.joinToString { id -> content.cards[id]?.label?.pick(officerLang) ?: id },
+            )
+            is Pending.ShowBack -> repo.log(
+                sessionId, EventType.QUESTION_SHOWN, EventSource.SHOW_BACK, lang,
+                text = pending.entry.label.pick(officerLang), cardId = pending.entry.card, lexiconId = pending.entry.id,
+            )
+            Pending.LanguageFinder -> repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_LANGUAGE_FINDER)
+            Pending.Drawing -> repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_DRAWING)
         }
+        local.update { it.copy(mode = Mode.SHOW, answeredCard = null, answeredYes = null, chosenLanguage = null) }
     }
 
     fun answerCard(cardId: String) {

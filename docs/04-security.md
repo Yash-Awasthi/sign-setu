@@ -53,10 +53,11 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | --- | --- | --- |
 | SEC-40 | `FLAG_SECURE` on the activity: blocks screenshots, screen recording and recents thumbnails. | NFR-32 |
 | SEC-41 | Only the launcher activity exported; export through `FileProvider` with a temporary grant. | MASVS-PLATFORM-1 |
-| SEC-42 | No dangerous permissions in release 1 (no CAMERA, RECORD_AUDIO, LOCATION, INTERNET). | CERT-In 6.2.6 |
+| SEC-42 | The only dangerous permission is CAMERA, for the stage mirror (D-20); no RECORD_AUDIO, LOCATION or INTERNET. | CERT-In 6.2.6 |
 | SEC-43 | No WebView. | MASVS-PLATFORM-2 |
 | SEC-44 | No notifications containing subject data. | NFR-37 |
 | SEC-45 | `filterTouchesWhenObscured` on Show, export and clear actions. | MASVS-PLATFORM-3 |
+| SEC-47 | Camera: only Preview is bound, plus ImageAnalysis when a hand model is installed; no ImageCapture or VideoCapture; frames are never written anywhere and the analysis bitmap is recycled after each frame; the camera runs only while the stage is on screen; CAMERA is requested from the officer at session start, never on the stage; the officer and the department can turn the mirror off. | MASVS-PLATFORM-1, DPDP section 8 |
 | SEC-46 | Screen pinning (`startLockTask`) from the first Show state until the session ends; first run guides the officer to turn on app pinning with "ask for PIN before unpinning". Leaving the Show state for the Officer state requires BiometricPrompt. | FR-61 |
 
 ### 2.6 Code and supply chain
@@ -91,7 +92,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 
 ## 4. Threats in scope for release 1
 
-The full STRIDE analysis is in [governance/07-threat-model.md](governance/07-threat-model.md); it predates the offline design and must be refreshed before the audit. Release 1 removes the network threats (T-07 to T-13) and camera exposure (T-16).
+The full STRIDE analysis is in [governance/07-threat-model.md](governance/07-threat-model.md); it predates the offline design and must be refreshed before the audit. Release 1 removes the network threats (T-07 to T-13); camera exposure (T-16) returns with the mirror and is controlled by SEC-47.
 
 | Threat | Main controls |
 | --- | --- |
@@ -104,6 +105,7 @@ The full STRIDE analysis is in [governance/07-threat-model.md](governance/07-thr
 | Report sent to the wrong person | SEC-12, passphrase out of band, officer SOP |
 | Other apps, intents, overlays | SEC-41, SEC-45 |
 | Rooted phone | SEC-63 |
+| Camera shows or keeps images of the subject or bystanders | SEC-47, FLAG_SECURE (SEC-40), mirror off by officer or department |
 | Compromised dependency or signing key | SEC-50 to SEC-52, SEC-62 |
 | Gesture misread and acted on | Show-back confirmation (FR-66); "unclear" logged otherwise |
 | Distressing content shown to a child | Content policy review; curated cards; no generated images |
