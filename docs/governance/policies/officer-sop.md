@@ -12,7 +12,7 @@ For police officers using the app in the field. Keep it short in training: the q
 
 1. Make sure you are somewhere the person feels safe, away from crowds where possible.
 2. Sit or crouch at their level.
-3. Choose who you are helping and their language, then start the session. When you tap **Show to them**, turn the phone so it faces them; the app stays on that screen until you take it back with your fingerprint or PIN.
+3. Choose who you are helping and their language, then start the session. When you tap **Show to them**, turn the phone so it faces them; the app stays on that screen until you take it back by tapping the small lock.
 4. If they sit opposite you, use the menu option **They sit opposite me** so the screen is the right way up for them.
 
 ## 3. Asking
@@ -21,7 +21,7 @@ For police officers using the app in the field. Keep it short in training: the q
 2. Ask one question at a time and wait. Do not rush.
 3. Do not ask about what happened until the person is calm and safe. Sensitive questions are behind a second tap on purpose.
 4. Do not ask leading questions ("Did he hit you?"). Use open questions or show choices.
-5. If you type your own question, keep it short and add pictures: the character does not sign typed words.
+5. If you type your own question, keep it short and use plain words: the character signs or spells it word by word, which is not full ISL grammar. Prefer a prepared question when one fits.
 6. If they tap **Stop**, pause. Check they are comfortable, offer water or a rest, and go on only when they are ready.
 
 ## 4. Understanding answers

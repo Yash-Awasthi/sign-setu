@@ -278,3 +278,29 @@ Status: Proposed, Accepted, Superseded.
 **Decision.** Both characters are drawn in code with Compose Canvas on one 2D rig: jointed arms solved from a target position, hands with five fingers of three joints seen from the front, back or side, and a face with brows, eyes and mouth. Gestures are short keyframe files (`gestures.json`) written against named contact points (forehead, mouth, chest), so one file plays on both characters. The gesture lexicon, its review rules and the show-back step do not change. Debug builds include a gallery of every gesture on both characters for reviewers.
 
 **Consequences.** No video files and almost no size cost; gestures can be corrected in the file and re-reviewed in minutes. A 2D figure carries less depth than a rendered clip; reviewers judge each gesture in the gallery, and a gesture that does not read in 2D gets a rendered clip later (05 §5.4).
+
+---
+
+## D-22 Typed text is signed word by word, with the officer choosing how
+
+**Status:** Accepted 16 October 2026; amends the free-text rule of D-13 and FR-13
+
+**Context.** Officers in Chhattisgarh, including its Naxal-affected districts, need to say things the triage set and phrase bank do not cover, and reaching a prepared question took several taps. Free text shown only as a caption reaches nobody who cannot read. Grammatical text-to-ISL translation does not exist offline at no cost.
+
+**Decision.** The composer at the bottom of the officer panel takes any text; Send shows it at once. The character plays it word by word, under four toggles the officer sets per person: **Signs** plays the ISL sign for a word, **Gestures** the everyday gesture a child who does not sign understands, **Spell** fingerspells any other word with the two-handed ISL alphabet (Hindi is first written in Latin letters, as Deaf signers spell it), and **Pictures** holds up the word's picture. Signers start with Signs, Spell and Pictures; everyone else with Gestures and Pictures. A question mark adds the asking face. The word being played is lit in the caption, and a spelled word shows its current letter beside the character. The vocabulary (`words.json`) lists each word in English, Hindi, Hindi in Latin letters and common Chhattisgarhi and Gondi forms; the alphabet, digits and new signs are generated into `signs.json` by `tools/content/build_signs.py`. Chhattisgarhi, Gondi and Halbi join the language finder as text only.
+
+**Consequences.** Word-by-word signing is not ISL grammar, so the stage presents it as words, not sentences, and prepared questions stay the first choice. Every letter, digit, sign and vocabulary entry is a draft until the ISL and language reviewers sign it off in the content review record; the new languages need native speakers for their greetings and any recordings. The Type sheet is removed; pictures for a typed question are attached from the type box.
+
+---
+
+## D-23 The handle alone, without a credential, leaves the stage
+
+**Status:** Accepted 16 October 2026; amends FR-61, SEC-21 and SEC-46
+
+**Context.** Officers met a fingerprint or PIN prompt on opening the app, again every time they took the phone back from the subject, and the phone locked when pinning ended. In the field this is several prompts a minute. The credential on the way back from the stage guards the notes and log against a subject who taps the officer handle, and a deliberate long press does that without a prompt.
+
+**Decision.** Leaving the stage needs the officer handle held for 1.2 seconds; a ring fills while it is held, the panel opens on release, and a tap or Back does nothing. A department setting, off by default, adds the fingerprint or PIN after the hold. Opening the app first tries the Keystore key silently: within its 30-second window after the officer unlocks the phone, the app opens without a second prompt. Screen pinning is unchanged.
+
+**Consequences.** One prompt per session at most: the phone's own unlock when pinning ends. A subject who discovers the held press can open the officer panel of their own session; departments that judge this a risk turn the setting on. Threat T-21's controls and test TC-03 change accordingly.
+
+**Amendment.** At the product owner's direction a single tap on the handle replaces the held press. The handle stays small and out of the way; a subject who taps it reaches the officer panel of their own session, which raises T-21 to Medium unless the department turns the credential setting on.

@@ -38,11 +38,7 @@
 
     <!-- Officer state -->
     <string name="officer_show">Show to them</string>
-    <string name="officer_nothing_pending">Choose a question, picture or gesture</string>
-    <string name="officer_own_question">Your own question</string>
-    <string name="officer_own_hint">Type a short question</string>
     <string name="officer_add_pictures">Add pictures</string>
-    <string name="officer_use">Use</string>
     <string name="officer_find_language">Find their language</string>
     <string name="officer_draw">Let them draw</string>
     <string name="officer_log">Session log</string>
@@ -201,10 +197,7 @@
     <string name="action_board">Pictures</string>
     <string name="action_draw">Draw</string>
     <string name="action_language">Language</string>
-    <string name="action_type">Type</string>
     <string name="officer_ask_another">Ask another way</string>
-    <string name="officer_latest">Latest answer</string>
-    <string name="officer_in_reply">to “%1$s”</string>
     <string name="officer_stop_title">They asked to stop</string>
     <string name="officer_stop_body">Pause. Check they are comfortable, offer water or a rest, and go on only when they are ready.</string>
     <string name="officer_has_gesture">Character shows a gesture</string>
@@ -234,4 +227,15 @@
     <string name="start_damaged_body">The questions or pictures in this copy of the app do not match the approved content, so no new session can start. Install the current version from your department.</string>
     <string name="start_media_rejected">Some pictures, sounds or gestures failed a check and are left out.</string>
     <string name="officer_phrases">Phrases</string>
+    <string name="quick_hint">Type anything to show them</string>
+    <string name="mode_signs">Signs</string>
+    <string name="mode_gestures">Gestures</string>
+    <string name="mode_spell">Spell</string>
+    <string name="mode_pictures">Pictures</string>
+    <string name="settings_pin_to_leave">Screen lock to leave the stage</string>
+    <string name="settings_pin_to_leave_summary">Tapping the lock leaves the stage. When on, the fingerprint or PIN is asked as well.</string>
+    <string name="chat_empty_title">Start the conversation</string>
+    <string name="chat_empty_body">Pick a question below or type anything. What you show and their answers appear here.</string>
+    <string name="chat_ready">Ready to show</string>
+    <string name="log_typed">Typed answer</string>
 </resources>

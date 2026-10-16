@@ -1,5 +1,7 @@
 package app.signsetu.ui
 
+import app.signsetu.ui.components.BrandButton
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +35,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -98,8 +99,8 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Surface(shape = CircleShape, color = ink.band, modifier = Modifier.size(56.dp)) {
-                    Icon(Icons.Filled.Lock, contentDescription = null, tint = ink.chipSelected, modifier = Modifier.padding(14.dp))
+                Surface(shape = CircleShape, color = Color.Transparent, modifier = Modifier.size(56.dp)) {
+                    Icon(Icons.Filled.Lock, contentDescription = null, tint = ink.onBand, modifier = Modifier.background(ink.brush).padding(14.dp))
                 }
                 Text(
                     stringResource(if (secure) R.string.lock_title else R.string.no_lock_title),
@@ -116,7 +117,7 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
                     Text(stringResource(R.string.lock_failed), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.weight(1f))
-                Button(
+                BrandButton(
                     onClick = {
                         if (secure) {
                             failed = false
@@ -125,8 +126,7 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
                             context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS))
                         }
                     },
-                    shape = RoundedCornerShape(22.dp),
-                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                 ) { Text(stringResource(if (secure) R.string.lock_button else R.string.no_lock_button), style = MaterialTheme.typography.titleMedium) }
                 Text(
                     stringResource(R.string.notice_aid),

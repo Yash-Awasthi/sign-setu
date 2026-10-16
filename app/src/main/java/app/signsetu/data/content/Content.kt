@@ -78,6 +78,7 @@ data class Phrase(val id: String, val label: Localized, val signs: List<String>,
 @Serializable private data class LanguagesFile(val languages: List<Language>)
 @Serializable private data class Manifest(val files: Map<String, String>)
 @Serializable private data class GesturesFile(val gestures: List<Gesture>)
+@Serializable private data class WordsFile(val words: List<WordEntry>)
 
 @Immutable
 data class ContentBundle(
@@ -94,6 +95,8 @@ data class ContentBundle(
     val files: Set<String> = emptySet(),
     val gestures: Map<String, Gesture> = emptyMap(),
     val phrases: List<Phrase> = emptyList(),
+    /** Every written form of a vocabulary word, lower case, to its entry. */
+    val words: Map<String, WordEntry> = emptyMap(),
 ) {
     fun gestureFor(q: Question): Gesture? = (q.gesture ?: q.lexicon)?.let { gestures[it] }
 
@@ -113,7 +116,7 @@ data class ContentBundle(
     fun hasCardImage(id: String) = "cards/$id.webp" in files
 
     /** A text file failed its check, so the subject could be shown wrong words: no session may start (SEC-54). */
-    val damaged: Boolean get() = rejected.any { it.endsWith(".json") && it != "gestures.json" }
+    val damaged: Boolean get() = rejected.any { it.endsWith(".json") && it != "gestures.json" && it != "signs.json" }
 
     /** Gesture lookup: both location and action match first, then location only, then action only. */
     fun lookup(location: BodyLocation?, action: HandAction?): List<LexiconEntry> {
@@ -144,7 +147,9 @@ class ContentRepository(private val assets: AssetManager) {
         val lexicon = verified("lexicon.json", rejected) ?: LexiconFile(emptyList())
         val languages = verified("languages.json", rejected) ?: LanguagesFile(emptyList())
         val subjectUi = verified<Map<String, Localized>>("subject_ui.json", rejected).orEmpty()
-        val gestures = verified<GesturesFile>("gestures.json", rejected)?.gestures.orEmpty()
+        val gestures = verified<GesturesFile>("gestures.json", rejected)?.gestures.orEmpty() +
+            verified<GesturesFile>("signs.json", rejected)?.gestures.orEmpty()
+        val words = verified<WordsFile>("words.json", rejected)?.words.orEmpty()
         val phrases = verified<PhrasesFile>("phrases.json", rejected)?.phrases.orEmpty()
         ContentBundle(
             groups = triage.groups,
@@ -158,6 +163,7 @@ class ContentRepository(private val assets: AssetManager) {
             files = manifest.files.keys - rejected,
             gestures = gestures.associateBy { it.id },
             phrases = phrases,
+            words = words.flatMap { e -> e.w.map { it to e } }.toMap(),
         ).also { bundle = it }
     }
 

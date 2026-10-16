@@ -59,6 +59,59 @@ Reviewers: child-welfare reviewer for every gesture; ISL reviewer as well for en
 | `school.write` | School | Writing on the other palm. |  |  |  |
 | `police.salute` | Police | Flat hand to the forehead in a salute. |  |  |  |
 | `doctor.listen` | Doctor | Two fingers from the ears to the chest, like a stethoscope. |  |  |  |
+| `letter.a` | Fingerspelling: letter A |  |  |  |  |
+| `letter.e` | Fingerspelling: letter E |  |  |  |  |
+| `letter.i` | Fingerspelling: letter I |  |  |  |  |
+| `letter.o` | Fingerspelling: letter O |  |  |  |  |
+| `letter.u` | Fingerspelling: letter U |  |  |  |  |
+| `letter.b` | Fingerspelling: letter B |  |  |  |  |
+| `letter.c` | Fingerspelling: letter C |  |  |  |  |
+| `letter.d` | Fingerspelling: letter D |  |  |  |  |
+| `letter.f` | Fingerspelling: letter F |  |  |  |  |
+| `letter.g` | Fingerspelling: letter G |  |  |  |  |
+| `letter.h` | Fingerspelling: letter H |  |  |  |  |
+| `letter.j` | Fingerspelling: letter J |  |  |  |  |
+| `letter.k` | Fingerspelling: letter K |  |  |  |  |
+| `letter.l` | Fingerspelling: letter L |  |  |  |  |
+| `letter.m` | Fingerspelling: letter M |  |  |  |  |
+| `letter.n` | Fingerspelling: letter N |  |  |  |  |
+| `letter.p` | Fingerspelling: letter P |  |  |  |  |
+| `letter.q` | Fingerspelling: letter Q |  |  |  |  |
+| `letter.r` | Fingerspelling: letter R |  |  |  |  |
+| `letter.s` | Fingerspelling: letter S |  |  |  |  |
+| `letter.t` | Fingerspelling: letter T |  |  |  |  |
+| `letter.v` | Fingerspelling: letter V |  |  |  |  |
+| `letter.w` | Fingerspelling: letter W |  |  |  |  |
+| `letter.x` | Fingerspelling: letter X |  |  |  |  |
+| `letter.y` | Fingerspelling: letter Y |  |  |  |  |
+| `letter.z` | Fingerspelling: letter Z |  |  |  |  |
+| `digit.0` | Number 0 |  |  |  |  |
+| `digit.1` | Number 1 |  |  |  |  |
+| `digit.2` | Number 2 |  |  |  |  |
+| `digit.3` | Number 3 |  |  |  |  |
+| `digit.4` | Number 4 |  |  |  |  |
+| `digit.5` | Number 5 |  |  |  |  |
+| `digit.6` | Number 6 |  |  |  |  |
+| `digit.7` | Number 7 |  |  |  |  |
+| `digit.8` | Number 8 |  |  |  |  |
+| `digit.9` | Number 9 |  |  |  |  |
+| `sign.thanks` | "thanks" |  |  |  |  |
+| `sign.bad` | "bad" |  |  |  |  |
+| `sign.doctor` | "doctor" |  |  |  |  |
+| `sign.help` | "help" |  |  |  |  |
+| `sign.come` | "come" |  |  |  |  |
+| `sign.go` | "go" |  |  |  |  |
+| `sign.stop` | "stop" |  |  |  |  |
+| `sign.finish` | "finish" |  |  |  |  |
+| `sign.child` | "child" |  |  |  |  |
+| `sign.sit` | "sit" |  |  |  |  |
+| `sign.sorry` | "sorry" |  |  |  |  |
+| `sign.hit` | "hit" |  |  |  |  |
+| `sign.time` | "time" |  |  |  |  |
+| `sign.cry` | "cry" |  |  |  |  |
+| `sign.see` | "see" |  |  |  |  |
+| `sign.know` | "know" |  |  |  |  |
+| `sign.wait` | "wait" |  |  |  |  |
 
 ## 2. Phrase-bank sentences
 
@@ -77,7 +130,83 @@ Each sentence is signed as the sequence shown, with its picture held up. Reviewe
 | Are you hungry? | क्या आपको भूख लगी है? | `you.palm`, `hungry.belly`, `ask` |  |  |  |  |
 | Are you in pain? | क्या आपको दर्द हो रहा है? | `you.palm`, `pain.point`, `ask` |  |  |  |  |
 
-## 3. Placeholder recordings
+## 3. Typed-word vocabulary
+
+Typed words the character signs, gestures or pictures (`words.json`, D-22). Reviewers: language reviewer for the written forms of their language, ISL reviewer for the sign column.
+
+| Written forms | Sign | Gesture | Picture | Language | ISL | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| i, me, my, mine, myself, मैं, मुझे, मेरा, मेरी, मेरे, main, mai, mujhe, mera, meri, mere | `me.chest` | `me.chest` | `person` |  |  |  |
+| you, your, yours, आप, तुम, तू, आपका, आपकी, आपके, आपको, तुम्हारा, तुम्हें, aap, tum, tu, aapka, aapki, aapke, aapko, tumhara, tumhe | `you.palm` | `you.palm` |  |  |  |  |
+| mother, mom, mum, mummy, amma, maa, ma, mata, माँ, मां, माता, मम्मी, अम्मा, दाई, याया | `mother.nosering` | `mother.bindi` | `mother` |  |  |  |
+| father, dad, daddy, papa, baba, abba, पिता, पापा, बाबा, बापू, अब्बा, ददा | `father.moustache` | `father.moustache` | `father` |  |  |  |
+| grandmother, granny, dadi, nani, दादी, नानी |  | `grandparent.stick` | `grandmother` |  |  |  |
+| grandfather, grandpa, dada, nana, दादा, नाना |  | `grandparent.stick` | `grandfather` |  |  |  |
+| baby, infant, शिशु, बेबी | `baby.rock` | `baby.rock` | `baby` |  |  |  |
+| child, kid, kids, children, boy, girl, बच्चा, बच्ची, बच्चे, लड़का, लड़की, bachcha, bacha, bachchi, ladka, ladki | `sign.child` | `sign.child` |  |  |  |  |
+| brother, bhai, bhaiya, भाई, भैया |  | `sibling.rakhi` | `brother` |  |  |  |
+| sister, behen, bahan, didi, बहन, दीदी |  | `sibling.rakhi` | `sister` |  |  |  |
+| home, house, ghar, makaan, घर, मकान, लोन | `home.roof` | `home.roof` | `home` |  |  |  |
+| village, gaon, gaanv, गाँव, गांव |  | `home.roof` | `village` |  |  |  |
+| eat, ate, eating, food, meal, khana, khaana, khao, khaya, bhojan, roti, खाना, खाओ, खाया, भोजन, रोटी, भात | `eat.fingers` | `eat.fingers` | `food` |  |  |  |
+| hungry, hunger, bhook, bhukh, bhookh, भूख, भूखा, भूखी, भूखे |  | `hungry.belly` | `food` |  |  |  |
+| water, drink, thirsty, pani, paani, pyaas, pyas, पानी, प्यास, प्यासा, प्यासी, पियो, पीना, एर | `water.thumb` | `water.cup` | `water` |  |  |  |
+| toilet, bathroom, washroom, pee, potty, latrine, शौचालय, टॉयलेट, बाथरूम, पेशाब |  | `toilet.finger` | `toilet` |  |  |  |
+| sleep, sleeping, slept, tired, rest, neend, sona, soya, aaram, नींद, सोना, सोओ, सोए, थका, थकी, थके, आराम | `sleep.palms` | `sleep.palms` | `rest` |  |  |  |
+| pain, hurt, hurts, hurting, injury, injured, dard, chot, takleef, दर्द, चोट, तकलीफ | `pain.point` | `pain.point` | `pain` |  |  |  |
+| sick, ill, fever, bimar, bukhar, बीमार, बुखार |  | `sick.forehead` | `sick` |  |  |  |
+| medicine, tablet, pill, dawa, dawai, दवा, दवाई, गोली |  | `medicine.pill` | `medicine` |  |  |  |
+| doctor, dr, daktar, डॉक्टर, डाक्टर | `sign.doctor` | `doctor.listen` | `doctor` |  |  |  |
+| hospital, aspatal, अस्पताल | `sign.doctor` | `doctor.listen` | `hospital` |  |  |  |
+| cold, thand, thanda, ठंड, ठंडा, ठंडी, सर्दी |  | `cold.hug` | `cold` |  |  |  |
+| hot, heat, garmi, garam, गर्मी, गरम, गर्म |  | `hot.fan` | `hot` |  |  |  |
+| scared, afraid, fear, frightened, darr, dar, dara, dari, डर, डरा, डरी, डरो, भय |  | `scared.cover` | `scared` |  |  |  |
+| cry, crying, sad, rona, udaas, रोना, रोए, उदास, दुखी | `sign.cry` | `sign.cry` | `sad` |  |  |  |
+| yes, yeah, haan, han, ji, हाँ, हां, जी | `yes.nod` | `yes.nod` | `yes` |  |  |  |
+| no, not, nahi, nahin, mat, na, नहीं, ना, मत | `no.shake` | `no.shake` | `no` |  |  |  |
+| ok, okay, fine, good, accha, achha, theek, thik, badhiya, अच्छा, अच्छी, ठीक, बढ़िया | `thumbs_up` | `thumbs_up` | `okay` |  |  |  |
+| bad, wrong, bura, buri, galat, kharab, बुरा, बुरी, गलत, खराब | `sign.bad` | `sign.bad` |  |  |  |  |
+| hello, hi, namaste, namaskar, johar, नमस्ते, नमस्कार, जोहार | `namaste` | `namaste` |  |  |  |  |
+| bye, goodbye, alvida, अलविदा | `wave` | `wave` |  |  |  |  |
+| thanks, thank, dhanyavad, dhanyawad, shukriya, धन्यवाद, शुक्रिया | `sign.thanks` | `sign.thanks` |  |  |  |  |
+| sorry, maaf, maafi, माफ़, माफ, माफ़ी, माफी, क्षमा | `sign.sorry` | `sign.sorry` |  |  |  |  |
+| help, madad, sahayata, bachao, मदद, सहायता, बचाओ | `sign.help` | `sign.help` |  |  |  |  |
+| safe, surakshit, सुरक्षित | `thumbs_up` | `thumbs_up` | `okay` |  |  |  |
+| come, aao, aaiye, आओ, आइए, आइये | `sign.come` | `sign.come` |  |  |  |  |
+| go, went, gone, jao, jana, gaya, gayi, जाओ, जाना, गया, गई, गए | `sign.go` | `sign.go` |  |  |  |  |
+| stop, ruko, roko, रुको, रोको | `sign.stop` | `sign.stop` | `stop` |  |  |  |
+| wait, thahro, intezaar, ठहरो, इंतज़ार, इंतजार | `sign.wait` | `sign.wait` |  |  |  |  |
+| sit, baitho, baithiye, बैठो, बैठिए, बैठिये | `sign.sit` | `sign.sit` |  |  |  |  |
+| finish, finished, done, khatam, ख़त्म, खत्म, समाप्त | `sign.finish` | `sign.finish` |  |  |  |  |
+| hit, beat, beaten, slap, slapped, maara, mara, maar, peeta, मारा, मार, पीटा, थप्पड़ | `sign.hit` | `sign.hit` |  |  |  |  |
+| time, when, kab, samay, waqt, कब, समय, वक़्त, वक्त | `sign.time` | `sign.time` |  |  |  |  |
+| see, saw, look, watch, dekho, dekha, dekhna, देखो, देखा, देखना | `sign.see` | `sign.see` |  |  |  |  |
+| know, knew, pata, jaante, jaanta, jaanti, पता, जानते, जानता, जानती | `sign.know` | `sign.know` |  |  |  |  |
+| show, dikhao, दिखाओ, दिखाइए |  | `show_me` |  |  |  |  |
+| what, where, who, why, how, which, kya, kahan, kaha, kaun, kyon, kyun, kyu, kaise, kaisa, kitna, kitne, kitni, क्या, कहाँ, कहां, कौन, क्यों, कैसे, कैसा, कितना, कितने, कितनी | `ask` | `ask` |  |  |  |  |
+| walk, walked, walking, chalo, chalna, paidal, चलो, चलना, पैदल |  | `walk.fingers` | `walk` |  |  |  |
+| road, street, sadak, rasta, सड़क, रास्ता |  | `walk.fingers` | `road` |  |  |  |
+| train, rail, railway, ट्रेन, रेल |  | `train.arm` | `train` |  |  |  |
+| car, vehicle, gaadi, gadi, गाड़ी, कार |  | `vehicle.steer` | `car` |  |  |  |
+| bus, बस |  | `vehicle.steer` | `bus` |  |  |  |
+| auto, rickshaw, ऑटो, रिक्शा |  | `vehicle.steer` | `auto` |  |  |  |
+| phone, call, mobile, फ़ोन, फोन, मोबाइल, कॉल | `phone.ear` | `phone.ear` | `phone` |  |  |  |
+| money, rupees, rupee, paisa, paise, पैसा, पैसे, रुपये, रुपया | `money.rub` | `money.rub` | `money` |  |  |  |
+| school, study, padhai, padhna, स्कूल, पढ़ाई, पढ़ना, विद्यालय |  | `school.write` | `school` |  |  |  |
+| shop, market, dukaan, bazaar, दुकान, बाज़ार, बाजार |  | `money.rub` | `shop` |  |  |  |
+| police, policeman, officer, cop, पुलिस, अधिकारी | `police.salute` | `police.salute` | `police` |  |  |  |
+| head, सिर |  |  | `head` |  |  |  |
+| eye, eyes, aankh, आँख, आंख |  |  | `eye` |  |  |  |
+| ear, ears, kaan, कान |  |  | `ear` |  |  |  |
+| mouth, muh, munh, मुँह, मुंह |  |  | `mouth` |  |  |  |
+| throat, gala, गला |  |  | `throat` |  |  |  |
+| stomach, tummy, belly, पेट |  | `hungry.belly` | `stomach` |  |  |  |
+| kamar, peeth, कमर, पीठ |  |  | `back` |  |  |  |
+| arm, hand, haath, हाथ, बाँह |  |  | `arm` |  |  |  |
+| leg, टाँग, टांग |  |  | `leg` |  |  |  |
+| foot, feet, पैर |  |  | `foot` |  |  |  |
+
+## 4. Placeholder recordings
 
 Every file under `assets/content/audio/` is machine-generated placeholder speech until a fluent speaker records it again or approves it. The language reviewer listens to each file in the folder for their language.
 
@@ -87,7 +216,7 @@ Every file under `assets/content/audio/` is machine-generated placeholder speech
 | `greet` | 14 |  | One greeting per language-finder language; each goes to that language's reviewer |
 | `hi` | 37 |  |  |
 
-## 4. Sign-off
+## 5. Sign-off
 
 | Role | Name | Organisation | Signature | Date |
 | --- | --- | --- | --- | --- |
@@ -95,4 +224,7 @@ Every file under `assets/content/audio/` is machine-generated placeholder speech
 | ISL reviewer |  |  |  |  |
 | Language reviewer (Hindi) |  |  |  |  |
 | Language reviewer (English) |  |  |  |  |
+| Language reviewer (Chhattisgarhi) |  |  |  |  |
+| Language reviewer (Gondi) |  |  |  |  |
+| Language reviewer (Halbi) |  |  |  |  |
 | Content owner |  |  |  |  |

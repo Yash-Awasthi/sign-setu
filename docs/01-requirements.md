@@ -48,7 +48,7 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | FR-06 | Ending a session offers export, then purges all session data. | MUST |
 | FR-07 | The officer sets the subject language per session (Hindi and English at minimum). | MUST |
 | FR-60 | The officer sets a subject profile per session and can change it at any time. | MUST |
-| FR-61 | From the first Show state until the session ends, the app stays pinned (screen pinning) when the device allows it; first run guides the officer to turn on app pinning. Returning from the Show state to the Officer state requires the officer's biometric or device credential. | MUST |
+| FR-61 | From the first Show state until the session ends, the app stays pinned (screen pinning) when the device allows it; first run guides the officer to turn on app pinning. Returning from the Show state to the Officer state needs a tap on the officer handle; Back does nothing on the stage; a department setting adds the biometric or device credential (D-23). | MUST |
 
 ### 4.2 Asking
 
@@ -57,7 +57,7 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | FR-10 | Preset triage questions are grouped: safety, health, needs, identity, family, location. | MUST |
 | FR-11 | A preset question shows in the Show state with its picture cards and caption, plus by profile the character performing the gesture, a human ISL clip, or recorded audio. No network is used. | MUST |
 | FR-12 | Sensitive questions ("what happened", "who hurt you") sit behind a deliberate second tap and never appear on the first screen. | MUST |
-| FR-13 | The officer can type a free-text question. It is shown as a caption with officer-chosen picture cards and is never signed. | MUST |
+| FR-13 | The officer can type free text and show it in one step. The character plays it word by word with ISL signs, everyday gestures, fingerspelling and pictures, each turned on or off by the officer (D-22). | MUST |
 | FR-15 | Nothing reaches the Show state until the officer confirms it. | MUST |
 | FR-17 | When a gesture, clip or audio item is missing, the picture and caption are shown alone and the officer sees "not available". | MUST |
 | FR-18 | Clips and audio can be replayed and played at slow speed. | MUST |
@@ -76,6 +76,7 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | FR-69 | Below the character, the stage shows a live mirror of the subject's hands from the front camera. Nothing is captured, recorded or stored. The officer can turn it off for one person; the department can turn it off in settings (D-20). | MUST |
 | FR-70 | During any question the subject can also answer "I don't know" or "Stop". "Stop" is shown to the officer prominently, with guidance to pause. | MUST |
 | FR-65 | Gesture lookup: the officer records where the hand went (body location) and what it did (hand action); the app lists matching lexicon entries with picture and clip. | MUST |
+| FR-71 | The subject can write their own answer on the stage with the keyboard (every profile except a young child). It is logged word for word as a typed answer and never interpreted. | MUST |
 | FR-66 | Show-back: the officer sends a candidate meaning to the Show state with "Is this it?" and Yes/No. Only Yes logs the meaning; anything else is logged as unclear. | MUST |
 
 ### 4.4 Records

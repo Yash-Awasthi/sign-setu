@@ -25,6 +25,14 @@ ROLES = {
 }
 
 
+def role(gid, meanings):
+    if gid.startswith("letter."):
+        return f"Fingerspelling: letter {gid[-1].upper()}"
+    if gid.startswith("digit."):
+        return f"Number {gid[-1]}"
+    return f"\"{meanings[gid]}\"" if gid in meanings else ""
+
+
 def load(name):
     return json.loads((ASSETS / name).read_text(encoding="utf-8"))
 
@@ -34,7 +42,12 @@ def cell(text):
 
 
 def main():
-    gestures = [g["id"] for g in load("gestures.json")["gestures"]]
+    gestures = [g["id"] for name in ("gestures.json", "signs.json") for g in load(name)["gestures"]]
+    words = load("words.json")["words"]
+    meanings = {}
+    for w in words:
+        for gid in {w.get("sign"), w.get("gesture")} - {None}:
+            meanings.setdefault(gid, w["w"][0])
     lexicon = {e["id"]: e for e in load("lexicon.json")["entries"]}
     phrases = load("phrases.json")["phrases"]
     audio = collections.Counter(p.parent.name for p in (ASSETS / "audio").rglob("*.ogg"))
@@ -55,7 +68,7 @@ def main():
            "| --- | --- | --- | --- | --- | --- |"]
     for gid in gestures:
         entry = lexicon.get(gid)
-        meaning = entry["label"]["en"] if entry else ROLES.get(gid, "")
+        meaning = entry["label"]["en"] if entry else ROLES.get(gid) or role(gid, meanings)
         how = entry["how"]["en"] if entry else ""
         out.append(f"| `{gid}` | {cell(meaning)} | {cell(how)} |  |  |  |")
 
@@ -69,7 +82,16 @@ def main():
             signs = ", ".join(f"`{slot['sign'] if s == '$' else s}`" for s in p["signs"])
             out.append(f"| {cell(slot['text'].get('en', ''))} | {cell(slot['text'].get('hi', ''))} | {signs} |  |  |  |  |")
 
-    out += ["", "## 3. Placeholder recordings", "",
+    out += ["", "## 3. Typed-word vocabulary", "",
+            "Typed words the character signs, gestures or pictures (`words.json`, D-22). Reviewers: language reviewer "
+            "for the written forms of their language, ISL reviewer for the sign column.", "",
+            "| Written forms | Sign | Gesture | Picture | Language | ISL | Notes |",
+            "| --- | --- | --- | --- | --- | --- | --- |"]
+    for w in words:
+        sign, gesture, card = (f"`{w[k]}`" if w.get(k) else "" for k in ("sign", "gesture", "card"))
+        out.append(f"| {cell(', '.join(w['w']))} | {sign} | {gesture} | {card} |  |  |  |")
+
+    out += ["", "## 4. Placeholder recordings", "",
             "Every file under `assets/content/audio/` is machine-generated placeholder speech until a fluent speaker "
             "records it again or approves it. The language reviewer listens to each file in the folder for their language.", "",
             "| Language folder | Files | Approved by | Notes |",
@@ -78,13 +100,16 @@ def main():
         note = "One greeting per language-finder language; each goes to that language's reviewer" if lang == "greet" else ""
         out.append(f"| `{lang}` | {count} |  | {note} |")
 
-    out += ["", "## 4. Sign-off", "",
+    out += ["", "## 5. Sign-off", "",
             "| Role | Name | Organisation | Signature | Date |",
             "| --- | --- | --- | --- | --- |",
             "| Child-welfare reviewer |  |  |  |  |",
             "| ISL reviewer |  |  |  |  |",
             "| Language reviewer (Hindi) |  |  |  |  |",
             "| Language reviewer (English) |  |  |  |  |",
+            "| Language reviewer (Chhattisgarhi) |  |  |  |  |",
+            "| Language reviewer (Gondi) |  |  |  |  |",
+            "| Language reviewer (Halbi) |  |  |  |  |",
             "| Content owner |  |  |  |  |", ""]
     OUT.write_text("\n".join(out), encoding="utf-8", newline="\n")
     print(f"{OUT.relative_to(ROOT)}: {len(gestures)} gestures, "

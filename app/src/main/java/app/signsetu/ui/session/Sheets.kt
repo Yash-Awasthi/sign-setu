@@ -1,5 +1,7 @@
 package app.signsetu.ui.session
 
+import androidx.compose.foundation.layout.height
+import app.signsetu.ui.components.BrandButton
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.Character
 import app.signsetu.ui.avatar.Timeline
@@ -188,10 +190,10 @@ fun BoardSheet(
                     }
                 }
             }
-            Button(
+            BrandButton(
                 onClick = { onUse(chosen.toList()) },
                 enabled = chosen.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = Spacing.md).heightIn(min = 52.dp),
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = Spacing.md).height(52.dp),
             ) { Text(stringResource(R.string.board_use, chosen.size)) }
         }
     }
@@ -304,7 +306,7 @@ fun List<SessionEvent>.withQuestions(): List<Pair<SessionEvent, String?>> {
     }
 }
 
-val AnswerEvents = setOf(EventType.ANSWER_CARD, EventType.ANSWER_DRAWING, EventType.ANSWER_GESTURE, EventType.ANSWER_UNCLEAR, EventType.LANGUAGE_CHOSEN)
+val AnswerEvents = setOf(EventType.ANSWER_CARD, EventType.ANSWER_DRAWING, EventType.ANSWER_GESTURE, EventType.ANSWER_UNCLEAR, EventType.LANGUAGE_CHOSEN, EventType.ANSWER_TEXT)
 
 @Composable
 fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? = null) {
@@ -433,6 +435,7 @@ fun EventType.label() = when (this) {
     EventType.LANGUAGE_CHOSEN -> R.string.log_language
     EventType.NOTE -> R.string.log_note
     EventType.SYSTEM -> R.string.log_system
+    EventType.ANSWER_TEXT -> R.string.log_typed
 }
 
 /** The character's pose at the gesture's key moment, with the picture it stands for. */
