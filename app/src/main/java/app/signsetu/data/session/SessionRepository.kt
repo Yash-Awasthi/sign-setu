@@ -9,7 +9,7 @@ enum class Profile { YOUNG_CHILD, ISL_USER, OTHER_LANGUAGE, NOT_SURE }
 
 enum class EventType { QUESTION_SHOWN, ANSWER_CARD, ANSWER_DRAWING, ANSWER_GESTURE, ANSWER_UNCLEAR, LANGUAGE_CHOSEN, NOTE, SYSTEM }
 
-enum class EventSource { PRESET, TEXT, BOARD, SHOW_BACK, SUBJECT, OFFICER }
+enum class EventSource { PRESET, TEXT, BOARD, SHOW_BACK, SUBJECT, OFFICER, PHRASE }
 
 @Immutable
 data class Session(val id: String, val startedAt: Long, val profile: Profile, val subjectLang: String)

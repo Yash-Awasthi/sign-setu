@@ -1,11 +1,13 @@
 package app.signsetu
 
+import app.signsetu.data.content.Phrase
 import app.signsetu.ui.avatar.AdultBuild
 import app.signsetu.ui.avatar.ChildBuild
 import app.signsetu.ui.avatar.Gesture
 import app.signsetu.ui.avatar.HandShape
 import app.signsetu.ui.avatar.Side
 import app.signsetu.ui.avatar.Timeline
+import app.signsetu.ui.avatar.chain
 import app.signsetu.ui.avatar.solveElbow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -26,6 +28,21 @@ class AvatarTest {
     private val content = File("src/main/assets/content")
     private val json = Json { ignoreUnknownKeys = true }
     private val gestures = json.decodeFromString<GesturesFile>(File(content, "gestures.json").readText()).gestures
+
+    @Serializable private data class PhrasesFile(val phrases: List<Phrase>)
+
+    @Test
+    fun everyPhraseSignsWithReviewedGesturesInOrder() {
+        val byId = gestures.associateBy { it.id }
+        val phrases = json.decodeFromString<PhrasesFile>(File(content, "phrases.json").readText()).phrases
+        for (p in phrases) for (slot in p.slots) {
+            val ids = p.signs.map { if (it == Phrase.SLOT) slot.sign else it }
+            ids.forEach { assertNotNull("${p.id}/${slot.card}: no gesture $it", byId[it]) }
+            val chained = chain(p.id, ids.map { byId.getValue(it!!) })
+            assertTrue("${p.id}/${slot.card}: keys out of order", chained.keys.zipWithNext().all { (a, b) -> a.t < b.t })
+            assertEquals(ids.sumOf { byId.getValue(it!!).keys.size }, chained.keys.size)
+        }
+    }
 
     @Test
     fun everyGestureUsesKnownAnchorsAndShapes() {

@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import app.signsetu.ui.avatar.Gesture
+import app.signsetu.ui.avatar.chain
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -60,6 +61,17 @@ data class Language(val code: String, val name: String, val english: String, val
     val hello: String get() = greeting.split('।', '.', '۔').first().trim()
 }
 
+/** One slot filled: the picture, the sign for it, and the whole reviewed sentence, since agreement differs by language. */
+@Immutable @Serializable
+data class PhraseSlot(val card: String, val sign: String? = null, val text: Localized)
+
+/** A phrase-bank sentence (FR-62): [signs] play in order, with [SLOT] standing for the chosen slot's sign. */
+@Immutable @Serializable
+data class Phrase(val id: String, val label: Localized, val signs: List<String>, val slots: List<PhraseSlot>) {
+    companion object { const val SLOT = "$" }
+}
+
+@Serializable private data class PhrasesFile(val phrases: List<Phrase>)
 @Serializable private data class TriageFile(val groups: List<Group>, val questions: List<Question>)
 @Serializable private data class CardsFile(val categories: List<CardCategory>, val cards: List<Card>)
 @Serializable private data class LexiconFile(val entries: List<LexiconEntry>)
@@ -81,8 +93,14 @@ data class ContentBundle(
     /** Every verified file in the bundle, relative to `assets/content/`. */
     val files: Set<String> = emptySet(),
     val gestures: Map<String, Gesture> = emptyMap(),
+    val phrases: List<Phrase> = emptyList(),
 ) {
     fun gestureFor(q: Question): Gesture? = (q.gesture ?: q.lexicon)?.let { gestures[it] }
+
+    /** The phrase's signs as one gesture; a sign with no reviewed animation is left out. */
+    fun gestureFor(phrase: Phrase, slot: PhraseSlot): Gesture? =
+        chain("${phrase.id}:${slot.card}", phrase.signs.mapNotNull { (if (it == Phrase.SLOT) slot.sign else it)?.let(gestures::get) })
+            .takeIf { it.keys.isNotEmpty() }
 
     private fun audio(path: String) = path.takeIf { it in files }
     fun questionAudio(questionId: String, lang: String) = audio("audio/$lang/$questionId.ogg")
@@ -91,7 +109,10 @@ data class ContentBundle(
 
     fun language(code: String): Language? = languages.firstOrNull { it.code == code }
     fun subjectText(key: String, lang: String): String? = subjectUi[key]?.pick(lang)
-    fun hasCardImage(id: String) = "cards/$id.webp" !in rejected
+    fun hasCardImage(id: String) = "cards/$id.webp" in files
+
+    /** A text file failed its check, so the subject could be shown wrong words: no session may start (SEC-54). */
+    val damaged: Boolean get() = rejected.any { it.endsWith(".json") && it != "gestures.json" }
 
     /** Gesture lookup: both location and action match first, then location only, then action only. */
     fun lookup(location: BodyLocation?, action: HandAction?): List<LexiconEntry> {
@@ -116,13 +137,14 @@ class ContentRepository(private val assets: AssetManager) {
     suspend fun load(): ContentBundle = bundle ?: withContext(Dispatchers.IO) {
         val manifest = json.decodeFromString<Manifest>(read("manifest.json"))
         val rejected = manifest.files.filter { (path, hash) -> sha256(path) != hash }.keys
-        val triage = json.decodeFromString<TriageFile>(read("triage.json"))
-        val cards = json.decodeFromString<CardsFile>(read("cards.json"))
-        val lexicon = json.decodeFromString<LexiconFile>(read("lexicon.json"))
-        val languages = json.decodeFromString<LanguagesFile>(read("languages.json"))
-        val subjectUi = json.decodeFromString<Map<String, Localized>>(read("subject_ui.json"))
-        // A tampered animation file means no animation, never a wrong one (SEC-54).
-        val gestures = if ("gestures.json" in rejected) emptyList() else json.decodeFromString<GesturesFile>(read("gestures.json")).gestures
+        // A file that fails its check is never parsed: no content beats wrong content (SEC-54).
+        val triage = verified("triage.json", rejected) ?: TriageFile(emptyList(), emptyList())
+        val cards = verified("cards.json", rejected) ?: CardsFile(emptyList(), emptyList())
+        val lexicon = verified("lexicon.json", rejected) ?: LexiconFile(emptyList())
+        val languages = verified("languages.json", rejected) ?: LanguagesFile(emptyList())
+        val subjectUi = verified<Map<String, Localized>>("subject_ui.json", rejected).orEmpty()
+        val gestures = verified<GesturesFile>("gestures.json", rejected)?.gestures.orEmpty()
+        val phrases = verified<PhrasesFile>("phrases.json", rejected)?.phrases.orEmpty()
         ContentBundle(
             groups = triage.groups,
             questions = triage.questions,
@@ -134,6 +156,7 @@ class ContentRepository(private val assets: AssetManager) {
             rejected = rejected,
             files = manifest.files.keys - rejected,
             gestures = gestures.associateBy { it.id },
+            phrases = phrases,
         ).also { bundle = it }
     }
 
@@ -146,6 +169,9 @@ class ContentRepository(private val assets: AssetManager) {
             }.getOrNull()?.also { images.put(id, it) }
         }
     }
+
+    private inline fun <reified T> verified(name: String, rejected: Set<String>): T? =
+        if (name in rejected) null else json.decodeFromString<T>(read(name))
 
     private fun read(name: String): String = assets.open("content/$name").bufferedReader().use { it.readText() }
 

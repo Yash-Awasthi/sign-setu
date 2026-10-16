@@ -10,6 +10,7 @@ import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.settings.whatsappNumber
 import app.signsetu.ui.session.withQuestions
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -29,6 +30,14 @@ class LogicTest {
         ).associateBy { it.id },
         languages = emptyList(), subjectUi = emptyMap(), rejected = emptySet(),
     )
+
+    @Test
+    fun onlyAFailedTextFileBlocksSessions() {
+        assertFalse(bundle.copy(rejected = setOf("gestures.json", "cards/water.webp")).damaged)
+        assertTrue(bundle.copy(rejected = setOf("triage.json")).damaged)
+        assertFalse(bundle.copy(files = emptySet()).hasCardImage("water"))
+        assertTrue(bundle.copy(files = setOf("cards/water.webp")).hasCardImage("water"))
+    }
 
     @Test
     fun lookupRanksFullMatchThenLocationThenAction() {

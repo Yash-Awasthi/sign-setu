@@ -1,0 +1,28 @@
+{
+  "phrases": [
+    {
+      "id": "want",
+      "label": {"en": "Do you want …?", "hi": "क्या आपको … चाहिए?"},
+      "signs": ["you.palm", "$", "ask"],
+      "slots": [
+        {"card": "water", "sign": "water.cup", "text": {"en": "Do you want water?", "hi": "क्या आपको पानी चाहिए?"}},
+        {"card": "food", "sign": "eat.fingers", "text": {"en": "Do you want food?", "hi": "क्या आपको खाना चाहिए?"}},
+        {"card": "toilet", "sign": "toilet.finger", "text": {"en": "Do you need the toilet?", "hi": "क्या आपको शौचालय जाना है?"}},
+        {"card": "rest", "sign": "sleep.palms", "text": {"en": "Do you want to rest?", "hi": "क्या आपको आराम चाहिए?"}},
+        {"card": "doctor", "sign": "doctor.listen", "text": {"en": "Do you want a doctor?", "hi": "क्या आपको डॉक्टर चाहिए?"}},
+        {"card": "phone", "sign": "phone.ear", "text": {"en": "Do you want to make a phone call?", "hi": "क्या आपको फ़ोन करना है?"}}
+      ]
+    },
+    {
+      "id": "feel",
+      "label": {"en": "Do you feel …?", "hi": "क्या आपको … लग रहा है?"},
+      "signs": ["you.palm", "$", "ask"],
+      "slots": [
+        {"card": "cold", "sign": "cold.hug", "text": {"en": "Are you cold?", "hi": "क्या आपको ठंड लग रही है?"}},
+        {"card": "hot", "sign": "hot.fan", "text": {"en": "Are you hot?", "hi": "क्या आपको गर्मी लग रही है?"}},
+        {"card": "food", "sign": "hungry.belly", "text": {"en": "Are you hungry?", "hi": "क्या आपको भूख लगी है?"}},
+        {"card": "pain", "sign": "pain.point", "text": {"en": "Are you in pain?", "hi": "क्या आपको दर्द हो रहा है?"}}
+      ]
+    }
+  ]
+}

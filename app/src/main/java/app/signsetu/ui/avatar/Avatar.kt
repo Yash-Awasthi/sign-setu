@@ -1,6 +1,8 @@
 package app.signsetu.ui.avatar
 
 import android.provider.Settings
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,6 +62,7 @@ private val AdultLook = Look(
 /**
  * Draws a character and plays [gesture] once each time [playKey] changes. Speed below 1 plays slowly (FR-18).
  * With [idle] the character breathes and blinks; the system "remove animations" setting turns that off.
+ * With [glance] the character looks down at the answers once the gesture is over.
  */
 @Composable
 fun Avatar(
@@ -71,6 +74,7 @@ fun Avatar(
     idle: Boolean = true,
     /** Draws one still frame of the gesture instead of playing it. */
     atSeconds: Float? = null,
+    glance: Boolean = false,
     onFinished: () -> Unit = {},
 ) {
     val build = if (character == Character.CHILD) ChildBuild else AdultBuild
@@ -83,15 +87,20 @@ fun Avatar(
         Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
     }
     val finished by rememberUpdatedState(onFinished)
+    val gaze = remember { Animatable(0f) }
 
     LaunchedEffect(playKey, timeline, speed, atSeconds) {
+        gaze.snapTo(0f)
         clock.floatValue = atSeconds ?: 0f
-        if (timeline.duration == 0f || atSeconds != null) return@LaunchedEffect
-        val start = withFrameNanos { it }
-        while (clock.floatValue < timeline.duration) {
-            withFrameNanos { now -> clock.floatValue = (now - start) / 1e9f * speed }
+        if (atSeconds != null) return@LaunchedEffect
+        if (timeline.duration > 0f) {
+            val start = withFrameNanos { it }
+            while (clock.floatValue < timeline.duration) {
+                withFrameNanos { now -> clock.floatValue = (now - start) / 1e9f * speed }
+            }
+            finished()
         }
-        finished()
+        if (glance) gaze.animateTo(1f, tween(durationMillis = 500, delayMillis = 300))
     }
     if (idle && !still && atSeconds == null) {
         LaunchedEffect(Unit) {
@@ -102,7 +111,8 @@ fun Avatar(
 
     Canvas(modifier) {
         // State is read here, in the draw phase, so animation frames redraw without recomposing.
-        val pose = timeline.pose(clock.floatValue)
+        val g = gaze.value
+        val pose = timeline.pose(clock.floatValue).let { if (g > 0f) it.copy(nod = it.nod + g * 0.5f, gaze = g) else it }
         drawCharacter(build, look, pose, idleClock.floatValue, character == Character.CHILD)
     }
 }
@@ -207,8 +217,8 @@ private fun DrawScope.drawHead(b: Build, look: Look, pose: Pose, blink: Float, c
     }
 
     // Eyes: large and warm for the child, simple for the adult.
-    val open = (f.eyeOpen * blink).coerceIn(0.05f, 1.2f)
-    val eyeY = fy - 1f
+    val open = (f.eyeOpen * blink * (1f - pose.gaze * 0.18f)).coerceIn(0.05f, 1.2f)
+    val eyeY = fy - 1f + pose.gaze * (if (child) 2.2f else 0.6f)
     for (s in floatArrayOf(-1f, 1f)) {
         val ex = fx + s * (if (child) 15f else 13f)
         if (f.eyeSmile > 0.55f || open < 0.18f) {
@@ -229,8 +239,9 @@ private fun DrawScope.drawHead(b: Build, look: Look, pose: Pose, blink: Float, c
             val rx = 5.2f
             val ry = 4f * open
             drawOval(Color(0xFFFBF7F2), Offset(ex - rx, eyeY - ry), Size(rx * 2, ry * 2))
-            drawCircle(look.iris, 2.9f * open.coerceAtMost(1f), Offset(ex, eyeY))
-            drawCircle(Color.White, 0.9f, Offset(ex + 1f, eyeY - 1f))
+            val irisY = eyeY + pose.gaze * 1.2f
+            drawCircle(look.iris, 2.9f * open.coerceAtMost(1f), Offset(ex, irisY))
+            drawCircle(Color.White, 0.9f, Offset(ex + 1f, irisY - 1f))
             drawLine(look.line, Offset(ex - rx, eyeY - ry * 0.6f), Offset(ex + rx, eyeY - ry * 0.6f), 1.2f, StrokeCap.Round)
         }
         if (f.eyeSmile > 0.1f) {

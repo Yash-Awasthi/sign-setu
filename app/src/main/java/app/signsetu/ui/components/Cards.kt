@@ -39,7 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import app.signsetu.R
 import app.signsetu.data.content.ContentRepository
+import androidx.compose.foundation.background
 import app.signsetu.ui.theme.LocalAnswerColors
+import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
 import app.signsetu.ui.theme.SubjectCardMin
 
@@ -85,7 +87,7 @@ fun PictureCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                CardImage(cardId, Modifier.fillMaxWidth().aspectRatio(1f))
+                CardImage(cardId, Modifier.fillMaxWidth().aspectRatio(1f).background(PictureWell, MaterialTheme.shapes.medium).padding(Spacing.sm))
                 if (label != null) {
                     Text(
                         label,

@@ -22,7 +22,7 @@ Implements the CERT-In Guidelines for Secure Application Design, Development, Im
 Every pull request runs:
 
 1. Build debug and release variants.
-2. Unit tests and Compose UI tests.
+2. Unit tests, and the instrumented accessibility tests on an Android 14 or later emulator: `./gradlew :app:connectedDebugAndroidTest` (Accessibility Test Framework over every stage state and the picture board, both themes).
 3. Android Lint with security checks as errors.
 4. Static analysis (Semgrep with Kotlin/Android rules or MobSF static scan).
 5. Dependency vulnerability scan: `osv-scanner scan source --lockfile app/gradle.lockfile`; fail on critical or high in anything that ships (the release runtime classpath).

@@ -137,6 +137,8 @@ data class Pose(
     val face: Face,
     val tilt: Float, val nod: Float, val turn: Float,
     val lean: Float, val shrug: Float, val hunch: Float, val shiver: Float,
+    /** 0 looks ahead, 1 looks down at the answers below the character. */
+    val gaze: Float = 0f,
 )
 
 /** Proportions and anchor points of one character. */
@@ -197,6 +199,24 @@ val AdultBuild = Build(
 )
 
 private val RestKey = HandKey()
+
+/**
+ * Plays [parts] one after another as a single gesture (FR-62). Each part's first key spells out everything it
+ * leaves out, so it starts from the same pose as when it plays alone rather than holding the previous part's.
+ */
+fun chain(id: String, parts: List<Gesture>, gap: Float = 0.3f): Gesture {
+    var offset = 0f
+    val keys = parts.filter { it.keys.isNotEmpty() }.flatMap { part ->
+        val sorted = part.keys.sortedBy { it.t }
+        val first = sorted.first().let {
+            it.copy(R = it.R ?: RestKey, L = it.L ?: RestKey, face = it.face ?: "neutral", head = it.head ?: HeadKey(), body = it.body ?: BodyKey())
+        }
+        val shifted = (listOf(first) + sorted.drop(1)).map { it.copy(t = it.t + offset) }
+        offset += sorted.last().t + gap
+        shifted
+    }
+    return Gesture(id, keys)
+}
 
 /** Plays a gesture: eases in from rest, through the keys, and back to rest. */
 class Timeline(val gesture: Gesture?, private val build: Build) {

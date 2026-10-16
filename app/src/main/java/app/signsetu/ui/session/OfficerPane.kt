@@ -2,7 +2,6 @@ package app.signsetu.ui.session
 
 import android.app.Activity
 import android.content.res.Resources
-import androidx.compose.foundation.background
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -78,7 +77,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -92,8 +90,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -106,6 +105,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
+import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.Question
 import app.signsetu.data.content.pick
 import app.signsetu.data.session.EventType
@@ -117,6 +117,7 @@ import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.start.profileTitle
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalInk
+import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.io.File
@@ -124,6 +125,9 @@ import java.text.DateFormat
 import java.util.Date
 
 private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, LOG, CHANGE, TYPE }
+
+/** The phrase bank sits beside the triage groups as one more group (FR-62). */
+private const val PHRASES = "phrases"
 
 /**
  * The officer's side of the phone: everything secondary to the stage. One screen, no page scroll: groups on top,
@@ -153,8 +157,9 @@ fun OfficerPane(
     var askEnd by remember { mutableStateOf(false) }
     var export by remember { mutableStateOf<ExportState?>(null) }
     var stopSeen by rememberSaveable { mutableStateOf<Long?>(null) }
+    var phrase by remember { mutableStateOf<Phrase?>(null) }
     val scope = rememberCoroutineScope()
-    val res = LocalContext.current.resources
+    val res = LocalResources.current
     val attached = remember { mutableStateListOf<String>() }
     var ownText by rememberSaveable { mutableStateOf("") }
 
@@ -172,7 +177,7 @@ fun OfficerPane(
         controller?.isAppearanceLightStatusBars = false
         onDispose { before?.let { controller.isAppearanceLightStatusBars = it } }
     }
-    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Surface(color = MaterialTheme.colorScheme.background) { Column(Modifier.fillMaxSize()) {
         Surface(color = ink.band, contentColor = ink.onBand, shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)) {
             Column(Modifier.statusBarsPadding().padding(bottom = Spacing.md)) {
                 Row(Modifier.fillMaxWidth().padding(start = Spacing.lg, end = Spacing.xs, top = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
@@ -180,7 +185,7 @@ fun OfficerPane(
                         Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(16.dp))
-                            .clickable(onClickLabel = stringResource(R.string.officer_change)) { sheet = Sheet.CHANGE }
+                            .clickable(onClickLabel = stringResource(R.string.officer_change), role = Role.Button) { sheet = Sheet.CHANGE }
                             .padding(vertical = Spacing.xs),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -237,8 +242,17 @@ fun OfficerPane(
                     contentPadding = PaddingValues(horizontal = Spacing.lg),
                     modifier = Modifier.padding(top = Spacing.sm),
                 ) {
-                    items(content.groups, key = { it.id }) { g ->
-                        val locked = g.sensitive && !ui.sensitiveUnlocked
+                    items(content.groups.filterNot { it.sensitive }, key = { it.id }) { g ->
+                        GroupChip(g.label.pick(officerLang) ?: g.id, ui.selectedGroup == g.id, locked = false) { vm.selectGroup(g.id) }
+                    }
+                    if (content.phrases.isNotEmpty()) {
+                        item(key = PHRASES) {
+                            GroupChip(stringResource(R.string.officer_phrases), ui.selectedGroup == PHRASES, locked = false) { vm.selectGroup(PHRASES) }
+                        }
+                    }
+                    // Sensitive groups stay last and locked until confirmed (FR-12).
+                    items(content.groups.filter { it.sensitive }, key = { it.id }) { g ->
+                        val locked = !ui.sensitiveUnlocked
                         GroupChip(
                             label = g.label.pick(officerLang) ?: g.id,
                             selected = ui.selectedGroup == g.id,
@@ -275,6 +289,21 @@ fun OfficerPane(
                 contentPadding = PaddingValues(top = Spacing.md, bottom = if (largeText) Spacing.md else 0.dp),
                 modifier = Modifier.weight(1f),
             ) {
+                if (ui.selectedGroup == PHRASES) {
+                    items(content.phrases, key = { it.id }) { p ->
+                        PromptTile(
+                            cardId = p.slots.firstOrNull()?.card,
+                            title = p.label.pick(officerLang) ?: p.id,
+                            caption = p.label.pick(subjectLang),
+                            showCaption = subjectLang != officerLang,
+                            missingLang = content.language(subjectLang)?.english ?: subjectLang,
+                            hasGesture = true,
+                            hasAudio = false,
+                            selected = (ui.pending as? Pending.PhraseAsk)?.phrase?.id == p.id,
+                            onSelect = { phrase = p },
+                        )
+                    }
+                }
                 items(questions, key = { it.id }) { q ->
                     QuestionTile(
                         question = q,
@@ -300,8 +329,11 @@ fun OfficerPane(
         }
 
         ShowBar(ui.pending, content, officerLang, subjectLang, ui.session.profile, onShow = vm::show, onClear = { vm.prepare(null) })
-    }
+    } }
 
+    phrase?.let { p ->
+        PhraseSheet(p, content, officerLang, onPick = { slot -> vm.prepare(Pending.PhraseAsk(p, slot)); phrase = null }, onDismiss = { phrase = null })
+    }
     when (sheet) {
         Sheet.BOARD_SHOW -> BoardSheet(content, officerLang, emptyList(), favourites, onFavourite, onUse = { vm.prepare(Pending.Cards(it)); sheet = null }, onDismiss = { sheet = null })
         Sheet.BOARD_ATTACH -> BoardSheet(content, officerLang, attached.toList(), favourites, onFavourite, onUse = { attached.clear(); attached.addAll(it); sheet = Sheet.TYPE }, onDismiss = { sheet = Sheet.TYPE })
@@ -396,10 +428,33 @@ private fun QuestionTile(
     selected: Boolean,
     onSelect: () -> Unit,
 ) {
+    PromptTile(
+        cardId = question.cards.firstOrNull(),
+        title = question.text.pick(officerLang) ?: question.text.values.first(),
+        caption = question.text.pick(subjectLang),
+        showCaption = subjectLang != officerLang,
+        missingLang = content.language(subjectLang)?.english ?: subjectLang,
+        hasGesture = content.gestureFor(question) != null,
+        hasAudio = content.questionAudio(question.id, subjectLang) != null && profile != Profile.ISL_USER,
+        selected = selected,
+        onSelect = onSelect,
+    )
+}
+
+/** Something the officer can show: its picture, its words, and what the subject will get (FR-17). */
+@Composable
+private fun PromptTile(
+    cardId: String?,
+    title: String,
+    caption: String?,
+    showCaption: Boolean,
+    missingLang: String,
+    hasGesture: Boolean,
+    hasAudio: Boolean,
+    selected: Boolean,
+    onSelect: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
-    val caption = question.text.pick(subjectLang)
-    val hasGesture = content.gestureFor(question) != null
-    val hasAudio = content.questionAudio(question.id, subjectLang) != null && profile != Profile.ISL_USER
     Surface(
         onClick = onSelect,
         shape = RoundedCornerShape(22.dp),
@@ -410,8 +465,8 @@ private fun QuestionTile(
     ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(12.dp), color = colors.surfaceContainer, modifier = Modifier.size(34.dp)) {
-                    question.cards.firstOrNull()?.let { CardImage(it, Modifier.padding(4.dp)) }
+                Surface(shape = RoundedCornerShape(12.dp), color = PictureWell, modifier = Modifier.size(34.dp)) {
+                    cardId?.let { CardImage(it, Modifier.padding(4.dp)) }
                 }
                 Spacer(Modifier.weight(1f))
                 // What the subject will get, so a missing gesture or recording is never a surprise (FR-17).
@@ -424,19 +479,19 @@ private fun QuestionTile(
                 }
             }
             Text(
-                question.text.pick(officerLang) ?: question.text.values.first(),
+                title,
                 style = MaterialTheme.typography.titleSmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             when {
                 caption == null -> Text(
-                    stringResource(R.string.officer_caption_missing, content.language(subjectLang)?.english ?: subjectLang),
+                    stringResource(R.string.officer_caption_missing, missingLang),
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.tertiary,
                     maxLines = 2,
                 )
-                subjectLang != officerLang -> Text(caption, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                showCaption -> Text(caption, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 !hasGesture && !hasAudio -> Text(stringResource(R.string.officer_media_missing), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             }
         }
@@ -522,7 +577,7 @@ private fun LatestAnswer(e: SessionEvent, question: String?, onClick: () -> Unit
             val tint = when (e.cardId) {
                 "yes" -> answerColors.yesContainer
                 "no" -> answerColors.noContainer
-                else -> colors.surfaceContainer
+                else -> PictureWell
             }
             Surface(shape = RoundedCornerShape(12.dp), color = tint, modifier = Modifier.size(40.dp)) {
                 e.cardId?.let { CardImage(it, Modifier.padding(5.dp)) }
@@ -620,9 +675,10 @@ private fun MediaSummary(question: Question, content: ContentBundle, subjectLang
 @Composable
 private fun describe(p: Pending, content: ContentBundle, lang: String): String = when (p) {
     is Pending.Ask -> p.question.text.pick(lang) ?: p.question.id
-    is Pending.FreeText -> if (p.cardIds.isEmpty()) p.text else "${p.text}  ·  ${stringResource(R.string.officer_pictures, p.cardIds.size)}"
+    is Pending.FreeText -> if (p.cardIds.isEmpty()) p.text else "${p.text}  ·  ${pluralStringResource(R.plurals.officer_pictures, p.cardIds.size, p.cardIds.size)}"
     is Pending.Cards -> p.cardIds.joinToString { content.cards[it]?.label?.pick(lang) ?: it }
     is Pending.ShowBack -> "${stringResource(R.string.officer_gesture)}: ${p.entry.label.pick(lang) ?: p.entry.id}"
+    is Pending.PhraseAsk -> p.slot.text.pick(lang) ?: p.slot.card
     Pending.LanguageFinder -> stringResource(R.string.officer_find_language)
     Pending.Drawing -> stringResource(R.string.officer_draw)
 }
@@ -639,7 +695,7 @@ private fun TypeSheet(
     onUse: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    OfficerSheet(onDismiss) {
         Column(Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.xxl), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             SheetTitle(stringResource(R.string.officer_own_question))
             OutlinedTextField(

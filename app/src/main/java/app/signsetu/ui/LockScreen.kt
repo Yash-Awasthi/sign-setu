@@ -19,6 +19,7 @@ import app.signsetu.ui.avatar.Character
 import app.signsetu.ui.session.Backdrop
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalInk
+import app.signsetu.ui.theme.LocalStageColors
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
@@ -77,7 +78,7 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
                     fontFamily = Baloo,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 24.sp,
-                    color = ink.band,
+                    color = LocalStageColors.current.title,
                     modifier = Modifier.padding(start = Spacing.lg, top = Spacing.md),
                 )
             }

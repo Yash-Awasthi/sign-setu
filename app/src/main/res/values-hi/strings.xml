@@ -17,7 +17,6 @@
     <string name="return_prompt_title">अधिकारी जाँच</string>
     <string name="return_prompt_subtitle">अधिकारी स्क्रीन पर लौटें</string>
 
-    <string name="start_title">नया सत्र</string>
     <string name="start_resume_title">अधूरा सत्र</string>
     <string name="start_resume_body">%1$s · %2$s · %3$s बजे शुरू</string>
     <string name="start_resume">जारी रखें</string>
@@ -38,18 +37,12 @@
 
     <string name="officer_show">उन्हें दिखाएँ</string>
     <string name="officer_nothing_pending">कोई सवाल, चित्र या इशारा चुनें</string>
-    <string name="officer_ready">दिखाने के लिए तैयार</string>
     <string name="officer_own_question">अपना सवाल</string>
     <string name="officer_own_hint">छोटा सवाल लिखें</string>
     <string name="officer_add_pictures">चित्र जोड़ें</string>
     <string name="officer_use">इस्तेमाल करें</string>
-    <string name="officer_gestured">उन्होंने इशारा किया</string>
-    <string name="officer_board">चित्र बोर्ड</string>
     <string name="officer_find_language">उनकी भाषा पता करें</string>
     <string name="officer_draw">उन्हें चित्र बनाने दें</string>
-    <string name="officer_answers">जवाब</string>
-    <string name="officer_no_answers">उनके जवाब यहाँ दिखेंगे।</string>
-    <string name="officer_see_all">पूरा रिकॉर्ड</string>
     <string name="officer_log">सत्र रिकॉर्ड</string>
     <string name="officer_call">दुभाषिया बुलाएँ</string>
     <string name="officer_more">और विकल्प</string>
@@ -58,7 +51,10 @@
     <string name="officer_change">प्रोफ़ाइल या भाषा बदलें</string>
     <string name="officer_caption_missing">%1$s में कैप्शन नहीं है। उन्हें केवल चित्र दिखेंगे।</string>
     <string name="officer_gesture">इशारा</string>
-    <string name="officer_pictures">%1$d चित्र</string>
+    <plurals name="officer_pictures">
+        <item quantity="one">%1$d चित्र</item>
+        <item quantity="other">%1$d चित्र</item>
+    </plurals>
 
     <string name="sensitive_title">संवेदनशील सवाल</string>
     <string name="sensitive_body">ये सवाल बच्चे को परेशान कर सकते हैं। तभी पूछें जब व्यक्ति शांत और सुरक्षित हो, और कभी इनसे शुरुआत न करें।</string>
@@ -66,7 +62,6 @@
 
     <string name="end_title">यह सत्र समाप्त करें?</string>
     <string name="end_body">इस सत्र का सारा रिकॉर्ड इस फ़ोन से मिट जाएगा। अगर केस फ़ाइल में ज़रूरत हो, तो पहले पासवर्ड वाली रिपोर्ट निकाल लें।</string>
-    <string name="end_confirm">समाप्त करें और मिटाएँ</string>
 
     <string name="log_shown">दिखाया</string>
     <string name="log_answer">जवाब</string>
@@ -160,10 +155,12 @@
     <string name="settings_contact_invalid">10 अंकों का मोबाइल नंबर, या देश कोड के साथ पूरा नंबर डालें।</string>
     <string name="settings_records">सत्र के रिकॉर्ड</string>
     <string name="settings_retention">अपने-आप मिटाएँ, इतने समय बाद</string>
-    <string name="settings_hours">%1$d घंटे</string>
+    <plurals name="settings_hours">
+        <item quantity="one">%1$d घंटा</item>
+        <item quantity="other">%1$d घंटे</item>
+    </plurals>
     <string name="settings_retention_note">इससे पुराने सत्र मिट जाते हैं, भले ही किसी ने उन्हें खत्म न किया हो।</string>
     <string name="settings_app_language">ऐप की भाषा</string>
-    <string name="settings_app_language_summary">अधिकारी वाली स्क्रीन की भाषा</string>
     <string name="settings_clear">सारा डेटा मिटाएँ</string>
     <string name="settings_clear_summary">एन्क्रिप्शन कुंजी नष्ट हो जाती है। इस फ़ोन का कोई भी सत्र पढ़ा नहीं जा सकेगा।</string>
     <string name="settings_clear_title">सारा डेटा मिटाएँ?</string>
@@ -207,12 +204,10 @@
     <string name="officer_has_audio">उनकी भाषा में रिकॉर्ड की गई आवाज़</string>
     <string name="officer_media_missing">केवल तस्वीर और कैप्शन</string>
     <string name="officer_camera">कैमरा आईना</string>
-    <string name="officer_stage">स्टेज पर वापस</string>
     <string name="settings_stage">स्टेज</string>
     <string name="settings_camera">कैमरा आईना</string>
     <string name="settings_camera_summary">स्टेज पर व्यक्ति को उनके अपने हाथ दिखते हैं। कुछ भी रिकॉर्ड या सेव नहीं होता।</string>
     <string name="home_greeting_hint">चुनिए कि आप किसकी मदद कर रहे हैं, फिर शुरू करें।</string>
-    <string name="camera_rationale">कैमरा केवल उनके हाथों का आईना है। कुछ भी रिकॉर्ड या सेव नहीं होता।</string>
     <string name="profile_isl_short">संकेत भाषा</string>
     <string name="profile_other_short">दूसरी भाषा</string>
     <string name="settings_large_captions">बड़े कैप्शन</string>
@@ -228,4 +223,8 @@
     <string name="media_audio">आवाज़</string>
     <string name="media_gesture">इशारा</string>
     <string name="media_missing">%1$s उपलब्ध नहीं</string>
+    <string name="start_damaged_title">सामग्री की जाँच विफल</string>
+    <string name="start_damaged_body">ऐप की इस कॉपी के सवाल या चित्र स्वीकृत सामग्री से मेल नहीं खाते, इसलिए नया सत्र शुरू नहीं हो सकता। अपने विभाग से नया संस्करण इंस्टॉल करें।</string>
+    <string name="start_media_rejected">कुछ चित्र, आवाज़ें या इशारे जाँच में विफल रहे और हटा दिए गए हैं।</string>
+    <string name="officer_phrases">वाक्य</string>
 </resources>

@@ -18,7 +18,6 @@
     <string name="return_prompt_subtitle">Return to the officer screen</string>
 
     <!-- Start -->
-    <string name="start_title">New session</string>
     <string name="start_resume_title">Unfinished session</string>
     <string name="start_resume_body">%1$s · %2$s · started %3$s</string>
     <string name="start_resume">Continue</string>
@@ -40,18 +39,12 @@
     <!-- Officer state -->
     <string name="officer_show">Show to them</string>
     <string name="officer_nothing_pending">Choose a question, picture or gesture</string>
-    <string name="officer_ready">Ready to show</string>
     <string name="officer_own_question">Your own question</string>
     <string name="officer_own_hint">Type a short question</string>
     <string name="officer_add_pictures">Add pictures</string>
     <string name="officer_use">Use</string>
-    <string name="officer_gestured">They made a gesture</string>
-    <string name="officer_board">Picture board</string>
     <string name="officer_find_language">Find their language</string>
     <string name="officer_draw">Let them draw</string>
-    <string name="officer_answers">Answers</string>
-    <string name="officer_no_answers">Their answers appear here.</string>
-    <string name="officer_see_all">Full log</string>
     <string name="officer_log">Session log</string>
     <string name="officer_call">Call an interpreter</string>
     <string name="officer_more">More options</string>
@@ -60,7 +53,10 @@
     <string name="officer_change">Change profile or language</string>
     <string name="officer_caption_missing">No caption in %1$s. They will see pictures only.</string>
     <string name="officer_gesture">Gesture</string>
-    <string name="officer_pictures">%1$d pictures</string>
+    <plurals name="officer_pictures">
+        <item quantity="one">%1$d picture</item>
+        <item quantity="other">%1$d pictures</item>
+    </plurals>
 
     <string name="sensitive_title">Sensitive questions</string>
     <string name="sensitive_body">These questions can upset a child. Ask them only when the person is calm and safe, and never start with them.</string>
@@ -68,7 +64,6 @@
 
     <string name="end_title">End this session?</string>
     <string name="end_body">Everything recorded in this session is deleted from this phone. Export a password-protected report first if the case file needs it.</string>
-    <string name="end_confirm">End and delete</string>
 
     <!-- Log -->
     <string name="log_shown">Shown</string>
@@ -167,10 +162,12 @@
     <string name="settings_contact_invalid">Enter a 10-digit mobile number, or the full number with country code.</string>
     <string name="settings_records">Session records</string>
     <string name="settings_retention">Delete automatically after</string>
-    <string name="settings_hours">%1$d hours</string>
+    <plurals name="settings_hours">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
     <string name="settings_retention_note">Sessions older than this are deleted even if nobody ended them.</string>
     <string name="settings_app_language">App language</string>
-    <string name="settings_app_language_summary">Language of the officer screens</string>
     <string name="settings_clear">Delete all data</string>
     <string name="settings_clear_summary">Destroys the encryption key. Every session on this phone becomes unreadable.</string>
     <string name="settings_clear_title">Delete all data?</string>
@@ -214,12 +211,10 @@
     <string name="officer_has_audio">Recorded speech in their language</string>
     <string name="officer_media_missing">Picture and caption only</string>
     <string name="officer_camera">Camera mirror</string>
-    <string name="officer_stage">Back to the stage</string>
     <string name="settings_stage">Stage</string>
     <string name="settings_camera">Camera mirror</string>
     <string name="settings_camera_summary">Shows the person their own hands on the stage. Nothing is recorded or saved.</string>
     <string name="home_greeting_hint">Choose who you are helping, then start.</string>
-    <string name="camera_rationale">The camera is only a mirror for their hands. Nothing is recorded or saved.</string>
     <string name="profile_isl_short">Signs</string>
     <string name="profile_other_short">Other language</string>
     <string name="settings_large_captions">Large captions</string>
@@ -235,4 +230,8 @@
     <string name="media_audio">Audio</string>
     <string name="media_gesture">Gesture</string>
     <string name="media_missing">%1$s not available</string>
+    <string name="start_damaged_title">Content check failed</string>
+    <string name="start_damaged_body">The questions or pictures in this copy of the app do not match the approved content, so no new session can start. Install the current version from your department.</string>
+    <string name="start_media_rejected">Some pictures, sounds or gestures failed a check and are left out.</string>
+    <string name="officer_phrases">Phrases</string>
 </resources>
