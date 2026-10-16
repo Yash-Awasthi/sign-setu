@@ -24,7 +24,7 @@ Logic with branches (retention, show-back, build expiry, export) is written test
 | TC-04 | App pinning on: subject cannot leave the app; pinning ends with the session | FR-61, SEC-46 |
 | TC-05 | Every triage question shows within 300 ms with its cards, caption and profile content | FR-11, NFR-02 |
 | TC-06 | Sensitive questions need a second deliberate tap | FR-12 |
-| TC-07 | Free text with board cards: caption and cards shown; no sign or gesture played | FR-13 |
+| TC-07 | Typed text from the composer: Send shows it at once; each word plays as a sign, gesture or fingerspelling per the toggles, lit in the caption, with its picture or letter beside the character | FR-13, D-22 |
 | TC-08 | Missing clip or audio: picture and caption only; officer sees "not available" | FR-17 |
 | TC-09 | Phrase bank sentence with slot plays as one sequence | FR-62 |
 | TC-10 | Language finder: each tile plays its greeting; choice sets subject language | FR-63 |
@@ -39,6 +39,9 @@ Logic with branches (retention, show-back, build expiry, export) is written test
 | TC-19 | Camera mirror: permission asked of the officer at start; denied or off shows a placeholder; no files appear in app storage after a session | FR-69, SEC-47 |
 | TC-20 | "I don't know" and "Stop" are logged; Stop shows the officer's banner until acknowledged or a new item is shown | FR-70 |
 | TC-21 | Every gesture plays on both characters; the gesture file passes the rig checks (unit test) and reviewers sign off in the gallery | FR-11, D-21 |
+| TC-22 | The subject taps Write on the stage (any profile but young child), types and taps Done; the answer appears in the officer's conversation as a typed answer and in the export | FR-71 |
+| TC-23 | Assistant: a known model file imports, any other file is refused and deleted; a typed question returns a caption and its back-translation; Send shows the caption and logs both texts | FR-68, D-24, SEC-65 |
+| TC-24 | Every text field reports `IME_FLAG_NO_PERSONALIZED_LEARNING` to the keyboard | SEC-05 |
 
 ## 3. Performance
 

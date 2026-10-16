@@ -1,0 +1,49 @@
+# 12. On-Device Assistant
+
+The assistant translates what the officer types into the subject's language and back into English, on the phone, so the officer can see a wrong translation before showing it (D-24). It does nothing else: it never answers, judges, summarises or signs.
+
+## 1. What the officer sees
+
+1. The officer types in the composer and taps **Assistant**.
+2. A card shows the caption in the subject's language, marked "machine translation, not checked", and below it "Which means" with the caption translated back into English.
+3. If the meaning is right, Send shows the caption on the stage; the character still signs, gestures or spells the officer's own words (D-22). If it is wrong, the officer closes the card and the text is shown as typed.
+4. The log keeps the officer's words and the caption that was shown.
+
+The assistant is skipped when the subject's language is English, or Hindi typed in Devanagari, since nothing needs translating.
+
+## 2. Model and runtime
+
+| Item | Choice | Reason |
+| --- | --- | --- |
+| Runtime | llama.cpp v0.5.0 (MIT), built from source by CMake, the archive pinned by SHA-256 | Open source, CPU only, runs on arm64 phones and the x86_64 emulator |
+| Model | Gemma 3 1B instruction-tuned, Q4_K_M GGUF, 806 MB (Gemma Terms of Use) | Best Hindi of the small models tried; Qwen2.5-1.5B (Apache-2.0) mistranslated three of four test questions |
+| Decoding | Greedy, at most 120 tokens per direction, empty context per request | The same input always gives the same output |
+| Native library | `libassistant.so`, arm64-v8a only in release (5.9 MB) | 32-bit phones cannot map the model |
+
+The Gemma licence is free for government use but is not an OSI open-source licence; it passes on Google's prohibited-use policy. A fully open model of the same size with good Indic output can replace it by adding its hash (§3).
+
+## 3. Installing the model
+
+- The department downloads the model once and hands it to officers as a file (SD card, USB, or a shared drive).
+- Settings, **On-device assistant**, **Import model file**: the app copies the file into its private storage and computes its SHA-256 while copying.
+- Only files whose hash is in `ModelStore.KNOWN_MODELS` are kept; any other file is deleted before it is parsed, so a swapped or damaged file never reaches the native parser.
+- The app has no INTERNET permission and gains none: it never downloads the model.
+- **Remove the model** deletes it.
+
+| Model | SHA-256 |
+| --- | --- |
+| `gemma-3-1b-it-Q4_K_M.gguf` from `ggml-org/gemma-3-1b-it-GGUF` | `8ccc5cd1f1b3602548715ae25a66ed73fd5dc68a210412eea643eb20eb75a135` |
+
+## 4. Budgets
+
+| Resource | Measured or set | Note |
+| --- | --- | --- |
+| Phone memory | Offered only on phones reporting at least 2.8 GB | The model maps about 0.9 GB; with it loaded the session exceeds NFR-06's 300 MB, so the model is loaded on first use and freed when the app locks |
+| APK | Release 19.1 MB (was 12.9 MB) | Within NFR-05's 30 MB |
+| Time | 66 s on the x86_64 emulator for one question, including loading the model | To be measured on the oldest supported arm64 phone (PT-02); arm64 is built for the plain ARMv8 baseline |
+
+## 5. Tests
+
+- Unit: the hash allow-list and the "already in the subject's script" skip.
+- Emulator: import accepted for the known file and refused for another; "are you hungry? do you want water?" gives "आप भूखे हैं? क्या आप पानी चाहते हैं?" and back "Are you hungry? Do you want some water?".
+- Field: language reviewers spot-check assistant output for each pilot language before officers rely on it.

@@ -1,5 +1,8 @@
 package app.signsetu.ui.session
 
+import androidx.compose.material.icons.filled.Star
+import app.signsetu.assistant.Suggestion
+import app.signsetu.assistant.Assistant
 import android.app.Activity
 import android.content.res.Resources
 import androidx.compose.animation.AnimatedVisibility
@@ -149,6 +152,7 @@ fun OfficerPane(
     onCameraOn: (Boolean) -> Unit,
     favourites: Set<String>,
     onFavourite: (String) -> Unit,
+    assistant: Assistant?,
     onCallInterpreter: (() -> Unit)?,
     onShare: (File) -> Unit,
     onEndSession: () -> Unit,
@@ -169,6 +173,9 @@ fun OfficerPane(
     val res = LocalResources.current
     val attached = remember { mutableStateListOf<String>() }
     var ownText by rememberSaveable { mutableStateOf("") }
+    var suggestion by remember { mutableStateOf<Suggestion?>(null) }
+    var thinking by remember { mutableStateOf(false) }
+    var noHelp by remember { mutableStateOf(false) }
     val modes = rememberSaveable(ui.session.profile, saver = listSaver(save = { l -> l.map { it.name } }, restore = { l -> l.map(SignMode::valueOf).toMutableStateList() })) {
         defaultModes(ui.session.profile).toMutableStateList()
     }
@@ -189,9 +196,10 @@ fun OfficerPane(
 
     val send = {
         if (ownText.isNotBlank()) {
-            vm.prepare(Pending.FreeText(ownText.trim(), attached.toList(), modes.toSet()))
+            vm.prepare(Pending.FreeText(ownText.trim(), attached.toList(), modes.toSet(), suggestion?.caption))
             ownText = ""
             attached.clear()
+            suggestion = null
         }
         tools = false
         vm.show()
@@ -275,7 +283,23 @@ fun OfficerPane(
             content = content,
             officerLang = officerLang,
             text = ownText,
-            onText = { ownText = it },
+            onText = { ownText = it; suggestion = null; noHelp = false },
+            assistant = assistant != null,
+            thinking = thinking,
+            suggestion = suggestion,
+            noHelp = noHelp,
+            onAssist = {
+                val language = content.language(subjectLang)
+                if (assistant != null && language != null && !thinking) {
+                    thinking = true
+                    scope.launch {
+                        suggestion = assistant.suggest(ownText.trim(), language)
+                        noHelp = suggestion == null
+                        thinking = false
+                    }
+                }
+            },
+            onDiscard = { suggestion = null },
             modes = modes,
             onMode = { if (!modes.remove(it)) modes.add(it) },
             attached = attached,
@@ -502,6 +526,12 @@ private fun Dock(
     officerLang: String,
     text: String,
     onText: (String) -> Unit,
+    assistant: Boolean,
+    thinking: Boolean,
+    suggestion: Suggestion?,
+    noHelp: Boolean,
+    onAssist: () -> Unit,
+    onDiscard: () -> Unit,
     modes: List<SignMode>,
     onMode: (SignMode) -> Unit,
     attached: List<String>,
@@ -588,6 +618,7 @@ private fun Dock(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
+                    if (assistant && typing) AssistChip(thinking, onAssist)
                     ModeLabels.forEach { (mode, label) -> ModeChip(stringResource(label), mode in modes) { onMode(mode) } }
                     attached.forEach { id ->
                         Surface(shape = RoundedCornerShape(50), color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = Modifier.height(32.dp)) {
@@ -600,6 +631,11 @@ private fun Dock(
                 }
             } else if (pending != null) {
                 Ready(pending, content, officerLang, subjectLang, ui.session.profile, onClear)
+            }
+            if (typing && suggestion != null) {
+                AssistantCard(suggestion, content.language(subjectLang)?.english ?: subjectLang, onDiscard)
+            } else if (typing && noHelp) {
+                Text(stringResource(R.string.ai_none), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm))
             }
 
             Composer(
@@ -690,6 +726,48 @@ private fun CategoryChip(label: String, selected: Boolean, locked: Boolean, onCl
         Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (locked) Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(14.dp))
             Text(label, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+@Composable
+private fun AssistChip(thinking: Boolean, onClick: () -> Unit) {
+    val ink = LocalInk.current
+    Box(
+        Modifier
+            .height(32.dp)
+            .clip(RoundedCornerShape(50))
+            .background(ink.brush)
+            .clickable(enabled = !thinking, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (thinking) CircularProgressIndicator(Modifier.size(14.dp), color = Color.White, strokeWidth = 2.dp)
+            else Icon(Icons.Filled.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+            Text(stringResource(if (thinking) R.string.ai_working else R.string.ai_suggest), style = MaterialTheme.typography.labelMedium, color = Color.White, modifier = Modifier.padding(start = 4.dp))
+        }
+    }
+}
+
+/** The assistant's suggestion, shown before Send; a machine translation is always marked as unchecked (D-24). */
+@Composable
+private fun AssistantCard(suggestion: Suggestion, languageName: String, onDiscard: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = colors.secondaryContainer,
+        contentColor = colors.onSecondaryContainer,
+        modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm).fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(start = Spacing.md, top = Spacing.sm, bottom = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.ai_caption, languageName), style = MaterialTheme.typography.labelSmall, color = colors.tertiary)
+                Text(suggestion.caption, style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.ai_meaning), style = MaterialTheme.typography.labelSmall, color = colors.primary)
+                Text(suggestion.meaning, style = MaterialTheme.typography.bodyMedium)
+            }
+            IconButton(onClick = onDiscard) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel)) }
         }
     }
 }

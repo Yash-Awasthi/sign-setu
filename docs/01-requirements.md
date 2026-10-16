@@ -76,6 +76,7 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | FR-69 | Below the character, the stage shows a live mirror of the subject's hands from the front camera. Nothing is captured, recorded or stored. The officer can turn it off for one person; the department can turn it off in settings (D-20). | MUST |
 | FR-70 | During any question the subject can also answer "I don't know" or "Stop". "Stop" is shown to the officer prominently, with guidance to pause. | MUST |
 | FR-65 | Gesture lookup: the officer records where the hand went (body location) and what it did (hand action); the app lists matching lexicon entries with picture and clip. | MUST |
+| FR-68 | Machine translation of the officer's typed text into the subject's language, shown with its translation back into English and marked as not checked, before the officer chooses to show it (on-device, D-24). | SHOULD |
 | FR-71 | The subject can write their own answer on the stage with the keyboard (every profile except a young child). It is logged word for word as a typed answer and never interpreted. | MUST |
 | FR-66 | Show-back: the officer sends a candidate meaning to the Show state with "Is this it?" and Yes/No. Only Yes logs the meaning; anything else is logged as unclear. | MUST |
 
@@ -103,7 +104,6 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | ID | Requirement | Release |
 | --- | --- | --- |
 | FR-14 | Voice question with editable transcript (Bhashini through the project gateway). | 1.1 |
-| FR-68 | Machine translation of free-text captions, marked as unreviewed. | 1.1 |
 | FR-22 | On-device hand and sign recognition, from the partner team's model through the `HandTracker` interface (D-20), always followed by show-back. | After pilot |
 
 Withdrawn from earlier drafts: FR-01 (split screen, replaced by FR-03), FR-04 (divider), FR-16 (free text signed by a skeleton avatar), FR-23 (camera confidence display), FR-25 (echo, replaced by FR-66), FR-40 to FR-43 (network and permission fallbacks; release 1 uses neither).

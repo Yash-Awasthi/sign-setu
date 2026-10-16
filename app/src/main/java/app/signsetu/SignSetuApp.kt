@@ -1,5 +1,7 @@
 package app.signsetu
 
+import app.signsetu.assistant.ModelStore
+import app.signsetu.assistant.Assistant
 import android.app.Application
 import android.os.Build
 import android.util.Log
@@ -45,6 +47,8 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver {
     val content = ContentRepository(app.assets)
     val settings = SettingsStore(app)
     val report = SessionReport(app)
+    val models = ModelStore(app)
+    val assistant = Assistant(models)
 
     /** The partner team's hand-detection model, created per build type; without one the stage shows a plain mirror (D-20). */
     val handTracker: HandTracker? by lazy { HandTrackers.create(app) }
@@ -104,6 +108,7 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver {
 
     fun lock() {
         _sessions.value = null
+        scope.launch { models.release() }
         database?.close()
         database = null
     }

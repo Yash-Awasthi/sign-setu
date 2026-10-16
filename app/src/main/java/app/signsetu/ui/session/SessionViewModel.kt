@@ -34,7 +34,13 @@ import java.io.File
 @Immutable
 sealed interface Pending {
     data class Ask(val question: Question) : Pending
-    data class FreeText(val text: String, val cardIds: List<String>, val modes: Set<SignMode> = emptySet()) : Pending
+    /** [caption] is the assistant's translation the officer accepted (D-24); the character still signs [text]. */
+    data class FreeText(
+        val text: String,
+        val cardIds: List<String>,
+        val modes: Set<SignMode> = emptySet(),
+        val caption: String? = null,
+    ) : Pending
     data class Cards(val cardIds: List<String>) : Pending
     data class ShowBack(val entry: LexiconEntry) : Pending
     data class PhraseAsk(val phrase: Phrase, val slot: PhraseSlot) : Pending
@@ -130,7 +136,8 @@ class SessionViewModel(
                 sessionId, EventType.QUESTION_SHOWN, EventSource.PRESET, lang,
                 text = pending.question.text.pick(officerLang), lexiconId = pending.question.lexicon,
             )
-            is Pending.FreeText -> repo.log(sessionId, EventType.QUESTION_SHOWN, EventSource.TEXT, lang, text = pending.text)
+            // A machine-made caption is logged next to the officer's own words, so the record shows both.
+            is Pending.FreeText -> repo.log(sessionId, EventType.QUESTION_SHOWN, EventSource.TEXT, lang, text = listOfNotNull(pending.text, pending.caption).joinToString("\n"))
             is Pending.Cards -> repo.log(
                 sessionId, EventType.QUESTION_SHOWN, EventSource.BOARD, lang,
                 text = pending.cardIds.joinToString { id -> content.cards[id]?.label?.pick(officerLang) ?: id },

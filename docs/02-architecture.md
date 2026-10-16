@@ -20,34 +20,37 @@ The data flow diagrams, element catalogue and trust boundaries are in the [syste
 | Language, UI | Kotlin, Jetpack Compose, Material 3 | Native, smallest build, direct access to Keystore and platform security APIs |
 | SDK levels | minSdk 29; compile and target the latest stable SDK installed (37) | Android 10 floor |
 | Media | Media3 ExoPlayer | Clips and audio, gapless playlists for the phrase bank, variable speed |
-| Database | Room with SQLCipher for Android 4.18 | Encrypted at rest; Room 3 supported |
+| Database | Room 2.8 with SQLCipher for Android 4.19 | Encrypted at rest |
 | Settings | Jetpack DataStore | No personal data |
 | Background work | WorkManager | Retention purge |
 | App lock | androidx.biometric BiometricPrompt, KeyguardManager | Device credential or strong biometric |
 | PDF export | Android PdfDocument to compose, PdfBox-Android to encrypt (AES-256) | Readable in any PDF reader |
 | Characters | Compose Canvas, 2D rig, keyframes in `gestures.json` (D-21) | No video files; one gesture file plays on both characters |
 | Camera mirror | CameraX 1.6: Preview, and ImageAnalysis only when a hand model is present (D-20) | Nothing captured or stored |
+| On-device assistant | llama.cpp v0.5.0 built with the NDK and CMake into `libassistant.so` (arm64-v8a; x86_64 for the emulator); an optional GGUF model file imported in Settings (D-24) | Offline translation with a back-translation; no network |
 | Type | Baloo 2 (SIL OFL), bundled, for headings and subject captions in Latin and Devanagari | Friendly, legible at arm's length; other scripts use the system Noto fonts |
-| Build | Gradle wrapper, version catalog, R8 full mode, Baseline Profile, dependency verification | Size, startup, supply chain |
+| Build | Gradle wrapper, version catalog, R8 full mode, dependency verification; CMake fetches llama.cpp pinned by SHA-256 | Size, startup, supply chain |
 
-Not used: networking libraries, dependency-injection frameworks, Firebase or any Google Play services, analytics or crash SDKs, WebView, microphone APIs, and camera capture or recording (the camera is a mirror only, D-20). Exact versions are pinned in the version catalog when the project is created.
+Not used: networking libraries, dependency-injection frameworks, Firebase or any Google Play services, analytics or crash SDKs, WebView, microphone APIs, and camera capture or recording (the camera is a mirror only, D-20). Exact versions are pinned in the version catalog.
 
 ## 4. Packages
 
-One Gradle module, organised by feature. Process numbers refer to the [system design](system-design.html) Figure 2.
+One Gradle module under `app.signsetu`, organised by feature. Process numbers refer to the [system design](system-design.html) Figure 2.
 
 | Package | Responsibility | DFD | Requirements |
 | --- | --- | --- | --- |
-| `ui.shell` | Officer and Show states, rotation, screen pinning, navigation between sheets | 2.0, 3.2 | FR-02, FR-03, FR-61 |
-| `ui.officer` | Profile and language, triage groups, free text, picture board, gesture lookup, notes, session log | 2.0 | FR-07, FR-10 to FR-19, FR-31, FR-60, FR-65 |
-| `ui.subject` | Render set, cards, Yes/No, clip and audio playback, drawing canvas, show-back, language finder | 3.1 to 3.4 | FR-11, FR-20, FR-21, FR-24, FR-63, FR-66 |
-| `content` | Loads and validates the content bundle; resolves a request and profile into a render set; lexicon search for gesture lookup | 3.1, D2 | FR-11, FR-17, FR-62, FR-65 |
-| `session` | Session state, event log, end and purge, retention worker | 4.0 | FR-05, FR-06, FR-30, FR-33, FR-34 |
-| `export` | PDF report, passphrase, share sheet, interpreter hand-off | 5.0 | FR-32, FR-64 |
-| `ui.avatar` | 2D rig, the two characters, keyframe playback | 3.1 | FR-11, FR-18, FR-66 |
-| `camera` | Camera mirror; `HandTracker` interface for the partner model ([contract](11-hand-model-integration.md)), created by `HandTrackers` per build type (release: the partner model; debug: a stand-in hand) | 3.1 | FR-69, FR-22 |
-| `storage` | Room database, SQLCipher key handling, DataStore | D1, D3, D4 | NFR-30 |
-| `security` | App lock, FLAG_SECURE, build expiry, root warning | 1.0 | FR-67, NFR-31, NFR-32 |
+| (root) | `MainActivity` (FLAG_SECURE, overlay touch filter, BiometricPrompt, screen pinning); `AppContainer` wiring, app lock and relock | 1.0 | FR-61, FR-67, NFR-31 |
+| `ui` | Navigation, lock screen, session route (officer panel or stage), app-wide no-learning keyboard | 1.0, 2.0, 3.0 | FR-02, FR-03, SEC-05 |
+| `ui.start` | Home: greeting stage, unfinished session, profile faces, language picker; first run | 2.0 | FR-05, FR-07, FR-60 |
+| `ui.session` | Officer panel (conversation, suggestions, composer, tools), stage (character, caption, mirror, answers, drawing, writing), sheets (picture board, gesture lookup, phrases, log, change profile), session view model | 2.0, 3.0 | FR-10 to FR-21, FR-31, FR-60 to FR-66, FR-70, FR-71 |
+| `ui.avatar` | 2D rig, the two characters, keyframe playback, fingerspelling contact points | 3.1 | FR-11, FR-18 |
+| `ui.settings`, `ui.theme`, `ui.components` | Settings; officer and stage colour schemes, shapes and type; shared cards and buttons | 2.0 | FR-51 |
+| `data.content` | Loads and verifies the content bundle; resolves questions, phrases and lexicon lookup; plans typed text into signs, gestures and spelling | 3.1, D2 | FR-11, FR-13, FR-17, FR-62, FR-65 |
+| `data.session` | Encrypted Room database, wrapped database key, event log, retention worker | 4.0, D1, D4 | FR-05, FR-06, FR-30, FR-33, FR-34 |
+| `data.settings` | DataStore settings and the officer's app language | D3 | FR-51 |
+| `export` | Password-protected PDF report | 5.0 | FR-32 |
+| `camera` | Camera mirror; `HandTracker` interface for the partner model ([contract](11-hand-model-integration.md)), created by `HandTrackers` per build type (release: none until the model is connected; debug: a stand-in hand) | 3.3 | FR-69, FR-22 |
+| `assistant` | Model import with hash check, llama.cpp bridge, translation and back-translation | 6.0, D5 | FR-68, SEC-65 |
 
 ## 5. Content bundle
 
@@ -58,6 +61,8 @@ assets/content/
   cards.json             picture board categories and cards: id, category, label{lang}
   lexicon.json           gesture and ISL entries (schema in 05-avatar-and-gestures.md §5.2)
   gestures.json          character keyframes per gesture, written against named contact points (D-21)
+  signs.json             fingerspelling alphabet, digits and draft word signs, generated by tools/content/build_signs.py (D-22)
+  words.json             typed-word vocabulary: written forms to sign, gesture and picture (D-22)
   languages.json         language finder: code, name in its own script, English name, greeting
   subject_ui.json        words the stage shows the subject (Yes, No, Stop, draw), per language
   phrases.json           phrase bank: sentence patterns, their signs, and per slot the picture, its sign and the full sentence
@@ -105,14 +110,14 @@ API-level details for authentication are in [security](04-security.md) SEC-21 an
 
 - The `applicationId` is `in.signsetu`. The code namespace is `app.signsetu`, because `in` is a Kotlin keyword. The department confirms the identifier before the first signed release, because it cannot change afterwards.
 - `BuildConfig.BUILD_EPOCH_DAY` is set at build time for the build-expiry check (FR-67).
-- Release builds: R8 full mode, Baseline Profile for cold start and the first question, `debuggable=false`, no logging.
+- Release builds: R8 full mode, `debuggable=false`, no logging. A Baseline Profile is not yet generated; it is the next step if cold start on the oldest phone misses NFR-01.
 - Signing, SBOM, scanning and release steps are in [governance/11-devsecops-release.md](governance/11-devsecops-release.md).
 
 ## 10. Performance
 
 | Target | Approach |
 | --- | --- |
-| Cold start under 2 s (NFR-01) | No work on startup beyond unlocking; Baseline Profile; content manifest checked once per install |
+| Cold start under 2 s (NFR-01) | No work on startup beyond unlocking; content manifest checked once per install |
 | Preset under 300 ms (NFR-02) | First-screen cards preloaded; one ExoPlayer instance reused; clips stored uncompressed in the APK so they play without extraction |
 | Smooth clips (NFR-03) | 480x480 H.264 at source frame rate; hardware decode |
 | APK under 30 MB (NFR-05) | WebP cards, Opus audio, short clips; size checked in CI |
@@ -120,4 +125,4 @@ API-level details for authentication are in [security](04-security.md) SEC-21 an
 
 ## 11. Release 1.1 (not built in release 1)
 
-Voice questions and caption translation add the INTERNET permission, a project-owned gateway in an India-region cloud, Android key attestation, certificate pinning and Bhashini behind the gateway. The superseded contract draft is in [archive/09-api-contracts.md](archive/09-api-contracts.md). Adding release 1.1 requires an updated threat model, DPIA and audit scope.
+Voice questions and caption translation add the INTERNET permission, a project-owned gateway in an India-region cloud, Android key attestation, certificate pinning and Bhashini behind the gateway. Adding release 1.1 requires an updated threat model, DPIA and audit scope.

@@ -14,7 +14,7 @@ Everything a subject sees is content: triage questions, captions, translations, 
 
 ## 2. Standards
 
-- Wording follows the content style in [UX design](../../archive/05-design-ux.md) §7: short, gentle, one idea, non-leading, safety first.
+- Wording follows the content style in [UX](../03-ux.md) §7: short, gentle, one idea, non-leading, safety first.
 - Pictures: simple illustrations, no photographs of real people, no violence, weapons, injuries shown graphically, or frightening imagery; culturally appropriate for India; diverse in skin tone, dress and region.
 - ISL clips: one signer style across the set; plain background; signer's face clearly visible; no more than 6 seconds per question.
 - Every asset has a recorded source and licence (see [copyright and licensing policy](copyright-licensing-policy.md)).

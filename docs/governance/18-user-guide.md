@@ -41,6 +41,7 @@ Child in distress: Childline 1098 or 112.
 | Phrases | **Phrases** group: pick a sentence ("Do you want ...?"), then the picture it is about. The character signs the sentence in parts. |
 | Pictures | **Pictures** opens the board: categories, search and your **Favourites** (tap the star). Pick one or more and tap **Use**. |
 | Your own question | Type in the composer at the bottom and tap send. The character signs, gestures or spells it word by word and holds up pictures; the toggles above the composer choose Signs, Gestures, Spell and Pictures. **+** then **Add pictures** attaches answer pictures. |
+| Their language differs from yours | Type your question, tap **Assistant** (if your department installed it). Check **Which means**: it is the translation read back in English. If it is right, tap send; if not, close the card and your words are shown as typed. |
 | They write an answer | On the stage they tap **Write**, type, and tap **Done**. Their words appear in your conversation as a typed answer. A young child does not get the button. |
 | They made a gesture | **+**, then **They gestured**: tap where the hand went and what it did, then the likely meaning. They see it with "Is this it?"; only their **Yes** records the meaning. |
 | Drawing | **Draw**: they draw with a finger and tap done; the drawing is kept with the session. |

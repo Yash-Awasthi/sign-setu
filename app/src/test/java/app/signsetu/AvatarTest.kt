@@ -138,6 +138,8 @@ class AvatarTest {
         assertTrue(still.beats.single().end > 0f)
         assertEquals(null, bundle.planText("Ravi", setOf(SignMode.GESTURES)).gesture)
         assertEquals(listOf("ravi"), bundle.planText("Ravi's", setOf(SignMode.SPELL)).beats.map { it.letters })
+        // With Signs on, a word that has only an everyday gesture plays the gesture rather than being spelled.
+        assertEquals(listOf(null), bundle.planText("hungry", setOf(SignMode.SIGNS, SignMode.SPELL)).beats.map { it.letters })
     }
 
     @Test
