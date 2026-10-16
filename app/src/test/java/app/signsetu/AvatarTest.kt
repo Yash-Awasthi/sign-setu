@@ -115,14 +115,37 @@ class AvatarTest {
         assertEquals("ram", spelling("Ram!"))
     }
 
-    @Test
-    fun typedTextIsSignedWordByWord() {
-        val bundle = ContentBundle(
+    private val bundle by lazy {
+        ContentBundle(
             groups = emptyList(), questions = emptyList(), categories = emptyList(), cards = emptyMap(), lexicon = emptyMap(),
             languages = emptyList(), subjectUi = emptyMap(), rejected = emptySet(),
             gestures = gestures.associateBy { it.id },
             words = json.decodeFromString<WordsFile>(File(content, "words.json").readText()).words.flatMap { e -> e.w.map { it to e } }.toMap(),
         )
+    }
+
+    private fun signed(text: String, modes: Set<SignMode> = setOf(SignMode.SIGNS)) =
+        bundle.planText(text, modes).beats.map { text.substring(it.range).lowercase() }
+
+    @Test
+    fun signsFollowIslOrder() {
+        assertEquals(listOf("your", "mother", "where"), signed("Where is your mother?"))
+        assertEquals(listOf("i", "hungry", "not"), signed("I am not hungry"))
+        assertEquals("yesterday", signed("Did he hit you yesterday?", setOf(SignMode.SIGNS, SignMode.SPELL)).first())
+        assertEquals(listOf("kal", "tum", "kahan"), signed("tum kal kahan the?"))
+        // Gestures alone keep the typed order, and Hindi "do" gives only at the end of a sentence.
+        assertEquals(listOf("where", "your", "mother"), signed("Where is your mother?", setOf(SignMode.GESTURES)))
+        assertEquals(listOf("paani", "do"), signed("paani do"))
+        assertEquals(listOf("you", "know"), signed("do you know"))
+        // Each beat still lights its own typed word, so highlighting follows the reordered signs.
+        val text = "where is your mother"
+        val beats = bundle.planText(text, setOf(SignMode.SIGNS)).beats
+        assertEquals(text.indexOf("where"), beats.last().range.first)
+        assertTrue(beats.zipWithNext().all { (a, b) -> a.end <= b.start + 1e-4f })
+    }
+
+    @Test
+    fun typedTextIsSignedWordByWord() {
         val text = "Is Ravi your brother?"
         val plan = bundle.planText(text, setOf(SignMode.GESTURES, SignMode.SPELL, SignMode.PICTURES))
         // "Is" is a grammar word, "Ravi" is spelled, "your" and "brother" have gestures, and "?" adds the asking face.

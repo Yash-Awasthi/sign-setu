@@ -80,16 +80,26 @@ import app.signsetu.data.content.PhraseSlot
 import app.signsetu.data.content.pick
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
+import app.signsetu.data.session.Role as SessionRole
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.PictureCard
 import app.signsetu.ui.start.LanguagePicker
+import app.signsetu.ui.start.RoleChoice
 import app.signsetu.ui.start.profileTitle
 import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
 import java.text.DateFormat
 import java.util.Date
 import app.signsetu.ui.components.FilterObscuredTouches
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.runtime.toMutableStateList
+import app.signsetu.data.session.EventSource
+import app.signsetu.sign.SignSegment
+import app.signsetu.sign.SkeletonPlayer
+import app.signsetu.sign.rememberReplayState
+import kotlin.math.roundToInt
 
 private const val FAVOURITES = "*favourites"
 
@@ -307,19 +317,24 @@ fun List<SessionEvent>.withQuestions(): List<Pair<SessionEvent, String?>> {
     }
 }
 
-val AnswerEvents = setOf(EventType.ANSWER_CARD, EventType.ANSWER_DRAWING, EventType.ANSWER_GESTURE, EventType.ANSWER_UNCLEAR, EventType.LANGUAGE_CHOSEN, EventType.ANSWER_TEXT)
+val AnswerEvents = setOf(EventType.ANSWER_CARD, EventType.ANSWER_DRAWING, EventType.ANSWER_GESTURE, EventType.ANSWER_UNCLEAR, EventType.LANGUAGE_CHOSEN, EventType.ANSWER_TEXT, EventType.ANSWER_SIGNED)
+
+/** A signed answer is always marked as the app's reading or the officer's, never as the subject's own words. */
+fun signedMark(e: SessionEvent) = if (e.source == EventSource.OFFICER) R.string.signed_officer else R.string.signed_app
 
 @Composable
 fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? = null) {
     ListItem(
         overlineContent = {
-            Text("${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))}  ·  ${stringResource(e.type.label())}")
+            val mark = if (e.type == EventType.ANSWER_SIGNED) "  ·  ${stringResource(signedMark(e))}" else ""
+            Text("${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))}  ·  ${stringResource(e.type.label())}$mark")
         },
         headlineContent = {
             Text(
                 when (e.text) {
                     SYSTEM_LANGUAGE_FINDER -> stringResource(R.string.officer_find_language)
                     SYSTEM_DRAWING -> stringResource(R.string.officer_draw)
+                    SYSTEM_READ_SIGNS -> stringResource(R.string.officer_read_signs)
                     else -> e.text ?: "—"
                 },
             )
@@ -338,8 +353,10 @@ fun ChangeSheet(
     content: ContentBundle,
     profile: Profile,
     subjectLang: String,
+    role: SessionRole,
     onProfile: (Profile) -> Unit,
     onLanguage: (String) -> Unit,
+    onRole: (SessionRole) -> Unit,
     onDismiss: () -> Unit,
 ) {
     OfficerSheet(onDismiss, expanded = false) {
@@ -348,6 +365,7 @@ fun ChangeSheet(
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             SheetTitle(stringResource(R.string.officer_change))
+            RoleChoice(role, onRole, Modifier.padding(bottom = Spacing.sm))
             Column(Modifier.selectableGroup()) {
                 Profile.entries.forEach { p ->
                     Row(
@@ -437,6 +455,65 @@ fun EventType.label() = when (this) {
     EventType.NOTE -> R.string.log_note
     EventType.SYSTEM -> R.string.log_system
     EventType.ANSWER_TEXT -> R.string.log_typed
+    EventType.ANSWER_SIGNED -> R.string.log_signed
+}
+
+/**
+ * Replays a signed answer slowly, sign by sign, so the officer can accept a guess or type the word for each sign.
+ * Without a sign reader every sign starts blank: the officer transcribes by watching.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun SignedSheet(segments: List<SignSegment>, onAccept: (List<String>) -> Unit, onDismiss: () -> Unit) {
+    val replay = rememberReplayState(segments)
+    val words = remember(segments) { segments.map { s -> s.word?.takeIf { it != "?" }.orEmpty() }.toMutableStateList() }
+    val colors = MaterialTheme.colorScheme
+    OfficerSheet(onDismiss) {
+        LazyColumn(
+            Modifier.fillMaxHeight(0.92f).imePadding(),
+            contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            item { SheetTitle(stringResource(R.string.log_signed)) }
+            item { SkeletonPlayer(replay, Modifier.fillMaxWidth()) }
+            if (segments.all { it.guesses.isNullOrEmpty() }) {
+                item { Text(stringResource(R.string.signed_manual), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant) }
+            }
+            itemsIndexed(segments) { i, s ->
+                Surface(shape = MaterialTheme.shapes.medium, color = if (replay.segment == i) colors.primaryContainer else colors.surfaceContainerLow) {
+                    Column(Modifier.padding(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val name = stringResource(R.string.signed_sign, i + 1)
+                            TextButton(onClick = { replay.play(i) }) {
+                                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text(name, modifier = Modifier.padding(start = Spacing.xs))
+                            }
+                        }
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            s.guesses.orEmpty().forEach { g ->
+                                FilterChip(selected = words[i] == g.word, onClick = { words[i] = g.word }, label = { Text("${g.word}  ${(g.score * 100).roundToInt()}%") })
+                            }
+                        }
+                        OutlinedTextField(
+                            value = words[i],
+                            onValueChange = { words[i] = it },
+                            placeholder = { Text(stringResource(R.string.signed_type)) },
+                            singleLine = true,
+                            // SEC-05: the keyboard should not learn from what is transcribed about a subject.
+                            keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+            item {
+                BrandButton(
+                    onClick = { onAccept(words.map { it.trim().ifEmpty { "?" } }) },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                ) { Text(stringResource(R.string.signed_accept)) }
+            }
+        }
+    }
 }
 
 /** The character's pose at the gesture's key moment, with the picture it stands for. */

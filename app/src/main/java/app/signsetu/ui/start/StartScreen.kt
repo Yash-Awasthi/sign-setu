@@ -46,6 +46,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -78,6 +81,7 @@ import app.signsetu.R
 import app.signsetu.camera.hasCameraPermission
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.session.Profile
+import app.signsetu.data.session.Role as SessionRole
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.avatar.Avatar
@@ -115,8 +119,9 @@ fun StartScreen(
     val open by produceState<Session?>(null, refresh) { value = repo.openSession() }
     var profile by rememberSaveable { mutableStateOf<Profile?>(null) }
     var lang by rememberSaveable { mutableStateOf("hi") }
+    var role by rememberSaveable { mutableStateOf(SessionRole.VICTIM) }
 
-    val begin = { p: Profile -> scope.launch { onOpenSession(repo.start(p, lang)) }; Unit }
+    val begin = { p: Profile -> scope.launch { onOpenSession(repo.start(p, lang, role)) }; Unit }
     // The camera permission is asked of the officer here, never of the subject on the stage.
     val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { profile?.let(begin) }
     val onStart = {
@@ -175,6 +180,7 @@ fun StartScreen(
                             onEnd = { scope.launch { repo.purge(session.id); refresh++ } },
                         )
                     }
+                    RoleChoice(role, onRole = { role = it })
                     Text(stringResource(R.string.start_who), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
                     Row(Modifier.selectableGroup().fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Profile.entries.forEach { p -> ProfileFace(p, content, selected = profile == p, onSelect = { profile = p }) }
@@ -188,6 +194,9 @@ fun StartScreen(
                         Text(stringResource(R.string.start_language_finder), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                     } else {
                         LanguagePicker(content, lang, onPick = { lang = it }, label = stringResource(R.string.start_language))
+                    }
+                    if (role == SessionRole.ACCUSED && profile == Profile.YOUNG_CHILD) {
+                        Notice(stringResource(R.string.start_juvenile_title), stringResource(R.string.start_juvenile_body), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                     }
                 }
                 BrandButton(
@@ -342,6 +351,25 @@ fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) ->
             }
         }
     }
+}
+
+@Composable
+fun RoleChoice(role: SessionRole, onRole: (SessionRole) -> Unit, modifier: Modifier = Modifier) {
+    SingleChoiceSegmentedButtonRow(modifier.fillMaxWidth()) {
+        SessionRole.entries.forEachIndexed { i, r ->
+            SegmentedButton(
+                selected = r == role,
+                onClick = { onRole(r) },
+                shape = SegmentedButtonDefaults.itemShape(i, SessionRole.entries.size),
+                label = { Text(stringResource(roleTitle(r)), maxLines = 2, textAlign = TextAlign.Center) },
+            )
+        }
+    }
+}
+
+fun roleTitle(r: SessionRole) = when (r) {
+    SessionRole.VICTIM -> R.string.role_victim
+    SessionRole.ACCUSED -> R.string.role_accused
 }
 
 fun profileTitle(p: Profile) = when (p) {

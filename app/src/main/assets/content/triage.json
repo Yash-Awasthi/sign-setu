@@ -48,7 +48,21 @@
         "en": "Sensitive",
         "hi": "संवेदनशील"
       },
-      "sensitive": true
+      "sensitive": true,
+      "roles": [
+        "VICTIM"
+      ]
+    },
+    {
+      "id": "rights",
+      "label": {
+        "en": "Rights",
+        "hi": "अधिकार"
+      },
+      "roles": [
+        "ACCUSED"
+      ],
+      "note": "Draft wording; needs legal review before field use."
     }
   ],
   "questions": [
@@ -396,6 +410,98 @@
       "text": {
         "en": "Are you afraid of someone?",
         "hi": "क्या आप किसी से डरते हैं?"
+      },
+      "gesture": "ask"
+    },
+    {
+      "id": "r1",
+      "group": "rights",
+      "cards": [
+        "police"
+      ],
+      "text": {
+        "en": "You are under arrest. The officer will tell you why.",
+        "hi": "आपको गिरफ़्तार किया गया है। अधिकारी आपको इसका कारण बताएँगे।"
+      },
+      "gesture": "police.salute",
+      "note": "BNSS s.47; needs legal review."
+    },
+    {
+      "id": "r2",
+      "group": "rights",
+      "cards": [
+        "person"
+      ],
+      "text": {
+        "en": "You can meet a lawyer.",
+        "hi": "आप वकील से मिल सकते हैं।"
+      },
+      "gesture": "you.palm",
+      "note": "BNSS s.38; needs legal review."
+    },
+    {
+      "id": "r3",
+      "group": "rights",
+      "cards": [
+        "mother",
+        "father",
+        "phone"
+      ],
+      "text": {
+        "en": "A relative or friend will be told where you are.",
+        "hi": "आपके किसी रिश्तेदार या दोस्त को बताया जाएगा कि आप कहाँ हैं।"
+      },
+      "gesture": "phone.ear",
+      "note": "BNSS s.48; needs legal review."
+    },
+    {
+      "id": "r4",
+      "group": "rights",
+      "cards": [
+        "doctor"
+      ],
+      "text": {
+        "en": "A doctor will examine you.",
+        "hi": "एक डॉक्टर आपकी जाँच करेंगे।"
+      },
+      "gesture": "doctor.listen",
+      "note": "BNSS s.53; needs legal review."
+    },
+    {
+      "id": "r5",
+      "group": "rights",
+      "cards": [
+        "stop"
+      ],
+      "text": {
+        "en": "You do not have to say anything against yourself.",
+        "hi": "आपको अपने ख़िलाफ़ कुछ भी कहना ज़रूरी नहीं है।"
+      },
+      "gesture": "no.shake",
+      "note": "Constitution Art. 20(3); needs legal review."
+    },
+    {
+      "id": "r6",
+      "group": "rights",
+      "cards": [],
+      "text": {
+        "en": "An interpreter will be with you for any statement.",
+        "hi": "आपके किसी भी बयान के समय एक दुभाषिया आपके साथ रहेगा।"
+      },
+      "gesture": "okay",
+      "note": "Interpreter for any statement; needs legal review."
+    },
+    {
+      "id": "r7",
+      "group": "rights",
+      "cards": [
+        "yes",
+        "no",
+        "dont_know"
+      ],
+      "text": {
+        "en": "Do you understand?",
+        "hi": "क्या आपको समझ आया?"
       },
       "gesture": "ask"
     }

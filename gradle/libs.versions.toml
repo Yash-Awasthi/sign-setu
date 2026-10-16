@@ -22,6 +22,7 @@ pdfbox = "2.0.27.0"
 camerax = "1.6.2"
 bouncycastle = "1.86"
 junit = "4.13.2"
+mediapipe = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -63,6 +64,7 @@ bouncycastle-util = { module = "org.bouncycastle:bcutil-jdk15to18", version.ref 
 camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camera-compose = { module = "androidx.camera:camera-compose", version.ref = "camerax" }
+mediapipe-tasks-vision = { module = "com.google.mediapipe:tasks-vision", version.ref = "mediapipe" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

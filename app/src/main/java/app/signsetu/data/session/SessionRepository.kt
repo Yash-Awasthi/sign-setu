@@ -7,12 +7,15 @@ import java.util.UUID
 
 enum class Profile { YOUNG_CHILD, ISL_USER, OTHER_LANGUAGE, NOT_SURE }
 
-enum class EventType { QUESTION_SHOWN, ANSWER_CARD, ANSWER_DRAWING, ANSWER_GESTURE, ANSWER_UNCLEAR, LANGUAGE_CHOSEN, NOTE, SYSTEM, ANSWER_TEXT }
+/** Victim or witness, or accused or in custody (suspect, arrested or convicted): sets the question set and safeguards. */
+enum class Role { VICTIM, ACCUSED }
+
+enum class EventType { QUESTION_SHOWN, ANSWER_CARD, ANSWER_DRAWING, ANSWER_GESTURE, ANSWER_UNCLEAR, LANGUAGE_CHOSEN, NOTE, SYSTEM, ANSWER_TEXT, ANSWER_SIGNED }
 
 enum class EventSource { PRESET, TEXT, BOARD, SHOW_BACK, SUBJECT, OFFICER, PHRASE }
 
 @Immutable
-data class Session(val id: String, val startedAt: Long, val profile: Profile, val subjectLang: String)
+data class Session(val id: String, val startedAt: Long, val profile: Profile, val subjectLang: String, val role: Role = Role.VICTIM)
 
 @Immutable
 data class SessionEvent(
@@ -37,16 +40,17 @@ class SessionRepository(
 
     fun session(id: String): Flow<Session?> = dao.session(id).map { it?.toModel() }
 
-    suspend fun start(profile: Profile, subjectLang: String): String {
+    suspend fun start(profile: Profile, subjectLang: String, role: Role = Role.VICTIM): String {
         val id = UUID.randomUUID().toString()
         val now = clock()
-        dao.insertSession(SessionEntity(id, now, null, profile.name, subjectLang))
+        dao.insertSession(SessionEntity(id, now, null, profile.name, subjectLang, role.name))
         onSessionStarted(now)
         return id
     }
 
     suspend fun setSubjectLang(id: String, lang: String) = dao.setSubjectLang(id, lang)
     suspend fun setProfile(id: String, profile: Profile) = dao.setProfile(id, profile.name)
+    suspend fun setRole(id: String, role: Role) = dao.setRole(id, role.name)
 
     fun events(sessionId: String): Flow<List<SessionEvent>> = dao.events(sessionId).map { list -> list.map { it.toModel() } }
 
@@ -72,7 +76,7 @@ class SessionRepository(
 
     suspend fun purgeExpired(retentionHours: Int): Int = dao.deleteStartedBefore(clock() - retentionHours * 3_600_000L)
 
-    private fun SessionEntity.toModel() = Session(id, startedAt, Profile.valueOf(profile), subjectLang)
+    private fun SessionEntity.toModel() = Session(id, startedAt, Profile.valueOf(profile), subjectLang, Role.valueOf(role))
 
     private fun EventEntity.toModel() = SessionEvent(
         id, ts, EventType.valueOf(type), EventSource.valueOf(source), lang, text, cardId, lexiconId, drawingId,

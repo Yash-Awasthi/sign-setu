@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import app.signsetu.data.session.Role
 import app.signsetu.ui.avatar.Gesture
 import app.signsetu.ui.avatar.chain
 import kotlinx.serialization.Serializable
@@ -19,7 +20,7 @@ typealias Localized = Map<String, String>
 fun Localized.pick(lang: String): String? = this[lang]
 
 @Immutable @Serializable
-data class Group(val id: String, val label: Localized, val sensitive: Boolean = false)
+data class Group(val id: String, val label: Localized, val sensitive: Boolean = false, val roles: List<Role> = emptyList())
 
 @Immutable @Serializable
 data class Question(
@@ -77,6 +78,9 @@ data class Phrase(val id: String, val label: Localized, val signs: List<String>,
 @Serializable private data class LexiconFile(val entries: List<LexiconEntry>)
 @Serializable private data class LanguagesFile(val languages: List<Language>)
 @Serializable private data class Manifest(val files: Map<String, String>)
+
+/** Files hashed on every load. Models are large and their loaders check them against the manifest on first use. */
+internal fun eagerlyChecked(path: String) = !path.startsWith("models/")
 @Serializable private data class GesturesFile(val gestures: List<Gesture>)
 @Serializable private data class WordsFile(val words: List<WordEntry>)
 
@@ -98,6 +102,9 @@ data class ContentBundle(
     /** Every written form of a vocabulary word, lower case, to its entry. */
     val words: Map<String, WordEntry> = emptyMap(),
 ) {
+    /** A group with no roles listed is for everyone. */
+    fun groupsFor(role: Role): List<Group> = groups.filter { it.roles.isEmpty() || role in it.roles }
+
     fun gestureFor(q: Question): Gesture? = (q.gesture ?: q.lexicon)?.let { gestures[it] }
 
     /** The phrase's signs as one gesture; a sign with no reviewed animation is left out. */
@@ -140,7 +147,7 @@ class ContentRepository(private val assets: AssetManager) {
 
     suspend fun load(): ContentBundle = bundle ?: withContext(Dispatchers.IO) {
         val manifest = json.decodeFromString<Manifest>(read("manifest.json"))
-        val rejected = manifest.files.filter { (path, hash) -> sha256(path) != hash }.keys
+        val rejected = manifest.files.filter { (path, hash) -> eagerlyChecked(path) && sha256(path) != hash }.keys
         // A file that fails its check is never parsed: no content beats wrong content (SEC-54).
         val triage = verified("triage.json", rejected) ?: TriageFile(emptyList(), emptyList())
         val cards = verified("cards.json", rejected) ?: CardsFile(emptyList(), emptyList())
