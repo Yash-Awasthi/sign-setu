@@ -39,6 +39,11 @@ def jobs():
     subject_ui = json.loads((ASSETS / "subject_ui.json").read_text(encoding="utf-8"))
     for code, text in subject_ui["is_this_it"].items():
         yield code, text, ASSETS / "audio" / code / "is_this_it.ogg"
+    phrases = json.loads((ASSETS / "phrases.json").read_text(encoding="utf-8"))["phrases"]
+    for p in phrases:
+        for slot in p["slots"]:
+            for code, text in slot["text"].items():
+                yield code, text, ASSETS / "audio" / code / f"phrase.{p['id']}.{slot['card']}.ogg"
 
 
 def main(force: bool) -> None:
@@ -54,16 +59,19 @@ def main(force: bool) -> None:
     for code, text, path in todo:
         speaker = VOICES.get(code)
         description = f"{speaker} {STYLE}" if speaker else f"A female speaker {STYLE}"
-        torch.manual_seed(7)  # same seed, more consistent takes
         d = desc_tok(description, return_tensors="pt").to(device)
         p = prompt_tok(text, return_tensors="pt").to(device)
-        with torch.no_grad():
-            audio = model.generate(
-                input_ids=d.input_ids, attention_mask=d.attention_mask,
-                prompt_input_ids=p.input_ids, prompt_attention_mask=p.attention_mask,
-            )
-        wav = audio.cpu().numpy().squeeze().astype(np.float32)
-        wav = trim(wav, rate)
+        # Same seed for consistent takes; the model sometimes returns a near-empty take, so try the next seed.
+        for seed in (7, 8, 9):
+            torch.manual_seed(seed)
+            with torch.no_grad():
+                audio = model.generate(
+                    input_ids=d.input_ids, attention_mask=d.attention_mask,
+                    prompt_input_ids=p.input_ids, prompt_attention_mask=p.attention_mask,
+                )
+            wav = trim(audio.cpu().numpy().squeeze().astype(np.float32), rate)
+            if len(wav) / rate >= 0.8:
+                break
         wav = resample_poly(wav, OUT_RATE, rate).astype(np.float32)
         wav = 0.89 * wav / max(1e-6, float(np.max(np.abs(wav))))
         path.parent.mkdir(parents=True, exist_ok=True)

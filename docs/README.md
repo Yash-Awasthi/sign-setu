@@ -17,6 +17,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | [08-plan.md](08-plan.md) | Gated delivery phases and phase 0 status |
 | [09-open-source.md](09-open-source.md) | Reusable open-source components per module, with licences |
 | [10-test-report.md](10-test-report.md) | Phase 1 test results against the test plan, with open items |
+| [11-hand-model-integration.md](11-hand-model-integration.md) | Contract for the partner team's hand model: interface, input, output, budgets, packaging, acceptance |
 
 ## Other folders
 

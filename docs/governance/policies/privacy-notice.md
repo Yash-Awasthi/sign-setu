@@ -6,18 +6,20 @@ Sign Setu is an app used by officers of <Department name> to communicate with pe
 
 ## What data the app handles
 
-- Questions the officer asks, and the answers given by tapping pictures, signing or drawing.
+- The questions and pictures the officer shows.
+- The answers given on the phone: Yes, No, I don't know, Stop, a picture, a drawing, or a gesture the person confirms.
 - Notes the officer writes.
-- While the camera is switched on for sign recognition: images from the camera are processed on the phone into hand and body position points. Images are not stored or sent anywhere.
-- While the officer holds the voice button: the officer's voice, sent to convert it into text.
+- The kind of help needed (for example, young child or sign language user) and the language chosen. No name is needed.
+- The camera: while a question is on the screen, the front camera shows the person their own hands, like a mirror. The pictures are not recorded, stored or sent anywhere. The officer can switch the mirror off for a person, and the department can switch it off for all officers.
 
-The app does not ask for names, addresses, photographs or identity documents, and does not use location.
+The app does not use the microphone or location, and does not ask for names, addresses, photographs or identity documents.
 
 ## Where it goes
 
-- Conversation records stay on the officer's phone, encrypted, and are deleted automatically after <24 hours> or when the officer ends the conversation.
-- Hand and body position points, question text and voice are sent securely to services run for the department in India, only to produce sign language, recognise signs, convert speech to text and translate. These services do not keep the data.
-- If needed, the officer exports a record of the conversation to the official case file, which is handled under the rules for police records.
+- Conversation records stay on the officer's phone, encrypted, and are deleted when the officer ends the conversation or automatically after <24 hours>.
+- This version of the app has no internet access. Nothing is sent to any server or service.
+- If needed, the officer exports a password-protected record of the conversation to the official case file, which is handled under the rules for police records.
+- If the officer calls an interpreter, the call takes place in the department's messaging app (<Sandes or WhatsApp>) under that app's terms. Sign Setu passes no details of the conversation to it.
 
 ## Why
 
@@ -37,6 +39,6 @@ To ask about data concerning you or a child in your care, or to raise a complain
 
 ## Security
 
-The app encrypts data on the phone, blocks screenshots, uses secure connections, and is security-audited by a CERT-In empanelled auditor.
+The app encrypts data on the phone, opens only with the officer's fingerprint or phone PIN, blocks screenshots, keeps the screen fixed to the app while it faces the person, and is security-audited by a CERT-In empanelled auditor.
 
 *Last updated: <date>*

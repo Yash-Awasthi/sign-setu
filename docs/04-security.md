@@ -56,7 +56,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | SEC-42 | The only dangerous permission is CAMERA, for the stage mirror (D-20); no RECORD_AUDIO, LOCATION or INTERNET. | CERT-In 6.2.6 |
 | SEC-43 | No WebView. | MASVS-PLATFORM-2 |
 | SEC-44 | No notifications containing subject data. | NFR-37 |
-| SEC-45 | `filterTouchesWhenObscured` on Show, export and clear actions. | MASVS-PLATFORM-3 |
+| SEC-45 | `filterTouchesWhenObscured` on every window the app opens (the activity, and each dialog, sheet and menu), so Show, export and clear actions ignore touches that come through another app's overlay. | MASVS-PLATFORM-3 |
 | SEC-47 | Camera: only Preview is bound, plus ImageAnalysis when a hand model is installed; no ImageCapture or VideoCapture; frames are never written anywhere and the analysis bitmap is recycled after each frame; the camera runs only while the stage is on screen; CAMERA is requested from the officer at session start, never on the stage; the officer and the department can turn the mirror off. | MASVS-PLATFORM-1, DPDP section 8 |
 | SEC-46 | Screen pinning (`startLockTask`) from the first Show state until the session ends; first run guides the officer to turn on app pinning with "ask for PIN before unpinning". Leaving the Show state for the Officer state requires BiometricPrompt. | FR-61 |
 

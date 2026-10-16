@@ -7,31 +7,29 @@ Annex for the audit work order. The auditor must be on the current CERT-In empan
 | Target | Type | Access provided |
 | --- | --- | --- |
 | Sign Setu Android app, release candidate `vX.Y.Z` (SHA-256 listed) | Source code review + black box | Repository at the tagged commit; signed APK; test phones |
-| API gateway, staging | Source code review + black box + API testing | Repository; staging URL; test credentials |
-| Gateway cloud configuration | Configuration review | Read-only console access |
 
-Partner services (ISL generation, sign recognition) and Bhashini are out of scope except their interface with the gateway; partners provide their own audit evidence.
+Release 1 has no server: the app declares no INTERNET permission and sends nothing anywhere. The gateway, its cloud configuration, Bhashini and partner services join the scope with release 1.1. The partner hand model, when delivered, runs on the phone and is reviewed with the app against its [integration contract](../11-hand-model-integration.md).
 
 ## Standards
 
-- OWASP MASVS v2 with the MASTG **MAS-L2** profile (and MAS-R checks for tampering and attestation)
-- OWASP API Security Top 10
+- OWASP MASVS v2 with the MASTG **MAS-L2** profile (and MAS-R checks for tampering)
 - CERT-In Guidelines on Information Security Practices for Government Entities (2023), sections 6, 7, 9
 - CERT-In Guidelines for Secure Application Design, Development, Implementation and Operations (2024)
 - CERT-In Cyber Security Audit Baseline Requirements
 
 ## Focus areas
 
-1. Data at rest: SQLCipher key handling, Keystore binding, backup exclusion, export encryption.
-2. Data in transit: pinning, TLS configuration, cleartext.
-3. Key attestation flow and token issuance at the gateway; bypass attempts with emulators, rooted and repackaged apps.
+1. Data at rest: SQLCipher key handling, Keystore binding and invalidation on lock change, backup and device-transfer exclusion, export encryption.
+2. No network: the merged manifest and the build gate that fails on INTERNET, RECORD_AUDIO or location permissions.
+3. Camera mirror: preview only, nothing captured, stored or sent; the analysis path for the partner model.
 4. Leakage: logs, screenshots, recents, clipboard, notifications, exported components, intents.
-5. Gateway input validation, rate limiting, error handling, secret management, logging content.
-6. Supply chain: SBOM completeness, vulnerable dependencies, build reproducibility of the tagged commit.
+5. Subject isolation: screen pinning, return to the officer side only with the officer's credential, touch filtering against overlays in every window.
+6. Integrity: content hash verification, build expiry, rooted-device warning, behaviour of repackaged apps.
+7. Supply chain: SBOM completeness, vulnerable dependencies, dependency verification, build reproducibility of the tagged commit.
 
 ## Evidence provided to the auditor
 
-Documents 03, 04, 06, 07, 08, 10, 11; SBOM; SAST and dependency scan reports; internal MASTG results.
+[UX](../03-ux.md), [security](../04-security.md), [test plan](../06-test-plan.md), [test report](../10-test-report.md), [hand model contract](../11-hand-model-integration.md), [threat model](07-threat-model.md), [DPIA](08-privacy-dpia.md), [release process](11-devsecops-release.md); SBOM; SAST and dependency scan reports; internal MASTG results.
 
 ## Deliverables required
 
@@ -41,6 +39,5 @@ Documents 03, 04, 06, 07, 08, 10, 11; SBOM; SAST and dependency scan reports; in
 
 ## Rules of engagement
 
-- Test only staging and provided phones; no real case data exists or may be created.
-- No denial-of-service testing against shared government services (Bhashini).
+- Test only on the provided phones; no real case data exists or may be created.
 - Findings shared only with the named project contacts and the department CISO.

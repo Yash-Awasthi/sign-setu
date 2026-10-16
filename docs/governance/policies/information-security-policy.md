@@ -39,15 +39,15 @@ Follow [secure development and release](../11-devsecops-release.md): protected b
 
 ## 7. Third parties and partners
 
-- Partners (ISL team, ML team, cloud provider, Bhashini) confirm in writing: where data is processed, that request data is not stored, security contacts and incident notification duties, and right to audit (CERT-In 8).
+- From release 1.1, partners (ISL team, ML team, cloud provider, Bhashini) confirm in writing: where data is processed, that request data is not stored, security contacts and incident notification duties, and right to audit (CERT-In 8).
 - Vendors supply an SBOM and inform of vulnerabilities within a reasonable time (CERT-In 8.5).
 
 ## 8. Data classification
 
 | Class | Examples | Handling |
 | --- | --- | --- |
-| Restricted | Session data, exports, voice, landmarks | Encrypted at rest and in transit; never in logs; on-phone only |
-| Confidential | Keys, credentials, audit reports, gateway logs | Need-to-know; encrypted; access logged |
+| Restricted | Session data, exports; voice and landmarks from release 1.1 | Encrypted at rest and in transit; never in logs; on-phone only |
+| Confidential | Keys, credentials, audit reports; gateway logs from release 1.1 | Need-to-know; encrypted; access logged |
 | Internal | Source code, documents | Team access only |
 | Public | Privacy notice, accessibility statement, store listing | Approved before publication |
 

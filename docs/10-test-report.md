@@ -8,7 +8,7 @@ Results of running the [test plan](06-test-plan.md) against the phase 1 build. E
 | --- | --- |
 | Build | Debug and release (R8) builds of `in.signsetu` 0.1.0 |
 | Release APK | 12.9 MB unsigned, ARM only (arm64-v8a, armeabi-v7a) |
-| Devices | Android 10 (API 29) emulator, x86_64, 3 GB RAM; Android 14 (API 34) emulator, x86_64, 3 GB RAM, gesture navigation; release checked through a one-off x86_64 release build |
+| Devices | Android 10 (API 29) emulator, x86_64, 3 GB RAM; Android 14 (API 34) emulator, x86_64, 3 GB RAM, gesture navigation; release checked through a one-off x86_64 release build; a 5-inch screen (360 by 640 dp) simulated on the Android 14 emulator for NFR-11 |
 | Not yet used | Real Android 10 phone; recent phone. Android 17 (API 37) emulator images, standard and 16 KB page, crash the system compositor on the build machine, so Android 14 stands in as the recent-platform emulator; the native libraries were checked for 16 KB alignment on the APK itself |
 
 ## 2. Functional scenarios
@@ -23,7 +23,7 @@ Results of running the [test plan](06-test-plan.md) against the phase 1 build. E
 | TC-06 | Pass | Sensitive group locked until confirmed |
 | TC-07 | Pass | Typed question with one picture: the stage shows the typed caption and holds the picture; the character makes only its general asking pose, which carries no content |
 | TC-08 | Pass | Officer tiles mark gesture and audio; the Show bar names caption, audio and gesture as present or "not available" |
-| TC-09 | Pass (pending review) | "Do you want ...?" with water: the stage shows the full sentence and holds the picture while the character signs "you", "water" and the asking pose in one movement; logged as a phrase. Unit test checks every phrase's signs exist and chain in order. The sentences await content review |
+| TC-09 | Pass (pending review) | "Do you want ...?" with water: the stage shows the full sentence and holds the picture while the character signs "you", "water" and the asking pose in one movement; logged as a phrase; the sentence is spoken in the subject's language for hearing profiles. Unit test checks every phrase's signs exist and chain in order, and that each sentence has its recording. The sentences and their placeholder recordings await content review |
 | TC-10 | Pass | 14 tiles in their own scripts; tapping plays the greeting, selects, and the bubble greets back |
 | TC-11 | Pass | Unit test for ranking; officer list shows the character's pose and picture for each match |
 | TC-12 | Pass | "Is this it?" with the gesture and picture; Yes logs the meaning, otherwise unclear |
@@ -42,8 +42,8 @@ Results of running the [test plan](06-test-plan.md) against the phase 1 build. E
 | ID | Result |
 | --- | --- |
 | PT-01 | Emulator only: release cold start to first frame 0.79 to 1.03 s over four runs (`am start -W`); repeat on a real Android 10 phone |
-| PT-02 | Emulator, debug build, software rendering: 283 to 388 ms after the first show (see TC-05) |
-| PT-03 | Not meaningful on this emulator: it renders in software (SwiftShader), so every frame misses its deadline; measure on a phone GPU |
+| PT-02 | Debug build, Android 14 emulator on a desktop GPU: 173 to 236 ms over four repeat shows, 510 ms for the first (target 300 ms). Software-rendered Android 10: 283 to 388 ms repeat, 672 ms first. Repeat on a real phone |
+| PT-03 | Partial. Release build, Android 14 emulator on a desktop GPU, four shows of about 7 s each: 0 to 8 janky frames of about 420 (0 to 2%), all as the stage opens; gesture playback itself drops none. Repeat on a real phone |
 | PT-05 | Pass on the emulator: 139 MB total PSS on the stage with the camera running (limit 300 MB) |
 | PT-04 | Pass: 12.9 MB, under 30 MB |
 
@@ -51,7 +51,7 @@ Results of running the [test plan](06-test-plan.md) against the phase 1 build. E
 
 | ID | Result | Evidence |
 | --- | --- | --- |
-| ST-01 | Pass | `adb backup`: Android reports the app "not eligible for backup"; the archive holds no app entries. Device-to-device transfer is excluded by the extraction rules but was not run |
+| ST-01 | Pass (transfer by configuration) | `adb backup`: Android reports the app "not eligible for backup"; the archive holds no app entries. Device-to-device transfer ignores `allowBackup` from Android 12; the extraction rules exclude every domain (root, files, databases, shared preferences, external) for both cloud backup and device transfer, and a copied database would stay unreadable because its key is wrapped by this phone's Keystore (SEC-01). A live transfer needs a Google account on the test phone and was not run |
 | ST-02 | Pass | Database pulled as root from the emulator: no SQLite header, rejected by a standard SQLite library; neither it nor the settings file contains any session text |
 | ST-03 | Pass | Screen capture refused on the release build |
 | ST-05 | Pass | Merged manifest: CAMERA only among dangerous permissions; no INTERNET, RECORD_AUDIO or LOCATION |
@@ -63,14 +63,14 @@ Results of running the [test plan](06-test-plan.md) against the phase 1 build. E
 | ST-12 | Pass | A debug build with one byte added to `gestures.json` showed the officer a notice and played no gestures; with one byte added to `triage.json` it showed "Content check failed" and kept Start disabled. Also covers RD-05 |
 | ST-13 | Partial | gitleaks clean on every commit; OSV over all 361 packages in `app/gradle.lockfile`: nothing on the release runtime classpath has a known vulnerability (BouncyCastle raised from 1.72 to 1.86); six packages with known issues sit only in Android Lint and the instrumented-test runtime, neither of which ships; SBOM produced |
 | ST-04 | Pass | Release build (one-off x86_64 for the emulator): a typed question naming a person, a shown question, an answer and a note naming a place. The app's own log lines are rendering and memory messages only; no session text appears |
-| ST-14 | Partial | The touch filter drops taps under Android's own "Screen pinned" notice, so obscured touches are filtered; a third-party overlay app over the stage and export was not run |
+| ST-14 | Pass | Android 10, a separate test app drawing a translucent overlay that lets touches through: "Show to them", a picture-board card, the officer menu, "Export report" and "Finish and delete session" all ignored the tap while the overlay was up and worked once it was removed. Instrumented test checks that dialog and sheet windows keep the filter |
 
 ## 5. Accessibility
 
 | ID | Result | Evidence |
 | --- | --- | --- |
-| AT-01 | Pass on emulator | The Accessibility Test Framework (the engine behind Accessibility Scanner) runs as instrumented tests on Android 14 over every stage state (greeting, held picture, choices, number pad, adult character, phrase, language finder, drawing) and the picture board, in both themes: 18 of 18 pass. It found the bottom-sheet drag handle 32 dp wide, now fixed. Contrast also computed for 32 text pairs, all at or above 4.5:1 |
-| AT-02 | Pass | At 200% font scale the officer panel switches to one scrolling column with full labels |
+| AT-01 | Pass on emulator | The Accessibility Test Framework (the engine behind Accessibility Scanner) runs as instrumented tests on Android 14 over every stage state (greeting, held picture, choices, number pad, adult character, phrase, language finder, drawing) and the picture board, in both themes, at the emulator's own size and at 5 inches: 18 of 18 pass each time. It found the bottom-sheet drag handle 32 dp wide, now fixed. Contrast also computed for 32 text pairs, all at or above 4.5:1 |
+| AT-02 | Pass | At 200% font scale the officer panel switches to one scrolling column with full labels. The subject's stage, answer cards and home screen also stay whole at 200%; the lock screen now gives its character less room at large sizes so the unlock button and notice stay visible |
 | AT-03 | Partial | Every control on the stage and the officer panel exposes a spoken label in the accessibility tree (UI Automator dump); a spoken TalkBack walk-through is outstanding: neither the Google APIs nor the Google Play Android 10 emulator image includes TalkBack, so it needs a phone |
 | AT-04 | Pass | All 14 language names and Hindi interface text render without clipping |
 | AT-05 | Pass by design | Yes and No differ by icon (tick, cross), word and position as well as colour |
@@ -86,6 +86,9 @@ Results of running the [test plan](06-test-plan.md) against the phase 1 build. E
 | Dark theme: a chosen number's digit drawn white on light teal (1.6:1) | Paired text colour for the selection colour |
 | Picture board favourite star: 40 dp target, and below 3:1 in both states | 48 dp toggle that announces its state; darker colours |
 | Bottom-sheet drag handle 32 dp wide (found by the accessibility tests) | Every officer sheet uses one handle with a 48 dp touch area |
+| Dialogs, sheets and menus open their own windows, which did not inherit the overlay touch filter: a tap through an overlay started an export (found by ST-14) | Every dialog, sheet and menu applies the filter to its own window; instrumented test guards it |
+| 5-inch screen: the stage squashed the second row of answer cards and dropped their labels, a two-line caption covered the character's face, and the home sheet scrolled | The stage measures the room its answer cards need at full size and gives the character the rest; captions shrink on a short stage; the officer panel's heading gives way on short screens; the home sheet sizes to its content and the greeting stage takes the rest, so tall phones show a larger character instead of empty space |
+| 200% font: the lock screen cut off its notice, and its sheet stopped short of the bottom edge | The character gives up room at large font sizes; the sheet is drawn taller rather than shifted |
 | Dark theme: wordmark and settings icon nearly invisible on the night stage | Stage title colour defined per theme |
 | Dark theme: officer action labels drawn black on the dark panel | Panel drawn on a surface that sets the content colour |
 | Dark theme: the symbols' dark outlines lost on dark tiles | Symbols always sit on a light well, in both themes |
@@ -106,20 +109,21 @@ Each control in [security](04-security.md) checked against the code and the rele
 | SEC-12 | Met | AES-256 PDF, 80-bit one-time password, verified with a standard reader |
 | SEC-20, SEC-21 | Met | Secure lock required; BiometricPrompt with API-level authenticators; five-minute relock |
 | SEC-30, SEC-42 | Met | No INTERNET, RECORD_AUDIO or LOCATION; the build fails if one appears; CAMERA only |
-| SEC-40, SEC-45 | Met | FLAG_SECURE in release; touches through overlays filtered |
+| SEC-40, SEC-45 | Met | FLAG_SECURE in release; touches through another app's overlay filtered in the activity and in every dialog, sheet and menu (ST-14) |
 | SEC-41 | Met with one exception | Only the launcher activity is exported, except WorkManager's job service, which Android requires and protects with BIND_JOB_SERVICE; two unused library receivers removed |
 | SEC-46, SEC-47 | Met | Pinning from the first stage to the end; camera preview only, nothing stored, officer and department switches |
 | SEC-50 | Met | `gradle/verification-metadata.xml` (SHA-256 for every artifact) and `app/gradle.lockfile` |
 | SEC-51 | Met | `tools/security/sbom.py` writes a CycloneDX 1.7 SBOM of the 185 components on the release runtime classpath |
 | SEC-52 | Met | Android Lint clean of errors; OSV-Scanner clean for shipped components; Semgrep (Kotlin and secrets rules) found nothing in 62 files; gitleaks on every commit |
 | SEC-54 | Met | Every content file verified against the manifest before use; a failed file is never parsed or shown; LF hashing fixed |
-| SEC-55, SEC-63, SEC-64 | Met | minSdk 29, target 37; rooted-phone warning; build expiry |
+| SEC-55, SEC-64 | Met | minSdk 29, target 37; build expiry |
+| SEC-63 | Partial | Rooted-phone warning shown; disabling session history waits on the department's rooted-device decision (threat model T-19) |
 | SEC-62 | Open | Release signing key and custodians are a department decision |
 
 ## 8. Open items before the phase 1 exit
 
-- Reviewer sign-off for every gesture and both characters (05 §8), and content review of the phrase-bank sentences.
+- Reviewer sign-off for every gesture and both characters (05 §8), the phrase-bank sentences and the placeholder recordings, on the [content review record](governance/forms/content-review-record.md).
 - TC-05, PT-01, PT-02 and PT-03 on a real Android 10 phone with a GPU.
 - Spoken TalkBack pass on a phone with TalkBack, and the formal MASVS review (`/masvs-checklist`).
-- Partner hand model through `HandTrackers` in the release source set.
-- ST-14 with a third-party overlay app, and device-to-device transfer for ST-01.
+- Partner hand model through `HandTrackers` in the release source set, against the [integration contract](11-hand-model-integration.md).
+- A live device-to-device transfer (ST-01) on two phones with a Google account.

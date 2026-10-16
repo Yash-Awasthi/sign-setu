@@ -41,6 +41,9 @@ class AvatarTest {
             val chained = chain(p.id, ids.map { byId.getValue(it!!) })
             assertTrue("${p.id}/${slot.card}: keys out of order", chained.keys.zipWithNext().all { (a, b) -> a.t < b.t })
             assertEquals(ids.sumOf { byId.getValue(it!!).keys.size }, chained.keys.size)
+            for (code in slot.text.keys) {
+                assertTrue("${p.id}/${slot.card}: no $code audio", File(content, "audio/$code/phrase.${p.id}.${slot.card}.ogg").exists())
+            }
         }
     }
 

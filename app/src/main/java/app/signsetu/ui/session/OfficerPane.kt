@@ -56,7 +56,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -103,6 +102,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.platform.LocalWindowInfo
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.Phrase
@@ -123,6 +123,8 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
+import app.signsetu.ui.components.GuardedAlertDialog
+import app.signsetu.ui.components.FilterObscuredTouches
 
 private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, LOG, CHANGE, TYPE }
 
@@ -211,6 +213,7 @@ fun OfficerPane(
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.officer_more)) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            FilterObscuredTouches()
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.officer_change)) },
                                 leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
@@ -298,7 +301,7 @@ fun OfficerPane(
                             showCaption = subjectLang != officerLang,
                             missingLang = content.language(subjectLang)?.english ?: subjectLang,
                             hasGesture = true,
-                            hasAudio = false,
+                            hasAudio = ui.session.profile != Profile.ISL_USER && p.slots.any { content.phraseAudio(p, it, subjectLang) != null },
                             selected = (ui.pending as? Pending.PhraseAsk)?.phrase?.id == p.id,
                             onSelect = { phrase = p },
                         )
@@ -354,7 +357,7 @@ fun OfficerPane(
     }
 
     if (askSensitive) {
-        AlertDialog(
+        GuardedAlertDialog(
             onDismissRequest = { askSensitive = false },
             icon = { Icon(Icons.Filled.Lock, contentDescription = null) },
             title = { Text(stringResource(R.string.sensitive_title)) },
@@ -368,7 +371,7 @@ fun OfficerPane(
         )
     }
     if (askEnd) {
-        AlertDialog(
+        GuardedAlertDialog(
             onDismissRequest = { askEnd = false },
             icon = { Icon(Icons.Filled.Delete, contentDescription = null) },
             title = { Text(stringResource(R.string.end_title)) },
@@ -508,7 +511,10 @@ private fun MediaDot(painter: Painter, name: String) {
 @Composable
 private fun AskAnotherWay(scrolls: Boolean, actions: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(stringResource(R.string.officer_ask_another), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // On a short screen the questions need the room more; every button below carries its own label.
+        if (with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } >= 700.dp) {
+            Text(stringResource(R.string.officer_ask_another), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         if (scrolls) {
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) { actions() }
         } else {
@@ -770,7 +776,7 @@ private fun eventDetail(res: Resources, e: SessionEvent): String = when {
 @Composable
 private fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () -> Unit, onDismiss: () -> Unit) {
     when (state) {
-        ExportState.Working -> AlertDialog(
+        ExportState.Working -> GuardedAlertDialog(
             onDismissRequest = {},
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
             text = {
@@ -781,7 +787,7 @@ private fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () -
             },
             confirmButton = {},
         )
-        is ExportState.Ready -> AlertDialog(
+        is ExportState.Ready -> GuardedAlertDialog(
             // The password is shown once; the dialog closes only through its own buttons.
             onDismissRequest = {},
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
@@ -819,7 +825,7 @@ private fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () -
                 TextButton(onClick = onFinish) { Text(stringResource(R.string.export_finish), color = MaterialTheme.colorScheme.error) }
             },
         )
-        ExportState.Failed -> AlertDialog(
+        ExportState.Failed -> GuardedAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.export_failed)) },
             confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) } },

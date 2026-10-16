@@ -4,7 +4,7 @@ Implements the CERT-In Guidelines for Secure Application Design, Development, Im
 
 ## 1. Repository
 
-- One Git repository for the app; one for the gateway.
+- One Git repository for the app; the gateway gets its own with release 1.1.
 - `main` is protected: pull request required, at least one approving review from someone other than the author, all checks green, no force push.
 - Signed commits recommended for maintainers.
 - Multi-factor authentication required for every account with write access (CERT-In app guidelines 4.10).
@@ -21,8 +21,8 @@ Implements the CERT-In Guidelines for Secure Application Design, Development, Im
 
 Every pull request runs:
 
-1. Build debug and release variants.
-2. Unit tests, and the instrumented accessibility tests on an Android 14 or later emulator: `./gradlew :app:connectedDebugAndroidTest` (Accessibility Test Framework over every stage state and the picture board, both themes).
+1. Build debug and release variants. The build itself fails if the merged manifest gains INTERNET, RECORD_AUDIO or a location permission (`check<Variant>Permissions`, run before every assemble; SEC-30, SEC-42).
+2. Unit tests, and the instrumented tests on an Android 14 or later emulator: `./gradlew :app:connectedDebugAndroidTest` (Accessibility Test Framework over every stage state and the picture board in both themes; overlay touch filtering in dialog and sheet windows).
 3. Android Lint with security checks as errors.
 4. Static analysis (Semgrep with Kotlin/Android rules or MobSF static scan).
 5. Dependency vulnerability scan: `osv-scanner scan source --lockfile app/gradle.lockfile`; fail on critical or high in anything that ships (the release runtime classpath).
@@ -46,7 +46,7 @@ CI runners use least-privilege tokens; signing credentials are not available to 
 ## 5. Signing and keys
 
 - The release signing key is generated offline and held encrypted by the release manager with a second custodian; an offline backup stays in department custody. Losing it means installed apps cannot be updated, so the backup is mandatory.
-- Gateway TLS certificate pins: ship a backup pin in every release; rotate before expiry (see [security architecture](../archive/06-security-architecture.md) §3).
+- From release 1.1, gateway TLS certificate pins: ship a backup pin in every release; rotate before expiry (see [security architecture](../archive/06-security-architecture.md) §3).
 
 ## 6. Release process
 
@@ -54,13 +54,15 @@ CI runners use least-privilege tokens; signing credentials are not available to 
 | --- | --- | --- |
 | 1. Code freeze, release branch | Tech lead | Branch |
 | 2. Full test plan on device matrix | QA lead | Test report |
-| 3. Security checks ST-01 to ST-13 | Security lead | Security report |
-| 4. Content approval for changed content | Content owner | Approval record |
+| 3. Security checks ST-01 to ST-14 | Security lead | Security report |
+| 4. Content approval: regenerate the [content review record](forms/content-review-record.md) and have every new or changed item signed | Content owner | Signed review record |
 | 5. Audit decision: does the change need re-audit? | Security lead | Decision in release record |
 | 6. Build, sign, generate SBOM and hashes | Release manager | Release record |
 | 7. Pilot group through MDM or direct signed APK | Release manager | Distribution record |
 | 8. Department approval | Department | Approval |
-| 9. Staged rollout by district; raise minimum version at gateway when needed | Release manager | Distribution record |
+| 9. Staged rollout by district | Release manager | Distribution record |
+
+Every build stops starting new sessions 180 days after its build date (FR-67; `BUILD_LIFETIME_DAYS` in `Policy.kt`), so officers update at least that often; a session already open can still be exported and ended. Plan releases so a new build reaches officers well inside that window.
 
 After the CERT-In audit, the production build must be the audited build. Any later change follows change control (section 7) and the audit decision in step 5.
 

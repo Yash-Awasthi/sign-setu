@@ -106,6 +106,7 @@ data class ContentBundle(
     fun questionAudio(questionId: String, lang: String) = audio("audio/$lang/$questionId.ogg")
     fun greetingAudio(lang: String) = audio("audio/greet/$lang.ogg")
     fun subjectAudio(key: String, lang: String) = audio("audio/$lang/$key.ogg")
+    fun phraseAudio(phrase: Phrase, slot: PhraseSlot, lang: String) = audio("audio/$lang/phrase.${phrase.id}.${slot.card}.ogg")
 
     fun language(code: String): Language? = languages.firstOrNull { it.code == code }
     fun subjectText(key: String, lang: String): String? = subjectUi[key]?.pick(lang)

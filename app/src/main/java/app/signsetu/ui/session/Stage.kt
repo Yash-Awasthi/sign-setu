@@ -21,6 +21,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -174,17 +175,22 @@ fun Stage(
     }
 
     Surface(color = stage.skyBottom, modifier = Modifier.fillMaxSize()) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+        val stageHeight = maxHeight
         Column(
             Modifier
                 .fillMaxSize()
                 .graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f },
         ) {
-            val topWeight = when {
+            val preferred = when {
                 drawing -> 0.36f
                 pending == Pending.LanguageFinder -> 0.36f
                 item.choices.isNotEmpty() -> 0.44f
                 else -> 0.52f
             }
+            // On a small phone the answer cards keep their full 96 dp size (NFR-20); the character gives up the room.
+            val topWeight = if (drawing || pending == Pending.LanguageFinder) preferred
+            else minOf(preferred, 1f - answerAreaHeight(item) / stageHeight).coerceAtLeast(0.28f)
             val topAnimated by animateFloatAsState(topWeight, spring(stiffness = 300f), label = "split")
             Box(
                 Modifier
@@ -192,7 +198,8 @@ fun Stage(
                     .fillMaxWidth(),
             ) {
                 Backdrop(Modifier.fillMaxSize())
-                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
+                    val roomy = maxHeight >= 240.dp
                     Avatar(
                         character = characterFor(profile),
                         gesture = gesture,
@@ -200,8 +207,9 @@ fun Stage(
                         speed = if (slow) 0.5f else gestureSpeed,
                         glance = pending != null && !drawing && !reacting,
                         onFinished = { reacting = false },
+                        // Room is left above for a caption, so on short screens a long one covers the hair, never the face.
                         modifier = Modifier
-                            .fillMaxHeight(0.76f)
+                            .height(minOf(maxHeight * 0.76f, maxHeight - 72.dp))
                             .aspectRatio(1f)
                             .align(Alignment.BottomCenter),
                     )
@@ -210,7 +218,7 @@ fun Stage(
                         transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.92f)) togetherWith fadeOut() },
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp, start = 52.dp, end = 52.dp),
                         label = "caption",
-                    ) { text -> if (text != null) Bubble(text, large = largeCaptions) }
+                    ) { text -> if (text != null) Bubble(text, large = largeCaptions, compact = !roomy) }
                     item.held?.let { id ->
                         key(id) {
                             HeldCard(
@@ -266,6 +274,7 @@ fun Stage(
                 }
             }
         }
+        }
     }
 }
 
@@ -277,6 +286,16 @@ private class StageItem(
     val numbers: Boolean,
     val canDraw: Boolean,
 )
+
+/** Height the stage's lower half needs: the mirror with its answer cards at full size, the answer bar and padding. */
+private fun answerAreaHeight(item: StageItem): Dp {
+    val rows = if (item.numbers) (item.choices.size + 4) / 5 else (item.choices.size + 2) / 3
+    val cards = if (item.numbers) rows * 64 else rows * 96
+    val tray = if (rows == 0) 0 else cards + (rows - 1) * 8 + 16
+    val draw = if (item.canDraw) 60 else 0
+    // Mirror frame and a strip of live camera, the Yes/No and Don't know/Stop rows, and the column's padding.
+    return (10 + 16 + tray + draw + 76 + 8 + 52 + 48).dp
+}
 
 private fun describeItem(pending: Pending?, content: ContentBundle, lang: String): StageItem {
     val (caption, cards) = when (pending) {
@@ -301,6 +320,7 @@ private fun describeItem(pending: Pending?, content: ContentBundle, lang: String
 private fun speechFor(pending: Pending?, content: ContentBundle, lang: String): String? = when (pending) {
     is Pending.Ask -> content.questionAudio(pending.question.id, lang)
     is Pending.ShowBack -> content.subjectAudio("is_this_it", lang)
+    is Pending.PhraseAsk -> content.phraseAudio(pending.phrase, pending.slot, lang)
     else -> null
 }
 
@@ -335,7 +355,7 @@ private object BubbleShape : Shape {
 }
 
 @Composable
-internal fun Bubble(text: String, large: Boolean = false) {
+internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = false) {
     val stage = LocalStageColors.current
     Surface(
         shape = BubbleShape,
@@ -346,7 +366,11 @@ internal fun Bubble(text: String, large: Boolean = false) {
     ) {
         Text(
             text,
-            style = if (large) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
+            style = when {
+                large -> MaterialTheme.typography.headlineMedium
+                compact -> MaterialTheme.typography.titleMedium
+                else -> MaterialTheme.typography.titleLarge
+            },
             textAlign = TextAlign.Center,
             maxLines = if (large) 4 else 3,
             overflow = TextOverflow.Ellipsis,

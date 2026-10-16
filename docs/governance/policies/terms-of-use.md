@@ -3,7 +3,7 @@
 *For authorised officers of <Department name>. Draft for legal review.*
 
 1. **Authorised use only.** The app is for authorised police personnel performing official duties of helping persons who cannot communicate in words.
-2. **Aid, not interpreter.** Results, including recognised signs and translations, may be wrong. Officers must confirm important information through reliable means and must not rely on the app alone for decisions about a person's safety, custody or care.
+2. **Aid, not interpreter.** Results, including the meaning of gestures and pictures, may be wrong. Officers must confirm important information through reliable means and must not rely on the app alone for decisions about a person's safety, custody or care.
 3. **Not for statements or evidence.** The app must not be used to record statements under the POCSO Act, the Code of Criminal Procedure or the Bharatiya Nagarik Suraksha Sanhita, or as evidence of what a person said.
 4. **Prohibited uses.** Interrogating suspects; surveillance; identifying or tracking any person; any use outside official duty.
 5. **Confidentiality.** Officers must keep all session content confidential, must not disclose a child's identity (Juvenile Justice Act 2015, section 74), and must follow the [officer operating procedure](officer-sop.md).
