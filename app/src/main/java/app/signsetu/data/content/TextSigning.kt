@@ -27,8 +27,19 @@ private val TOKEN = Regex("[\\p{L}\\p{M}\\p{N}]+(?:['’]\\p{L}+)?")
 private val FILLER = setOf(
     "a", "an", "the", "is", "are", "am", "was", "were", "be", "to", "of", "do", "does", "did", "for", "and",
     "है", "हैं", "था", "थी", "थे", "का", "की", "के", "को", "में", "से", "ने", "तो", "ही", "भी", "और",
-    "hai", "hain", "tha", "thi", "the", "ka", "ki", "ke", "ko", "me", "mein", "se", "ne", "to", "bhi", "aur",
+    "hai", "hain", "tha", "thi", "the", "ka", "ki", "ke", "ko", "mein", "se", "ne", "to", "bhi", "aur",
 )
+
+private val TIME_SIGNS = setOf("sign.today", "sign.yesterday", "sign.tomorrow", "sign.now", "sign.morning", "sign.night", "sign.day", "sign.time")
+private val WHEN = setOf("when", "kab", "कब")
+
+/** ISL order: time first, then the rest as typed, then negation, then the question word. */
+private fun islRank(word: String, entry: WordEntry?) = when {
+    entry?.sign == "ask" || word in WHEN -> 3
+    entry?.sign == "no.shake" -> 2
+    entry?.sign in TIME_SIGNS -> 0
+    else -> 1
+}
 
 /** A still beat that keeps a picture on screen for a word with no sign. */
 private val PAUSE = Gesture("pause", listOf(Key(0f), Key(0.6f)))
@@ -45,10 +56,14 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
         parts += g
         t += g.keys.maxOf { it.t } + GAP
     }
-    for (m in TOKEN.findAll(text)) {
-        // "Ravi's" plays as Ravi: a possessive or contraction keeps only its stem.
-        val word = m.value.lowercase().split('\'', '’').first()
-        val entry = words[word]
+    // "Ravi's" plays as Ravi: a possessive or contraction keeps only its stem.
+    val tokens = TOKEN.findAll(text).map { it to it.value.lowercase().split('\'', '’').first() }.toList()
+    // Hindi "do" (give) ends its sentence; anywhere else it is the English helper word.
+    fun entryOf(i: Int) = tokens[i].second.let { w -> words[w]?.takeIf { w !in FILLER || i == tokens.lastIndex } }
+    val order = tokens.indices.let { all -> if (SignMode.SIGNS in modes) all.sortedBy { islRank(tokens[it].second, entryOf(it)) } else all }
+    for (i in order) {
+        val (m, word) = tokens[i]
+        val entry = entryOf(i)
         val start = t
         val card = if (SignMode.PICTURES in modes) entry?.card ?: word.toIntOrNull()?.takeIf { it in 1..10 }?.let { "n$it" } else null
         // A signer reads an everyday gesture far faster than a spelled word, so Signs falls back to it before spelling.

@@ -4,6 +4,7 @@ import app.signsetu.data.content.BodyLocation
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.HandAction
 import app.signsetu.data.content.LexiconEntry
+import app.signsetu.data.content.eagerlyChecked
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.SessionEvent
@@ -16,6 +17,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LogicTest {
+
+    @Test
+    fun contentLoadSkipsHashingModels() {
+        assertFalse(eagerlyChecked("models/holistic_landmarker.task"))
+        assertTrue(eagerlyChecked("triage.json"))
+        assertTrue(eagerlyChecked("audio/en/s1.ogg"))
+    }
 
     private fun entry(id: String, locations: List<BodyLocation>, actions: List<HandAction>) =
         LexiconEntry(id, id, "card", locations, actions, mapOf("en" to id), mapOf("en" to ""))

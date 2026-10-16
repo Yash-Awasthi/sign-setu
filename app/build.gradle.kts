@@ -25,11 +25,11 @@ android {
         externalNativeBuild { cmake { abiFilters += listOf("arm64-v8a", "x86_64"); arguments += "-DCMAKE_BUILD_TYPE=Release" } }
     }
 
-    ndkVersion = "27.1.12297006"
+    ndkVersion = "30.0.16248370"
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
+            version = "4.1.1"
         }
     }
 
@@ -56,8 +56,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // 32-bit phones keep a plain mirror (D-25); dropping MediaPipe's armeabi-v7a library keeps the APK small.
+    packaging { jniLibs { excludes += "lib/armeabi-v7a/libmediapipe_tasks_jni.so" } }
+
     androidResources {
-        noCompress += listOf("webp", "ogg", "mp4")
+        noCompress += listOf("webp", "ogg", "mp4", "task")
     }
 }
 
@@ -134,6 +137,10 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.compose)
+    implementation(libs.mediapipe.tasks.vision) {
+        // This backend uploads MediaPipe usage statistics and brings INTERNET (SEC-30); a stub destination replaces it.
+        exclude(group = "com.google.android.datatransport", module = "transport-backend-cct")
+    }
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
 

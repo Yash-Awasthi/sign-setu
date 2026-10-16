@@ -116,6 +116,51 @@ SIGNS = {
                     r("front", "FLAT", "palm", roll=-1, angle=90, dx=16, dy=-20)], {"at": "rest"}, step=0.3, face="gentle"),
 }
 
+DOWN_PALM = {"at": "front", "shape": "FLAT", "touch": "palm", "roll": -1, "angle": 90}
+PALM_UP = base(shape="FLAT", roll=-1, angle=-90, dy=-6)
+SIGNS |= {
+    # Time: the past is behind the signer, the future ahead.
+    "now": moving([{**DOWN_PALM, "dx": 14, "dy": -30}, {**DOWN_PALM, "dx": 14, "dy": -18}], {**DOWN_PALM, "dx": 14, "dy": -30}, step=0.4),
+    "today": moving([r("front", dx=14, dy=-28, angle=180), r("front", dx=14, dy=-14, angle=180)], r("front", dx=14, dy=-28, angle=180), step=0.4),
+    "yesterday": moving([r("shoulder", "THUMB", "wrist", roll=0, angle=0, dy=-20, elbow="down"), r("shoulder", "THUMB", "wrist", roll=0, angle=60, dx=6, dy=-34, elbow="down")], {"at": "rest"}, step=0.45),
+    "tomorrow": moving([r("cheek", angle=-10, dx=8), r("cheek", angle=-60, dx=-10, dy=10)], {"at": "rest"}, step=0.45),
+    "morning": moving([r("palm_opp", "FLAT", "wrist", roll=-1, angle=-20, dy=14), r("palm_opp", "FLAT", "wrist", roll=-1, angle=-20, dy=-14)], base(shape="FLAT", roll=-1, angle=-90), step=0.5, face="smile"),
+    "night": moving([r("palm_opp", "FLAT", "wrist", roll=-1, angle=40, dy=-20), r("palm_opp", "FLAT", "wrist", roll=-1, angle=80, dy=2)], base(shape="FLAT", roll=-1, angle=-90), step=0.5, face="sleepy"),
+    "day": moving([r("side", angle=20, dy=-40), r("hair_side", angle=-10, dy=-14), r("head_top", angle=-40, dy=-14)], {"at": "rest"}, step=0.3),
+    # People.
+    "man": moving([r("chin", "THUMB", "wrist", roll=0, angle=-20, dy=6), r("chin", "THUMB", "wrist", roll=0, angle=-20, dy=14)], {"at": "rest"}, step=0.4),
+    "woman": held(r("nose_side", angle=-30), {"at": "rest"}, hold=0.6),
+    "friend": moving([r("index_opp", "HOOK", angle=-80, dy=6), r("index_opp", "HOOK", angle=-80, dy=6)], base(shape="HOOK", roll=0, angle=-20), step=0.5, face="smile"),
+    "name": moving([r("index_opp", "TWO", angle=-90, dy=4), r("index_opp", "TWO", angle=-90, dy=-4), r("index_opp", "TWO", angle=-90, dy=4)],
+                   base(shape="TWO", roll=0, angle=-20), step=0.25),
+    # Actions.
+    "give": moving([r("chest", "FLAT", "palm", roll=1, angle=-80, dx=10, dy=6), r("front", "FLAT", "palm", roll=1, angle=-80, dx=24, dy=-26)], {"at": "rest"}, step=0.45),
+    "take": moving([r("front", "CLAW", "palm", roll=-1, angle=-60, dx=24, dy=-28), r("chest", "FIST", "palm", roll=-1, angle=-60, dx=8, dy=6)], {"at": "rest"}, step=0.45),
+    "touch": moving([r("palm_opp", dy=-14, roll=0, angle=-80), r("palm_opp", dy=-2, roll=0, angle=-80)], base(shape="FLAT", roll=-1, angle=-90, dy=-6), step=0.4, face="concern"),
+    "run": moving([r("front", "FIST", "wrist", roll=0, angle=0, dx=26, dy=-34), r("front", "FIST", "wrist", roll=0, angle=0, dx=26, dy=-18),
+                   r("front", "FIST", "wrist", roll=0, angle=0, dx=26, dy=-34)],
+                  r("front", "FIST", "wrist", roll=0, angle=0, dx=26, dy=-18), step=0.2),
+    "hide": moving([r("palm_opp", "FIST", "wrist", roll=0, angle=0, dx=12, dy=-6), r("palm_opp", "FIST", "wrist", roll=0, angle=0, dx=-4, dy=6)], base(shape="FLAT", roll=1, angle=0, dy=-30), step=0.5, face="concern"),
+    "lost": moving([r("front", "BUNCH", "tip", roll=-1, angle=0, dx=4, dy=-30), r("front", "OPEN", "wrist", roll=-1, angle=40, dx=22, dy=-16)],
+                   base(shape="OPEN", roll=-1, angle=0, dy=-30), step=0.45, face="concern"),
+    "find": moving([r("palm_opp", "PINCH", "thumb", roll=0, angle=-60), r("palm_opp", "PINCH", "thumb", roll=0, angle=-20, dy=-20)], PALM_UP, step=0.45, face="smile"),
+    "play": moving([r("front", "Y", "wrist", roll=1, angle=-20, dx=20, dy=-30), r("front", "Y", "wrist", roll=1, angle=20, dx=20, dy=-30),
+                    r("front", "Y", "wrist", roll=1, angle=-20, dx=20, dy=-30)],
+                   r("front", "Y", "wrist", roll=1, angle=-20, dx=20, dy=-30), step=0.25, face="smile"),
+    "wash": moving([r("palm_opp", "FLAT", "palm", roll=-1, angle=-90, dx=6), r("palm_opp", "FLAT", "palm", roll=-1, angle=-90, dx=-6),
+                    r("palm_opp", "FLAT", "palm", roll=-1, angle=-90, dx=6)], PALM_UP, step=0.25),
+    "ten": held({**UP, "shape": "OPEN"}, FIVE_LEFT, hold=0.5),
+}
+
+# Body parts are signed by pointing at them on the character's own body.
+POINT_AT = {
+    "head": r("temple", angle=-60), "eye": r("eye", angle=-30, dy=10), "ear": r("ear", angle=-40),
+    "nose": r("nose", angle=-20, dy=6), "mouth": r("mouth", angle=-20, dy=4), "stomach": r("belly", angle=-70),
+    "arm": r("arm_opp", angle=-85, dy=-6), "leg": r("hip", angle=170, dy=6),
+    "back": r("shoulder", "THUMB", "wrist", roll=0, angle=30, dy=-16, elbow="down"),
+}
+SIGNS |= {f"body.{k}": held(v, {"at": "rest"}, hold=0.6) for k, v in POINT_AT.items()}
+
 
 def main() -> None:
     made = (

@@ -1,6 +1,7 @@
 package app.signsetu.data.session
 
 import android.content.Context
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -11,6 +12,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import kotlinx.coroutines.flow.Flow
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -24,6 +26,7 @@ data class SessionEntity(
     val endedAt: Long?,
     val profile: String,
     val subjectLang: String,
+    @ColumnInfo(defaultValue = "VICTIM") val role: String = "VICTIM",
 )
 
 @Entity(
@@ -71,6 +74,9 @@ interface SessionDao {
     @Query("UPDATE session SET profile = :profile WHERE id = :id")
     suspend fun setProfile(id: String, profile: String)
 
+    @Query("UPDATE session SET role = :role WHERE id = :id")
+    suspend fun setRole(id: String, role: String)
+
     @Insert suspend fun insertEvent(event: EventEntity): Long
 
     @Query("SELECT * FROM event WHERE sessionId = :sessionId ORDER BY ts, id")
@@ -91,12 +97,18 @@ interface SessionDao {
     suspend fun deleteAll()
 }
 
-@Database(entities = [SessionEntity::class, EventEntity::class, DrawingEntity::class], version = 1, exportSchema = true)
+@Database(entities = [SessionEntity::class, EventEntity::class, DrawingEntity::class], version = 2, exportSchema = true)
 abstract class SessionDatabase : RoomDatabase() {
     abstract fun dao(): SessionDao
 
     companion object {
         const val FILE_NAME = "session.db"
+
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE session ADD COLUMN role TEXT NOT NULL DEFAULT 'VICTIM'")
+            }
+        }
 
         fun open(context: Context, key: ByteArray): SessionDatabase {
             System.loadLibrary("sqlcipher")
@@ -104,6 +116,7 @@ abstract class SessionDatabase : RoomDatabase() {
                 .openHelperFactory(SupportOpenHelperFactory(key))
                 // Purged rows are overwritten in place, and no write-ahead log keeps old pages around (SEC-08).
                 .setJournalMode(JournalMode.TRUNCATE)
+                .addMigrations(MIGRATION_1_2)
                 .addCallback(object : Callback() {
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         db.query("PRAGMA secure_delete = ON").use { it.moveToFirst() }

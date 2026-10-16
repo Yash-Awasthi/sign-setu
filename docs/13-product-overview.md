@@ -85,7 +85,7 @@ Every event (item shown, answer, note) is written to the encrypted database befo
 
 ### 4.3 Content integrity
 
-`assets/content/manifest.json` holds the SHA-256 of every content file and is checked each time content loads. A failed file is never parsed: a failed text file stops new sessions, because the subject could otherwise be shown wrong words; a failed picture, recording or motion file is left out. The officer sees a notice either way.
+`assets/content/manifest.json` holds the SHA-256 of every content file and is checked each time content loads. A failed file is never parsed: a failed text file stops new sessions, because the subject could otherwise be shown wrong words; a failed picture, recording or motion file is left out. The officer sees a notice either way. Model files are checked against the same manifest when first used, not on every load; a failed model is not used.
 
 ### 4.4 Typed text into signs
 
@@ -190,7 +190,7 @@ Export works without a network. The PDF is written on the phone and handed to An
 | Background | WorkManager 2.12.0 |
 | Export | Android PdfDocument, PdfBox-Android 2.0.27.0, BouncyCastle 1.86 |
 | Data | kotlinx.serialization 1.11.0, coroutines 1.11.0 |
-| Assistant | llama.cpp v0.5.0 through NDK 27.1 and CMake 3.22.1; Gemma 3 1B GGUF model file |
+| Assistant | llama.cpp v0.5.0 through NDK r30 and CMake 4.1.1; Gemma 3 1B GGUF model file |
 | Fonts | Baloo 2 (SIL OFL) |
 | Tests | JUnit 4.13.2; Accessibility Test Framework instrumented tests; Android Lint |
 | Content tools | Python: content manifest, sign generator, review record, placeholder speech (Indic Parler-TTS) |

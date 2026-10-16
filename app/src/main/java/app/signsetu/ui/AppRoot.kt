@@ -60,7 +60,8 @@ import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.OfficerPane
 import app.signsetu.ui.session.SessionViewModel
 import app.signsetu.ui.session.Stage
-import app.signsetu.camera.HandTracker
+import app.signsetu.camera.LandmarkTracker
+import app.signsetu.sign.SignReader
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -158,7 +159,7 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
             }
             entry<SessionKey> { key ->
                 SessionRoute(
-                    key.id, repo, content, settings, guard, container.report, container.handTracker,
+                    key.id, repo, content, settings, guard, container.report, container.landmarkTracker, container.signReader,
                     onFavourite = { id -> scope.launch { container.settings.toggleFavourite(id) } },
                     assistant = container.assistant.takeIf { container.models.state() == ModelStore.State.READY },
                     onClosed = { backStack.removeLastOrNull() },
@@ -176,7 +177,8 @@ private fun SessionRoute(
     settings: AppSettings,
     guard: DeviceGuard,
     report: SessionReport,
-    tracker: HandTracker?,
+    tracker: LandmarkTracker?,
+    reader: SignReader?,
     assistant: Assistant?,
     onFavourite: (String) -> Unit,
     onClosed: () -> Unit,
@@ -184,7 +186,7 @@ private fun SessionRoute(
     val officerLang = if (LocalConfiguration.current.locales[0].language == "hi") "hi" else "en"
     val vm: SessionViewModel = viewModel(
         key = sessionId,
-        factory = viewModelFactory { initializer { SessionViewModel(sessionId, repo, content, officerLang, report) } },
+        factory = viewModelFactory { initializer { SessionViewModel(sessionId, repo, content, officerLang, report, reader) } },
     )
     val ui by vm.ui.collectAsStateWithLifecycle()
     val activity = LocalActivity.current
@@ -221,6 +223,7 @@ private fun SessionRoute(
             favourites = settings.favourites,
             onFavourite = onFavourite,
             assistant = assistant,
+            canReadSigns = tracker != null,
             onCallInterpreter = if (settings.interpreterConfigured) {
                 {
                     guard.unpin()
@@ -257,6 +260,9 @@ private fun SessionRoute(
                     onLanguage = vm::chooseLanguage,
                     onDrawing = vm::submitDrawing,
                     onWritten = vm::answerText,
+                    onSignFrame = vm::onSignFrame,
+                    onStartSigning = vm::startReading,
+                    onDoneSigning = vm::finishReading,
                     onOfficer = backToOfficer,
                 )
             }

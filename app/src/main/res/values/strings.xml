@@ -252,4 +252,24 @@
     <string name="settings_assistant_importing">Checking and importing the file…</string>
     <string name="settings_assistant_bad">That file is not a model this app knows; nothing was installed.</string>
     <string name="settings_assistant_remove">Remove the model</string>
+    <string name="role_victim">Victim or witness</string>
+    <string name="role_accused">Accused or in custody</string>
+    <string name="report_role">Role</string>
+    <string name="start_juvenile_title">Child in conflict with law</string>
+    <string name="start_juvenile_body">The Juvenile Justice Act applies: no lock-up and no handcuffs. Inform the Special Juvenile Police Unit and a parent or guardian. Produce the child before the Juvenile Justice Board within 24 hours. (Draft wording, needs legal review.)</string>
+    <string name="log_signed">Signed answer</string>
+    <string name="signed_app">read by the app, not checked</string>
+    <string name="signed_officer">checked by the officer</string>
+    <string name="signed_pause">Pause</string>
+    <string name="signed_manual">No sign reader on this phone. Watch each sign and type the word.</string>
+    <string name="signed_sign">Sign %1$d</string>
+    <string name="signed_type">Type the word</string>
+    <string name="signed_accept">Accept these words</string>
+    <string name="signed_replay">Replay the signs</string>
+    <string name="officer_read_signs">Read signs</string>
+    <string name="officer_tab_transcribe">Transcribe</string>
+    <string name="officer_tab_more">More</string>
+    <string name="more_questions">Questions and phrases</string>
+    <string name="more_tools">Other ways to ask</string>
+    <string name="more_session">Session</string>
 </resources>

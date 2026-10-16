@@ -13,9 +13,17 @@ import app.signsetu.data.content.pick
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
+import app.signsetu.data.session.Role
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
+import app.signsetu.camera.LandmarkFrame
+import app.signsetu.sign.SignCapture
+import app.signsetu.sign.SignReader
+import app.signsetu.sign.SignSegment
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -53,6 +61,7 @@ enum class Mode { OFFICER, SHOW }
 /** Machine keys for SYSTEM events; the log shows them in the officer's language. */
 const val SYSTEM_LANGUAGE_FINDER = "language_finder"
 const val SYSTEM_DRAWING = "drawing"
+const val SYSTEM_READ_SIGNS = "read_signs"
 
 /** The first thing every subject sees: the officer introduces themself (03-ux §7). */
 private const val OPENING_QUESTION = "s1"
@@ -70,6 +79,10 @@ data class SessionUi(
     val answeredYes: Boolean?,
     val chosenLanguage: String?,
     val events: List<SessionEvent>,
+    /** Signs read so far while the subject is signing an answer; null when not reading. */
+    val reading: List<SignSegment>?,
+    /** Landmark frames of each signed answer, by event id: memory only, never stored or exported (D-25). */
+    val signed: Map<Long, List<SignSegment>>,
 )
 
 private data class Local(
@@ -81,6 +94,8 @@ private data class Local(
     val answeredCard: String? = null,
     val answeredYes: Boolean? = null,
     val chosenLanguage: String? = null,
+    val reading: List<SignSegment>? = null,
+    val signed: Map<Long, List<SignSegment>> = emptyMap(),
 )
 
 class SessionViewModel(
@@ -89,12 +104,17 @@ class SessionViewModel(
     val content: ContentBundle,
     private val officerLang: String,
     private val report: SessionReport,
+    private val reader: SignReader? = null,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(Local())
+    @Volatile private var capture: SignCapture? = null
+    private val reads = mutableListOf<Job>()
+    // One read at a time: a model need not be safe to call from several threads.
+    private val readDispatcher = Dispatchers.Default.limitedParallelism(1)
 
     val ui: StateFlow<SessionUi?> = combine(repo.session(sessionId).filterNotNull(), repo.events(sessionId), local) { s, events, l ->
-        SessionUi(s, l.selectedGroup, l.sensitiveUnlocked, l.pending, l.mode, l.rotated, l.answeredCard, l.answeredYes, l.chosenLanguage, events)
+        SessionUi(s, l.selectedGroup, l.sensitiveUnlocked, l.pending, l.mode, l.rotated, l.answeredCard, l.answeredYes, l.chosenLanguage, events, l.reading, l.signed)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
@@ -121,12 +141,94 @@ class SessionViewModel(
     fun setProfile(profile: Profile) = viewModelScope.launch { repo.setProfile(sessionId, profile) }
     fun setSubjectLang(lang: String) = viewModelScope.launch { repo.setSubjectLang(sessionId, lang) }
 
+    // The open group may not exist for the new role (sensitive is victim-only), so fall back to the shared first one.
+    fun setRole(role: Role) = viewModelScope.launch {
+        local.update { it.copy(selectedGroup = Local().selectedGroup) }
+        repo.setRole(sessionId, role)
+    }
+
     /** Officer confirms: the item is logged, then the subject panel takes the screen. */
     fun show() {
         val state = ui.value ?: return
         val pending = local.value.pending ?: return
         ShowTiming.start()
         viewModelScope.launch { present(pending, state.session.subjectLang) }
+    }
+
+    /** Shows what is prepared, if anything, and reads the subject's signed answer (D-25). */
+    fun readSigns() {
+        val state = ui.value ?: return
+        val pending = local.value.pending
+        ShowTiming.start()
+        viewModelScope.launch {
+            if (pending != null) {
+                present(pending, state.session.subjectLang)
+            } else {
+                repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_READ_SIGNS)
+                local.update { it.copy(mode = Mode.SHOW, answeredCard = null, answeredYes = null, chosenLanguage = null) }
+            }
+            startReading()
+        }
+    }
+
+    fun startReading() {
+        if (capture != null) return
+        capture = SignCapture()
+        local.update { it.copy(reading = emptyList()) }
+    }
+
+    /** Every tracked camera frame, on the analysis thread. */
+    fun onSignFrame(frame: LandmarkFrame) {
+        val c = capture ?: return
+        val reachedCap = synchronized(c) {
+            val wasFull = c.full
+            c.add(frame).forEach(::readSegment)
+            !wasFull && c.full
+        }
+        if (reachedCap) viewModelScope.launch { finishReading() }
+    }
+
+    private fun readSegment(frames: List<LandmarkFrame>) {
+        val segment = SignSegment(frames)
+        local.update { it.copy(reading = it.reading?.plus(segment)) }
+        reads += viewModelScope.launch(readDispatcher) {
+            val guesses = reader?.let { r -> runCatching { r.read(frames) }.getOrNull() }.orEmpty().sortedByDescending { it.score }.take(3)
+            val read = SignSegment(frames, guesses)
+            local.update { l -> l.copy(reading = l.reading?.map { if (it === segment) read else it }) }
+        }
+    }
+
+    /** The subject is done signing: the words read are logged as the app's reading, never as confirmed (FR-66). */
+    fun finishReading() {
+        val c = capture ?: return
+        capture = null
+        val pending = synchronized(c) {
+            c.finish().forEach(::readSegment)
+            reads.toList().also { reads.clear() }
+        }
+        viewModelScope.launch {
+            pending.joinAll()
+            val segments = local.value.reading.orEmpty()
+            local.update { it.copy(reading = null) }
+            if (segments.isNotEmpty()) logSigned(segments, segments.map { it.word ?: "?" }, EventSource.SUBJECT, "en")
+        }
+    }
+
+    /** The officer's reading of a signed answer, logged beside the app's so the record shows both. */
+    fun acceptSigned(eventId: Long, words: List<String>) {
+        val segments = local.value.signed[eventId] ?: return
+        viewModelScope.launch { logSigned(segments, words, EventSource.OFFICER, officerLang) }
+    }
+
+    private suspend fun logSigned(segments: List<SignSegment>, words: List<String>, source: EventSource, lang: String) {
+        repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = words.joinToString(" "))
+        val id = repo.events(sessionId).first().last { it.type == EventType.ANSWER_SIGNED }.id
+        local.update { it.copy(signed = it.signed + (id to segments)) }
+    }
+
+    override fun onCleared() {
+        capture = null
+        local.update { it.copy(reading = null, signed = emptyMap()) }
     }
 
     private suspend fun present(pending: Pending, lang: String) {
@@ -207,6 +309,7 @@ class SessionViewModel(
 
     /** Called after the officer re-authenticates (FR-61). */
     fun returnToOfficer() {
+        finishReading()
         val l = local.value
         viewModelScope.launch {
             val pending = l.pending

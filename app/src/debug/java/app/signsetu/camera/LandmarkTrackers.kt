@@ -8,17 +8,16 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Debug builds: a stand-in tracker that reports one waving open hand, to check the camera, analysis and overlay
- * path end to end before the partner model exists. Turn it on with
- * `adb shell run-as in.signsetu touch files/demo_hands`.
+ * Debug builds: the bundled holistic model, or a stand-in tracker that reports one waving open right hand, to check the
+ * camera, analysis, overlay and capture path without a model. Turn it on with `adb shell run-as in.signsetu touch files/demo_hands`.
  */
-object HandTrackers {
-    fun create(context: Context): HandTracker? =
-        if (File(context.filesDir, "demo_hands").exists()) DemoHandTracker() else null
+object LandmarkTrackers {
+    fun create(context: Context): LandmarkTracker? =
+        if (File(context.filesDir, "demo_hands").exists()) DemoTracker() else holisticTracker(context)
 }
 
-private class DemoHandTracker : HandTracker {
-    override fun detect(frame: Bitmap, timestampMs: Long): List<TrackedHand> {
+private class DemoTracker : LandmarkTracker {
+    override fun track(frame: Bitmap, timestampMs: Long): LandmarkFrame {
         val a = sin(timestampMs / 400.0).toFloat() * 0.25f
         val wrist = OPEN_HAND[0]
         val points = OPEN_HAND.map { p ->
@@ -26,7 +25,7 @@ private class DemoHandTracker : HandTracker {
             val dy = p.y - wrist.y
             Offset(wrist.x + dx * cos(a) - dy * sin(a), wrist.y + dx * sin(a) + dy * cos(a))
         }
-        return listOf(TrackedHand(points, score = 1f))
+        return LandmarkFrame(timestampMs, rightHand = points)
     }
 }
 

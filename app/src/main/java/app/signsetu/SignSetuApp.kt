@@ -16,8 +16,10 @@ import app.signsetu.data.session.RetentionWorker
 import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.data.settings.SettingsStore
-import app.signsetu.camera.HandTracker
-import app.signsetu.camera.HandTrackers
+import app.signsetu.camera.LandmarkTracker
+import app.signsetu.camera.LandmarkTrackers
+import app.signsetu.sign.SignReader
+import app.signsetu.sign.SignReaders
 import app.signsetu.export.SessionReport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,8 +52,11 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver {
     val models = ModelStore(app)
     val assistant = Assistant(models)
 
-    /** The partner team's hand-detection model, created per build type; without one the stage shows a plain mirror (D-20). */
-    val handTracker: HandTracker? by lazy { HandTrackers.create(app) }
+    /** Landmark tracking, created per build type; without it the stage shows a plain mirror (D-20, D-25). */
+    val landmarkTracker: LandmarkTracker? by lazy { LandmarkTrackers.create(app) }
+
+    /** Reads isolated signs from landmarks; none until its model is present (D-25). */
+    val signReader: SignReader? by lazy { SignReaders.create(app) }
 
     /** SEC-63: warn only; blocking would fail an officer in an emergency. */
     val deviceLooksRooted: Boolean by lazy {
