@@ -155,11 +155,11 @@ The base stays inside the 30 MB budget (NFR-05) with room for cards and fonts.
 
 ### 5.6 Playback rules
 
-- Plays only on an officer action; never loops on its own; replay and slow-speed buttons (FR-18).
+- Plays only on an officer action; never loops on its own; replay and slow-speed buttons (FR-18). The subject sets the signing speed (½×, ¾×, 1×) for the session, in memory only; a young child starts at ¾×. Tapping a word in typed text replays that word alone at half speed; tapping a question replays it.
 - The caption and picture are shown first; the clip plays with them, never alone.
 - If a clip is missing, the picture and caption stand alone and the officer sees "gesture not available".
 
-## 6. Officer gesture lookup (instead of camera recognition)
+## 6. Officer gesture lookup
 
 When the subject makes a gesture the officer does not understand:
 
@@ -170,7 +170,7 @@ When the subject makes a gesture the officer does not understand:
 5. Officer picks the likely one and taps **Show back**: the subject sees the gesture and picture with "Is this it?" and Yes/No cards.
 6. Only a confirmed match is logged as an answer; unconfirmed lookups are logged as "unclear gesture".
 
-This works offline, needs no model, and works with home signs, because the confirmation step catches mismatches. The officer's list shows each candidate as the character's pose with its picture. The stage's camera mirror (D-20) lets the subject see their own hands; when the partner team's hand model is installed, its suggestions enter this same list and still end with Show back.
+This works offline, needs no model, and works with home signs, because the confirmation step catches mismatches. The officer's list shows each candidate as the character's pose with its picture. The stage's camera mirror (D-20) lets the subject see their own hands. Signed answers are read separately by the on-device sign reader (D-25, [hand model integration](11-hand-model-integration.md)); its readings are proposals and become the subject's only when the subject picks the meaning among two or three pictures (D-27). The body outline here is an officer tool; the subject is never shown a body map in the default flow.
 
 ## 7. Fallback chain
 
@@ -182,7 +182,7 @@ This works offline, needs no model, and works with home signs, because the confi
 4. Picture card with caption, plus recorded audio for hearing subjects.
 5. The officer performs the gesture, copying it from the card on their panel or the printed quick card.
 
-**Subject to officer:** picture card, Yes/No, drawing, gesture with lookup and Show back, interpreter.
+**Subject to officer:** picture card, Yes/No, drawing, writing, a signed answer or account read on the phone and confirmed by the subject's pick, gesture with lookup and Show back, interpreter.
 
 ## 8. Validation
 
@@ -192,6 +192,8 @@ This works offline, needs no model, and works with home signs, because the confi
 | Each gesture entry | Child-welfare reviewer and educators; then children in deaf and hearing schools | 70% of children pick the right picture after seeing the gesture |
 | Both characters | Child psychologist; then children | No child shows fear; most children prefer the character to no character |
 | Officer gesture lookup | Officers in UAT | Right meaning in the top three for 80% of scripted gestures |
+
+Reviewers use the reviewer portal (`portal/`, D-31): every motion plays on both characters with speed and scrub, and verdicts export to the [content review record](governance/forms/content-review-record.md).
 
 Testing with children requires ethics approval, guardian consent, the child's assent and a child-welfare professional present ([test plan](06-test-plan.md) §7). Rescued children are never test participants.
 
@@ -253,5 +255,7 @@ These are planning estimates; measure the first 20 clips and re-plan. Stage 0 ca
 - **Playback.** A gesture eases in from rest and back to rest; it plays once on the officer's action and on replay; slow replay is half speed (FR-18). Once a question's gesture ends, the character glances down at the answers below it, inviting a reply without words. The character breathes and blinks between gestures unless the phone's "remove animations" setting is on.
 - **Phrases.** A phrase-bank sentence chains its signs ("you", the chosen item, the asking pose) into one gesture; each part starts from the pose it has when played alone, so a reviewed sign never changes inside a sentence. Each slot carries its own complete sentence in every language, because word order and agreement change with the item.
 - **Two-handed contact.** A hand can be placed on the other hand: its wrist, palm centre, thumb or any fingertip (`index_opp`, `ring_opp`, ...). The hand being touched is solved first, so a fingertip lands on a fingertip on both characters.
-- **Typed text (D-22).** The two-handed ISL alphabet, the digits and a small set of draft word signs are generated into `signs.json` by `tools/content/build_signs.py`, with the left hand as the base. Typed words are looked up in `words.json` and chained like a phrase: a sign or gesture where one exists, otherwise the word's letters, with Hindi spelled in Latin letters. The caption lights the word being played and a tile beside the character shows a spelled word's current letter.
-- **Review.** Debug builds include a gallery of every gesture on both characters, frozen at the moment of contact, for the reviewers in section 8. Every entry remains a candidate until reviewed.
+- **Typed text (D-22, D-29).** The 26-letter two-handed ISL alphabet, 10 digits and 47 draft word signs (time, people, actions, and body parts signed by pointing at the character's own body) are generated into `signs.json` by `tools/content/build_signs.py`, with the left hand as the base. With Signs on, words play in draft ISL order: time words first, then the rest as typed, then negation, then the question word. Typed words are looked up in `words.json` and chained like a phrase: a sign or gesture where one exists, otherwise the word's letters, with Hindi spelled in Latin letters. The caption lights the word being played and a tile beside the character shows a spelled word's current letter.
+- **Look.** Every arm bone and sleeve has a dark rim, so an arm crossing the body or face stays visible. A palm facing the viewer uses a lighter palm tone; straight fingers seen from the back show nails, which separates palm-out from palm-in. The neck sits under the collar; the adult wears a V-neck, has a side-parted cut and calm lidded eyes. Everything is still drawn in code, with no image assets.
+- **Gestures avoided.** Thumb-up, thumb-down and an open palm are never used for yes, no or stop; Stop on the stage is an octagonal sign.
+- **Review.** Debug builds include a gallery of every gesture on both characters, frozen at the moment of contact, and the reviewer portal plays the same motions through a TypeScript port of the rig checked against `Rig.kt` (D-31). Every entry remains a candidate until reviewed.

@@ -90,11 +90,43 @@
       }
     },
     {
+      "id": "dont_understand",
+      "category": "answers",
+      "label": {
+        "en": "I don't understand",
+        "hi": "मुझे समझ नहीं आया"
+      }
+    },
+    {
       "id": "stop",
       "category": "answers",
       "label": {
         "en": "Stop",
         "hi": "रुको"
+      }
+    },
+    {
+      "id": "something_else",
+      "category": "answers",
+      "label": {
+        "en": "Something else",
+        "hi": "कुछ और"
+      }
+    },
+    {
+      "id": "wrong",
+      "category": "answers",
+      "label": {
+        "en": "That's wrong",
+        "hi": "यह ग़लत है"
+      }
+    },
+    {
+      "id": "break",
+      "category": "answers",
+      "label": {
+        "en": "Break",
+        "hi": "थोड़ा आराम"
       }
     },
     {

@@ -46,10 +46,28 @@ android {
         }
     }
 
+    // D-26: the second screen links over bonded Bluetooth by default; "nearby" swaps in Google Nearby Connections for
+    // departments whose phones have Play services. Only "standard" is the reference build that keeps every rule.
+    flavorDimensions += "transport"
+    productFlavors {
+        create("standard") {
+            dimension = "transport"
+            isDefault = true
+        }
+        create("nearby") {
+            dimension = "transport"
+            applicationIdSuffix = ".nearby"
+            versionNameSuffix = "-nearby"
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
+
+    // Android calls made in plain JVM tests return defaults instead of throwing (timing marks, log lines).
+    testOptions { unitTests.isReturnDefaultValues = true }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -64,26 +82,38 @@ android {
     }
 }
 
-// SEC-30, SEC-42: the build fails if any library brings a forbidden permission into the merged manifest.
+// SEC-30, SEC-42, SEC-66: the build fails if any library brings a forbidden permission into the merged manifest.
+// The nearby flavor needs scanning and, below Android 13, location for Nearby Connections; it keeps the rest.
 androidComponents {
     onVariants { variant ->
         val manifest = variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
         val name = variant.name.replaceFirstChar { it.uppercase() }
+        val standard = variant.flavorName != "nearby"
         val check = tasks.register("check${name}Permissions") {
             inputs.file(manifest)
             doLast {
-                val forbidden = listOf(
+                val always = listOf(
                     "android.permission.INTERNET",
                     "android.permission.RECORD_AUDIO",
+                    "android.permission.ACCESS_BACKGROUND_LOCATION",
+                )
+                val discovery = listOf(
                     "android.permission.ACCESS_FINE_LOCATION",
                     "android.permission.ACCESS_COARSE_LOCATION",
+                    "android.permission.BLUETOOTH_SCAN",
+                    "android.permission.BLUETOOTH_ADMIN",
+                    "android.permission.BLUETOOTH_ADVERTISE",
+                    "android.permission.NEARBY_WIFI_DEVICES",
                 )
+                val forbidden = if (standard) always + discovery else always
                 val text = manifest.get().asFile.readText()
                 val found = forbidden.filter { text.contains("\"$it\"") }
                 if (found.isNotEmpty()) throw GradleException("Forbidden permissions in the merged manifest: $found")
             }
         }
-        tasks.matching { it.name == "assemble$name" }.configureEach { dependsOn(check) }
+        // Every task that packages the merged manifest, so neither an APK nor an AAB nor an install can skip the check.
+        val packaging = setOf("assemble$name", "bundle$name", "install$name", "package$name", "package${name}Bundle")
+        tasks.matching { it.name in packaging }.configureEach { dependsOn(check) }
     }
 }
 
@@ -140,9 +170,14 @@ dependencies {
     implementation(libs.mediapipe.tasks.vision) {
         // This backend uploads MediaPipe usage statistics and brings INTERNET (SEC-30); a stub destination replaces it.
         exclude(group = "com.google.android.datatransport", module = "transport-backend-cct")
+        // Its classes are compiled against full protobuf (Any.Builder.build() returning Any); the lite runtime lacks that method.
+        exclude(group = "com.google.protobuf", module = "protobuf-javalite")
     }
+    implementation(libs.protobuf.java)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    // Play services only in the nearby flavor; the standard build has none (D-26).
+    "nearbyImplementation"(libs.play.services.nearby)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

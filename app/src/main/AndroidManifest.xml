@@ -5,6 +5,13 @@
     <!-- Live mirror of the subject's hands; nothing is captured or stored (D-20). -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <!-- Answer codes felt by the officer holding the phone; a normal permission. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- A second screen over bonded Bluetooth (D-26). No scan, advertise or bond: those permissions are refused by the build. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 
     <!-- Sandes (NIC) is opened for the interpreter call; package visibility needs it declared (API 30+). -->
     <queries>
@@ -27,6 +34,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

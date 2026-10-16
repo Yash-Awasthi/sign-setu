@@ -100,6 +100,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -124,10 +127,13 @@ import app.signsetu.ui.components.FilterObscuredTouches
 import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.start.profileTitle
 import app.signsetu.ui.start.roleTitle
+import app.signsetu.data.session.Role as SessionRole
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalInk
 import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.SunMode
+import androidx.compose.material.icons.filled.Info
 import kotlinx.coroutines.launch
 import java.io.File
 import androidx.compose.foundation.rememberScrollState
@@ -136,8 +142,17 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material.icons.filled.PlayArrow
 import app.signsetu.sign.SignSegment
+import app.signsetu.sign.SignWindow
 import java.text.DateFormat
 import java.util.Date
+import androidx.compose.material.icons.filled.Phone
+import app.signsetu.pair.PairedPane
+import app.signsetu.ui.pair.PairedBar
+import app.signsetu.ui.pair.linkText
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.VisualTransformation
+import app.signsetu.data.content.PhraseSlot
 
 private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, LOG, CHANGE }
 
@@ -166,6 +181,10 @@ fun OfficerPane(
     onShare: (File) -> Unit,
     onEndSession: () -> Unit,
     canReadSigns: Boolean = false,
+    /** Set while a second screen shows the stage (D-26). */
+    paired: PairedPane? = null,
+    onSecondScreen: (() -> Unit)? = null,
+    allowAuto: Boolean = false,
 ) {
     val content = vm.content
     val ink = LocalInk.current
@@ -193,7 +212,7 @@ fun OfficerPane(
 
     val answers = ui.events.count { it.type in AnswerEvents }
     // A request to stop stays on screen until the officer acknowledges it or shows something new.
-    val lastStop = ui.events.lastOrNull { it.type == EventType.QUESTION_SHOWN || it.cardId == "stop" }?.takeIf { it.cardId == "stop" }
+    val lastStop = ui.events.lastOrNull { it.type == EventType.QUESTION_SHOWN || it.cardId in PauseCards }?.takeIf { it.cardId in PauseCards }
 
     // The ink header needs light status-bar icons; the rest of the app uses dark ones.
     val view = LocalView.current
@@ -205,6 +224,21 @@ fun OfficerPane(
         onDispose { before?.let { controller.isAppearanceLightStatusBars = it } }
     }
 
+    // Main page: question run and say-back.
+    var run by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var sayingBack by remember { mutableStateOf<SessionEvent?>(null) }
+    val context = LocalContext.current
+    val runQuestions = run.mapNotNull { id -> content.questions.firstOrNull { it.id == id } }
+    val sensitiveGroups = content.groups.filter { it.sensitive }.map { it.id }
+    val addToRun = { q: Question ->
+        when {
+            q.group in sensitiveGroups -> Toast.makeText(context, R.string.run_no_sensitive, Toast.LENGTH_SHORT).show()
+            q.id in run -> Unit
+            run.size >= RUN_MAX -> Toast.makeText(context, R.string.run_full, Toast.LENGTH_SHORT).show()
+            else -> run = run + q.id
+        }
+    }
+
     val prepareTyped = {
         if (ownText.isNotBlank()) {
             vm.prepare(Pending.FreeText(ownText.trim(), attached.toList(), modes.toSet(), suggestion?.caption))
@@ -213,7 +247,14 @@ fun OfficerPane(
             suggestion = null
         }
     }
-    val send = { prepareTyped(); vm.show() }
+    val send = {
+        if (run.isNotEmpty() && ownText.isBlank()) {
+            vm.showRun(runQuestions.map { Pending.Ask(it) })
+            run = emptyList()
+        } else {
+            prepareTyped(); if (paired?.allowShow?.invoke() != false) vm.show()
+        }
+    }
     val read = { prepareTyped(); vm.readSigns() }
     val onTool = { tool: Tool ->
         when (tool) {
@@ -222,6 +263,7 @@ fun OfficerPane(
             Tool.ATTACH -> sheet = Sheet.BOARD_ATTACH
             Tool.DRAW -> { vm.prepare(Pending.Drawing); page = 0 }
             Tool.LANGUAGE -> { vm.prepare(Pending.LanguageFinder); page = 0 }
+            Tool.RULES -> { vm.prepare(Pending.GroundRules()); page = 0 }
         }
     }
 
@@ -267,12 +309,21 @@ fun OfficerPane(
                             leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = null) },
                             trailingIcon = { Checkbox(checked = ui.rotated, onCheckedChange = null) },
                             onClick = { vm.toggleRotation() },
+                            modifier = Modifier.toggleState(ui.rotated, Role.Checkbox),
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.officer_sun)) },
+                            leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null) },
+                            trailingIcon = { Switch(checked = SunMode.forced.value, onCheckedChange = null) },
+                            onClick = { SunMode.forced.value = !SunMode.forced.value },
+                            modifier = Modifier.toggleState(SunMode.forced.value, Role.Switch),
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.officer_camera)) },
                             leadingIcon = { Icon(painterResource(R.drawable.ic_videocam), contentDescription = null) },
                             trailingIcon = { Switch(checked = cameraOn, onCheckedChange = null) },
                             onClick = { onCameraOn(!cameraOn) },
+                            modifier = Modifier.toggleState(cameraOn, Role.Switch),
                         )
                         HorizontalDivider()
                         DropdownMenuItem(
@@ -284,6 +335,8 @@ fun OfficerPane(
                 }
             }
         }
+
+        paired?.let { PairedBar(it, ui, content, officerLang) }
 
         PrimaryTabRow(selectedTabIndex = page) {
             Tab(selected = page == 0, onClick = { page = 0 }, text = { Text(stringResource(R.string.officer_tab_transcribe)) })
@@ -304,17 +357,20 @@ fun OfficerPane(
                     if (!again) page = 0
                 },
                 onPhrase = { phrase = it },
+                onAddToRun = addToRun,
                 onTool = onTool,
                 onLog = { sheet = Sheet.LOG },
                 onChange = { sheet = Sheet.CHANGE },
+                onSecondScreen = onSecondScreen,
+                onTell = if (canReadSigns) ({ prepareTyped(); vm.readSigns(SignWindow.NARRATIVE); page = 0 }) else null,
                 modifier = Modifier.weight(1f),
             )
         } else {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            Transcript(ui.events, ui.session.profile, ui.signed, onReplay = { replaying = it }, Modifier.fillMaxSize())
+            Transcript(ui.events, ui.session.profile, ui.signed, onReplay = { replaying = it }, Modifier.fillMaxSize(), onSayBack = { sayingBack = it })
             // The scope-free overload: inside this Box the Column's AnimatedVisibility does not apply.
             androidx.compose.animation.AnimatedVisibility(
-                lastStop != null && lastStop.id != stopSeen,
+                lastStop != null && lastStop.id != stopSeen && paired == null,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut(),
                 modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = Spacing.lg),
@@ -323,6 +379,7 @@ fun OfficerPane(
             }
         }
 
+        if (allowAuto && ownText.isEmpty()) AutoPanel(vm.auto, ui, content, officerLang)
         Dock(
             ui = ui,
             content = content,
@@ -354,6 +411,14 @@ fun OfficerPane(
             onClear = { vm.prepare(null) },
             onSend = send,
             onRead = read,
+            run = runQuestions,
+            onRunRemove = { q -> run = run - q.id },
+            onAddToRun = addToRun,
+            onRunBasics = {
+                // The opening question has been shown already; the next three safety questions follow it.
+                content.questions.filter { it.group == "safety" && it.id != "s1" }.take(3).forEach(addToRun)
+            },
+            onTemplate = { p, s -> vm.prepare(Pending.PhraseAsk(p, s)); ownText = "" },
         )
         }
     } }
@@ -361,17 +426,30 @@ fun OfficerPane(
     phrase?.let { p ->
         PhraseSheet(p, content, officerLang, onPick = { slot -> vm.prepare(Pending.PhraseAsk(p, slot)); phrase = null; page = 0 }, onDismiss = { phrase = null })
     }
+    sayingBack?.let { e ->
+        SayBackDialog(e, onSend = { words -> vm.sayBack(e, words, modes.toSet()); sayingBack = null }, onDismiss = { sayingBack = null })
+    }
     replaying?.let { id ->
         ui.signed[id]?.let { segments ->
-            SignedSheet(segments, onAccept = { vm.acceptSigned(id, it); replaying = null }, onDismiss = { replaying = null })
+            SignedSheet(
+                segments,
+                onAccept = { vm.acceptSigned(id, it); replaying = null },
+                onDismiss = { replaying = null },
+                onAsk = { vm.askSubject(id, it); replaying = null },
+                canAsk = { vm.canAskSubject(id, it) },
+            )
         }
     }
     when (sheet) {
         Sheet.BOARD_SHOW -> BoardSheet(content, officerLang, emptyList(), favourites, onFavourite, onUse = { vm.prepare(Pending.Cards(it)); sheet = null; page = 0 }, onDismiss = { sheet = null })
         Sheet.BOARD_ATTACH -> BoardSheet(content, officerLang, attached.toList(), favourites, onFavourite, onUse = { attached.clear(); attached.addAll(it); sheet = null }, onDismiss = { sheet = null })
-        Sheet.GESTURE -> GestureSheet(content, officerLang, onPick = { vm.prepare(Pending.ShowBack(it)); sheet = null; page = 0 }, onDismiss = { sheet = null })
+        Sheet.GESTURE -> GestureSheet(content, officerLang, onPick = { entry, found -> vm.prepare(Pending.ShowBack(entry, checkChoices(entry.card, found.map { it.card }))); sheet = null; page = 0 }, onDismiss = { sheet = null })
         Sheet.LOG -> LogSheet(ui.events, onAddNote = vm::addNote, onDismiss = { sheet = null })
-        Sheet.CHANGE -> ChangeSheet(content, ui.session.profile, subjectLang, ui.session.role, onProfile = vm::setProfile, onLanguage = vm::setSubjectLang, onRole = vm::setRole, onDismiss = { sheet = null })
+        // Profile and language stay fixed while an item is on a second screen.
+        Sheet.CHANGE -> if (paired == null || ui.onStage == null) ChangeSheet(
+            content, ui.session.profile, subjectLang, ui.session.role, ui.juvenile,
+            onProfile = vm::setProfile, onLanguage = vm::setSubjectLang, onRole = vm::setRole, onJuvenile = vm::setJuvenile, onDismiss = { sheet = null },
+        )
         null -> Unit
     }
 
@@ -401,7 +479,9 @@ fun OfficerPane(
                         askEnd = false
                         export = ExportState.Working
                         scope.launch {
-                            export = runCatching { vm.exportReport(reportText(res, ui, content)) { eventDetail(res, it) } }
+                            val by = shownBy(ui.events)
+                            val idle = notActedOn(ui.events)
+                            export = runCatching { vm.exportReport(reportText(res, ui, content), recordDetail(res, content, officerLang, ui.events) { eventDetail(res, it, by, idle) }) }
                                 .fold({ (file, pass) -> ExportState.Ready(file, pass) }, { ExportState.Failed })
                         }
                     }) { Text(stringResource(R.string.end_export)) }
@@ -425,7 +505,7 @@ fun OfficerPane(
 
 /** The conversation so far: what was shown on the right, the subject's answers on the left, newest at the bottom. */
 @Composable
-private fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map<Long, List<SignSegment>>, onReplay: (Long) -> Unit, modifier: Modifier) {
+private fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map<Long, List<SignSegment>>, onReplay: (Long) -> Unit, modifier: Modifier, onSayBack: (SessionEvent) -> Unit = {}) {
     if (events.isEmpty()) {
         Column(modifier.padding(Spacing.xxl), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             MiniFace(characterFor(profile), 72.dp, Color(0xFFFFDDBE))
@@ -445,7 +525,12 @@ private fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map
         }
         return
     }
-    val newestFirst = remember(events) { events.asReversed() }
+    // Suggestions and their outcomes belong in the log, not the conversation.
+    val newestFirst = remember(events) { events.filter { it.type != EventType.PROMPT && it.type !in AutoRows }.asReversed() }
+    val by = remember(events) { shownBy(events) }
+    val grades = remember(events) { grades(events) }
+    val trails = remember(events) { answerTrails(events) }
+    val positions = remember(events) { choicePositions(events) }
     LazyColumn(
         modifier,
         reverseLayout = true,
@@ -455,10 +540,15 @@ private fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map
         items(newestFirst, key = { it.id }) { e ->
             Box(Modifier.animateItem()) {
                 when (e.type) {
-                    EventType.QUESTION_SHOWN -> Shown(e)
+                    EventType.QUESTION_SHOWN -> Shown(e, by[e.id])
                     EventType.NOTE -> Aside(e.text.orEmpty(), note = true)
                     EventType.SYSTEM -> Aside(systemText(e.text), note = false)
-                    else -> Answered(e, profile, onReplay = if (e.id in signed) ({ onReplay(e.id) }) else null)
+                    EventType.LINK -> Aside(linkText(e).orEmpty(), note = false)
+                    else -> Answered(
+                        e, profile, onReplay = if (e.id in signed) ({ onReplay(e.id) }) else null,
+                        grade = grades[e.id], trail = trails[e.id], position = positions[e.id],
+                        onSayBack = if (canSayBack(e, grades[e.id])) ({ onSayBack(e) }) else null,
+                    )
                 }
             }
         }
@@ -466,17 +556,14 @@ private fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map
 }
 
 @Composable
-private fun systemText(text: String?) = when (text) {
-    SYSTEM_LANGUAGE_FINDER -> stringResource(R.string.officer_find_language)
-    SYSTEM_DRAWING -> stringResource(R.string.officer_draw)
-    SYSTEM_READ_SIGNS -> stringResource(R.string.officer_read_signs)
-    else -> text.orEmpty()
-}
+private fun systemText(text: String?) = systemText(LocalResources.current, text)
+
+private val AutoRows = setOf(EventType.SUGGESTED, EventType.APPROVED, EventType.SKIPPED, EventType.AUTO_ADVANCED)
 
 private fun timeOf(e: SessionEvent) = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))
 
 @Composable
-private fun Shown(e: SessionEvent) {
+private fun Shown(e: SessionEvent, by: ShownBy? = null) {
     val ink = LocalInk.current
     Column(Modifier.fillMaxWidth().padding(start = 48.dp), horizontalAlignment = Alignment.End) {
         Box(
@@ -487,8 +574,12 @@ private fun Shown(e: SessionEvent) {
         ) {
             Text(e.text ?: "—", style = MaterialTheme.typography.bodyLarge, color = Color.White)
         }
+        val tags = listOfNotNull(
+            by?.tag?.let { stringResource(it) },
+            if (e.reason == SHOWN_RIGHTS) stringResource(R.string.rights_shown_mark) else null,
+        ).joinToString("") { " · $it" }
         Text(
-            "${stringResource(e.type.label())} · ${timeOf(e)}",
+            "${stringResource(e.type.label())} · ${timeOf(e)}$tags",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp, end = 4.dp),
@@ -497,7 +588,15 @@ private fun Shown(e: SessionEvent) {
 }
 
 @Composable
-private fun Answered(e: SessionEvent, profile: Profile, onReplay: (() -> Unit)? = null) {
+private fun Answered(
+    e: SessionEvent,
+    profile: Profile,
+    onReplay: (() -> Unit)? = null,
+    grade: Grade? = null,
+    trail: Trail? = null,
+    position: Pair<Int, Int>? = null,
+    onSayBack: (() -> Unit)? = null,
+) {
     val colors = MaterialTheme.colorScheme
     val answer = LocalAnswerColors.current
     val well = when {
@@ -513,6 +612,7 @@ private fun Answered(e: SessionEvent, profile: Profile, onReplay: (() -> Unit)? 
                 shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 6.dp, bottomEnd = 20.dp),
                 color = colors.surfaceContainerLowest,
                 shadowElevation = 1.dp,
+                border = trailBorder(trail),
             ) {
                 Row(Modifier.padding(start = 8.dp, end = 14.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Surface(shape = RoundedCornerShape(12.dp), color = well, modifier = Modifier.size(40.dp)) {
@@ -542,6 +642,7 @@ private fun Answered(e: SessionEvent, profile: Profile, onReplay: (() -> Unit)? 
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp, start = 4.dp),
             )
+            AnswerMeta(grade, trail, position, onSayBack)
         }
     }
 }
@@ -561,7 +662,7 @@ private fun Aside(text: String, note: Boolean) {
     }
 }
 
-private enum class Tool { GESTURE, BOARD, DRAW, LANGUAGE, ATTACH }
+private enum class Tool { GESTURE, BOARD, DRAW, LANGUAGE, ATTACH, RULES }
 
 /** Quick questions and the composer: everything the officer reaches with a thumb. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -587,9 +688,15 @@ private fun Dock(
     onClear: () -> Unit,
     onSend: () -> Unit,
     onRead: () -> Unit,
+    run: List<Question> = emptyList(),
+    onRunRemove: (Question) -> Unit = {},
+    onAddToRun: (Question) -> Unit = {},
+    onRunBasics: () -> Unit = {},
+    onTemplate: (Phrase, PhraseSlot) -> Unit = { _, _ -> },
 ) {
     val colors = MaterialTheme.colorScheme
     val typing = text.isNotEmpty()
+    val addLabel = stringResource(R.string.run_add)
     val pending = ui.pending
     val subjectLang = ui.session.subjectLang
     val asked = remember(ui.events) { ui.events.filter { it.type == EventType.QUESTION_SHOWN }.mapNotNull { it.text }.toSet() }
@@ -599,8 +706,9 @@ private fun Dock(
         Column(Modifier.navigationBarsPadding().padding(top = Spacing.md)) {
             AnimatedVisibility(!typing && quick.isNotEmpty(), enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(horizontal = Spacing.lg), modifier = Modifier.padding(bottom = Spacing.sm)) {
+                    if (run.isEmpty()) item(key = "run_basics") { CategoryChip(stringResource(R.string.run_basics), false, locked = false, onClick = onRunBasics) }
                     items(quick, key = { it.id }) { q ->
-                        CategoryChip(q.text.pick(officerLang) ?: q.id, (pending as? Pending.Ask)?.question?.id == q.id, locked = false) { onQuestion(q) }
+                        CategoryChip(q.text.pick(officerLang) ?: q.id, (pending as? Pending.Ask)?.question?.id == q.id, locked = false, onLongClick = { onAddToRun(q) }, longClickLabel = addLabel) { onQuestion(q) }
                     }
                 }
             }
@@ -622,9 +730,12 @@ private fun Dock(
                         }
                     }
                 }
+            } else if (run.isNotEmpty()) {
+                RunTray(run, officerLang, onRunRemove)
             } else if (pending != null) {
                 Ready(pending, content, officerLang, subjectLang, ui.session.profile, onClear)
             }
+            if (typing) CompletionRows(content, text, officerLang, onComplete = onText, onTemplate = onTemplate)
             if (typing && suggestion != null) {
                 AssistantCard(suggestion, content.language(subjectLang)?.english ?: subjectLang, onDiscard)
             } else if (typing && noHelp) {
@@ -635,9 +746,10 @@ private fun Dock(
                 text = text,
                 onText = onText,
                 onPictures = onPictures,
-                canSend = text.isNotBlank() || pending != null,
+                canSend = text.isNotBlank() || pending != null || run.isNotEmpty(),
                 onSend = onSend,
                 onRead = onRead.takeIf { canRead },
+                visualTransformation = rememberSignabilityTint(content),
             )
         }
     }
@@ -654,10 +766,13 @@ private fun MorePage(
     onPhrases: () -> Unit,
     onQuestion: (Question) -> Unit,
     onPhrase: (Phrase) -> Unit,
+    onAddToRun: (Question) -> Unit,
     onTool: (Tool) -> Unit,
     onLog: () -> Unit,
     onChange: () -> Unit,
+    onSecondScreen: (() -> Unit)?,
     modifier: Modifier,
+    onTell: (() -> Unit)? = null,
 ) {
     val pending = ui.pending
     val subjectLang = ui.session.subjectLang
@@ -666,14 +781,14 @@ private fun MorePage(
         SectionLabel(stringResource(R.string.more_questions), Modifier.padding(horizontal = Spacing.lg))
         Column {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(horizontal = Spacing.lg)) {
-                items(content.groupsFor(ui.session.role).filterNot { it.sensitive }, key = { it.id }) { g ->
+                items(content.groupsFor(ui.session.role, ui.juvenile).filterNot { it.sensitive }, key = { it.id }) { g ->
                     CategoryChip(g.label.pick(officerLang) ?: g.id, ui.selectedGroup == g.id, locked = false) { onGroup(g) }
                 }
                 if (content.phrases.isNotEmpty()) {
                     item(key = PHRASES) { CategoryChip(stringResource(R.string.officer_phrases), ui.selectedGroup == PHRASES, locked = false, onClick = onPhrases) }
                 }
                 // Sensitive groups stay last and locked until confirmed (FR-12).
-                items(content.groupsFor(ui.session.role).filter { it.sensitive }, key = { it.id }) { g ->
+                items(content.groupsFor(ui.session.role, ui.juvenile).filter { it.sensitive }, key = { it.id }) { g ->
                     CategoryChip(g.label.pick(officerLang) ?: g.id, ui.selectedGroup == g.id, locked = !ui.sensitiveUnlocked) { onGroup(g) }
                 }
             }
@@ -706,6 +821,7 @@ private fun MorePage(
                         selected = (pending as? Pending.Ask)?.question?.id == q.id,
                         wide = wide,
                         onClick = { onQuestion(q) },
+                        onLongClick = { onAddToRun(q) },
                     )
                 }
             }
@@ -717,9 +833,13 @@ private fun MorePage(
             ToolButton(rememberVectorPainter(Icons.Filled.Create), stringResource(R.string.action_draw), pending == Pending.Drawing) { onTool(Tool.DRAW) }
             ToolButton(painterResource(R.drawable.ic_translate), stringResource(R.string.action_language), pending == Pending.LanguageFinder) { onTool(Tool.LANGUAGE) }
         }
+        // Up to three minutes of signing with nothing on screen to interrupt; replayed later with an interpreter.
+        onTell?.let { MoreRow(painterResource(R.drawable.ic_hand), stringResource(R.string.tell_me_long), null, it) }
         SectionLabel(stringResource(R.string.more_session), Modifier.padding(horizontal = Spacing.lg))
         MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.List), stringResource(R.string.officer_log), answers.takeIf { it > 0 }?.toString(), onLog)
         MoreRow(rememberVectorPainter(Icons.Filled.Person), stringResource(R.string.officer_change), null, onChange)
+        onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, it) }
+        MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
     }
 }
 
@@ -749,6 +869,9 @@ private fun Ready(pending: Pending, content: ContentBundle, officerLang: String,
                 Text(stringResource(R.string.chat_ready), style = MaterialTheme.typography.labelSmall, color = colors.primary)
                 Text(describe(pending, content, officerLang), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (pending is Pending.Ask) MediaSummary(pending.question, content, subjectLang, profile)
+                if (pending is Pending.Ask && content.isRights(pending.question)) {
+                    Text(stringResource(R.string.rights_notice_officer), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp, end = Spacing.sm))
+                }
             }
             IconButton(onClick = onClear) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel)) }
         }
@@ -756,7 +879,15 @@ private fun Ready(pending: Pending, content: ContentBundle, officerLang: String,
 }
 
 @Composable
-private fun Composer(text: String, onText: (String) -> Unit, onPictures: () -> Unit, canSend: Boolean, onSend: () -> Unit, onRead: (() -> Unit)?) {
+private fun Composer(
+    text: String,
+    onText: (String) -> Unit,
+    onPictures: () -> Unit,
+    canSend: Boolean,
+    onSend: () -> Unit,
+    onRead: (() -> Unit)?,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+) {
     val colors = MaterialTheme.colorScheme
     val ink = LocalInk.current
     Row(Modifier.fillMaxWidth().padding(start = Spacing.sm, end = Spacing.md, bottom = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
@@ -774,6 +905,7 @@ private fun Composer(text: String, onText: (String) -> Unit, onPictures: () -> U
                 keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { if (canSend) onSend() }),
                 cursorBrush = SolidColor(colors.primary),
+                visualTransformation = visualTransformation,
                 maxLines = 4,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = Spacing.lg, vertical = 13.dp),
                 decorationBox = { field ->
@@ -813,14 +945,13 @@ private fun Composer(text: String, onText: (String) -> Unit, onPictures: () -> U
 }
 
 @Composable
-private fun CategoryChip(label: String, selected: Boolean, locked: Boolean, onClick: () -> Unit) {
+private fun CategoryChip(label: String, selected: Boolean, locked: Boolean, onLongClick: (() -> Unit)? = null, longClickLabel: String? = null, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
-        onClick = onClick,
         shape = RoundedCornerShape(50),
         color = if (selected) colors.primary else colors.surfaceContainerHigh,
         contentColor = if (selected) colors.onPrimary else colors.onSurfaceVariant,
-        modifier = Modifier.height(36.dp).semantics { this.selected = selected },
+        modifier = Modifier.height(36.dp).clip(RoundedCornerShape(50)).runnable(onClick, onLongClick, longClickLabel).semantics { this.selected = selected },
     ) {
         Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (locked) Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(14.dp))
@@ -900,14 +1031,16 @@ private fun Suggestion(
     wide: Boolean,
     onClick: () -> Unit,
     missing: String? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
-        onClick = onClick,
         shape = MaterialTheme.shapes.large,
         color = if (selected) colors.primaryContainer else colors.surfaceContainerHigh,
         border = if (selected) BorderStroke(2.dp, colors.primary) else null,
-        modifier = Modifier.width(if (wide) 280.dp else 208.dp).height(if (wide) 156.dp else 116.dp).semantics { this.selected = selected },
+        modifier = Modifier.width(if (wide) 280.dp else 208.dp).height(if (wide) 156.dp else 116.dp)
+            .clip(MaterialTheme.shapes.large).runnable(onClick, onLongClick, onLongClick?.let { stringResource(R.string.run_add) })
+            .semantics { this.selected = selected },
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1016,7 +1149,7 @@ private fun MediaSummary(question: Question, content: ContentBundle, subjectLang
 }
 
 @Composable
-private fun describe(p: Pending, content: ContentBundle, lang: String): String = when (p) {
+internal fun describe(p: Pending, content: ContentBundle, lang: String): String = when (p) {
     is Pending.Ask -> p.question.text.pick(lang) ?: p.question.id
     is Pending.FreeText -> if (p.cardIds.isEmpty()) p.text else "${p.text}  ·  ${pluralStringResource(R.plurals.officer_pictures, p.cardIds.size, p.cardIds.size)}"
     is Pending.Cards -> p.cardIds.joinToString { content.cards[it]?.label?.pick(lang) ?: it }
@@ -1024,9 +1157,16 @@ private fun describe(p: Pending, content: ContentBundle, lang: String): String =
     is Pending.PhraseAsk -> p.slot.text.pick(lang) ?: p.slot.card
     Pending.LanguageFinder -> stringResource(R.string.officer_find_language)
     Pending.Drawing -> stringResource(R.string.officer_draw)
+    is Pending.GroundRules -> stringResource(R.string.officer_rules)
 }
 
 /** Profiles that sign get ISL signs and spelling; everyone else gets everyday gestures. Both get pictures. */
+/** A menu row that toggles: TalkBack hears its state, as a Checkbox or Switch with its own handler would give. */
+private fun Modifier.toggleState(on: Boolean, kind: Role) = semantics {
+    role = kind
+    toggleableState = ToggleableState(on)
+}
+
 private fun defaultModes(profile: Profile) =
     if (profile == Profile.ISL_USER) listOf(SignMode.SIGNS, SignMode.SPELL, SignMode.PICTURES) else listOf(SignMode.GESTURES, SignMode.PICTURES)
 
@@ -1048,14 +1188,18 @@ private fun reportText(res: Resources, ui: SessionUi, content: ContentBundle): R
     val language = content.language(ui.session.subjectLang)
     return ReportText(
         title = res.getString(R.string.report_title),
-        disclaimer = res.getString(R.string.report_disclaimer),
-        header = listOf(
+        disclaimer = res.getString(R.string.report_disclaimer) + "\n" + res.getString(R.string.report_grade_legend),
+        header = listOfNotNull(
             res.getString(R.string.report_started) to time.format(Date(ui.session.startedAt)),
             res.getString(R.string.report_exported) to time.format(Date()),
-            res.getString(R.string.report_role) to res.getString(roleTitle(ui.session.role)),
+            // A role the officer never set is left out rather than guessed.
+            (res.getString(R.string.report_role) to res.getString(roleTitle(ui.session.role))).takeIf { ui.session.role != SessionRole.NOT_KNOWN },
             res.getString(R.string.report_profile) to res.getString(profileTitle(ui.session.profile)),
             res.getString(R.string.report_language) to (language?.let { "${it.english} (${it.name})" } ?: ui.session.subjectLang),
-        ),
+        ) + ui.events.filter { it.via != null }.let { remote ->
+            val clock = DateFormat.getTimeInstance(DateFormat.SHORT)
+            if (remote.isEmpty()) emptyList() else listOf(res.getString(R.string.report_second_screen) to res.getString(R.string.report_via_header, clock.format(Date(remote.first().ts)), clock.format(Date(remote.last().ts))))
+        } + autoHeader(res, ui.events),
         time = res.getString(R.string.report_time),
         event = res.getString(R.string.report_event),
         detail = res.getString(R.string.report_detail),
@@ -1063,17 +1207,17 @@ private fun reportText(res: Resources, ui: SessionUi, content: ContentBundle): R
         page = { n, total -> res.getString(R.string.report_page, n, total) },
         eventLabel = { res.getString(it.label()) },
         formatTime = { DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it)) },
+        notStatement = res.getString(R.string.report_not_statement),
+        readings = res.getString(R.string.report_readings),
     )
 }
 
-private fun eventDetail(res: Resources, e: SessionEvent): String = when {
-    e.text == SYSTEM_LANGUAGE_FINDER -> res.getString(R.string.officer_find_language)
-    e.text == SYSTEM_DRAWING -> res.getString(R.string.officer_draw)
-    e.text == SYSTEM_READ_SIGNS -> res.getString(R.string.officer_read_signs)
+private fun eventDetail(res: Resources, e: SessionEvent, by: Map<Long, ShownBy> = emptyMap(), idle: Set<Long> = emptySet()): String = when {
+    e.type == EventType.SYSTEM -> systemText(res, e.text)
     e.type == EventType.ANSWER_SIGNED -> "${e.text.orEmpty()} (${res.getString(signedMark(e))})"
     e.drawingId != null -> res.getString(R.string.report_drawing)
-    else -> e.text.orEmpty()
-}
+    else -> (linkText(res, e) ?: e.text.orEmpty()) + autoSuffix(res, e, by, idle)
+}.let { if (e.via != null) "$it (${res.getString(R.string.report_via_stage)})" else it }
 
 @Composable
 private fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () -> Unit, onDismiss: () -> Unit) {

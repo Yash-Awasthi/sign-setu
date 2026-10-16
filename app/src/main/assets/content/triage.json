@@ -43,6 +43,25 @@
       }
     },
     {
+      "id": "recall",
+      "label": {
+        "en": "Their account",
+        "hi": "उनकी बात"
+      },
+      "roles": [
+        "NOT_KNOWN",
+        "VICTIM"
+      ],
+      "note": "Free recall about how the person came to be here; never offered to an accused (Art. 20(3), BSA s.23)."
+    },
+    {
+      "id": "talk",
+      "label": {
+        "en": "Talking",
+        "hi": "बातचीत"
+      }
+    },
+    {
       "id": "sensitive",
       "label": {
         "en": "Sensitive",
@@ -62,7 +81,46 @@
       "roles": [
         "ACCUSED"
       ],
-      "note": "Draft wording; needs legal review before field use."
+      "note": "Draft wording from BNSS and the Constitution; needs legal review before field use.",
+      "rights": true
+    },
+    {
+      "id": "rights_adult",
+      "label": {
+        "en": "Arrest rights (adult)",
+        "hi": "गिरफ़्तारी के अधिकार (वयस्क)"
+      },
+      "roles": [
+        "ACCUSED"
+      ],
+      "child": false,
+      "rights": true,
+      "note": "Bail, place of custody and the Magistrate apply to adults; a child goes before the Juvenile Justice Board instead. Draft; needs legal review."
+    },
+    {
+      "id": "rights_child",
+      "label": {
+        "en": "Child's rights",
+        "hi": "बच्चे के अधिकार"
+      },
+      "roles": [
+        "ACCUSED"
+      ],
+      "child": true,
+      "rights": true,
+      "note": "Juvenile Justice (Care and Protection of Children) Act 2015 s.10 and the JJ Model Rules. Draft wording; needs legal review."
+    },
+    {
+      "id": "pwd_rights",
+      "label": {
+        "en": "Disability rights",
+        "hi": "दिव्यांगजन अधिकार"
+      },
+      "roles": [
+        "VICTIM"
+      ],
+      "rights": true,
+      "note": "RPwD Act 2016 s.7(4): what the police must tell a person with disability facing abuse, violence or exploitation. Draft; needs legal review."
     }
   ],
   "questions": [
@@ -76,7 +134,9 @@
       "text": {
         "en": "I am a police officer. I am here to help you.",
         "hi": "मैं पुलिस अधिकारी हूँ। मैं आपकी मदद के लिए यहाँ हूँ।"
-      }
+      },
+      "phase": "RAPPORT",
+      "kind": "STATEMENT"
     },
     {
       "id": "s2",
@@ -88,7 +148,8 @@
         "en": "Are you hurt?",
         "hi": "क्या आपको चोट लगी है?"
       },
-      "gesture": "pain.point"
+      "gesture": "pain.point",
+      "phase": "WELFARE"
     },
     {
       "id": "s3",
@@ -104,7 +165,8 @@
         "en": "Is someone with you?",
         "hi": "क्या आपके साथ कोई है?"
       },
-      "gesture": "ask"
+      "gesture": "ask",
+      "phase": "WELFARE"
     },
     {
       "id": "s4",
@@ -117,7 +179,9 @@
         "en": "Do you feel safe here?",
         "hi": "क्या आप यहाँ सुरक्षित महसूस करते हैं?"
       },
-      "gesture": "ask"
+      "gesture": "ask",
+      "phase": "WELFARE",
+      "kind": "OPTION"
     },
     {
       "id": "h1",
@@ -134,7 +198,9 @@
         "en": "Does it hurt anywhere? Show me where.",
         "hi": "क्या कहीं दर्द है? मुझे दिखाइए कहाँ।"
       },
-      "gesture": "show_me"
+      "gesture": "show_me",
+      "phase": "WELFARE",
+      "after": "s2:yes"
     },
     {
       "id": "h2",
@@ -146,7 +212,8 @@
         "en": "Do you need a doctor?",
         "hi": "क्या आपको डॉक्टर चाहिए?"
       },
-      "gesture": "doctor.listen"
+      "gesture": "doctor.listen",
+      "phase": "WELFARE"
     },
     {
       "id": "h3",
@@ -159,7 +226,8 @@
         "en": "Do you feel unwell?",
         "hi": "क्या आपकी तबीयत ठीक नहीं है?"
       },
-      "gesture": "sick.forehead"
+      "gesture": "sick.forehead",
+      "phase": "WELFARE"
     },
     {
       "id": "h4",
@@ -171,7 +239,8 @@
         "en": "Do you take any medicine?",
         "hi": "क्या आप कोई दवा लेते हैं?"
       },
-      "gesture": "medicine.pill"
+      "gesture": "medicine.pill",
+      "phase": "WELFARE"
     },
     {
       "id": "n1",
@@ -183,7 +252,8 @@
       "text": {
         "en": "Do you want water?",
         "hi": "क्या आपको पानी चाहिए?"
-      }
+      },
+      "phase": "WELFARE"
     },
     {
       "id": "n2",
@@ -195,7 +265,8 @@
       "text": {
         "en": "Are you hungry?",
         "hi": "क्या आपको भूख लगी है?"
-      }
+      },
+      "phase": "WELFARE"
     },
     {
       "id": "n3",
@@ -207,7 +278,8 @@
       "text": {
         "en": "Do you need the toilet?",
         "hi": "क्या आपको शौचालय जाना है?"
-      }
+      },
+      "phase": "WELFARE"
     },
     {
       "id": "n4",
@@ -221,7 +293,8 @@
         "en": "Are you cold?",
         "hi": "क्या आपको ठंड लग रही है?"
       },
-      "gesture": "cold.hug"
+      "gesture": "cold.hug",
+      "phase": "WELFARE"
     },
     {
       "id": "n5",
@@ -233,7 +306,8 @@
       "text": {
         "en": "Do you want to rest?",
         "hi": "क्या आप आराम करना चाहते हैं?"
-      }
+      },
+      "phase": "WELFARE"
     },
     {
       "id": "i1",
@@ -245,7 +319,9 @@
         "en": "Can you show me your name? You can write or draw it.",
         "hi": "क्या आप अपना नाम दिखा सकते हैं? आप उसे लिख या बना सकते हैं।"
       },
-      "gesture": "school.write"
+      "gesture": "school.write",
+      "phase": "PRACTICAL",
+      "kind": "INVITATION"
     },
     {
       "id": "i2",
@@ -266,7 +342,8 @@
         "en": "How old are you? Show me with your fingers.",
         "hi": "आपकी उम्र कितनी है? उँगलियों से दिखाइए।"
       },
-      "gesture": "count"
+      "gesture": "count",
+      "phase": "PRACTICAL"
     },
     {
       "id": "i3",
@@ -278,7 +355,8 @@
       "text": {
         "en": "Do you go to school?",
         "hi": "क्या आप स्कूल जाते हैं?"
-      }
+      },
+      "phase": "PRACTICAL"
     },
     {
       "id": "f1",
@@ -295,7 +373,9 @@
         "en": "Who do you live with?",
         "hi": "आप किसके साथ रहते हैं?"
       },
-      "gesture": "home.roof"
+      "gesture": "home.roof",
+      "phase": "PRACTICAL",
+      "kind": "OPTION"
     },
     {
       "id": "f2",
@@ -307,7 +387,8 @@
       "text": {
         "en": "Is your mother nearby?",
         "hi": "क्या आपकी माँ आस-पास हैं?"
-      }
+      },
+      "phase": "PRACTICAL"
     },
     {
       "id": "f3",
@@ -319,7 +400,8 @@
       "text": {
         "en": "Is your father nearby?",
         "hi": "क्या आपके पिता आस-पास हैं?"
-      }
+      },
+      "phase": "PRACTICAL"
     },
     {
       "id": "f4",
@@ -332,7 +414,8 @@
         "en": "Do you know a phone number? You can write it.",
         "hi": "क्या आपको कोई फ़ोन नंबर याद है? आप उसे लिख सकते हैं।"
       },
-      "gesture": "phone.ear"
+      "gesture": "phone.ear",
+      "phase": "PRACTICAL"
     },
     {
       "id": "l1",
@@ -349,11 +432,13 @@
         "en": "Can you show me where you live?",
         "hi": "क्या आप मुझे दिखा सकते हैं कि आप कहाँ रहते हैं?"
       },
-      "gesture": "home.roof"
+      "gesture": "home.roof",
+      "phase": "PRACTICAL",
+      "kind": "INVITATION"
     },
     {
       "id": "l2",
-      "group": "location",
+      "group": "recall",
       "cards": [
         "walk",
         "bus",
@@ -365,7 +450,9 @@
         "en": "How did you come here?",
         "hi": "आप यहाँ कैसे आए?"
       },
-      "gesture": "walk.fingers"
+      "gesture": "walk.fingers",
+      "phase": "FREE_RECALL",
+      "kind": "INVITATION"
     },
     {
       "id": "l3",
@@ -377,7 +464,8 @@
       "text": {
         "en": "Is your home far from here?",
         "hi": "क्या आपका घर यहाँ से दूर है?"
-      }
+      },
+      "phase": "PRACTICAL"
     },
     {
       "id": "x1",
@@ -389,29 +477,157 @@
         "en": "Can you show me what happened? You can draw it.",
         "hi": "क्या आप मुझे दिखा सकते हैं कि क्या हुआ? आप उसे बना सकते हैं।"
       },
-      "gesture": "show_me"
+      "gesture": "show_me",
+      "phase": "FREE_RECALL",
+      "kind": "INVITATION"
     },
     {
       "id": "x2",
       "group": "sensitive",
-      "cards": [],
+      "cards": [
+        "draw"
+      ],
       "text": {
-        "en": "Has someone hurt you?",
-        "hi": "क्या किसी ने आपको चोट पहुँचाई है?"
+        "en": "Is there anything that has happened that you want to tell me about?",
+        "hi": "क्या कुछ हुआ है जिसके बारे में आप मुझे बताना चाहते हैं?"
       },
-      "gesture": "ask"
+      "gesture": "ask",
+      "phase": "FOLLOW_UP",
+      "kind": "OPTION",
+      "note": "Reworded so it does not presuppose harm or a person (ABE 3.71); needs reviewer sign-off."
     },
     {
       "id": "x3",
       "group": "sensitive",
       "cards": [
-        "scared"
+        "okay",
+        "scared",
+        "sad"
       ],
       "text": {
-        "en": "Are you afraid of someone?",
-        "hi": "क्या आप किसी से डरते हैं?"
+        "en": "Is anything worrying you?",
+        "hi": "क्या कोई बात आपको परेशान कर रही है?"
       },
-      "gesture": "ask"
+      "gesture": "ask",
+      "phase": "FOLLOW_UP",
+      "kind": "OPTION",
+      "note": "Reworded so it does not presuppose harm or a person (ABE 3.71); needs reviewer sign-off."
+    },
+    {
+      "id": "g1",
+      "group": "talk",
+      "cards": [
+        "dont_know"
+      ],
+      "text": {
+        "en": "If you do not know, that is OK. Tap I don't know.",
+        "hi": "अगर आपको नहीं पता, तो कोई बात नहीं। 'पता नहीं' दबाएँ।"
+      },
+      "gesture": "okay",
+      "phase": "GROUND_RULES",
+      "kind": "STATEMENT"
+    },
+    {
+      "id": "g2",
+      "group": "talk",
+      "cards": [
+        "dont_understand"
+      ],
+      "text": {
+        "en": "If you do not understand me, tap I don't understand.",
+        "hi": "अगर आपको मेरी बात समझ न आए, तो 'मुझे समझ नहीं आया' दबाएँ।"
+      },
+      "gesture": "ask",
+      "phase": "GROUND_RULES",
+      "kind": "STATEMENT"
+    },
+    {
+      "id": "g3",
+      "group": "talk",
+      "cards": [],
+      "text": {
+        "en": "If I get something wrong, tell me.",
+        "hi": "अगर मुझसे कुछ ग़लत हो जाए, तो मुझे बताएँ।"
+      },
+      "gesture": "okay",
+      "phase": "GROUND_RULES",
+      "kind": "STATEMENT"
+    },
+    {
+      "id": "g4",
+      "group": "talk",
+      "cards": [
+        "stop"
+      ],
+      "text": {
+        "en": "You can tap Stop any time.",
+        "hi": "आप कभी भी 'रुको' दबा सकते हैं।"
+      },
+      "gesture": "okay",
+      "phase": "GROUND_RULES",
+      "kind": "STATEMENT"
+    },
+    {
+      "id": "k1",
+      "group": "talk",
+      "cards": [
+        "rest"
+      ],
+      "text": {
+        "en": "Do you want a break?",
+        "hi": "क्या आप थोड़ा आराम करना चाहते हैं?"
+      },
+      "gesture": "sign.wait",
+      "phase": "BREAK",
+      "kind": "DIRECTIVE"
+    },
+    {
+      "id": "k2",
+      "group": "talk",
+      "cards": [],
+      "text": {
+        "en": "You are doing well. We can go slowly.",
+        "hi": "आप अच्छा कर रहे हैं। हम धीरे-धीरे चल सकते हैं।"
+      },
+      "gesture": "okay",
+      "phase": "BREAK",
+      "kind": "STATEMENT"
+    },
+    {
+      "id": "k3",
+      "group": "talk",
+      "cards": [],
+      "text": {
+        "en": "Can we carry on?",
+        "hi": "क्या हम आगे बढ़ें?"
+      },
+      "gesture": "ask",
+      "phase": "BREAK",
+      "kind": "DIRECTIVE"
+    },
+    {
+      "id": "c1",
+      "group": "talk",
+      "cards": [],
+      "text": {
+        "en": "Thank you for helping me.",
+        "hi": "मेरी मदद करने के लिए धन्यवाद।"
+      },
+      "gesture": "sign.thanks",
+      "phase": "CLOSING",
+      "kind": "STATEMENT"
+    },
+    {
+      "id": "c2",
+      "group": "talk",
+      "cards": [],
+      "text": {
+        "en": "Is there anything you want to tell me or ask me?",
+        "hi": "क्या आप मुझे कुछ बताना या पूछना चाहते हैं?"
+      },
+      "gesture": "ask",
+      "phase": "CLOSING",
+      "kind": "INVITATION"
     },
     {
       "id": "r1",
@@ -420,90 +636,222 @@
         "police"
       ],
       "text": {
-        "en": "You are under arrest. The officer will tell you why.",
-        "hi": "आपको गिरफ़्तार किया गया है। अधिकारी आपको इसका कारण बताएँगे।"
+        "en": "You must be told at once why you are arrested.",
+        "hi": "आपको तुरंत बताया जाना चाहिए कि आपको क्यों गिरफ़्तार किया गया है।"
       },
       "gesture": "police.salute",
-      "note": "BNSS s.47; needs legal review."
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "BNSS s.47(1); needs legal review."
     },
     {
       "id": "r2",
-      "group": "rights",
+      "group": "rights_adult",
       "cards": [
-        "person"
+        "home"
       ],
       "text": {
-        "en": "You can meet a lawyer.",
-        "hi": "आप वकील से मिल सकते हैं।"
+        "en": "If the offence is bailable, you can get bail. Someone can stand surety for you.",
+        "hi": "अगर अपराध ज़मानती है, तो आपको ज़मानत मिल सकती है। कोई आपकी ज़मानत ले सकता है।"
       },
-      "gesture": "you.palm",
-      "note": "BNSS s.38; needs legal review."
+      "gesture": "sign.go",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "BNSS s.47(2); needs legal review."
     },
     {
       "id": "r3",
-      "group": "rights",
+      "group": "rights_adult",
       "cards": [
         "mother",
         "father",
         "phone"
       ],
       "text": {
-        "en": "A relative or friend will be told where you are.",
-        "hi": "आपके किसी रिश्तेदार या दोस्त को बताया जाएगा कि आप कहाँ हैं।"
+        "en": "The police must tell a relative or friend you name where you are held.",
+        "hi": "पुलिस को आपके बताए किसी रिश्तेदार या दोस्त को बताना होगा कि आपको कहाँ रखा गया है।"
       },
       "gesture": "phone.ear",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
       "note": "BNSS s.48; needs legal review."
     },
     {
       "id": "r4",
       "group": "rights",
       "cards": [
-        "doctor"
+        "person"
       ],
       "text": {
-        "en": "A doctor will examine you.",
-        "hi": "एक डॉक्टर आपकी जाँच करेंगे।"
+        "en": "You can meet a lawyer of your choice during questioning.",
+        "hi": "पूछताछ के दौरान आप अपनी पसंद के वकील से मिल सकते हैं।"
       },
-      "gesture": "doctor.listen",
-      "note": "BNSS s.53; needs legal review."
+      "gesture": "you.palm",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "BNSS s.38; needs legal review."
     },
     {
       "id": "r5",
       "group": "rights",
       "cards": [
-        "stop"
+        "doctor"
       ],
       "text": {
-        "en": "You do not have to say anything against yourself.",
-        "hi": "आपको अपने ख़िलाफ़ कुछ भी कहना ज़रूरी नहीं है।"
+        "en": "A government doctor must examine you soon. A woman is examined by a woman doctor.",
+        "hi": "एक सरकारी डॉक्टर जल्द आपकी जाँच करेगा। महिला की जाँच महिला डॉक्टर करेगी।"
       },
-      "gesture": "no.shake",
-      "note": "Constitution Art. 20(3); needs legal review."
+      "gesture": "doctor.listen",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "BNSS s.53; needs legal review."
     },
     {
       "id": "r6",
-      "group": "rights",
+      "group": "rights_adult",
       "cards": [],
       "text": {
-        "en": "An interpreter will be with you for any statement.",
-        "hi": "आपके किसी भी बयान के समय एक दुभाषिया आपके साथ रहेगा।"
+        "en": "You must be taken before a Magistrate within 24 hours, not counting travel time.",
+        "hi": "आपको 24 घंटे के अंदर मजिस्ट्रेट के सामने ले जाना होगा। यात्रा का समय इसमें नहीं गिना जाता।"
       },
-      "gesture": "okay",
-      "note": "Interpreter for any statement; needs legal review."
+      "gesture": "sign.time",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "BNSS s.58 (s.187 for longer custody); needs legal review."
     },
     {
       "id": "r7",
       "group": "rights",
       "cards": [
-        "yes",
-        "no",
-        "dont_know"
+        "stop"
       ],
       "text": {
-        "en": "Do you understand?",
-        "hi": "क्या आपको समझ आया?"
+        "en": "No one can force you to give evidence against yourself.",
+        "hi": "कोई भी आपको अपने ही ख़िलाफ़ गवाही देने के लिए मजबूर नहीं कर सकता।"
       },
-      "gesture": "ask"
+      "gesture": "no.shake",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "Constitution Art. 20(3); needs legal review."
+    },
+    {
+      "id": "j1",
+      "group": "rights_child",
+      "cards": [
+        "stop"
+      ],
+      "text": {
+        "en": "You will not be put in a lock-up or in handcuffs.",
+        "hi": "आपको हवालात में नहीं रखा जाएगा और हथकड़ी नहीं लगाई जाएगी।"
+      },
+      "gesture": "no.shake",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "JJ Act 2015 s.10; draft, needs legal review."
+    },
+    {
+      "id": "j2",
+      "group": "rights_child",
+      "cards": [
+        "mother",
+        "father"
+      ],
+      "text": {
+        "en": "Your parent or guardian will be told where you are.",
+        "hi": "आपके माता-पिता या अभिभावक को बताया जाएगा कि आप कहाँ हैं।"
+      },
+      "gesture": "phone.ear",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "JJ Act 2015 s.10; draft, needs legal review."
+    },
+    {
+      "id": "j3",
+      "group": "rights_child",
+      "cards": [
+        "police"
+      ],
+      "text": {
+        "en": "A child welfare police officer will look after you.",
+        "hi": "बाल कल्याण पुलिस अधिकारी आपकी देखभाल करेंगे।"
+      },
+      "gesture": "police.salute",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "JJ Act 2015 s.10; draft, needs legal review."
+    },
+    {
+      "id": "j4",
+      "group": "rights_child",
+      "cards": [],
+      "text": {
+        "en": "You will be taken before the Juvenile Justice Board within 24 hours, not counting travel time.",
+        "hi": "आपको 24 घंटे के अंदर किशोर न्याय बोर्ड के सामने ले जाया जाएगा। यात्रा का समय इसमें नहीं गिना जाता।"
+      },
+      "gesture": "sign.time",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "JJ Act 2015 s.10; draft, needs legal review."
+    },
+    {
+      "id": "pw1",
+      "group": "pwd_rights",
+      "cards": [
+        "police"
+      ],
+      "text": {
+        "en": "You can ask the Executive Magistrate for protection. The officer will give you their details.",
+        "hi": "आप कार्यकारी मजिस्ट्रेट से सुरक्षा माँग सकते हैं। अधिकारी आपको उनकी जानकारी देंगे।"
+      },
+      "gesture": "police.salute",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "RPwD Act 2016 s.7(4)(a); draft, needs legal review."
+    },
+    {
+      "id": "pw2",
+      "group": "pwd_rights",
+      "cards": [
+        "person"
+      ],
+      "text": {
+        "en": "The officer will tell you about the nearest group that helps people with disabilities.",
+        "hi": "अधिकारी आपको दिव्यांगजनों की मदद करने वाली सबसे नज़दीकी संस्था के बारे में बताएँगे।"
+      },
+      "gesture": "sign.help",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "RPwD Act 2016 s.7(4)(b); draft, needs legal review."
+    },
+    {
+      "id": "pw3",
+      "group": "pwd_rights",
+      "cards": [
+        "phone"
+      ],
+      "text": {
+        "en": "You can get a lawyer for free. Call 15100 or the District Legal Services Authority.",
+        "hi": "आपको मुफ़्त वकील मिल सकता है। 15100 पर फ़ोन करें या ज़िला विधिक सेवा प्राधिकरण से संपर्क करें।"
+      },
+      "gesture": "phone.ear",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "RPwD Act 2016 s.7(4)(c); NALSA helpline 15100; draft, needs legal review."
+    },
+    {
+      "id": "pw4",
+      "group": "pwd_rights",
+      "cards": [
+        "draw"
+      ],
+      "text": {
+        "en": "You have the right to make a complaint.",
+        "hi": "आपको शिकायत दर्ज करने का अधिकार है।"
+      },
+      "gesture": "school.write",
+      "phase": "RIGHTS",
+      "kind": "STATEMENT",
+      "note": "RPwD Act 2016 s.7(4)(d); draft, needs legal review."
     }
   ]
 }

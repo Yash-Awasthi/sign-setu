@@ -44,6 +44,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -51,6 +53,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
@@ -134,15 +139,24 @@ import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.delay
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import app.signsetu.camera.CAMERA_ASPECT
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.sign.SIGN_LIMIT_MS
+import app.signsetu.sign.SignChoice
 import app.signsetu.sign.SignSegment
+import app.signsetu.sign.SignWindow
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.runtime.movableContentOf
+import app.signsetu.data.content.WordBeat
 
 /** Profiles whose subjects hear the questions without the officer pressing play (03-ux §3). */
 private val AutoSpeech = setOf(Profile.YOUNG_CHILD, Profile.OTHER_LANGUAGE)
@@ -169,22 +183,42 @@ fun Stage(
     onSignFrame: (LandmarkFrame) -> Unit,
     onStartSigning: () -> Unit,
     onDoneSigning: () -> Unit,
-    onOfficer: () -> Unit,
+    /** Null on a second screen, whose only exit is its own cover and end screens. */
+    onOfficer: (() -> Unit)?,
+    /** Auto mode's next statement, offered only on the subject's own tap. */
+    onNext: (() -> Unit)? = null,
+    onSignChoice: (SignChoice?) -> Unit = {},
+    onNextRule: () -> Unit = {},
+    onPauseEnd: () -> Unit = {},
 ) {
     val stage = LocalStageColors.current
     val lang = ui.session.subjectLang
     val profile = ui.session.profile
     val pending = ui.pending
+    val rule = ruleStep(pending)
     var drawing by remember(pending) { mutableStateOf(pending == Pending.Drawing) }
     var writing by remember(pending) { mutableStateOf(false) }
     // A young child is not asked to write; anyone else, signers above all, can answer in their own words.
-    val canWrite = pending != null && profile != Profile.YOUNG_CHILD
+    // A ground rule asks for no answer, so only the practice round opens the other ways to answer.
+    val canWrite = pending != null && profile != Profile.YOUNG_CHILD && (rule == null || isPractice(pending))
     val signing = ui.reading != null
+    val narrative = ui.signWindow == SignWindow.NARRATIVE
+    val choices = ui.confirm?.queue?.firstOrNull()
     var replays by remember(pending) { mutableIntStateOf(0) }
-    var slow by remember(pending) { mutableStateOf(false) }
+    StagePace.forSession(ui.session.id, initialPace(profile, gestureSpeed))
+    val pace = StagePace.speed.floatValue
+    // A tapped word plays alone at half speed; the sentence clock waits until it is done.
+    var focus by remember(pending) { mutableStateOf<WordBeat?>(null) }
+    var wordTaps by remember(pending) { mutableIntStateOf(0) }
     var reacting by remember { mutableStateOf(false) }
     val answered = ui.answeredCard != null || ui.answeredYes != null
     LaunchedEffect(ui.answeredCard, ui.answeredYes) { reacting = answered }
+    val paused = ui.answeredCard in PauseCards
+    val context = LocalContext.current
+    // A young child is not startled by a buzz in the hand.
+    LaunchedEffect(ui.answeredYes, ui.answeredCard) {
+        if (profile != Profile.YOUNG_CHILD) buzzPattern(ui.answeredYes, ui.answeredCard)?.let { buzz(context, it) }
+    }
 
     val speech = rememberSpeechPlayer()
     val audio = speechFor(pending, content, lang)
@@ -193,22 +227,35 @@ fun Stage(
     LaunchedEffect(pending) { withFrameNanos { }; ShowTiming.firstFrame() }
 
     val item = describeItem(pending, content, lang)
+    // A show-back or say-back with pictures asks which one; the character must not act out the officer's reading.
+    val checking = pending.asksChoice
+    // One camera for the stage: a sign window adds analysis to it instead of restarting the preview.
+    val camera = remember(tracker) {
+        movableContentOf { frames: ((LandmarkFrame) -> Unit)? -> CameraMirror(tracker, Modifier.fillMaxSize(), onFrame = frames) { MirrorPlaceholder() } }
+    }
     val gestureId = when {
         reacting -> "okay"
         drawing || writing -> "school.write"
+        choices != null -> "ask"
         // A question or typed text is still shown while they sign; otherwise the character invites them to.
         signing && pending !is Pending.Ask && pending !is Pending.FreeText && pending !is Pending.PhraseAsk -> "show_me"
+        rule != null -> rule.gesture
         pending is Pending.Ask -> pending.question.gesture ?: pending.question.lexicon
+        checking -> "ask"
         pending is Pending.ShowBack -> pending.entry.id
         pending is Pending.Cards -> "ask"
         pending is Pending.PhraseAsk || pending is Pending.FreeText -> null
         pending == Pending.LanguageFinder -> "wave"
         else -> "namaste"
     }
-    val plan = remember(pending, content) { (pending as? Pending.FreeText)?.let { content.planText(it.text, it.modes) } }
+    val plan = remember(pending, content) { (pending as? Pending.FreeText)?.takeIf { !it.asksChoice }?.let { content.planText(it.text, it.modes) } }
     // Word highlighting follows the planned words, so it shows only when the caption is those same words.
     val highlightable = (pending as? Pending.FreeText)?.caption == null
+    val focusGesture = remember(focus) {
+        focus?.let { f -> (pending as? Pending.FreeText)?.let { content.planText(it.text.substring(f.range), it.modes).gesture } }
+    }
     val gesture = when {
+        focusGesture != null -> focusGesture
         gestureId != null -> content.gestures[gestureId]
         pending is Pending.PhraseAsk -> content.gestureFor(pending.phrase, pending.slot)
         pending is Pending.FreeText -> plan?.gesture ?: content.gestures["ask"]
@@ -216,14 +263,13 @@ fun Stage(
     }
     // Follows the character through typed text, so the word being signed is lit and its picture or letters shown.
     val playClock = remember(pending) { mutableFloatStateOf(-1f) }
-    val beatSpeed = if (slow) 0.5f else gestureSpeed
-    LaunchedEffect(plan, replays, slow, reacting) {
+    LaunchedEffect(plan, replays, pace, reacting, focus) {
         playClock.floatValue = -1f
-        if (plan == null || reacting) return@LaunchedEffect
+        if (plan == null || reacting || focus != null) return@LaunchedEffect
         val start = withFrameNanos { it }
         val end = (plan.beats.lastOrNull()?.end ?: 0f) + Timeline.LEAD_IN
         while (playClock.floatValue < end) {
-            withFrameNanos { now -> playClock.floatValue = (now - start) / 1e9f * beatSpeed }
+            withFrameNanos { now -> playClock.floatValue = (now - start) / 1e9f * pace }
         }
         playClock.floatValue = -1f
     }
@@ -245,6 +291,8 @@ fun Stage(
         reacting -> content.subjectText("okay", lang)
         drawing -> content.subjectText("draw", lang)
         writing -> content.subjectText("write", lang)
+        choices != null -> content.subjectText("is_this_it", lang)
+        narrative -> content.subjectText("watching", lang)
         pending == null -> content.language(lang)?.hello
         // Greeting back in the language they picked tells them the tap was understood.
         pending == Pending.LanguageFinder -> ui.chosenLanguage?.let { content.language(it)?.hello }
@@ -252,22 +300,17 @@ fun Stage(
     }
 
     Surface(color = stage.skyBottom, modifier = Modifier.fillMaxSize()) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-        val stageHeight = maxHeight
+        Box(Modifier.fillMaxSize()) {
         Column(
             Modifier
                 .fillMaxSize()
-                .graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f },
+                .graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
+                // Covered by the pause layer: screen readers must not reach answers that cannot be tapped.
+                .then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),
         ) {
-            val preferred = when {
-                drawing || writing || signing -> 0.36f
-                pending == Pending.LanguageFinder -> 0.36f
-                item.choices.isNotEmpty() -> 0.44f
-                else -> 0.52f
-            }
-            // On a small phone the answer cards keep their full 96 dp size (NFR-20); the character gives up the room.
-            val topWeight = if (drawing || signing || pending == Pending.LanguageFinder) preferred
-            else minOf(preferred, 1f - answerAreaHeight(item) / stageHeight).coerceAtLeast(0.28f)
+            // A panel that needs width and height gets more room; otherwise the character and the camera split the screen.
+            val rightsNotice = (pending as? Pending.Ask)?.question?.takeIf(content::isRights)?.let { content.subjectText("rights_interpreter", lang) }
+            val topWeight = if (drawing || writing || choices != null || pending == Pending.LanguageFinder) 0.36f else 0.5f
             val topAnimated by animateFloatAsState(topWeight, spring(stiffness = 300f), label = "split")
             Box(
                 Modifier
@@ -280,24 +323,52 @@ fun Stage(
                     Avatar(
                         character = characterFor(profile),
                         gesture = gesture,
-                        playKey = if (reacting) "react:${ui.answeredCard}:${ui.answeredYes}" else Triple(pending, replays, ui.chosenLanguage),
-                        speed = if (slow) 0.5f else gestureSpeed,
+                        playKey = when {
+                            reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
+                            focus != null -> "word:$wordTaps"
+                            else -> Triple(pending, replays, ui.chosenLanguage)
+                        },
+                        speed = if (focus != null) 0.5f else pace,
+                        // Breathing redraws every frame; inside a sign window the landmark tracker needs that time.
+                        idle = !signing,
                         glance = pending != null && !drawing && !reacting,
-                        onFinished = { reacting = false },
+                        onFinished = { reacting = false; focus = null },
                         // Room is left above for a caption, so on short screens a long one covers the hair, never the face.
                         modifier = Modifier
                             .height(minOf(maxHeight * 0.76f, maxHeight - 72.dp))
                             .aspectRatio(1f)
                             .align(Alignment.BottomCenter),
                     )
+                    val sensitiveGroups = remember(content) { content.groups.filter { it.sensitive }.map { it.id } }
+                    val sensitive = (pending as? Pending.Ask)?.question?.group in sensitiveGroups
+                    val glance = remember(ui.events) { glanceText(ui.events) }
+                        ?.takeIf { !StagePace.glanceHidden.value && !sensitive && !drawing && !writing }
+                    val onWordTap: ((Int) -> Unit)? = when {
+                        pending is Pending.FreeText && highlightable && plan != null -> { offset ->
+                            beatAt(plan.beats, offset)?.let { b ->
+                                if (content.planText(pending.text.substring(b.range), pending.modes).gesture != null) { focus = b; wordTaps++ }
+                            }
+                        }
+                        pending is Pending.Ask || pending is Pending.PhraseAsk || rule != null -> { _ -> replays++; audio?.let { speech.play(it, audioRate(pace)) } }
+                        else -> null
+                    }
                     AnimatedContent(
                         targetState = caption,
                         transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.92f)) togetherWith fadeOut() },
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp, start = 52.dp, end = 52.dp),
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = if (glance != null) 44.dp else 12.dp, start = 52.dp, end = 52.dp),
                         label = "caption",
-                    ) { text -> if (text != null) Bubble(text, large = largeCaptions, compact = !roomy, highlight = beat?.range?.takeIf { highlightable && text == item.caption }) }
-                    val spelled = beat?.letters
-                    val shownCard = beat?.card
+                    ) { text ->
+                        if (text != null) {
+                            val own = text == item.caption
+                            Bubble(
+                                text, large = largeCaptions, compact = !roomy,
+                                highlight = (focus?.range ?: beat?.range)?.takeIf { highlightable && own },
+                                onWordTap = onWordTap?.takeIf { own },
+                            )
+                        }
+                    }
+                    val spelled = if (focus == null) beat?.letters else null
+                    val shownCard = focus?.card ?: beat?.card
                     if (spelled != null) {
                         LetterTile(
                             spelled,
@@ -321,15 +392,22 @@ fun Stage(
                             )
                         }
                     }
-                    OfficerHandle(onOfficer, Modifier.align(Alignment.TopEnd))
                     val replayable = gesture != null || (audio != null && profile != Profile.ISL_USER)
                     if (pending != null && !drawing && replayable) {
                         ReplayControls(
-                            onReplay = { slow = false; replays++; audio?.let { speech.play(it) } },
-                            onSlow = { slow = true; replays++; audio?.let { speech.play(it, 0.75f) } },
+                            pace = pace,
+                            onReplay = { focus = null; replays++; audio?.let { speech.play(it, audioRate(pace)) } },
+                            onPace = {
+                                val next = nextPace(pace)
+                                StagePace.speed.floatValue = next
+                                focus = null
+                                replays++
+                                audio?.let { speech.play(it, audioRate(next)) }
+                            },
                             modifier = Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 12.dp),
                         )
                     }
+                    glance?.let { GlanceStrip(it, onHide = { StagePace.glanceHidden.value = true }, Modifier.align(Alignment.TopCenter)) }
                 }
             }
             Column(
@@ -341,44 +419,79 @@ fun Stage(
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 when {
-                    signing -> SigningPanel(
-                        tracker, ui.reading.orEmpty(), content, lang,
-                        onFrame = onSignFrame,
-                        onStop = { onCard("stop"); onDoneSigning(); reacting = true },
-                        onDone = { onDoneSigning(); reacting = true },
+                    choices != null -> SignChoicePanel(choices, content, lang, { onSignChoice(it); reacting = true }, Modifier.weight(1f))
+                    drawing -> {
+                        // Only a picture that was asked for has nothing to go back to.
+                        DrawingPanel(content, lang, onDone = onDrawing, onBack = { drawing = false }.takeIf { pending != Pending.Drawing }, modifier = Modifier.weight(1f))
+                        PauseRow(content, lang, ui.answeredCard, onCard)
+                    }
+                    writing -> WritingPanel(
+                        content, lang,
+                        onDone = { onWritten(it); writing = false; reacting = true },
+                        onBack = { writing = false },
+                        pauseRow = { PauseRow(content, lang, ui.answeredCard, onCard, compact = true) },
                         modifier = Modifier.weight(1f),
                     )
-                    drawing -> DrawingPanel(content, lang, onDone = onDrawing, modifier = Modifier.weight(1f))
-                    writing -> WritingPanel(content, lang, onDone = { onWritten(it); writing = false; reacting = true }, modifier = Modifier.weight(1f))
-                    pending == Pending.LanguageFinder -> LanguageGrid(content, ui.chosenLanguage, Modifier.weight(1f)) { code ->
-                        onLanguage(code)
-                        content.greetingAudio(code)?.let { speech.play(it) }
+                    pending == Pending.LanguageFinder -> {
+                        LanguageGrid(content, ui.chosenLanguage, Modifier.weight(1f)) { code ->
+                            onLanguage(code)
+                            content.greetingAudio(code)?.let { speech.play(it) }
+                        }
+                        PauseRow(content, lang, ui.answeredCard, onCard)
                     }
                     else -> {
-                        MirrorWindow(
-                            tracker = tracker,
-                            cameraOn = cameraOn,
-                            choices = item.choices,
-                            numbers = item.numbers,
-                            canDraw = item.canDraw,
-                            canWrite = canWrite,
-                            canSign = pending != null && tracker != null && profile != Profile.YOUNG_CHILD,
-                            chosenCard = ui.answeredCard,
-                            content = content,
-                            lang = lang,
-                            onCard = onCard,
-                            onDraw = { drawing = true },
-                            onWrite = { writing = true },
-                            onSign = onStartSigning,
-                            modifier = Modifier.weight(1f),
-                        )
-                        if (pending != null) {
-                            AnswerBar(content, lang, ui.answeredYes, ui.answeredCard, onYesNo, onCard)
+                        val answer = LocalAnswerColors.current
+                        val chosen = ui.answeredCard
+                        val asks = pending != null && rightsNotice == null
+                        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            Rail {
+                                when {
+                                    signing -> RailCard("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, false) { onCard("stop"); onDoneSigning(); reacting = true }
+                                    // A Yes under a right would read as the person accepting or waiving it; it is only shown.
+                                    rightsNotice != null -> RailCard(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answer.unsure, answer.onUnsure, chosen == DONT_UNDERSTAND) { onCard(DONT_UNDERSTAND) }
+                                    asks -> {
+                                        RailIcon(Icons.Filled.Check, content.subjectText("yes", lang), stringResource(R.string.show_yes), answer.yes, answer.onYes, ui.answeredYes == true) { onYesNo(true) }
+                                        RailCard("dont_know", content.subjectText("dont_know", lang), stringResource(R.string.stage_dont_know), answer.unsure, answer.onUnsure, chosen == "dont_know") { onCard("dont_know") }
+                                        RailCard(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answer.unsure, answer.onUnsure, chosen == DONT_UNDERSTAND) { onCard(DONT_UNDERSTAND) }
+                                    }
+                                }
+                                if (!signing && item.canDraw) RailIcon(Icons.Filled.Create, content.subjectText("draw", lang), stringResource(R.string.stage_draw), Color(0xFFFFE7BF), Color(0xFF3D2700)) { drawing = true }
+                                if (!signing && canWrite) RailIcon(Icons.Filled.Edit, content.subjectText("write", lang), stringResource(R.string.stage_write), Color(0xFFFFE7BF), Color(0xFF3D2700)) { writing = true }
+                            }
+                            Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                val window = Modifier.aspectRatio(CAMERA_ASPECT)
+                                if (signing) SigningPanel(camera, ui.reading.orEmpty(), content, lang, narrative, onFrame = onSignFrame, modifier = window)
+                                else MirrorWindow(camera, cameraOn, item.choices, item.numbers, chosen, content, lang, onCard, window)
+                                rightsNotice?.let {
+                                    Text(
+                                        it, style = MaterialTheme.typography.labelLarge, color = Color.White, textAlign = TextAlign.Center, maxLines = 3,
+                                        modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(Spacing.sm)
+                                            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(14.dp)).padding(Spacing.sm),
+                                    )
+                                }
+                            }
+                            Rail {
+                                if (signing) {
+                                    RailIcon(Icons.Filled.Check, content.subjectText("done", lang), stringResource(R.string.stage_done), answer.yes, answer.onYes) { onDoneSigning(); reacting = true }
+                                } else {
+                                    val next = if (rule != null) onNextRule else onNext
+                                    next?.let { RailIcon(Icons.AutoMirrored.Filled.ArrowForward, content.subjectText("next", lang), stringResource(R.string.stage_next), answer.yes, answer.onYes, onClick = it) }
+                                    if (asks) {
+                                        RailIcon(Icons.Filled.Close, content.subjectText("no", lang), stringResource(R.string.show_no), answer.no, answer.onNo, ui.answeredYes == false) { onYesNo(false) }
+                                        RailCard("wrong", content.subjectText("wrong", lang), stringResource(R.string.stage_wrong), answer.unsure, answer.onUnsure, chosen == "wrong") { onCard("wrong") }
+                                    }
+                                    if (canWrite && tracker != null) RailIcon(painterResource(R.drawable.ic_hand), null, stringResource(R.string.officer_read_signs), Color(0xFFFFE7BF), Color(0xFF3D2700), onClick = onStartSigning)
+                                    RailCard("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosen == "stop") { onCard("stop") }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+        // Over the whole stage, so no answer can be tapped during a break; the officer's way out stays above it.
+        if (paused) PauseLayer(content.subjectText("ready", lang), onPauseEnd, Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f })
+        onOfficer?.let { OfficerHandle(it, Modifier.align(if (ui.rotated) Alignment.BottomStart else Alignment.TopEnd).safeDrawingPadding()) }
         }
     }
 }
@@ -392,29 +505,21 @@ private class StageItem(
     val canDraw: Boolean,
 )
 
-/** Height the stage's lower half needs: the mirror with its answer cards at full size, the answer bar and padding. */
-private fun answerAreaHeight(item: StageItem): Dp {
-    val rows = if (item.numbers) (item.choices.size + 4) / 5 else (item.choices.size + 2) / 3
-    val cards = if (item.numbers) rows * 64 else rows * 96
-    val tray = if (rows == 0) 0 else cards + (rows - 1) * 8 + 16
-    val draw = if (item.canDraw) 60 else 0
-    // Mirror frame and a strip of live camera, the Yes/No and Don't know/Stop rows, and the column's padding.
-    return (10 + 16 + tray + draw + 76 + 8 + 52 + 48).dp
-}
-
 private fun describeItem(pending: Pending?, content: ContentBundle, lang: String): StageItem {
     val (caption, cards) = when (pending) {
         is Pending.Ask -> pending.question.text.pick(lang) to pending.question.cards
         is Pending.FreeText -> (pending.caption ?: pending.text) to pending.cardIds
         is Pending.Cards -> null to pending.cardIds
-        is Pending.ShowBack -> content.subjectText("is_this_it", lang) to emptyList()
+        is Pending.ShowBack -> content.subjectText("is_this_it", lang) to pending.choices.takeIf { pending.asksChoice }.orEmpty()
         is Pending.PhraseAsk -> pending.slot.text.pick(lang) to listOf(pending.slot.card)
+        is Pending.GroundRules -> ruleStep(pending)?.let { ruleText(content, it.key, lang) } to
+            if (isPractice(pending)) listOf("draw") else listOfNotNull(ruleStep(pending)?.card)
         else -> null to emptyList()
     }
     val pictures = cards.filter { it != "draw" && it in content.cards }
     val numbers = pictures.isNotEmpty() && pictures.all { it.matches(Regex("n\\d+")) }
     val held = when {
-        pending is Pending.ShowBack -> pending.entry.card
+        pending is Pending.ShowBack && !pending.asksChoice -> pending.entry.card
         pending !is Pending.Cards && pictures.size == 1 -> pictures.first()
         else -> null
     }
@@ -426,8 +531,12 @@ private fun speechFor(pending: Pending?, content: ContentBundle, lang: String): 
     is Pending.Ask -> content.questionAudio(pending.question.id, lang)
     is Pending.ShowBack -> content.subjectAudio("is_this_it", lang)
     is Pending.PhraseAsk -> content.phraseAudio(pending.phrase, pending.slot, lang)
+    is Pending.GroundRules -> ruleStep(pending)?.let { ruleAudio(content, it.key, lang) }
     else -> null
 }
+
+/** Recorded speech below normal speed only goes to 0.75: slower than that, words smear. */
+private fun audioRate(pace: Float) = if (pace < 1f) 0.75f else 1f
 
 @Composable
 internal fun Backdrop(modifier: Modifier) {
@@ -460,13 +569,25 @@ private object BubbleShape : Shape {
 }
 
 @Composable
-internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = false, highlight: IntRange? = null) {
+internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = false, highlight: IntRange? = null, onWordTap: ((Int) -> Unit)? = null) {
     val stage = LocalStageColors.current
     val styled = buildAnnotatedString {
         append(text)
         highlight?.takeIf { it.last < text.length }?.let {
-            addStyle(SpanStyle(background = stage.highlight, fontWeight = FontWeight.Bold), it.first, it.last + 1)
+            addStyle(SpanStyle(color = stage.onHighlight, background = stage.highlight, fontWeight = FontWeight.Bold), it.first, it.last + 1)
         }
+    }
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val replayName = stringResource(R.string.word_replay)
+    // The caller's lambda changes every frame of typed-text playback; the tap detector must not restart with it.
+    val onTap by rememberUpdatedState(onWordTap)
+    val tap = if (onWordTap == null) Modifier else Modifier
+        .pointerInput(Unit) { detectTapGestures { p -> layout?.let { onTap?.invoke(it.getOffsetForPosition(p)) } } }
+        .semantics { onClick(replayName) { onTap?.invoke(0); true } }
+    val style = when {
+        large -> MaterialTheme.typography.headlineMedium
+        compact -> MaterialTheme.typography.titleMedium
+        else -> MaterialTheme.typography.titleLarge
     }
     Surface(
         shape = BubbleShape,
@@ -475,17 +596,16 @@ internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = fal
         shadowElevation = 6.dp,
         modifier = Modifier.widthIn(max = 340.dp),
     ) {
+        // A right or a question must be read to its end: the text shrinks to fit rather than being cut off.
         Text(
             styled,
-            style = when {
-                large -> MaterialTheme.typography.headlineMedium
-                compact -> MaterialTheme.typography.titleMedium
-                else -> MaterialTheme.typography.titleLarge
-            },
+            style = style,
             textAlign = TextAlign.Center,
-            maxLines = if (large) 4 else 3,
+            maxLines = if (large) 6 else 5,
+            autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = style.fontSize, stepSize = 1.sp),
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp + BubbleTail),
+            onTextLayout = { layout = it },
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp + BubbleTail).then(tap),
         )
     }
 }
@@ -555,16 +675,17 @@ private fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
 }
 
 @Composable
-private fun ReplayControls(onReplay: () -> Unit, onSlow: () -> Unit, modifier: Modifier) {
+private fun ReplayControls(pace: Float, onReplay: () -> Unit, onPace: () -> Unit, modifier: Modifier) {
     Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.85f), shadowElevation = 2.dp, modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onReplay), contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.show_replay), tint = Color(0xFF2B2118), modifier = Modifier.size(28.dp))
             }
-            val slowName = stringResource(R.string.show_slow)
-            Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onSlow).semantics { contentDescription = slowName }, contentAlignment = Alignment.Center) {
+            val shown = when { pace < 0.6f -> "½×"; pace < 0.9f -> "¾×"; else -> "1×" }
+            val paceName = stringResource(R.string.show_pace, shown)
+            Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onPace).semantics { contentDescription = paceName }, contentAlignment = Alignment.Center) {
                 Text(
-                    "½×",
+                    shown,
                     fontFamily = Baloo,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
@@ -579,29 +700,24 @@ private fun ReplayControls(onReplay: () -> Unit, onSlow: () -> Unit, modifier: M
 /** The mirror: the subject sees their own hands; choices sit at the bottom edge of it. */
 @Composable
 private fun MirrorWindow(
-    tracker: LandmarkTracker?,
+    camera: @Composable (((LandmarkFrame) -> Unit)?) -> Unit,
     cameraOn: Boolean,
     choices: List<String>,
     numbers: Boolean,
-    canDraw: Boolean,
-    canWrite: Boolean,
-    canSign: Boolean,
     chosenCard: String?,
     content: ContentBundle,
     lang: String,
     onCard: (String) -> Unit,
-    onDraw: () -> Unit,
-    onWrite: () -> Unit,
-    onSign: () -> Unit,
     modifier: Modifier,
 ) {
     Box(modifier.mirrorFrame()) {
         if (cameraOn) {
-            CameraMirror(tracker, Modifier.fillMaxSize()) { MirrorPlaceholder() }
+            // Outside a sign window the mirror is preview only: no frame is analysed (D-25).
+            camera(null)
         } else {
             MirrorPlaceholder()
         }
-        if (choices.isNotEmpty() || canDraw || canWrite || canSign) key(choices) {
+        if (choices.isNotEmpty()) key(choices) {
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -624,18 +740,10 @@ private fun MirrorWindow(
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
                             row.forEach { id ->
                                 val delay = 70 * choices.indexOf(id)
-                                ChoiceTile(id, content.cards[id]?.label?.pick(lang), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(delay)))
+                                ChoiceTile(id, content.cards[id]?.label?.pick(lang), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(delay)), name = content.cards[id]?.label?.pick("en"))
                             }
                             repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    if (canDraw) PillButton(Icons.Filled.Create, content.subjectText("draw", lang), onDraw, Modifier.weight(1f))
-                    if (canWrite) PillButton(Icons.Filled.Edit, content.subjectText("write", lang), onWrite, Modifier.weight(1f))
-                    if (canSign) {
-                        val name = stringResource(R.string.officer_read_signs)
-                        PillButton(painterResource(R.drawable.ic_hand), null, onSign, Modifier.weight(1f).semantics { contentDescription = name })
                     }
                 }
             }
@@ -656,57 +764,35 @@ private fun Modifier.mirrorFrame(): Modifier {
 }
 
 /**
- * Signing an answer: a large mirror, the words read so far in large type so the subject sees what was understood, and
- * Done. Only landmarks are kept, in memory, for this answer (D-25); the bar shows how much of the time limit is used.
+ * A sign window: a large mirror with the hand and arm skeleton, a dot per sign seen, and Done. Only landmarks are kept,
+ * in memory (D-25). A short answer shows its time bar and, after a failed read, the "sign slower" cue; a [narrative]
+ * shows neither, so nothing interrupts the person while they tell what happened.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SigningPanel(
-    tracker: LandmarkTracker?,
+    camera: @Composable (((LandmarkFrame) -> Unit)?) -> Unit,
     segments: List<SignSegment>,
     content: ContentBundle,
     lang: String,
+    narrative: Boolean,
     onFrame: (LandmarkFrame) -> Unit,
-    onStop: () -> Unit,
-    onDone: () -> Unit,
     modifier: Modifier,
 ) {
     val answer = LocalAnswerColors.current
     val used = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { used.animateTo(1f, tween(SIGN_LIMIT_MS.toInt(), easing = LinearEasing)) }
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        Box(Modifier.weight(1f).mirrorFrame()) {
-            CameraMirror(tracker, Modifier.fillMaxSize(), onFrame = onFrame) { MirrorPlaceholder() }
+    LaunchedEffect(Unit) { if (!narrative) used.animateTo(1f, tween(SIGN_LIMIT_MS.toInt(), easing = LinearEasing)) }
+    Box(modifier.mirrorFrame()) {
+        camera(onFrame)
+        if (!narrative) {
             LinearProgressIndicator(
                 progress = { used.value },
                 color = answer.yes,
                 trackColor = Color.White.copy(alpha = 0.3f),
                 modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(Spacing.md),
             )
-            if (segments.isNotEmpty()) {
-                FlowRow(
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f))))
-                        .padding(Spacing.md),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md, Alignment.CenterHorizontally),
-                ) {
-                    segments.takeLast(6).forEach { s ->
-                        Text(s.word ?: "…", fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 34.sp, color = Color.White, modifier = Modifier.popIn(rememberPopIn(0)))
-                    }
-                }
-            }
+            SignSlowerCue(segments.lastOrNull()?.slower == true, content, lang, Modifier.align(Alignment.TopCenter).padding(top = 36.dp))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            SmallAnswer("stop", content.subjectText("stop", lang), answer.pause, answer.onPause, false, onStop, Modifier.weight(1f))
-            PressableSurface(onClick = onDone, shape = RoundedCornerShape(50), color = answer.yes, modifier = Modifier.weight(2f).height(64.dp)) {
-                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYes)
-                    content.subjectText("done", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = answer.onYes, modifier = Modifier.padding(start = Spacing.sm)) }
-                }
-            }
-        }
+        SeenSigns(segments, Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(Spacing.md))
     }
 }
 
@@ -733,22 +819,23 @@ private fun Modifier.popIn(progress: Animatable<Float, AnimationVector1D>) = gra
 private fun MirrorPlaceholder() {
     val stage = LocalStageColors.current
     Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color(0xFF4A4352), stage.window))), contentAlignment = Alignment.Center) {
-        CardImage("stop", Modifier.size(96.dp).graphicsLayer { alpha = 0.55f })
+        Icon(painterResource(R.drawable.ic_hand), contentDescription = null, tint = Color.White.copy(alpha = 0.55f), modifier = Modifier.size(96.dp))
     }
 }
 
 @Composable
-private fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
+internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, name: String? = label) {
     val answer = LocalAnswerColors.current
     PressableSurface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
         border = if (chosen) BorderStroke(4.dp, answer.selection) else null,
-        modifier = modifier.heightIn(min = 96.dp).semantics { label?.let { contentDescription = it } },
+        modifier = modifier.heightIn(min = 96.dp).semantics { (label ?: name)?.let { contentDescription = it } },
     ) {
         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            CardImage(cardId, Modifier.size(58.dp))
+            // Without a word in their language the picture carries the meaning alone, so it gets the room.
+            CardImage(cardId, Modifier.size(if (label != null) 58.dp else 76.dp))
             label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Color(0xFF2B2118), maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
     }
@@ -769,87 +856,83 @@ private fun NumberButton(digit: String, chosen: Boolean, onClick: () -> Unit, mo
     }
 }
 
-@Composable
-private fun PillButton(icon: ImageVector, label: String?, onClick: () -> Unit, modifier: Modifier) =
-    PillButton(rememberVectorPainter(icon), label, onClick, modifier)
 
 @Composable
-private fun PillButton(icon: Painter, label: String?, onClick: () -> Unit, modifier: Modifier) {
-    PressableSurface(onClick = onClick, shape = RoundedCornerShape(50), color = Color(0xFFFFE7BF), modifier = modifier.height(52.dp)) {
-        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = Color(0xFF3D2700))
-            label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Color(0xFF3D2700), modifier = Modifier.padding(start = Spacing.sm)) }
-        }
-    }
+private fun PauseRow(content: ContentBundle, lang: String, chosenCard: String?, onCard: (String) -> Unit, compact: Boolean = false) {
+    val answer = LocalAnswerColors.current
+    SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosenCard == "stop", { onCard("stop") }, Modifier.fillMaxWidth(), height = if (compact) 48.dp else 52.dp)
 }
 
 /**
- * Yes and No always sit in the same place with icon, word and colour (FR-20, NFR-21). "I don't know" and "Stop" are
- * always offered too: a child must never feel pushed to guess, and may ask for a break at any time.
+ * Yes, No and the answers that keep a conversation honest sit in narrow rails either side of the camera, always in the
+ * same place with picture, word and colour (FR-20, NFR-21, ABE 2.104 to 2.108). Every tap is logged after the prompt shown.
  */
 @Composable
-private fun AnswerBar(
-    content: ContentBundle,
-    lang: String,
-    chosenYes: Boolean?,
-    chosenCard: String?,
-    onYesNo: (Boolean) -> Unit,
-    onCard: (String) -> Unit,
-) {
-    val answer = LocalAnswerColors.current
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            BigAnswer(
-                label = content.subjectText("yes", lang), name = stringResource(R.string.show_yes),
-                icon = Icons.Filled.Check, color = answer.yes, onColor = answer.onYes,
-                chosen = chosenYes == true, onClick = { onYesNo(true) }, modifier = Modifier.weight(1f),
-            )
-            BigAnswer(
-                label = content.subjectText("no", lang), name = stringResource(R.string.show_no),
-                icon = Icons.Filled.Close, color = answer.no, onColor = answer.onNo,
-                chosen = chosenYes == false, onClick = { onYesNo(false) }, modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            SmallAnswer("dont_know", content.subjectText("dont_know", lang), answer.unsure, answer.onUnsure, chosenCard == "dont_know", { onCard("dont_know") }, Modifier.weight(1f))
-            SmallAnswer("stop", content.subjectText("stop", lang), answer.pause, answer.onPause, chosenCard == "stop", { onCard("stop") }, Modifier.weight(1f))
-        }
-    }
-}
+private fun Rail(content: @Composable ColumnScope.() -> Unit) =
+    Column(Modifier.width(68.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically), content = content)
 
 @Composable
-private fun BigAnswer(
-    label: String?, name: String, icon: androidx.compose.ui.graphics.vector.ImageVector,
-    color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, modifier: Modifier,
-) {
+private fun ColumnScope.RailCard(cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit) =
+    RailButton(label, name, color, onColor, chosen, onClick) { CardImage(cardId, Modifier.size(if (label != null) 28.dp else 40.dp)) }
+
+@Composable
+private fun ColumnScope.RailIcon(icon: ImageVector, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, onClick: () -> Unit) =
+    RailIcon(rememberVectorPainter(icon), label, name, color, onColor, chosen, onClick)
+
+@Composable
+private fun ColumnScope.RailIcon(icon: Painter, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, onClick: () -> Unit) =
+    RailButton(label, name, color, onColor, chosen, onClick) { Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.size(28.dp)) }
+
+@Composable
+private fun ColumnScope.RailButton(label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, icon: @Composable () -> Unit) {
     PressableSurface(
         onClick = onClick,
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(18.dp),
         color = color,
-        border = if (chosen) BorderStroke(4.dp, Color(0xFF2B2118)) else null,
-        shadowElevation = if (chosen) 0.dp else 3.dp,
-        modifier = modifier.height(76.dp).semantics { contentDescription = name },
+        border = if (chosen) BorderStroke(3.dp, onColor) else null,
+        modifier = Modifier.weight(1f, fill = false).fillMaxWidth().heightIn(min = 56.dp, max = 72.dp).semantics { contentDescription = label ?: name },
     ) {
-        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = onColor.copy(alpha = 0.2f), modifier = Modifier.size(44.dp)) {
-                Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.padding(8.dp))
-            }
-            label?.let { Text(it, style = MaterialTheme.typography.headlineSmall, color = onColor, modifier = Modifier.padding(start = Spacing.md)) }
+        Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            icon()
+            label?.let { Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 13.sp, color = onColor, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis) }
         }
     }
 }
 
+/** A picture over its word, for the three answers that keep a conversation honest. */
 @Composable
-private fun SmallAnswer(cardId: String, label: String?, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
+internal fun StripAnswer(cardId: String, label: String?, name: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val answer = LocalAnswerColors.current
+    PressableSurface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = answer.unsure,
+        border = if (chosen) BorderStroke(3.dp, answer.onUnsure) else null,
+        modifier = modifier.height(76.dp).semantics { contentDescription = label ?: name },
+    ) {
+        Column(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            CardImage(cardId, Modifier.size(if (label != null) 28.dp else 44.dp))
+            label?.let {
+                Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 16.sp, color = answer.onUnsure, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+
+@Composable
+internal fun SmallAnswer(
+    cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, height: Dp = 52.dp,
+) {
     PressableSurface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
         color = color,
         border = if (chosen) BorderStroke(3.dp, onColor) else null,
-        modifier = modifier.height(52.dp).semantics { label?.let { contentDescription = it } },
+        modifier = modifier.height(height).semantics { contentDescription = label ?: name },
     ) {
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            CardImage(cardId, Modifier.size(30.dp))
+            CardImage(cardId, Modifier.size(if (label != null) 30.dp else 40.dp))
             label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = onColor, modifier = Modifier.padding(start = Spacing.sm)) }
         }
     }
@@ -857,7 +940,7 @@ private fun SmallAnswer(cardId: String, label: String?, color: Color, onColor: C
 
 /** Buttons squash softly and tick in the hand when pressed, so a child sees and feels the tap land. */
 @Composable
-private fun PressableSurface(
+internal fun PressableSurface(
     onClick: () -> Unit,
     shape: androidx.compose.ui.graphics.Shape,
     color: Color,
@@ -915,7 +998,14 @@ private class DrawStroke(val points: List<Offset>)
 
 /** The subject's own words, typed large on the stage; the keyboard opens at once and Done sends them. */
 @Composable
-private fun WritingPanel(content: ContentBundle, lang: String, onDone: (String) -> Unit, modifier: Modifier) {
+private fun WritingPanel(
+    content: ContentBundle,
+    lang: String,
+    onDone: (String) -> Unit,
+    onBack: () -> Unit,
+    pauseRow: @Composable () -> Unit,
+    modifier: Modifier,
+) {
     var text by rememberSaveable { mutableStateOf("") }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -925,7 +1015,8 @@ private fun WritingPanel(content: ContentBundle, lang: String, onDone: (String) 
         Surface(shape = RoundedCornerShape(28.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.weight(1f).fillMaxWidth()) {
             BasicTextField(
                 value = text,
-                onValueChange = { text = it },
+                // Input past the cap is ignored, never cut later: the receiver logs what was sent (D-26).
+                onValueChange = { if (it.length <= app.signsetu.pair.TEXT_CAP) text = it },
                 textStyle = MaterialTheme.typography.headlineSmall.copy(color = Color(0xFF2B2118)),
                 // SEC-05: nothing the subject writes is learned or suggested by the keyboard.
                 keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Done),
@@ -934,22 +1025,51 @@ private fun WritingPanel(content: ContentBundle, lang: String, onDone: (String) 
                 modifier = Modifier.fillMaxSize().padding(20.dp).focusRequester(focus),
             )
         }
-        PressableSurface(
-            onClick = send,
-            shape = RoundedCornerShape(50),
-            color = if (text.isNotBlank()) answer.yes else Color(0xFFBFD8CB),
-            modifier = Modifier.fillMaxWidth().height(64.dp),
-        ) {
-            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYes)
-                content.subjectText("done", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = answer.onYes, modifier = Modifier.padding(start = Spacing.sm)) }
+        if (text.length > app.signsetu.pair.TEXT_CAP - 200) {
+            Text(stringResource(R.string.write_count, text.length, app.signsetu.pair.TEXT_CAP), style = MaterialTheme.typography.labelLarge, modifier = Modifier.align(Alignment.End))
+        }
+        pauseRow()
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            BackButton(content, lang, onBack)
+            PressableSurface(
+                onClick = send,
+                shape = RoundedCornerShape(50),
+                color = if (text.isNotBlank()) answer.yes else Color(0xFFBFD8CB),
+                modifier = Modifier.weight(1f).height(64.dp).named(R.string.stage_done, content.subjectText("done", lang) == null),
+            ) {
+                Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYes)
+                    content.subjectText("done", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = answer.onYes, modifier = Modifier.padding(start = Spacing.sm)) }
+                }
             }
         }
     }
 }
 
+/** Back to the question's answers, for a subject who opened writing or drawing by mistake. */
 @Composable
-private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArray) -> Unit, modifier: Modifier) {
+private fun BackButton(content: ContentBundle, lang: String, onBack: () -> Unit) {
+    val name = stringResource(R.string.stage_back)
+    PressableSurface(
+        onClick = onBack,
+        shape = CircleShape,
+        color = Color(0xFFFFE7BF),
+        modifier = Modifier.size(64.dp).semantics { contentDescription = content.subjectText("back", lang) ?: name },
+    ) {
+        Box(contentAlignment = Alignment.Center) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color(0xFF3D2700)) }
+    }
+}
+
+/** A name for a control whose word is missing in the subject's language, so a screen reader still has one. */
+@Composable
+private fun Modifier.named(@StringRes id: Int, needed: Boolean = true): Modifier {
+    if (!needed) return this
+    val name = stringResource(id)
+    return semantics { contentDescription = name }
+}
+
+@Composable
+private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArray) -> Unit, onBack: (() -> Unit)?, modifier: Modifier) {
     val strokes = remember { mutableStateListOf<DrawStroke>() }
     var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
@@ -986,7 +1106,8 @@ private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArra
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            PressableSurface(onClick = { strokes.clear() }, shape = RoundedCornerShape(50), color = Color(0xFFFFE7BF), modifier = Modifier.weight(1f).height(64.dp)) {
+            onBack?.let { BackButton(content, lang, it) }
+            PressableSurface(onClick = { strokes.clear() }, shape = RoundedCornerShape(50), color = Color(0xFFFFE7BF), modifier = Modifier.weight(1f).height(64.dp).named(R.string.stage_clear, content.subjectText("clear", lang) == null)) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Refresh, contentDescription = null, tint = Color(0xFF3D2700))
                     content.subjectText("clear", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Color(0xFF3D2700), modifier = Modifier.padding(start = Spacing.sm)) }
@@ -997,7 +1118,7 @@ private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArra
                 onClick = { if (strokes.isNotEmpty()) onDone(renderPng(strokes, canvasSize, ink.toArgb(), paper.toArgb())) },
                 shape = RoundedCornerShape(50),
                 color = if (strokes.isNotEmpty()) answer.yes else Color(0xFFBFD8CB),
-                modifier = Modifier.weight(1f).height(64.dp),
+                modifier = Modifier.weight(1f).height(64.dp).named(R.string.stage_done, content.subjectText("done", lang) == null),
             ) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYes)

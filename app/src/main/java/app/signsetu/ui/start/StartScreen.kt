@@ -34,8 +34,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.selection.toggleable
+import app.signsetu.data.session.EventSource
+import app.signsetu.data.session.EventType
+import app.signsetu.ui.session.SYSTEM_JJ_NOTICE
+import app.signsetu.ui.session.SYSTEM_JUVENILE
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -111,6 +118,7 @@ fun StartScreen(
     cameraWanted: Boolean,
     onOpenSession: (String) -> Unit,
     onSettings: () -> Unit,
+    onSecondScreen: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -119,9 +127,21 @@ fun StartScreen(
     val open by produceState<Session?>(null, refresh) { value = repo.openSession() }
     var profile by rememberSaveable { mutableStateOf<Profile?>(null) }
     var lang by rememberSaveable { mutableStateOf("hi") }
-    var role by rememberSaveable { mutableStateOf(SessionRole.VICTIM) }
+    var role by rememberSaveable { mutableStateOf(SessionRole.NOT_KNOWN) }
+    var underAge by rememberSaveable { mutableStateOf(false) }
 
-    val begin = { p: Profile -> scope.launch { onOpenSession(repo.start(p, lang, role)) }; Unit }
+    val begin = { p: Profile ->
+        scope.launch {
+            val id = repo.start(p, lang, role)
+            // The record shows the officer saw the Juvenile Justice notice, and whether they marked the person a child.
+            if (role == SessionRole.ACCUSED) {
+                repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JJ_NOTICE)
+                if (underAge && p != Profile.YOUNG_CHILD) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JUVENILE)
+            }
+            onOpenSession(id)
+        }
+        Unit
+    }
     // The camera permission is asked of the officer here, never of the subject on the stage.
     val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { profile?.let(begin) }
     val onStart = {
@@ -146,6 +166,7 @@ fun StartScreen(
                 )
                 Row(Modifier.fillMaxWidth().padding(start = Spacing.lg, top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = LocalStageColors.current.title, modifier = Modifier.weight(1f))
+                    onSecondScreen?.let { IconButton(onClick = it) { Icon(Icons.Filled.Phone, contentDescription = stringResource(R.string.second_screen), tint = LocalStageColors.current.title) } }
                     IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title), tint = LocalStageColors.current.title) }
                 }
                 // The greeting needs the room below the wordmark; a short stage leaves it out rather than cut it off.
@@ -180,7 +201,6 @@ fun StartScreen(
                             onEnd = { scope.launch { repo.purge(session.id); refresh++ } },
                         )
                     }
-                    RoleChoice(role, onRole = { role = it })
                     Text(stringResource(R.string.start_who), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
                     Row(Modifier.selectableGroup().fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Profile.entries.forEach { p -> ProfileFace(p, content, selected = profile == p, onSelect = { profile = p }) }
@@ -195,8 +215,12 @@ fun StartScreen(
                     } else {
                         LanguagePicker(content, lang, onPick = { lang = it }, label = stringResource(R.string.start_language))
                     }
-                    if (role == SessionRole.ACCUSED && profile == Profile.YOUNG_CHILD) {
-                        Notice(stringResource(R.string.start_juvenile_title), stringResource(R.string.start_juvenile_body), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                    content.language(lang)?.takeIf { profile != Profile.OTHER_LANGUAGE && content.subjectText("yes", lang) == null }?.let {
+                        Notice(null, stringResource(R.string.start_pictures_only, it.name), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                    }
+                    RoleChoice(role, onRole = { role = it })
+                    if (role == SessionRole.ACCUSED) {
+                        JuvenileNotice(underAge || profile == Profile.YOUNG_CHILD, enabled = profile != Profile.YOUNG_CHILD, onChecked = { underAge = it })
                     }
                 }
                 BrandButton(
@@ -353,8 +377,30 @@ fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) ->
     }
 }
 
+/**
+ * Shown for every accused person: the Juvenile Justice rules if they may be under 18, and the officer's mark that
+ * they may be, which leaves out adult arrest rights. A young child profile is always treated as under 18.
+ */
+@Composable
+fun JuvenileNotice(checked: Boolean, enabled: Boolean, onChecked: (Boolean) -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = Spacing.md, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Text(stringResource(R.string.start_juvenile_title), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.start_juvenile_body), style = MaterialTheme.typography.bodySmall)
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = onChecked),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = checked, onCheckedChange = null, enabled = enabled)
+                Text(stringResource(R.string.start_juvenile_mark), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = Spacing.sm))
+            }
+        }
+    }
+}
+
 @Composable
 fun RoleChoice(role: SessionRole, onRole: (SessionRole) -> Unit, modifier: Modifier = Modifier) {
+    Text(stringResource(R.string.report_role), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
     SingleChoiceSegmentedButtonRow(modifier.fillMaxWidth()) {
         SessionRole.entries.forEachIndexed { i, r ->
             SegmentedButton(
@@ -368,6 +414,7 @@ fun RoleChoice(role: SessionRole, onRole: (SessionRole) -> Unit, modifier: Modif
 }
 
 fun roleTitle(r: SessionRole) = when (r) {
+    SessionRole.NOT_KNOWN -> R.string.role_not_known
     SessionRole.VICTIM -> R.string.role_victim
     SessionRole.ACCUSED -> R.string.role_accused
 }

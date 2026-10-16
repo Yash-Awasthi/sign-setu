@@ -10,6 +10,9 @@ import app.signsetu.camera.LandmarkFrame
 interface SignReader : AutoCloseable {
     /** The vocabulary the reader knows, as words (lower case, English), in model output order. */
     val labels: List<String>
+    /** Labels to the app's written words (assets/content/sign_words.json), where the two share a concept. */
+    val words: Map<String, String> get() = emptyMap()
+    /** Every label with its probability, highest first; empty when the frames cannot be read. */
     fun read(frames: List<LandmarkFrame>): List<SignGuess>
     override fun close() {}
 }

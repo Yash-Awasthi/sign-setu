@@ -160,6 +160,27 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                     trailingContent = { Switch(checked = s.pinToLeaveStage, onCheckedChange = null) },
                     modifier = Modifier.toggleable(s.pinToLeaveStage, role = Role.Switch) { on -> scope.launch { store.setPinToLeaveStage(on) } },
                 )
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_allow_auto)) },
+                    supportingContent = { Text(stringResource(R.string.settings_allow_auto_summary)) },
+                    colors = ItemColors,
+                    trailingContent = { Switch(checked = s.allowAuto, onCheckedChange = null) },
+                    modifier = Modifier.toggleable(s.allowAuto, role = Role.Switch) { on -> scope.launch { store.setAllowAuto(on) } },
+                )
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_tilt)) },
+                    supportingContent = { Text(stringResource(R.string.settings_tilt_summary)) },
+                    colors = ItemColors,
+                    trailingContent = { Switch(checked = s.tiltToShow, onCheckedChange = null) },
+                    modifier = Modifier.toggleable(s.tiltToShow, role = Role.Switch) { on -> scope.launch { store.setTiltToShow(on) } },
+                )
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_volume_keys)) },
+                    supportingContent = { Text(stringResource(R.string.settings_volume_keys_summary)) },
+                    colors = ItemColors,
+                    trailingContent = { Switch(checked = s.volumeKeys, onCheckedChange = null) },
+                    modifier = Modifier.toggleable(s.volumeKeys, role = Role.Switch) { on -> scope.launch { store.setVolumeKeys(on) } },
+                )
             }
             Group(R.string.settings_assistant) {
                 ListItem(
@@ -399,6 +420,13 @@ private val LICENCES = listOf(
     "OpenMoji 17.0.0" to "CC BY-SA 4.0. HfG Schwäbisch Gmünd, openmoji.org",
     "Mulberry Symbols" to "CC BY-SA 4.0. Steve Lee, mulberrysymbols.org",
     "Indic Parler-TTS (recorded prompts)" to "Apache 2.0. AI4Bharat, IIT Madras",
+    "INCLUDE (sign reader training data)" to "CC BY 4.0. \"INCLUDE: A Large Scale Dataset for Indian Sign Language Recognition\", " +
+        "A. Sridhar, R. G. Ganesan, P. Kumar, M. Khapra (IIT Madras, AI4Bharat), doi:10.5281/zenodo.4010759. " +
+        "Changed: a sign classifier was trained on its landmarks.",
+    "OpenHands pose release" to "CC BY 4.0. AI4Bharat, \"OpenHands v1: Labelled ISLR datasets, Poses\", zenodo.org/records/6674324. " +
+        "Changed: poses resampled and normalised.",
+    "MediaPipe and the Holistic landmarker model" to "Apache 2.0. Google LLC",
+    "Sign Setu symbols (original drawings)" to "CC BY-SA 4.0. Drawn in OpenMoji style for this app",
     "SQLCipher for Android" to "BSD 3-Clause. Zetetic LLC",
     "PdfBox-Android" to "Apache 2.0. Tom Roush; Apache PDFBox",
     "AndroidX, Jetpack Compose, Media3" to "Apache 2.0. The Android Open Source Project",

@@ -5,6 +5,9 @@ import android.content.Context
 import app.signsetu.data.settings.OfficerLocale
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.accessibility.AccessibilityManager
+import app.signsetu.ui.session.HardKey
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +27,9 @@ interface DeviceGuard {
 
     /** Confirms the officer before leaving the subject screen, keeping the app pinned wherever the platform allows. */
     fun confirmOfficer(title: String, subtitle: String, cancel: String, onSuccess: () -> Unit)
+
+    /** A credential check that works while pinned and never unpins; a stage device is refused where none exists (D-26). */
+    fun confirmPinned(title: String, subtitle: String, cancel: String, onSuccess: () -> Unit)
 
     fun pin()
     fun unpin()
@@ -49,6 +55,24 @@ class MainActivity : FragmentActivity(), DeviceGuard {
         setContent { AppRoot(container, this) }
     }
 
+    /** Volume keys drive the handover only when a session asks for them, and never under TalkBack, which uses them. */
+    override fun onKeyDown(keyCode: Int, event: KeyEvent) = hardKey(event) || super.onKeyDown(keyCode, event)
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent) = hardKey(event) || super.onKeyUp(keyCode, event)
+
+    private fun hardKey(event: KeyEvent): Boolean {
+        val key = when (event.keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> HardKey.UP
+            KeyEvent.KEYCODE_VOLUME_DOWN -> HardKey.DOWN
+            else -> null
+        }
+        val keys = (application as SignSetuApp).container.hardKeys
+        val talkBack = getSystemService(AccessibilityManager::class.java).isTouchExplorationEnabled
+        if (key == null || talkBack || !keys.consumes(key)) return false
+        if (event.repeatCount == 0) keys.events.tryEmit(key to (event.action == KeyEvent.ACTION_DOWN))
+        return true
+    }
+
     override fun unlock(title: String, subtitle: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
         // BIOMETRIC_STRONG with DEVICE_CREDENTIAL is unsupported on API 29 (SEC-21).
         val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -71,6 +95,14 @@ class MainActivity : FragmentActivity(), DeviceGuard {
                 unpin()
                 prompt(title, subtitle, BIOMETRIC_WEAK or DEVICE_CREDENTIAL, negative = null, onSuccess) { pin() }
             }
+        }
+    }
+
+    override fun confirmPinned(title: String, subtitle: String, cancel: String, onSuccess: () -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            prompt(title, subtitle, BIOMETRIC_STRONG or DEVICE_CREDENTIAL, negative = null, onSuccess) {}
+        } else {
+            prompt(title, subtitle, BIOMETRIC_WEAK, negative = cancel, onSuccess) {}
         }
     }
 

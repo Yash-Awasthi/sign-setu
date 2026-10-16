@@ -13,7 +13,7 @@ import kotlin.math.max
  * The bundled isolated-sign classifier (D-25), trained by tools/ml on INCLUDE. Features and forward pass must match
  * tools/ml/features.py and export.py exactly.
  */
-class LandmarkSignReader(spec: String, weights: ByteArray) : SignReader {
+class LandmarkSignReader(spec: String, weights: ByteArray, override val words: Map<String, String> = emptyMap()) : SignReader {
     @Serializable
     private class Spec(val frames: Int, val features: Int, val hidden: Int, val kernel: Int, val labels: List<String>)
 
@@ -47,7 +47,7 @@ class LandmarkSignReader(spec: String, weights: ByteArray) : SignReader {
         val top = z.max()
         val e = FloatArray(z.size) { exp(z[it] - top) }
         val sum = e.sum()
-        return e.indices.sortedByDescending { e[it] }.take(5).map { SignGuess(labels[it], e[it] / sum) }
+        return e.indices.sortedByDescending { e[it] }.map { SignGuess(labels[it], e[it] / sum) }
     }
 
     /** Raw class scores, or null when no frame shows the shoulders. */

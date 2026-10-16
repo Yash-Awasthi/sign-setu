@@ -34,8 +34,16 @@ data class AppSettings(
     val slowGestures: Boolean = false,
     /** Leaving the stage asks for the screen lock as well as a long press; a department can turn it on (D-23). */
     val pinToLeaveStage: Boolean = false,
+    /** Tipping the phone over its top edge shows what is prepared. */
+    val tiltToShow: Boolean = true,
+    /** Volume up shows what is prepared; both keys held leave the stage. */
+    val volumeKeys: Boolean = true,
     /** Picture-board cards the officer starred; card IDs only. */
     val favourites: Set<String> = emptySet(),
+    /** This device has served as a second screen; it never offers to unlock by itself, so a subject cannot open it. */
+    val stageDevice: Boolean = false,
+    /** Auto mode proposes welfare items in rule order; off unless a department allows it. */
+    val allowAuto: Boolean = false,
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -58,7 +66,11 @@ class SettingsStore(private val context: Context) {
         val largeCaptions = booleanPreferencesKey("large_captions")
         val slowGestures = booleanPreferencesKey("slow_gestures")
         val pinToLeave = booleanPreferencesKey("pin_to_leave_stage")
+        val tiltToShow = booleanPreferencesKey("tilt_to_show")
+        val volumeKeys = booleanPreferencesKey("volume_keys")
         val favourites = stringSetPreferencesKey("favourites")
+        val stageDevice = booleanPreferencesKey("stage_device")
+        val allowAuto = booleanPreferencesKey("allow_auto")
     }
 
     val settings: Flow<AppSettings> = context.store.data.map { it.toSettings() }
@@ -76,6 +88,10 @@ class SettingsStore(private val context: Context) {
     suspend fun setLargeCaptions(on: Boolean) = context.store.edit { it[Keys.largeCaptions] = on }
     suspend fun setSlowGestures(on: Boolean) = context.store.edit { it[Keys.slowGestures] = on }
     suspend fun setPinToLeaveStage(on: Boolean) = context.store.edit { it[Keys.pinToLeave] = on }
+    suspend fun setStageDevice() = context.store.edit { it[Keys.stageDevice] = true }
+    suspend fun setAllowAuto(on: Boolean) = context.store.edit { it[Keys.allowAuto] = on }
+    suspend fun setTiltToShow(on: Boolean) = context.store.edit { it[Keys.tiltToShow] = on }
+    suspend fun setVolumeKeys(on: Boolean) = context.store.edit { it[Keys.volumeKeys] = on }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -91,7 +107,11 @@ class SettingsStore(private val context: Context) {
         largeCaptions = this[Keys.largeCaptions] ?: false,
         slowGestures = this[Keys.slowGestures] ?: false,
         pinToLeaveStage = this[Keys.pinToLeave] ?: false,
+        tiltToShow = this[Keys.tiltToShow] ?: true,
+        volumeKeys = this[Keys.volumeKeys] ?: true,
         favourites = this[Keys.favourites].orEmpty(),
+        stageDevice = this[Keys.stageDevice] ?: false,
+        allowAuto = this[Keys.allowAuto] ?: false,
     )
 }
 

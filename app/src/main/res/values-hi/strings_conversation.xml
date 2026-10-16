@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="complete_sign">साइन है</string>
+    <string name="complete_gesture">इशारा है</string>
+    <string name="complete_picture">चित्र है</string>
+    <string name="complete_spell">अक्षरों में दिखेगा</string>
+    <string name="complete_word">%1$s, %2$s</string>
+
+    <string name="trail_answered">%1$d सेकंड में उत्तर</string>
+    <string name="trail_changed">उत्तर क्रम से: %1$s; अंतिम %2$d सेकंड बाद</string>
+    <string name="trail_paused">%1$s रुके</string>
+    <string name="trail_seconds">%1$d सेकंड</string>
+    <string name="trail_minutes">%1$d मिनट %2$d सेकंड</string>
+    <string name="choice_position">%2$d में से %1$d वाँ विकल्प</string>
+
+    <string name="grade_said">स्वयं बताया</string>
+    <string name="grade_confirmed">पुष्टि की</string>
+    <string name="grade_officer_read">अधिकारी की समझ</string>
+    <string name="grade_machine_read">ऐप की समझ</string>
+    <string name="grade_said_no">\'नहीं\' कहा</string>
+    <string name="grade_unclear">अस्पष्ट</string>
+    <string name="say_back">दोहराकर पूछें</string>
+    <string name="say_back_title">जाँचने के लिए दोहराकर पूछें</string>
+    <string name="say_back_body">व्यक्ति ये शब्द देखेगा और हाँ या नहीं में उत्तर देगा। अर्थ की पुष्टि केवल उसकी हाँ से होती है।</string>
+
+    <string name="run_ended">%2$d में से %1$d के बाद क्रम रुका</string>
+    <string name="run_no_sensitive">संवेदनशील प्रश्न एक-एक करके पूछे जाते हैं</string>
+    <string name="run_full">एक क्रम में अधिकतम 5 प्रश्न</string>
+    <string name="run_remove">क्रम से हटाएँ</string>
+    <string name="run_add">क्रम में जोड़ें</string>
+    <string name="run_basics">सुरक्षा के मूल प्रश्न</string>
+    <string name="run_title">%1$d प्रश्नों का क्रम</string>
+
+    <string name="log_prompt">ऐसे दिखाया गया</string>
+    <string name="prompt_detail">कैप्शन: %1$s। हाव-भाव: %2$s। चित्र क्रम से: %3$s। सामग्री %4$s।</string>
+    <string name="prompt_none">कोई नहीं</string>
+    <string name="report_not_statement">यह संवाद नोट है, बयान नहीं। बयान के लिए योग्य दुभाषिया और क़ानून के अनुसार वीडियो रिकॉर्डिंग ज़रूरी है।</string>
+    <string name="report_grade_legend">स्वयं बताया: व्यक्ति ने छुआ, लिखा या बनाया। पुष्टि की: वापस दिखाए गए दो या तीन विकल्पों में से व्यक्ति ने यही अर्थ चुना। \'नहीं\' कहा: वापस दिखाई गई समझ को व्यक्ति ने नकारा। अधिकारी की समझ और ऐप की समझ: एक व्याख्या, जिसकी व्यक्ति ने पुष्टि नहीं की।</string>
+    <string name="report_readings">ऐप या अधिकारी द्वारा की गई व्याख्या। ये व्यक्ति के अपने उत्तर नहीं हैं।</string>
+</resources>

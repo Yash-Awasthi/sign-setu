@@ -11,6 +11,8 @@ import androidx.compose.ui.geometry.Offset
  */
 interface LandmarkTracker : AutoCloseable {
     fun track(frame: Bitmap, timestampMs: Long): LandmarkFrame?
+    /** Loads the model ahead of the first frame, off the main thread; it analyses nothing (D-25). */
+    fun warm() {}
     override fun close() {}
 }
 

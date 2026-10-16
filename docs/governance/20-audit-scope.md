@@ -8,7 +8,7 @@ Annex for the audit work order. The auditor must be on the current CERT-In empan
 | --- | --- | --- |
 | Sign Setu Android app, release candidate `vX.Y.Z` (SHA-256 listed) | Source code review + black box | Repository at the tagged commit; signed APK; test phones |
 
-Release 1 has no server: the app declares no INTERNET permission and sends nothing anywhere. The gateway, its cloud configuration, Bhashini and partner services join the scope with release 1.1. The partner hand model, when delivered, runs on the phone and is reviewed with the app against its [integration contract](../11-hand-model-integration.md).
+Release 1 has no server: the app declares no INTERNET permission and sends nothing anywhere. The gateway, its cloud configuration, Bhashini and partner services join the scope with release 1.1. The vision engine (MediaPipe Holistic) and the sign reader run on the phone and are reviewed with the app against the [integration contract](../11-hand-model-integration.md). The second-screen link is local Bluetooth between department devices, reviewed with the app. Both build flavors are in scope; `standard` is the reference build.
 
 ## Standards
 
@@ -21,7 +21,8 @@ Release 1 has no server: the app declares no INTERNET permission and sends nothi
 
 1. Data at rest: SQLCipher key handling, Keystore binding and invalidation on lock change, backup and device-transfer exclusion, export encryption.
 2. No network: the merged manifest and the build gate that fails on INTERNET, RECORD_AUDIO or location permissions.
-3. Camera mirror: preview only, nothing captured, stored or sent; the analysis path for the partner model.
+3. Camera and landmarks: preview outside sign windows; analysis only inside a window; landmarks held in memory for the session and wiped on end, lock and clear; MediaPipe's usage statistics dropped on the device (SEC-47, SEC-71, SEC-72).
+3a. Second screen: pairing handshake, frame encryption and counters, resume, stage-device storage and exit, per-flavor permissions (SEC-66 to SEC-70, SEC-73).
 4. Leakage: logs, screenshots, recents, clipboard, notifications, exported components, intents.
 5. Subject isolation: screen pinning, return to the officer side only with the officer's credential, touch filtering against overlays in every window.
 6. Integrity: content hash verification, build expiry, rooted-device warning, behaviour of repackaged apps.

@@ -1,0 +1,22 @@
+{
+  "name": "signsetu-review-portal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "check": "vp check",
+    "test": "vp test",
+    "build": "vp build",
+    "preview": "vp preview"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "7.0.2",
+    "vite-plus": "1.0.0"
+  }
+}

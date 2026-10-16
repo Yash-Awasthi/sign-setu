@@ -1,11 +1,14 @@
 // JNI bridge to llama.cpp for the on-device assistant (D-24). One model and one context per handle;
 // every call starts from an empty context, so nothing from one request reaches the next.
 #include <jni.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include "llama.h"
 
 namespace {
+
+constexpr int32_t kBatch = 256;
 
 struct Assistant {
     llama_model * model = nullptr;
@@ -38,7 +41,8 @@ Java_app_signsetu_assistant_LocalModel_nativeLoad(JNIEnv * env, jclass, jstring 
     if (!model) return 0;
     auto cp = llama_context_default_params();
     cp.n_ctx = static_cast<uint32_t>(context);
-    cp.n_batch = static_cast<uint32_t>(context);
+    // The batch sizes the compute buffer; prompts are short and longer ones are fed in pieces below.
+    cp.n_batch = kBatch;
     cp.n_threads = threads;
     cp.n_threads_batch = threads;
     llama_context * ctx = llama_init_from_model(model, cp);
@@ -78,16 +82,18 @@ Java_app_signsetu_assistant_LocalModel_nativeChat(JNIEnv * env, jclass, jlong ha
     llama_sampler_chain_add(sampler, llama_sampler_init_greedy());
 
     std::string out;
-    llama_batch batch = llama_batch_get_one(tokens.data(), static_cast<int32_t>(tokens.size()));
-    llama_token next;
-    for (int i = 0; i < maxTokens; ++i) {
-        if (llama_decode(a->ctx, batch) != 0) break;
+    bool ok = true;
+    for (int32_t at = 0; ok && at < count; at += kBatch) {
+        ok = llama_decode(a->ctx, llama_batch_get_one(tokens.data() + at, std::min(kBatch, count - at))) == 0;
+    }
+    llama_token next = 0;
+    for (int i = 0; ok && i < maxTokens; ++i) {
+        if (i > 0 && llama_decode(a->ctx, llama_batch_get_one(&next, 1)) != 0) break;
         next = llama_sampler_sample(sampler, a->ctx, -1);
         if (llama_vocab_is_eog(vocab, next)) break;
         char piece[256];
         int32_t len = llama_token_to_piece(vocab, next, piece, sizeof(piece), 0, false);
         if (len > 0) out.append(piece, len);
-        batch = llama_batch_get_one(&next, 1);
     }
     llama_sampler_free(sampler);
     return toJava(env, out);

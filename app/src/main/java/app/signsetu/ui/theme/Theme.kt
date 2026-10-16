@@ -8,6 +8,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -90,8 +91,18 @@ fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
     }
 }
 
-/** The stage keeps the light scheme in both themes; only its backdrop dims at night (03-ux §6). */
+/**
+ * The stage keeps the light scheme in both themes; only its backdrop dims at night (03-ux §6). In strong light, or
+ * when the officer switches it on, it turns black, white and yellow; the light sensor runs only while the stage shows.
+ */
 @Composable
 fun SubjectTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = StageScheme, typography = SubjectType, shapes = AppShapes, content = content)
+    val bright by rememberSunMode()
+    if (bright || SunMode.forced.value) {
+        CompositionLocalProvider(LocalStageColors provides SunStageColors, LocalAnswerColors provides SunAnswerColors) {
+            MaterialTheme(colorScheme = StageScheme, typography = SubjectType, shapes = AppShapes, content = content)
+        }
+    } else {
+        MaterialTheme(colorScheme = StageScheme, typography = SubjectType, shapes = AppShapes, content = content)
+    }
 }

@@ -60,7 +60,12 @@ import app.signsetu.ui.theme.Spacing
 
 /** Shown whenever the database is closed. Without a secure lock screen the app refuses to store anything (SEC-20). */
 @Composable
-fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
+fun LockScreen(
+    onUnlock: (onFailed: () -> Unit) -> Unit,
+    /** False on a device that has served as a second screen: only an explicit tap opens the database (D-26). */
+    autoPrompt: Boolean = true,
+    stageButton: (@Composable () -> Unit)? = null,
+) {
     val context = LocalContext.current
     var secure by remember { mutableStateOf(isDeviceSecure(context)) }
     var failed by remember { mutableStateOf(false) }
@@ -68,7 +73,7 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
         secure = isDeviceSecure(context)
         onPauseOrDispose { }
     }
-    LaunchedEffect(secure) { if (secure) onUnlock { failed = true } }
+    LaunchedEffect(secure) { if (secure && autoPrompt) onUnlock { failed = true } }
 
     val ink = LocalInk.current
     // At large font sizes the words need the room, so the character gives some up (NFR-22).
@@ -128,6 +133,7 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                 ) { Text(stringResource(if (secure) R.string.lock_button else R.string.no_lock_button), style = MaterialTheme.typography.titleMedium) }
+                if (secure) stageButton?.invoke()
                 Text(
                     stringResource(R.string.notice_aid),
                     style = MaterialTheme.typography.bodySmall,

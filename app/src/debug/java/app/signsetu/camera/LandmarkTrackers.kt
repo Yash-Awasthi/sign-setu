@@ -4,11 +4,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.ui.geometry.Offset
 import java.io.File
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Debug builds: the bundled holistic model, or a stand-in tracker that reports one waving open right hand, to check the
+ * Debug builds: the bundled holistic model, or a stand-in tracker that reports one open right hand that waves and rests, to check the
  * camera, analysis, overlay and capture path without a model. Turn it on with `adb shell run-as in.signsetu touch files/demo_hands`.
  */
 object LandmarkTrackers {
@@ -18,7 +19,9 @@ object LandmarkTrackers {
 
 private class DemoTracker : LandmarkTracker {
     override fun track(frame: Bitmap, timestampMs: Long): LandmarkFrame {
-        val a = sin(timestampMs / 400.0).toFloat() * 0.25f
+        // A quick wave, then a still hand: each wave is one sign-sized segment for the capture path.
+        val phase = timestampMs % 1600
+        val a = if (phase < 800) sin(phase / 800.0 * 2 * PI).toFloat() * 0.6f else 0f
         val wrist = OPEN_HAND[0]
         val points = OPEN_HAND.map { p ->
             val dx = p.x - wrist.x

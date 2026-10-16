@@ -58,5 +58,9 @@
   "n9": "openmoji/0039-FE0F-20E3.svg",
   "n10": "openmoji/1F51F.svg",
   "dont_know": "openmoji/1F937-1F3FD.svg",
-  "stop": "openmoji/270B-1F3FD.svg"
+  "stop": "openmoji/1F6D1.svg",
+  "something_else": "sign-setu/something_else.svg",
+  "dont_understand": "openmoji/1F615.svg",
+  "wrong": "openmoji/21A9.svg",
+  "break": "openmoji/2615.svg"
 }

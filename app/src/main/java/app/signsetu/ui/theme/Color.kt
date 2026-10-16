@@ -149,6 +149,7 @@ data class StageColors(
     val title: Color,
     /** Behind the word the character is signing; the bubble stays light in both themes. */
     val highlight: Color = Color(0xFFFFD98A),
+    val onHighlight: Color = Color.Unspecified,
 )
 
 internal val StageLight = StageColors(
@@ -179,6 +180,41 @@ internal val StageDark = StageColors(
     handle = Color(0x33FFFFFF),
     onHandle = Color(0xFFE7D8C8),
     title = Color(0xFFF6E7D6),
+)
+
+/** Sun mode: black, white and yellow, the combination that still reads in direct sunlight. */
+internal val SunStageColors = StageColors(
+    skyTop = Color(0xFF111111),
+    skyBottom = Color(0xFF1A1A1A),
+    ground = Color(0xFF262626),
+    glow = Color(0xFF1A1A1A),
+    bubble = Color(0xFF000000),
+    onBubble = Color(0xFFFFE14D),
+    window = Color(0xFF000000),
+    windowFrame = Color(0xFFFFFFFF),
+    onWindow = Color(0xFFFFFFFF),
+    handle = Color(0x66FFFFFF),
+    onHandle = Color(0xFFFFFFFF),
+    title = Color(0xFFFFE14D),
+    highlight = Color(0xFFFFE14D),
+    onHighlight = Color(0xFF000000),
+)
+
+internal val SunAnswerColors = AnswerColors(
+    yes = Color(0xFF17803A),
+    onYes = Color(0xFFFFFFFF),
+    yesContainer = Color(0xFF17803A),
+    onYesContainer = Color(0xFFFFFFFF),
+    no = Color(0xFFC62828),
+    onNo = Color(0xFFFFFFFF),
+    noContainer = Color(0xFFC62828),
+    onNoContainer = Color(0xFFFFFFFF),
+    unsure = Color(0xFFFFFFFF),
+    onUnsure = Color(0xFF000000),
+    pause = Color(0xFFFFE14D),
+    onPause = Color(0xFF000000),
+    selection = Color(0xFFFFE14D),
+    onSelection = Color(0xFF000000),
 )
 
 /** Behind every symbol, in both themes: the symbols have dark outlines drawn for a light ground. */

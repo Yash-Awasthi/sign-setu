@@ -1,6 +1,6 @@
 # 10. Test Report
 
-Results of running the [test plan](06-test-plan.md) against the release 1 build. Every result below was observed on the device listed; anything not yet run says so.
+Results of running the [test plan](06-test-plan.md) against the release 1 build. Every result below was observed on the device listed; anything not yet run says so. Sections 2 to 6 cover the first build; section 7 covers the build with the vision engine, sign reader, roles, conversation modes, second screen and the stage and record changes (D-25 to D-34), as integrated and fixed.
 
 ## 1. Build and devices
 
@@ -106,11 +106,69 @@ Each control in [security](04-security.md) checked against the code and the rele
 | SEC-63 | Partial | Rooted-phone warning shown; disabling session history waits on the department's rooted-device decision (threat model T-19) |
 | SEC-62 | Open | Release signing key and custodians are a department decision |
 
-## 7. Open items before production
+## 7. Integrated build: vision, sign reading, roles, modes, second screen
 
-- Reviewer sign-off for every gesture and both characters (05 §8), the phrase-bank sentences and the placeholder recordings, on the [content review record](governance/forms/content-review-record.md).
-- TC-05, PT-01, PT-02 and PT-03 on a real Android 10 phone with a GPU.
-- Spoken TalkBack pass on a phone with TalkBack, and the formal MASVS review (`/masvs-checklist`).
-- Partner hand model through `HandTrackers` in the release source set, against the [integration contract](11-hand-model-integration.md); camera sign recognition is to be connected.
+### 7.1 Build
+
+| Item | Value |
+| --- | --- |
+| Variants | `standardDebug`, `standardRelease`, `nearbyDebug`, `nearbyRelease` of `in.signsetu` 0.1.0 (`in.signsetu.nearby` for the nearby flavor) |
+| Release APK | 47.0 MB (`standard`) and 47.7 MB (`nearby`), unsigned, arm64-v8a and armeabi-v7a; MediaPipe's native library ships for arm64-v8a only; under the 50 MB limit of NFR-05 |
+| Unit tests | 120 tests in 17 classes pass for both flavors (`testStandardDebugUnitTest`, `testNearbyDebugUnitTest`) |
+| Instrumented tests | 19 tests (overlay 2, migration 2, accessibility 15) compile; their last full run on the Android 14 emulator predates the merge, so the run on this build is open |
+| Device | Android 14 (API 34) emulator, x86_64, with the emulator's virtual camera and the debug stand-in hand |
+
+### 7.2 Functional scenarios
+
+| ID | Result | Evidence |
+| --- | --- | --- |
+| TC-25 | Pass | Unit test. The emulator smoke test found that no frame was ever analysed: the first-frame sentinel overflowed the interval check. Fixed, and covered by `AnalysisRateTest` |
+| TC-26 | Pass | Unit tests (`SegmentTest` 5, `SignIngestionTest` segmentation cases) |
+| TC-27 | Pass | Logits within 1e-3 of the Python reference on all five fixtures; a forward pass takes about 18 ms on a desktop JVM. Accuracy on phone cameras with children is unmeasured |
+| TC-28 | Pass | Unit tests; on the emulator the slower cue appeared, in Hindi with its picture, after a failed read of the stand-in hand |
+| TC-29 | Pass on emulator | Read signs showed the hand overlay, one dot per sign and Done; the officer's sheet showed the app's reading, slow replay at ¼× and the guesses as chips; Ask them to choose showed picture cards and None of these on the stage. The smoke test also found app readings graded as the officer's and "Ask them to choose" offered with nothing to choose; both fixed. Landmark wiping is verified by code review; no memory dump was taken |
+| TC-30 | Pass | Unit tests (`RoleTest` 4) against the real bank; on the emulator the rights group, the officer's interpreter card, the subject line on the stage and "shown, not proof of understanding" in the transcript and report |
+| TC-31 | Pass | Unit tests (`InterviewTest` 17). The smoke test found Auto proposing ground rules the stage opening had already covered; fixed and tested |
+| TC-32 | Pass | Unit tests (`AutoPilotTest` 10); on the emulator a suggestion was approved, shown and logged |
+| TC-33 | Pass | Unit tests (`PairTest` 28), including the check number added after review |
+| TC-34 | Pass | Unit tests (`MainPageTest` 8); on the emulator completions, a question run of two items and the report with grades and the not-a-statement notice on each page. The smoke test found a duplicate "I don't understand" tile; removed |
+| TC-35 | Pass | Unit tests (`StageLogicTest` 6); on the emulator the ground rules, the practice round, the pause layer after Stop and the officer glance strip |
+| TC-36 | Pass | Unit tests (`SunModeTest` 2); sun mode forced on from the menu on the emulator. The light sensor itself needs a phone |
+| TC-37 | Pass | Unit tests (`HandoverTest` 6). Tilt and volume keys on a phone are open |
+| TC-38 | Open | The process was killed while the stage showed on the emulator, but the restart was not captured; repeat and record. The `stage_live` flag logic is reviewed in code |
+| TC-39 | Open | `SessionMigrationTest` compiles; it has not run on this build |
+| TC-40 | Pass | `RigFixtureTest` passes; `vp test`: 756 tests in 3 files pass |
+| TC-41 | Open | Needs two phones and a tablet (UAT-18); on the emulator only the officer's pairing sheet was checked |
+
+### 7.3 Security
+
+| ID | Result | Evidence |
+| --- | --- | --- |
+| ST-05, ST-15 | Pass | Merged release manifests. `standard`: CAMERA, BLUETOOTH_CONNECT and BLUETOOTH (up to API 30) among the permissions that matter, plus VIBRATE; no INTERNET, RECORD_AUDIO, location, scan, advertise or NEARBY_WIFI_DEVICES. `nearby`: adds BLUETOOTH_SCAN, BLUETOOTH_ADVERTISE, BLUETOOTH_ADMIN (up to API 30), NEARBY_WIFI_DEVICES, ACCESS_FINE_LOCATION (up to API 32), and Wi-Fi state (up to API 31); no INTERNET. Both release variants assemble through `check<Variant>Permissions` |
+| ST-16 | Pass | `transport-backend-cct` is excluded in the build script and the stub destination is in the APK; the merged manifest has no INTERNET |
+| ST-17 | Open | Needs a stage device |
+| ST-18 | Partial | Pairing code logs exception class names only (code review); a logcat capture during a sign window on a phone is open |
+| ST-19 | Pass by design | Both models are listed in the content manifest and checked before loading (`HolisticTracker`, `SignReaders`); a tampered-model run is open |
+
+### 7.4 Security controls self-check
+
+| Controls | Status | Evidence |
+| --- | --- | --- |
+| SEC-42 | Met | Runtime permissions CAMERA and BLUETOOTH_CONNECT only (ST-15) |
+| SEC-66, SEC-73 | Met | Bonded RFCOMM, no scan or bond calls; per-variant permission gate |
+| SEC-67, SEC-68 | Met | Handshake, frame and resume behaviour covered by `PairTest` |
+| SEC-69, SEC-70 | Met in code | Stage stores only the `stageDevice` flag; exception class names only; ST-17 on a device is open |
+| SEC-71 | Met in code | Analysis gated by the sign window; landmarks in view-model memory, wiped on end, lock and clear; narratives drop faces |
+| SEC-72 | Met | ST-16 |
+| SEC-74 | Met | Manifest hash check before each model loads |
+| SEC-75 | Met in code | TC-38 open |
+
+## 8. Open items before production
+
+- Reviewer sign-off for every gesture and both characters (05 §8), the phrase-bank sentences, the placeholder recordings, the draft ISL word order and sign-word map, the rights wording in English and Hindi, and the reworded x2 and x3, on the [content review record](governance/forms/content-review-record.md).
+- TC-05, PT-01, PT-02 and PT-03 on a real Android 10 phone with a GPU; the vision engine's frame rate, memory and left-right hand assignment on a real 64-bit phone.
+- The instrumented suite (TC-39, AT-06) on the merged build; the two-phone and tablet script (TC-41, UAT-18) and ST-17.
+- Spoken TalkBack pass on a phone with TalkBack, and the formal MASVS review.
+- Sign reader accuracy with phone cameras and children; data for the core answer words the reader cannot read (yes, no, water, pain, help, stop, don't know).
 - Assistant speed on an arm64 phone (TC-23), and language reviewers' spot-check of its output.
 - A live device-to-device transfer (ST-01) on two phones with a Google account.
