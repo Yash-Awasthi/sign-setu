@@ -52,7 +52,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | ID | Control | Source |
 | --- | --- | --- |
 | SEC-40 | `FLAG_SECURE` on the activity: blocks screenshots, screen recording and recents thumbnails. | NFR-32 |
-| SEC-41 | Only the launcher activity exported; export through `FileProvider` with a temporary grant. | MASVS-PLATFORM-1 |
+| SEC-41 | Only the launcher activity exported, apart from WorkManager's job service, which Android requires and protects with BIND_JOB_SERVICE; unused library receivers are removed from the merged manifest; export through `FileProvider` with a temporary grant. | MASVS-PLATFORM-1 |
 | SEC-42 | The only dangerous permission is CAMERA, for the stage mirror (D-20); no RECORD_AUDIO, LOCATION or INTERNET. | CERT-In 6.2.6 |
 | SEC-43 | No WebView. | MASVS-PLATFORM-2 |
 | SEC-44 | No notifications containing subject data. | NFR-37 |

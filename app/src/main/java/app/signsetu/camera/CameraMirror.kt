@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -60,6 +61,8 @@ fun CameraMirror(
 
     if (permitted) {
         LaunchedEffect(owner, tracker) {
+            // Opening the camera waits for the stage's first frame, so the question appears first (NFR-02).
+            withFrameNanos { }
             val provider = ProcessCameraProvider.awaitInstance(context)
             val selector = when {
                 provider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> CameraSelector.DEFAULT_FRONT_CAMERA.also { front = true }

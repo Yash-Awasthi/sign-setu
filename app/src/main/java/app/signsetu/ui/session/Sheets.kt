@@ -44,6 +44,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -243,6 +244,8 @@ fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss:
                     value = note,
                     onValueChange = { note = it },
                     placeholder = { Text(stringResource(R.string.log_note_hint)) },
+                    // SEC-05: the keyboard should not learn or suggest from what is noted about a subject.
+                    keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
                     modifier = Modifier.weight(1f),
                 )
                 Button(

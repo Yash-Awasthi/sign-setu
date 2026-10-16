@@ -27,6 +27,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -167,7 +168,11 @@ private fun SessionRoute(
 
     // From the first Show until the session ends, the app stays pinned so a subject cannot reach other apps (FR-61).
     LaunchedEffect(state.mode) {
-        if (state.mode == Mode.SHOW) guard.pin()
+        // After the stage's first frame: pinning brings up system UI that would otherwise delay it (NFR-02).
+        if (state.mode == Mode.SHOW) {
+            withFrameNanos { }
+            guard.pin()
+        }
     }
     ImmersiveWhile(activity, state.mode == Mode.SHOW)
 

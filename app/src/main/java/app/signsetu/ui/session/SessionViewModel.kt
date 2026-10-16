@@ -115,6 +115,7 @@ class SessionViewModel(
     fun show() {
         val state = ui.value ?: return
         val pending = local.value.pending ?: return
+        ShowTiming.start()
         viewModelScope.launch { present(pending, state.session.subjectLang) }
     }
 

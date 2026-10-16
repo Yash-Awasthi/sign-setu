@@ -45,7 +45,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | sherpa-onnx, Vosk | Apache-2.0 | Ship (optional pack) | Offline speech recognition so officer audio never leaves the phone |
 | Language identification (v1.1) | IndicLID (Bhashini and AI4Bharat) | See model card | Ship (via gateway) or Reference | Text language identification for 22+ Indic languages; no audio language identification service was found |
 | Storage and crypto | SQLCipher for Android | BSD-style | Ship | Room 3 supported from 4.18.0 |
-| Export | PdfBox-Android | Apache-2.0 | Ship | AES-256 password-protected PDF export (D-17); last updated 2024, so watch advisories |
+| Export | PdfBox-Android | Apache-2.0 | Ship | AES-256 password-protected PDF export (D-17); last updated 2024, so watch advisories. Its BouncyCastle is held at 1.86 by a build constraint because 1.72 has known critical vulnerabilities |
 | | zip4j | Apache-2.0 | Alternative | AES-256 zip; recipients need 7-Zip, so PDF is preferred |
 | Gateway attestation (v1.1) | android/keyattestation | Apache-2.0 | Ship (gateway) | Google's verification library; handles both attestation roots and revocation |
 | Networking (v1.1) | OkHttp, kotlinx.serialization | Apache-2.0 | Ship | Already planned |

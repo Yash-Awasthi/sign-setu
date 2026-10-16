@@ -52,6 +52,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,7 +75,9 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -140,6 +143,7 @@ fun Stage(
     val audio = speechFor(pending, content, lang)
     // Speech plays by itself only for subjects who hear and may not read; ISL users never get sound (NFR-24).
     LaunchedEffect(pending, lang) { if (audio != null && profile in AutoSpeech) speech.play(audio) }
+    LaunchedEffect(pending) { withFrameNanos { }; ShowTiming.firstFrame() }
 
     val item = describeItem(pending, content, lang)
     val gestureId = when {
@@ -580,7 +584,7 @@ private fun SmallAnswer(cardId: String, label: String?, color: Color, onColor: C
     }
 }
 
-/** Buttons give a soft squash when pressed, so a child sees the tap landed. */
+/** Buttons squash softly and tick in the hand when pressed, so a child sees and feels the tap land. */
 @Composable
 private fun PressableSurface(
     onClick: () -> Unit,
@@ -594,8 +598,10 @@ private fun PressableSurface(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.94f else 1f, spring(dampingRatio = 0.5f, stiffness = 600f), label = "press")
+    // A deaf child cannot hear the tap land; a short tick in the hand confirms it.
+    val haptics = LocalHapticFeedback.current
     Surface(
-        onClick = onClick,
+        onClick = { haptics.performHapticFeedback(HapticFeedbackType.Confirm); onClick() },
         shape = shape,
         color = color,
         border = border,

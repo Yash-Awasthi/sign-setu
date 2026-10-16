@@ -73,6 +73,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -645,6 +646,7 @@ private fun TypeSheet(
                 value = text,
                 onValueChange = onText,
                 placeholder = { Text(stringResource(R.string.officer_own_hint)) },
+                keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
                 minLines = 2,
                 shape = RoundedCornerShape(18.dp),
                 modifier = Modifier.fillMaxWidth(),

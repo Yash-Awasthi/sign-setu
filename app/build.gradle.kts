@@ -1,3 +1,4 @@
+import com.android.build.api.artifact.SingleArtifact
 import java.time.LocalDate
 
 plugins {
@@ -47,6 +48,34 @@ android {
     }
 }
 
+// SEC-30, SEC-42: the build fails if any library brings a forbidden permission into the merged manifest.
+androidComponents {
+    onVariants { variant ->
+        val manifest = variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
+        val name = variant.name.replaceFirstChar { it.uppercase() }
+        val check = tasks.register("check${name}Permissions") {
+            inputs.file(manifest)
+            doLast {
+                val forbidden = listOf(
+                    "android.permission.INTERNET",
+                    "android.permission.RECORD_AUDIO",
+                    "android.permission.ACCESS_FINE_LOCATION",
+                    "android.permission.ACCESS_COARSE_LOCATION",
+                )
+                val text = manifest.get().asFile.readText()
+                val found = forbidden.filter { text.contains("\"$it\"") }
+                if (found.isNotEmpty()) throw GradleException("Forbidden permissions in the merged manifest: $found")
+            }
+        }
+        tasks.matching { it.name == "assemble$name" }.configureEach { dependsOn(check) }
+    }
+}
+
+// SEC-50: every resolved version is pinned in gradle.lockfile; update with --write-locks.
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
@@ -83,6 +112,12 @@ dependencies {
     implementation(libs.androidx.fragment)
     implementation(libs.media3.exoplayer)
     implementation(libs.pdfbox.android)
+    constraints {
+        // PdfBox-Android brings BouncyCastle 1.72, which has known critical vulnerabilities (OSV scan); 1.86 fixes them.
+        implementation(libs.bouncycastle.prov)
+        implementation(libs.bouncycastle.pkix)
+        implementation(libs.bouncycastle.util)
+    }
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.compose)
