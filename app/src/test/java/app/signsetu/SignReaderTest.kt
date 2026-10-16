@@ -46,11 +46,11 @@ class SignReaderTest {
     }
 
     @Test
-    fun guessesAreTopFiveProbabilities() {
+    fun guessesAreEveryLabelByProbability() {
         val guesses = reader.read(cases[0].first)
-        assertEquals(5, guesses.size)
+        assertEquals(reader.labels.size, guesses.size)
         assertTrue(guesses.zipWithNext().all { (a, b) -> a.score >= b.score })
-        assertTrue(guesses.sumOf { it.score.toDouble() } <= 1.0001)
+        assertEquals(1.0, guesses.sumOf { it.score.toDouble() }, 1e-3)
         assertTrue(reader.read(listOf(LandmarkFrame(0, rightHand = List(21) { Offset(0.5f, 0.5f) }))).isEmpty())
     }
 

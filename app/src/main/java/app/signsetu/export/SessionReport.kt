@@ -35,9 +35,13 @@ class ReportText(
     val page: (Int, Int) -> String,
     val eventLabel: (EventType) -> String,
     val formatTime: (Long) -> String,
+    /** Printed at the top and bottom of every page. */
+    val notStatement: String = "",
+    /** Heads the section of readings by the app or the officer, kept apart from the subject's own answers. */
+    val readings: String = "",
 )
 
-class ReportRow(val event: SessionEvent, val question: String?, val detail: String)
+class ReportRow(val event: SessionEvent, val question: String?, val detail: String, val reading: Boolean = false)
 
 /**
  * Builds the session report as an A4 PDF and encrypts it with AES-256 under a one-time passphrase (FR-32, SEC-12).
@@ -70,10 +74,18 @@ class SessionReport(private val context: Context) {
         val smallPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 8.5f; color = 0xFF555555.toInt() }
         val headPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 9f; typeface = Typeface.DEFAULT_BOLD }
         val rule = Paint().apply { color = 0xFFCCCCCC.toInt(); strokeWidth = 0.6f }
+        val noticePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 8f; typeface = Typeface.DEFAULT_BOLD }
 
         var page: PdfDocument.Page? = null
         var canvas: Canvas? = null
         var y = 0f
+
+        fun block(s: String, paint: TextPaint, width: Int): StaticLayout =
+            StaticLayout.Builder.obtain(s, 0, s.length, paint, width).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
+
+        fun draw(layout: StaticLayout, x: Float, top: Float) {
+            canvas!!.withTranslation(x, top) { layout.draw(this) }
+        }
 
         fun newPage() {
             page?.let { pdf.finishPage(it) }
@@ -82,17 +94,15 @@ class SessionReport(private val context: Context) {
             page = p
             canvas = p.canvas
             y = MARGIN
+            if (text.notStatement.isNotEmpty()) {
+                val notice = block(text.notStatement, noticePaint, PAGE_W - 2 * MARGIN.toInt())
+                draw(notice, MARGIN, MARGIN - notice.height - 4)
+                draw(notice, MARGIN, PAGE_H - MARGIN - FOOTER + 2)
+            }
         }
 
         fun ensure(height: Float) {
             if (canvas == null || y + height > PAGE_H - MARGIN - FOOTER) newPage()
-        }
-
-        fun block(s: String, paint: TextPaint, width: Int): StaticLayout =
-            StaticLayout.Builder.obtain(s, 0, s.length, paint, width).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
-
-        fun draw(layout: StaticLayout, x: Float, top: Float) {
-            canvas!!.withTranslation(x, top) { layout.draw(this) }
         }
 
         newPage()
@@ -121,7 +131,7 @@ class SessionReport(private val context: Context) {
         }
         headerRow()
 
-        for (row in rows) {
+        suspend fun drawRow(row: ReportRow) {
             val detail = block(row.detail, bodyPaint, detailWidth)
             val reply = row.question?.takeIf { it != row.detail }?.let { block("${text.inReplyTo}: $it", smallPaint, detailWidth) }
             val eventLayout = block(text.eventLabel(row.event.type), bodyPaint, 104)
@@ -143,6 +153,17 @@ class SessionReport(private val context: Context) {
             }
             y += rowHeight
             canvas!!.drawLine(MARGIN, y - 5, PAGE_W - MARGIN, y - 5, rule)
+        }
+        val (readings, conversation) = rows.partition { it.reading }
+        conversation.forEach { drawRow(it) }
+        if (readings.isNotEmpty()) {
+            val title = block(text.readings, headPaint, full)
+            ensure(title.height + 40f)
+            y += 8
+            draw(title, MARGIN, y)
+            y += title.height + 6
+            headerRow()
+            readings.forEach { drawRow(it) }
         }
         page?.let { pdf.finishPage(it) }
 
@@ -176,7 +197,8 @@ class SessionReport(private val context: Context) {
         const val PAGE_W = 595
         const val PAGE_H = 842
         const val MARGIN = 40f
-        const val FOOTER = 14f
+        // Room for the page number and the not-a-statement notice under the last row.
+        const val FOOTER = 30f
         // Crockford base32 without look-alike characters; 16 symbols = 80 bits.
         const val ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 

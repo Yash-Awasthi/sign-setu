@@ -88,7 +88,7 @@ class ModelStore(private val context: Context) {
     suspend fun <T> use(block: (LocalModel) -> T): T? = withContext(Dispatchers.Default) {
         lock.withLock {
             if (state() != State.READY) return@withLock null
-            val m = model ?: LocalModel.load(file)?.also { model = it } ?: return@withLock null
+            val m = model ?: (if (roomToLoad()) LocalModel.load(file)?.also { model = it } else null) ?: return@withLock null
             block(m)
         }
     }
@@ -107,9 +107,17 @@ class ModelStore(private val context: Context) {
         return info.totalMem >= MIN_MEMORY_BYTES
     }
 
+    // Checked at load time: total memory says nothing about what the camera and the stage are using right now.
+    private fun roomToLoad(): Boolean {
+        val info = ActivityManager.MemoryInfo()
+        context.getSystemService(ActivityManager::class.java).getMemoryInfo(info)
+        return !info.lowMemory && info.availMem >= MIN_FREE_BYTES
+    }
+
     companion object {
-        // A 3 GB phone reports a little under 3 GB; the model needs about 0.9 GB on top of the app and the system.
-        private const val MIN_MEMORY_BYTES = 2_800L * 1024 * 1024
+        // A 3 GB phone reports well under 3 GB; whether 0.9 GB is free for the model is checked when it loads.
+        private const val MIN_MEMORY_BYTES = 2_400L * 1024 * 1024
+        private const val MIN_FREE_BYTES = 1_200L * 1024 * 1024
 
         /** SHA-256 of the model files the department may install; see docs/12-on-device-assistant.md. */
         val KNOWN_MODELS = setOf(

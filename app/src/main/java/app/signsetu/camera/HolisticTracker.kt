@@ -14,7 +14,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.nio.ByteBuffer
-import java.nio.channels.Channels
+import java.io.FileInputStream
+import java.nio.channels.FileChannel
 import java.security.MessageDigest
 
 private const val MODEL = "models/holistic_landmarker.task"
@@ -26,40 +27,72 @@ fun holisticTracker(context: Context): LandmarkTracker? =
     } else null
 
 /**
- * MediaPipe Holistic on the CPU in video mode (D-25). The model is checked against the content manifest and loaded on
- * the first frame, on the analysis thread; if the check fails the tracker reports nothing (SEC-54).
+ * MediaPipe Holistic on the CPU in video mode (D-25). The model is mapped from the uncompressed asset, checked against
+ * the content manifest and opened by [warm] or the first frame; if the check fails the tracker reports nothing (SEC-54).
+ * [close] frees the graph, and the next use opens it again.
  */
 class HolisticTracker(private val context: Context) : LandmarkTracker {
     private var lastTimestampMs = Long.MIN_VALUE
-    private val landmarker = lazy { verifiedModel()?.let { runCatching { open(it) }.getOrNull() } }
+    private val lock = Any()
+    private var landmarker: HolisticLandmarker? = null
+    private var opened = false
+    private var delegate = Delegate.GPU
 
-    override fun track(frame: Bitmap, timestampMs: Long): LandmarkFrame? {
+    private fun model(): HolisticLandmarker? = synchronized(lock) {
+        if (!opened) {
+            landmarker = verifiedModel()?.let { runCatching { open(it) }.getOrNull() }
+            opened = true
+        }
+        landmarker
+    }
+
+    override fun warm() {
+        model()
+    }
+
+    override fun track(frame: Bitmap, timestampMs: Long): LandmarkFrame? = synchronized(lock) {
         // Video mode rejects a timestamp that does not move forward.
         if (timestampMs <= lastTimestampMs) return null
-        val model = landmarker.value ?: return null
+        val model = model() ?: return null
         lastTimestampMs = timestampMs
-        val r = model.detectForVideo(BitmapImageBuilder(frame).build(), timestampMs)
-        return landmarkFrame(timestampMs, r.leftHandLandmarks(), r.rightHandLandmarks(), r.faceLandmarks(), r.poseLandmarks())
+        val r = try {
+            model.detectForVideo(BitmapImageBuilder(frame).build(), timestampMs)
+        } catch (e: RuntimeException) {
+            // A GPU that opened but cannot run the graph: the next frame reopens it on the CPU.
+            if (delegate == Delegate.CPU) throw e
+            delegate = Delegate.CPU
+            landmarker?.close(); landmarker = null; opened = false
+            return null
+        }
+        landmarkFrame(timestampMs, r.leftHandLandmarks(), r.rightHandLandmarks(), r.faceLandmarks(), r.poseLandmarks())
     }
 
-    override fun close() {
-        if (landmarker.isInitialized()) landmarker.value?.close()
+    override fun close() = synchronized(lock) {
+        landmarker?.close()
+        landmarker = null
+        opened = false
+        lastTimestampMs = Long.MIN_VALUE
     }
 
-    private fun open(model: ByteBuffer): HolisticLandmarker = HolisticLandmarker.createFromOptions(
+    // The CPU managed about 9 frames a second on a mid-range phone; the GPU is tried first, the CPU when it fails.
+    private fun open(model: ByteBuffer): HolisticLandmarker =
+        runCatching { open(model, delegate) }.getOrElse { delegate = Delegate.CPU; open(model, Delegate.CPU) }
+
+    private fun open(model: ByteBuffer, delegate: Delegate): HolisticLandmarker = HolisticLandmarker.createFromOptions(
         context,
         HolisticLandmarker.HolisticLandmarkerOptions.builder()
-            .setBaseOptions(BaseOptions.builder().setModelAssetBuffer(model).setDelegate(Delegate.CPU).build())
+            .setBaseOptions(BaseOptions.builder().setModelAssetBuffer(model).setDelegate(delegate).build())
             .setRunningMode(RunningMode.VIDEO)
             .build(),
     )
 
+    // Mapped, not copied: clean file pages the system can reclaim, instead of 13.7 MB of anonymous memory.
     private fun verifiedModel(): ByteBuffer? = runCatching {
         val manifest = context.assets.open("content/manifest.json").bufferedReader().use { it.readText() }
         val expected = Json.parseToJsonElement(manifest).jsonObject["files"]?.jsonObject?.get(MODEL)?.jsonPrimitive?.content
-        val buffer = context.assets.openFd("content/$MODEL").use { ByteBuffer.allocateDirect(it.length.toInt()) }
-        Channels.newChannel(context.assets.open("content/$MODEL")).use { while (buffer.hasRemaining() && it.read(buffer) >= 0) Unit }
-        buffer.flip()
+        val buffer = context.assets.openFd("content/$MODEL").use { fd ->
+            FileInputStream(fd.fileDescriptor).channel.use { it.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.length) }
+        }
         val actual = MessageDigest.getInstance("SHA-256").apply { update(buffer.duplicate()) }.digest()
             .joinToString("") { "%02x".format(it) }
         buffer.takeIf { expected != null && actual == expected }

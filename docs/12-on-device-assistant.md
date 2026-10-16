@@ -1,6 +1,6 @@
 # 12. On-Device Assistant
 
-The assistant translates what the officer types into the subject's language and back into English, on the phone, so the officer can see a wrong translation before showing it (D-24). It does nothing else: it never answers, judges, summarises or signs.
+The assistant translates what the officer types into the subject's language and back into English, on the phone, so the officer can see a wrong translation before showing it (D-24). It does nothing else: it never answers, judges, summarises or signs. It plays no part in Auto mode, which is a rule sequencer over the reviewed bank (D-30), and it never sees camera frames, landmarks or sign readings.
 
 ## 1. What the officer sees
 
@@ -17,7 +17,7 @@ The assistant is skipped when the subject's language is English, or Hindi typed 
 | --- | --- | --- |
 | Runtime | llama.cpp v0.5.0 (MIT), built from source by CMake, the archive pinned by SHA-256 | Open source, CPU only, runs on arm64 phones and the x86_64 emulator |
 | Model | Gemma 3 1B instruction-tuned, Q4_K_M GGUF, 806 MB (Gemma Terms of Use) | Best Hindi of the small models tried; Qwen2.5-1.5B (Apache-2.0) mistranslated three of four test questions |
-| Decoding | Greedy, at most 120 tokens per direction, empty context per request | The same input always gives the same output |
+| Decoding | Greedy, at most 120 tokens per direction, empty context per request; the prompt is fed in batches of 256 tokens | The same input always gives the same output; a small batch keeps the compute buffer small |
 | Native library | `libassistant.so`, arm64-v8a only in release (5.9 MB) | 32-bit phones cannot map the model |
 
 The Gemma licence is free for government use but is not an OSI open-source licence; it passes on Google's prohibited-use policy. A fully open model of the same size with good Indic output can replace it by adding its hash (§3).
@@ -38,8 +38,8 @@ The Gemma licence is free for government use but is not an OSI open-source licen
 
 | Resource | Measured or set | Note |
 | --- | --- | --- |
-| Phone memory | Offered only on phones reporting at least 2.8 GB | The model maps about 0.9 GB; with it loaded the session exceeds NFR-06's 300 MB, so the model is loaded on first use and freed when the app locks |
-| APK | Release 19.1 MB (was 12.9 MB) | Within NFR-05's 30 MB |
+| Phone memory | Offered only on phones reporting at least 2.4 GB in total; loaded only when at least 1.2 GB is free and the system is not low on memory | A 3 GB phone reports well under 3 GB. The model maps about 0.9 GB; with it loaded the session exceeds NFR-06's 300 MB, so it is loaded on first use and freed when the app locks. The free-memory check at load time accounts for the camera and the vision engine |
+| APK | `libassistant.so` adds 5.9 MB; the release APK is 47.0 MB with the vision models | Within NFR-05's 50 MB |
 | Time | 66 s on the x86_64 emulator for one question, including loading the model | To be measured on the oldest supported arm64 phone (PT-02); arm64 is built for the plain ARMv8 baseline |
 
 ## 5. Tests

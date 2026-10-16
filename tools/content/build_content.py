@@ -3,6 +3,7 @@
 Run with the tools environment (resvg-py, Pillow):
     python tools/content/build_content.py                  # cards and manifest
     python tools/content/build_content.py --manifest-only  # after editing JSON or audio
+    python tools/content/build_content.py --only a,b       # render only these cards, then the manifest
 Audio is generated separately by build_audio.py, which needs the GPU environment.
 """
 import hashlib
@@ -20,9 +21,11 @@ ASSETS = ROOT / "app" / "src" / "main" / "assets" / "content"
 CARD_PX = 320
 
 
-def render_cards() -> None:
+def render_cards(only: set[str] | None = None) -> None:
     mapping = json.loads((SYMBOLS / "map.json").read_text(encoding="utf-8"))
     cards = json.loads((ASSETS / "cards.json").read_text(encoding="utf-8"))["cards"]
+    if only:
+        cards = [c for c in cards if c["id"] in only]
     missing = [c["id"] for c in cards if c["id"] not in mapping]
     if missing:
         sys.exit(f"cards without a symbol in map.json: {missing}")
@@ -55,6 +58,8 @@ def write_manifest() -> None:
 
 
 if __name__ == "__main__":
-    if "--manifest-only" not in sys.argv:
+    if "--only" in sys.argv:
+        render_cards(set(sys.argv[sys.argv.index("--only") + 1].split(",")))
+    elif "--manifest-only" not in sys.argv:
         render_cards()
     write_manifest()

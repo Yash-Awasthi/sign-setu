@@ -26,7 +26,8 @@ data class SessionEntity(
     val endedAt: Long?,
     val profile: String,
     val subjectLang: String,
-    @ColumnInfo(defaultValue = "VICTIM") val role: String = "VICTIM",
+    // The column default only fills rows from before roles existed; new sessions always write their role.
+    @ColumnInfo(defaultValue = "VICTIM") val role: String = "NOT_KNOWN",
 )
 
 @Entity(
@@ -45,6 +46,10 @@ data class EventEntity(
     val cardId: String?,
     val lexiconId: String?,
     val drawingId: Long?,
+    val itemId: String? = null,
+    val reason: String? = null,
+    val shownId: Long? = null,
+    val via: String? = null,
 )
 
 @Entity(
@@ -97,7 +102,7 @@ interface SessionDao {
     suspend fun deleteAll()
 }
 
-@Database(entities = [SessionEntity::class, EventEntity::class, DrawingEntity::class], version = 2, exportSchema = true)
+@Database(entities = [SessionEntity::class, EventEntity::class, DrawingEntity::class], version = 3, exportSchema = true)
 abstract class SessionDatabase : RoomDatabase() {
     abstract fun dao(): SessionDao
 
@@ -110,13 +115,24 @@ abstract class SessionDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE event ADD COLUMN itemId TEXT")
+                db.execSQL("ALTER TABLE event ADD COLUMN reason TEXT")
+                db.execSQL("ALTER TABLE event ADD COLUMN shownId INTEGER")
+                db.execSQL("ALTER TABLE event ADD COLUMN via TEXT")
+            }
+        }
+
         fun open(context: Context, key: ByteArray): SessionDatabase {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, SessionDatabase::class.java, FILE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(key))
                 // Purged rows are overwritten in place, and no write-ahead log keeps old pages around (SEC-08).
                 .setJournalMode(JournalMode.TRUNCATE)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                // Sessions live a day at most, so a downgrade drops them rather than failing every unlock.
+                .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
                 .addCallback(object : Callback() {
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         db.query("PRAGMA secure_delete = ON").use { it.moveToFirst() }

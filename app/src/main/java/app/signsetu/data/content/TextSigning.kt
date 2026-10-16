@@ -18,7 +18,7 @@ data class WordEntry(val w: List<String>, val sign: String? = null, val gesture:
 data class WordBeat(val range: IntRange, val card: String?, val letters: String?, val start: Float, val end: Float)
 
 @Immutable
-data class TextPlan(val gesture: Gesture?, val beats: List<WordBeat>)
+data class TextPlan(val gesture: Gesture?, val beats: List<WordBeat>, val motions: List<String> = emptyList())
 
 private const val GAP = 0.3f
 private val TOKEN = Regex("[\\p{L}\\p{M}\\p{N}]+(?:['’]\\p{L}+)?")
@@ -81,7 +81,7 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
         if (t > start) beats += WordBeat(m.range, card, letters?.ifEmpty { null }, start, t)
     }
     if (text.trimEnd().endsWith("?") && parts.none { it.id == "ask" }) gestures["ask"]?.let(::add)
-    return TextPlan(chain("text", parts, GAP).takeIf { it.keys.isNotEmpty() }, beats)
+    return TextPlan(chain("text", parts, GAP).takeIf { it.keys.isNotEmpty() }, beats, parts.map { it.id })
 }
 
 /** The letters to fingerspell: Latin as typed, Devanagari transliterated. */

@@ -13,7 +13,9 @@ Personal data is kept only as long as needed for the purpose it was collected fo
 | Session log, answers, notes, drawings | Officer's phone, encrypted | Until the session is ended, or the auto-delete period (default 24 hours, configurable between 4 and 72 hours by the department), whichever comes first | Deleted from the database; database compacted |
 | Export file | Wherever the officer sends it | Governed by the recipient system's rules | Officer deletes local copies after handover |
 | Camera images | Phone memory | Not retained; discarded frame by frame | Automatic |
-| Landmarks sent for recognition (release 1.1) | Transit; partner service | Not retained by app; partner must not retain | Partner confirms in writing |
+| Face and hand landmarks (sign windows) | Phone memory only | Until the session ends, the app locks or the session screen is closed | Wiped from memory; never written to storage |
+| Second-screen link keys and resume secret | Phone memory on both devices | Until the link ends or 120 s after it is lost | Zeroed; process exit on the stage device |
+| Stage device | Nothing about the session | Not retained | Hand-back screen, then the process ends |
 | Voice audio (release 1.1) | Phone memory; transit; Bhashini | Not retained by app; Bhashini terms [confirm] | Buffer cleared after upload |
 | Gateway access logs (release 1.1) | India-region cloud | 180 days rolling (CERT-In Directions 2022) | Automatic expiry |
 | Audit reports, incident records | Department records | As per department record retention rules | Per department rules |

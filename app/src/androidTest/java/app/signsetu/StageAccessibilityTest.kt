@@ -3,6 +3,15 @@ package app.signsetu
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import org.junit.Assert.assertFalse
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.isRoot
@@ -17,10 +26,12 @@ import app.signsetu.ui.components.LocalContentRepository
 import app.signsetu.ui.session.BoardSheet
 import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.Pending
+import app.signsetu.ui.session.RuleSteps
 import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.Stage
 import app.signsetu.ui.theme.SignSetuTheme
 import app.signsetu.ui.theme.SubjectTheme
+import app.signsetu.ui.theme.SunMode
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -60,30 +71,32 @@ class StageAccessibilityTest(private val dark: Boolean) {
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command).close()
     }
 
-    private fun show(body: @Composable () -> Unit) {
+    private fun show(atf: Boolean = true, body: @Composable () -> Unit) {
         rule.setContent { CompositionLocalProvider(LocalContentRepository provides repo) { SignSetuTheme(dark = dark, content = body) } }
         // A sheet opens its own window; the last root is the one on top.
-        rule.onAllNodes(isRoot()).onLast().tryPerformAccessibilityChecks()
+        if (atf) rule.onAllNodes(isRoot()).onLast().tryPerformAccessibilityChecks()
     }
 
-    private fun stage(pending: Pending?, profile: Profile = Profile.YOUNG_CHILD) {
+    private fun stage(pending: Pending?, profile: Profile = Profile.YOUNG_CHILD, answeredCard: String? = null, lang: String = "hi", size: DpSize? = null, atf: Boolean = true) {
         val ui = SessionUi(
-            session = Session("test", 0L, profile, "hi"),
+            session = Session("test", 0L, profile, lang),
             selectedGroup = "safety",
             sensitiveUnlocked = false,
             pending = pending,
             mode = Mode.SHOW,
             rotated = false,
-            answeredCard = null,
+            answeredCard = answeredCard,
             answeredYes = null,
             chosenLanguage = null,
             events = emptyList(),
             reading = null,
             signed = emptyMap(),
         )
-        show {
+        show(atf) {
             SubjectTheme {
-                Stage(ui, content, tracker = null, cameraOn = false, largeCaptions = false, gestureSpeed = 1f, {}, {}, {}, {}, {}, {}, {}, {}, {})
+                Box(if (size != null) Modifier.size(size) else Modifier) {
+                    Stage(ui, content, tracker = null, cameraOn = false, largeCaptions = false, gestureSpeed = 1f, {}, {}, {}, {}, {}, {}, {}, {}, {})
+                }
             }
         }
     }
@@ -105,6 +118,31 @@ class StageAccessibilityTest(private val dark: Boolean) {
     @Test fun languageFinder() = stage(Pending.LanguageFinder, Profile.OTHER_LANGUAGE)
 
     @Test fun drawing() = stage(Pending.Drawing)
+
+    @Test fun groundRule() = stage(Pending.GroundRules(2))
+
+    @Test fun practiceRound() = stage(Pending.GroundRules(RuleSteps.lastIndex), Profile.ISL_USER)
+
+    @Test fun pauseAfterStop() = stage(ask("s2"), answeredCard = "stop")
+
+    /** A language with pictures only: every control still has a name, from the officer's strings. */
+    @Test fun answersWithoutWordsInTheSubjectsLanguage() = stage(ask("h1"), Profile.NOT_SURE, lang = "bn")
+
+    @Test
+    fun aLongRightInHindiIsReadToItsEndOnASmallPhone() {
+        val q = content.questions.first { it.id == "r6" }
+        // The checks run on their own above; here only the caption's layout is read.
+        stage(Pending.Ask(q), Profile.NOT_SURE, size = DpSize(360.dp, 640.dp), atf = false)
+        val layouts = mutableListOf<TextLayoutResult>()
+        rule.onNodeWithText(q.text.getValue("hi"), useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+        assertFalse(layouts.first().hasVisualOverflow)
+    }
+
+    @Test
+    fun sunMode() {
+        SunMode.forced.value = true
+        try { stage(ask("h1")) } finally { SunMode.forced.value = false }
+    }
 
     @Test
     fun pictureBoard() = show { BoardSheet(content, "en", emptyList(), setOf("water"), {}, {}, {}) }

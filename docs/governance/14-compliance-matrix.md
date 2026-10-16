@@ -13,8 +13,13 @@ Maps each external obligation to the control that meets it and the evidence an a
 | DPDP Act s9, Rule 12, Fourth Schedule Part B | Children: consent or exemption; no tracking or monitoring | No network, analytics or advertising (SEC-30, NFR-36); exemption analysis in [DPIA](08-privacy-dpia.md) §4 | ST-05; signed DPIA | Implemented [confirm] |
 | DPDP Act s17(1) | Investigation exemption scope | DPIA §4 | Legal opinion | Planned [confirm] |
 | DPDP Rule 7 | Breach notification to Board and data principals | [12](12-operations-incident-response.md) §4 | IR procedure, drill record | Planned |
-| JJ Act 2015 s74 | No disclosure of child's identity | No identity fields; SEC-04, SEC-40, SEC-44; password-protected export (SEC-12) | ST-03, ST-04, ST-10 | Verified |
-| POCSO Act s24, s26 | Statement procedure with interpreter / special educator; video recording | App not used for statements; [officer SOP](policies/officer-sop.md); in-app notice FR-52 | SOP, training record | Planned |
+| JJ Act 2015 s74 | No disclosure of child's identity | No identity fields; SEC-04, SEC-40, SEC-44; password-protected export (SEC-12); Bluetooth friendly names never recorded (SEC-70) | ST-03, ST-04, ST-10 | Verified |
+| JJ Act 2015 s10, JJ Model Rules | Child in conflict with law: no lock-up or handcuffs, parent told, child welfare police officer, Board within 24 hours | Child's rights group and the officer's JJ notice (D-28) | TC-30; legal review of wording | Implemented [confirm] |
+| DPDP Act s8(5), s8(7) | Biometric data (face and hand landmarks) minimised and erased | SEC-71: analysis only in sign windows, memory only, wiped on end, lock and clear, never exported; accounts drop face points | TC-25, TC-29; DPIA P-11 | Implemented |
+| POCSO Act s24, s26 | Statement procedure with interpreter / special educator; video recording | App not used for statements; [officer SOP](policies/officer-sop.md); in-app notice FR-52; not-a-statement notice on every export page (FR-94) | SOP, training record, export sample | Implemented (app); Planned (training) |
+| BNSS 2023 s173, s183(6); BSA 2023 s125 | Statements of a person who cannot speak taken with an interpreter and on video | Exports labelled "communication note, not a statement"; machine and officer readings exported apart from answers; officer reminders (D-27, D-34) | Export sample; TC-34 | Implemented |
+| BNSS 2023 s38, s47, s48, s53, s58, s187; Constitution Art. 20(3) | Arrested person told of grounds, bail, a relative informed, lawyer, medical examination, production before a Magistrate; no compelled self-incrimination | Rights groups for an accused, each with the interpreter line and recorded as shown, not understood; no account questions for an accused (D-28) | TC-30, UAT-22; legal review | Implemented [confirm wording] |
+| RPwD Act 2016 s7(4) | Police inform a person with disability about protection, support groups, free legal aid and complaints | Disability rights group for a victim (draft) | Legal review | Implemented [confirm wording] |
 | RPwD Act 2016 s40, Rule 15 | ICT accessibility per IS 17802 | [UX](../03-ux.md) §5; NFR-20 to NFR-25 | AT-01 to AT-05; accessibility tests in CI | Implemented |
 | IT Act 2000 s70B, CERT-In Directions 2022 | Report incidents in 6 hours; point of contact; logs 180 days in India; NTP sync | [12](12-operations-incident-response.md); release 1 keeps no server logs | Contact sheet, IR procedure | Planned (logs and NTP: N/A for release 1) |
 
@@ -36,10 +41,11 @@ Maps each external obligation to the control that meets it and the evidence an a
 | CERT-In govt guidelines 6.2.3 | No unencrypted secret keys in app storage | SEC-11, SEC-22 | ST-08 | Verified |
 | CERT-In govt guidelines 6.2.4 | No plain-text user data on device | SEC-01, SEC-02 | ST-02 | Verified |
 | CERT-In govt guidelines 6.2.5 | No test code or debug logs; obfuscation | SEC-04, SEC-53, SEC-60 | ST-04, ST-08 | Verified |
-| CERT-In govt guidelines 6.2.6 | Minimum permissions | SEC-30, SEC-42; build gate | ST-05 | Verified |
+| CERT-In govt guidelines 6.2.6 | Minimum permissions | SEC-30, SEC-42, SEC-66, SEC-73; per-variant build gate | ST-05, ST-15 | Verified |
 | CERT-In govt guidelines 6.2.7 | Sensitive data only over TLS | No network in release 1 (SEC-30) | ST-05 | N/A for release 1 |
 | CERT-In govt guidelines 7.4, 7.10 | Backup policy | App data deliberately not backed up or transferred (SEC-03); gateway backups from release 1.1 | ST-01 | Verified |
-| CERT-In govt guidelines 8.5 | SBOM for all components | SEC-51 | SBOM in release record | Implemented |
+| CERT-In govt guidelines 8.5 | SBOM for all components | SEC-51, per build flavor | SBOM in release record | Implemented |
+| CERT-In govt guidelines 6.2.3, 6.2.7 (local link) | Keys protected; data encrypted in transit between devices | SEC-67, SEC-68: ECDH, HKDF, AES-256-GCM; keys in memory only | TC-33 | Implemented |
 | CERT-In govt guidelines 9 | Secure cloud configuration | Release 1.1 gateway | Cloud config review | N/A for release 1 |
 | CERT-In govt guidelines 10.1.13 | NIC or NPL NTP | Release 1.1 gateway | Server config | N/A for release 1 |
 | CERT-In secure app guidelines 4.8 | SAST before production, DAST on live app | [11](11-devsecops-release.md) §3: Semgrep and Android Lint; DAST from release 1.1 | Scan reports | Implemented |

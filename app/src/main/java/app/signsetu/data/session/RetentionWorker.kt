@@ -8,6 +8,8 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.signsetu.SignSetuApp
 import app.signsetu.allSessionsExpired
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 /**
@@ -20,7 +22,8 @@ class RetentionWorker(context: Context, params: WorkerParameters) : CoroutineWor
         val container = (applicationContext as SignSetuApp).container
         val settings = container.settings.current()
         if (allSessionsExpired(System.currentTimeMillis(), settings.newestSessionAt, settings.retentionHours)) {
-            container.clearAllData()
+            // lock() touches the link and the UI's state, which live on the main thread.
+            withContext(Dispatchers.Main) { container.clearAllData() }
             container.settings.setNewestSessionAt(0L)
         }
         return Result.success()

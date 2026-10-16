@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="complete_sign">has a sign</string>
+    <string name="complete_gesture">has a gesture</string>
+    <string name="complete_picture">has a picture</string>
+    <string name="complete_spell">will be spelled</string>
+    <string name="complete_word">%1$s, %2$s</string>
+
+    <string name="trail_answered">answered in %1$d s</string>
+    <string name="trail_changed">answers in order: %1$s; final after %2$d s</string>
+    <string name="trail_paused">paused for %1$s</string>
+    <string name="trail_seconds">%1$d s</string>
+    <string name="trail_minutes">%1$d min %2$d s</string>
+    <string name="choice_position">choice %1$d of %2$d</string>
+
+    <string name="grade_said">Said</string>
+    <string name="grade_confirmed">Confirmed</string>
+    <string name="grade_officer_read">Officer\'s reading</string>
+    <string name="grade_machine_read">App\'s reading</string>
+    <string name="grade_said_no">Said no</string>
+    <string name="grade_unclear">Unclear</string>
+    <string name="say_back">Say it back</string>
+    <string name="say_back_title">Say it back to check</string>
+    <string name="say_back_body">The person sees these words and answers Yes or No. Only their Yes confirms the meaning.</string>
+
+    <string name="run_ended">Run ended after %1$d of %2$d</string>
+    <string name="run_no_sensitive">Sensitive questions are asked one at a time</string>
+    <string name="run_full">A run holds up to 5 questions</string>
+    <string name="run_remove">Remove from run</string>
+    <string name="run_add">Add to run</string>
+    <string name="run_basics">Safety basics</string>
+    <string name="run_title">Run of %1$d</string>
+
+    <string name="log_prompt">Shown as</string>
+    <string name="prompt_detail">Caption: %1$s. Motions: %2$s. Pictures in order: %3$s. Content %4$s.</string>
+    <string name="prompt_none">none</string>
+    <string name="report_not_statement">Communication note, not a statement. A statement needs a qualified interpreter and the statutory video recording.</string>
+    <string name="report_grade_legend">Said: the person tapped, wrote or drew it. Confirmed: the person picked this meaning from two or three choices shown back. Said no: the person turned down the reading shown back. Officer\'s reading and App\'s reading: an interpretation, not confirmed by the person.</string>
+    <string name="report_readings">Readings by the app or the officer. These are not the person\'s own answers.</string>
+</resources>

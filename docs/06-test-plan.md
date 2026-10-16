@@ -4,7 +4,8 @@
 
 | Level | What | Tools | When |
 | --- | --- | --- | --- |
-| Unit | Session logic, retention, content resolution, lexicon search, passphrase, build expiry, PDF encryption | JUnit, kotlinx-coroutines-test | Every change |
+| Unit | Session logic, retention, content resolution, lexicon search, build expiry, segmentation, sign reader, auto sequencer, pairing protocol, handover, record and grades | JUnit, kotlinx-coroutines-test, in-process transport fake; run for both flavors (`testStandardDebugUnitTest`, `testNearbyDebugUnitTest`) | Every change |
+| Portal | Rig parity with `Rig.kt`, review flags | `vp test` (Vitest through Vite+) | Every change to the rig or portal |
 | UI | Officer and Show flows | Compose UI tests on the API 29 emulator | Every change |
 | Device | Release build on real phones | Scripts below, Macrobenchmark | End of each phase |
 | Security | MASVS L2 checks, static analysis, dependency and secret scans | Lint, Semgrep, OSV-Scanner, gitleaks, MobSF static | Every change (static); phase 2 (full) |
@@ -42,6 +43,23 @@ Logic with branches (retention, show-back, build expiry, export) is written test
 | TC-22 | The subject taps Write on the stage (any profile but young child), types and taps Done; the answer appears in the officer's conversation as a typed answer and in the export | FR-71 |
 | TC-23 | Assistant: a known model file imports, any other file is refused and deleted; a typed question returns a caption and its back-translation; Send shows the caption and logs both texts | FR-68, D-24, SEC-65 |
 | TC-24 | Every text field reports `IME_FLAG_NO_PERSONALIZED_LEARNING` to the keyboard | SEC-05 |
+| TC-25 | Frames reach the tracker only inside a sign window; the first frame is analysed whatever its timestamp and later frames wait for the interval (`AnalysisRateTest`) | FR-84, SEC-71 |
+| TC-26 | Segmentation: pauses split signs at exact index ranges; short holds and twitches stay inside or are dropped; incremental capture equals a full scan; hands leaving the frame do not end it; a 3-minute narrative drops faces and splits only at longer pauses (`SegmentTest`, `SignIngestionTest`) | FR-84, FR-87 |
+| TC-27 | Sign reader: Kotlin logits match the Python reference within 1e-3 on five fixtures; guesses are ranked probabilities; forward pass timed (`SignReaderTest`) | FR-85 |
+| TC-28 | Guesses are limited to the item on screen; the subject chooses among two or three alternatives with the officer's reading first; the slower cue appears only after a failed read of fast or lost hands; every sign-word maps to the reader and the vocabulary (`SignIngestionTest`) | FR-85 to FR-87 |
+| TC-29 | Read signs on the stage: one dot per sign, Done logs the app's reading as MACHINE; the officer's reading is logged beside it; Ask them to choose logs each set before it shows; None of these logs Unclear; ending the session, locking or clearing the view model leaves no landmarks | FR-84 to FR-87, SEC-71 |
+| TC-30 | Role gating against the real bank: sensitive only for a victim; never an account question for an accused; a child in conflict with law gets the child's rights, not the adult ones; role survives the database (`RoleTest`) | FR-88 |
+| TC-31 | Auto sequencer against the real bank: phase order; manual picks; the ceiling (no sensitive, free-recall, follow-up or rights item ever proposed); R1, R2, R3, R4b, R6 and R8; auto-advance only statement to statement, at most 3; answers pair by shown ID; content checks (`InterviewTest`) | FR-77 to FR-80 |
+| TC-32 | Auto logging and control: suggestion, approval and showing in order; skips; Stop pauses and a second Stop ends Auto; a break request pauses; typed or event questions turn Auto off; a role change drops the proposal; a closed database turns Auto off without a crash (`AutoPilotTest`) | FR-79, FR-81, FR-83 |
+| TC-33 | Pairing protocol over piped streams: both sides derive the same code, check number and keys; mismatched reveal, version, content hash or off-curve key aborts; frame caps before allocation; handshake timeout; tampered, replayed or skipped frames close the link; resume with the right key; the stage view never carries the draft; late and duplicate answers; drawing bounds (`PairTest`) | FR-72 to FR-76, SEC-66 to SEC-70 |
+| TC-34 | Officer page: completions rank signed words first; spelled words are marked; answer trails and pause length; say-back grading; choices shuffled with ways out; the "Shown as" row and picture positions (`MainPageTest`) | FR-89 to FR-94 |
+| TC-35 | Stage: glance strip shows the last question and latest answer; vibration codes; signing speed lasts the session; a tapped word is found; pause length from Stop or Break; every opening step and answer has words and pictures (`StageLogicTest`) | FR-95 to FR-98 |
+| TC-36 | Sun mode switches on after 3 s above 10,000 lux and off after 10 s below 2,000 lux (`SunModeTest`) | FR-99 |
+| TC-37 | Tilt fires once after the dwell and must re-arm; a short dip does not fire; both volume keys held fire once; one key never fires; keys stay with the system unless something is ready or shown (`HandoverTest`) | FR-100 |
+| TC-38 | Kill the app while the stage shows; on restart the full biometric or PIN is asked even straight after a phone unlock | FR-101, SEC-75 |
+| TC-39 | Database migrations 1 to 2 (role) and 2 to 3 (item, reason, shown and via columns) keep existing rows (`SessionMigrationTest`) | FR-34, FR-81 |
+| TC-40 | Rig parity: `RigFixtureTest` regenerates nothing and `vp test` passes on the portal's TypeScript rig | D-31 |
+| TC-41 | Two phones and a tablet: the second-screen script UAT-18 | FR-72 to FR-76 |
 
 ## 3. Performance
 
@@ -81,6 +99,11 @@ Release build on the API 29 emulator with 3 GB RAM, then on a real Android 10 ph
 | ST-12 | Tampered content bundle rejected | SEC-54 |
 | ST-13 | SBOM complete; no known critical vulnerabilities; gitleaks clean | SEC-50 to SEC-52 |
 | ST-14 | Overlay app over Show, export and clear actions: touches filtered | SEC-45 |
+| ST-15 | Merged manifest of every variant: the standard build has no discovery or location permission and adding BLUETOOTH_SCAN by hand fails the build; the nearby build adds only the D-26 list; no build has INTERNET, RECORD_AUDIO or ACCESS_BACKGROUND_LOCATION | SEC-30, SEC-66, SEC-73 |
+| ST-16 | Dependency tree has no `transport-backend-cct`; the stub destination is present; nothing leaves the phone during a sign window (no network permission) | SEC-72 |
+| ST-17 | Stage device after a session: `run-as ls -R` shows no new files other than the settings store; the hand-back screen stays pinned until the stage credential | SEC-69, FR-73 |
+| ST-18 | Logcat during a sign window and a pairing session: no landmarks, guesses, exception messages or Bluetooth names | SEC-70, SEC-71 |
+| ST-19 | Release APK contains the holistic and sign-reader models listed in the manifest; one changed byte in either disables it and leaves a plain mirror | SEC-74 |
 
 ST-06 and ST-11 (attestation, gateway fuzzing) apply from release 1.1.
 
@@ -93,6 +116,7 @@ ST-06 and ST-11 (attestation, gateway fuzzing) apply from release 1.1.
 | AT-03 | TalkBack: complete triage flow as officer | NFR-23 |
 | AT-04 | Every supported script renders without clipping | NFR-25 |
 | AT-05 | Greyscale: Yes and No still distinguishable | NFR-21 |
+| AT-06 | Accessibility Test Framework over the stage device screens (waiting, code, reconnecting, hold, break, ended), the three-row answer bar, the hold screen and the Next button, in both themes, at 320 and 411 dp and font scale 1.3 | NFR-20, NFR-21 |
 
 ## 7. Content validation and testing with people
 
@@ -107,11 +131,12 @@ ST-06 and ST-11 (attestation, gateway fuzzing) apply from release 1.1.
 | Emulator, API 29, 3 GB RAM | Performance floor and automated tests |
 | Real Android 10 phone, 3 GB RAM | Final performance and pinning behaviour |
 | Recent phone | Current platform behaviour |
+| Second phone (API 29, fingerprint enrolled) and a tablet | Second screen (UAT-18); the emulator has no Bluetooth |
 | Emulator, latest API | Automated tests |
 
 ## 9. Exit criteria per release
 
 - All MUST requirements pass on the device list.
-- No open critical or high defects; ST-01 to ST-14 (release 1 set) pass.
+- No open critical or high defects; ST-01 to ST-19 (release 1 set) pass.
 - Performance targets met on the oldest device.
 - Test report stored with the release record.

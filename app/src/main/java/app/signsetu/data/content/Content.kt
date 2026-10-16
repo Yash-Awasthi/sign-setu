@@ -19,8 +19,26 @@ typealias Localized = Map<String, String>
 
 fun Localized.pick(lang: String): String? = this[lang]
 
+/**
+ * [rights] items are shown, never taken as understood: each carries the interpreter notice. [child] true is only for a
+ * person who may be under 18, false only for an adult, null for anyone: a child is not told adult arrest rights.
+ */
 @Immutable @Serializable
-data class Group(val id: String, val label: Localized, val sensitive: Boolean = false, val roles: List<Role> = emptyList())
+data class Group(
+    val id: String,
+    val label: Localized,
+    val sensitive: Boolean = false,
+    val roles: List<Role> = emptyList(),
+    val rights: Boolean = false,
+    val child: Boolean? = null,
+)
+
+/** Where an item sits in a first-contact conversation; declaration order is the auto mode's proposal order. */
+@Serializable
+enum class Phase { RAPPORT, GROUND_RULES, WELFARE, PRACTICAL, CLOSING, BREAK, RIGHTS, FREE_RECALL, FOLLOW_UP }
+
+@Serializable
+enum class Kind { STATEMENT, INVITATION, DIRECTIVE, OPTION }
 
 @Immutable @Serializable
 data class Question(
@@ -31,6 +49,10 @@ data class Question(
     val lexicon: String? = null,
     /** Character animation; defaults to the lexicon entry's. */
     val gesture: String? = null,
+    val phase: Phase? = null,
+    val kind: Kind = Kind.DIRECTIVE,
+    /** "s2:yes" or "s2:any": asked only after that answer to that item. */
+    val after: String? = null,
 )
 
 @Immutable @Serializable
@@ -101,9 +123,18 @@ data class ContentBundle(
     val phrases: List<Phrase> = emptyList(),
     /** Every written form of a vocabulary word, lower case, to its entry. */
     val words: Map<String, WordEntry> = emptyMap(),
+    /** SHA-256 of manifest.json; a second screen must hold the same content (D-26). */
+    val manifestHash: String = "",
+    /** Start of the manifest's SHA-256: names the exact content a prompt was drawn from. */
+    val version: String = "",
 ) {
     /** A group with no roles listed is for everyone. */
-    fun groupsFor(role: Role): List<Group> = groups.filter { it.roles.isEmpty() || role in it.roles }
+    fun groupsFor(role: Role, child: Boolean = false): List<Group> =
+        groups.filter { (it.roles.isEmpty() || role in it.roles) && (it.child == null || it.child == child) }
+
+    fun group(id: String): Group? = groups.firstOrNull { it.id == id }
+    fun question(id: String): Question? = questions.firstOrNull { it.id == id }
+    fun isRights(q: Question) = group(q.group)?.rights == true
 
     fun gestureFor(q: Question): Gesture? = (q.gesture ?: q.lexicon)?.let { gestures[it] }
 
@@ -146,7 +177,8 @@ class ContentRepository(private val assets: AssetManager) {
     private val images = LruCache<String, ImageBitmap>(48)
 
     suspend fun load(): ContentBundle = bundle ?: withContext(Dispatchers.IO) {
-        val manifest = json.decodeFromString<Manifest>(read("manifest.json"))
+        val manifestText = read("manifest.json")
+        val manifest = json.decodeFromString<Manifest>(manifestText)
         val rejected = manifest.files.filter { (path, hash) -> eagerlyChecked(path) && sha256(path) != hash }.keys
         // A file that fails its check is never parsed: no content beats wrong content (SEC-54).
         val triage = verified("triage.json", rejected) ?: TriageFile(emptyList(), emptyList())
@@ -171,6 +203,8 @@ class ContentRepository(private val assets: AssetManager) {
             gestures = gestures.associateBy { it.id },
             phrases = phrases,
             words = words.flatMap { e -> e.w.map { it to e } }.toMap(),
+            manifestHash = sha256("manifest.json").orEmpty(),
+            version = MessageDigest.getInstance("SHA-256").digest(manifestText.toByteArray()).take(6).joinToString("") { "%02x".format(it) },
         ).also { bundle = it }
     }
 

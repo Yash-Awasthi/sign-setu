@@ -38,5 +38,61 @@
   "okay": {
     "en": "Okay",
     "hi": "ठीक है"
+  },
+  "dont_understand": {
+    "en": "I don't understand",
+    "hi": "मुझे समझ नहीं आया"
+  },
+  "wrong": {
+    "en": "That's wrong",
+    "hi": "यह ग़लत है"
+  },
+  "break": {
+    "en": "Break",
+    "hi": "थोड़ा आराम"
+  },
+  "ready": {
+    "en": "I'm ready",
+    "hi": "मैं तैयार हूँ"
+  },
+  "next": {
+    "en": "Next",
+    "hi": "आगे"
+  },
+  "rights_interpreter": {
+    "en": "A qualified interpreter must also explain this to you.",
+    "hi": "यह बात एक योग्य दुभाषिया भी आपको समझाएगा।"
+  },
+  "watching": {
+    "en": "I'm watching. Take your time.",
+    "hi": "आराम से बताइए, हम देख रहे हैं।"
+  },
+  "sign_slower": {
+    "en": "A little slower, please",
+    "hi": "थोड़ा धीरे-धीरे दिखाइए"
+  },
+  "none_of_these": {
+    "en": "None of these",
+    "hi": "इनमें से कोई नहीं"
+  },
+  "rule_not_there": {
+    "en": "I was not there. Only you know what happened.",
+    "hi": "मैं वहाँ नहीं था। क्या हुआ, यह सिर्फ़ आप जानते हैं।"
+  },
+  "rule_dont_know": {
+    "en": "If you don't know, you can say \"I don't know\".",
+    "hi": "अगर आपको नहीं पता, तो आप \"पता नहीं\" कह सकते हैं।"
+  },
+  "rule_wrong": {
+    "en": "If I get something wrong, tell me.",
+    "hi": "अगर मैं कुछ ग़लत समझूँ, तो मुझे बताइए।"
+  },
+  "rule_break": {
+    "en": "You can take a break at any time.",
+    "hi": "आप कभी भी थोड़ा आराम ले सकते हैं।"
+  },
+  "practice_morning": {
+    "en": "Show me what you did this morning.",
+    "hi": "मुझे दिखाइए, आज सुबह आपने क्या किया।"
   }
 }

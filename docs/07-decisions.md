@@ -8,7 +8,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-01 Native Android with Kotlin and Jetpack Compose
 
-**Status:** Accepted 16 October 2026
+**Status:** Accepted
 
 **Context.** Production government app, distributed as an APK, oldest phone Android 10 with 3 GB RAM, on-device camera ML, strict security controls. The original plan chose React as a PWA for speed of development.
 
@@ -25,7 +25,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-02 Landmarks on device; only landmarks leave the phone
 
-**Status:** Superseded by D-14 (release 1 has no camera). If recognition returns after the pilot, it runs entirely on the device.
+**Status:** Superseded by D-14, then by D-25: landmarks are computed on the phone and never leave it.
 
 **Context.** Sign recognition needs the subject's hands and body. Video of a child is highly sensitive and heavy on the network.
 
@@ -37,7 +37,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-03 Recorded ISL clips for the triage set; skeleton avatar only for free text
 
-**Status:** Accepted 16 October 2026 for human ISL clips on the triage set; the skeleton avatar is superseded by D-13. Needs a volunteer signer and reviewer.
+**Status:** Accepted for human ISL clips on the triage set; the skeleton avatar is superseded by D-13. Needs a volunteer signer and reviewer.
 
 **Context.** Studies show sentence comprehension from avatars is substantially lower than from human signers; ISL depends on facial grammar a skeleton may not show.
 
@@ -158,7 +158,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-12 Subject profiles decide what the subject sees and hears
 
-**Status:** Accepted 16 October 2026
+**Status:** Accepted
 
 **Context.** Most deaf children do not know ISL; hearing children may speak another language and be unable to read. One ISL-first output serves neither.
 
@@ -170,7 +170,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-13 Two original characters with a fixed, reviewed lexicon replace the skeleton avatar
 
-**Status:** Accepted 16 October 2026; supersedes the skeleton part of D-03 (see [avatar design](05-avatar-and-gestures.md))
+**Status:** Accepted; supersedes the skeleton part of D-03 (see [avatar design](05-avatar-and-gestures.md))
 
 **Context.** A skeleton has no face, so it cannot show ISL facial grammar, and may frighten children. Free text converted word by word into signs is not ISL and cannot be reviewed before a child sees it.
 
@@ -182,7 +182,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-14 Officer gesture lookup replaces camera sign recognition in v1
 
-**Status:** Accepted 16 October 2026 (see critical review C-4, C-5); the camera part is superseded by D-20. Gesture lookup and show-back stay.
+**Status:** Accepted (see critical review C-4, C-5); the camera part is superseded by D-20 and D-25. Gesture lookup and show-back stay.
 
 **Context.** Public ISL datasets are adult signers; children's home signs are in no dataset. One phone's front camera cannot watch the subject while the officer reads the screen. A false "yes" is the worst failure the app can produce.
 
@@ -194,7 +194,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-15 v1 works fully offline, with no INTERNET permission
 
-**Status:** Accepted 16 October 2026 (see critical review H-1, H-7)
+**Status:** Accepted (see critical review H-1, H-7)
 
 **Context.** The network features (free-text signing, server recognition, voice, translation) carry most of the security, audit and partner-agreement cost, and the first two are replaced by D-13 and D-14.
 
@@ -206,7 +206,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-16 Call an interpreter
 
-**Status:** Accepted 16 October 2026 (see critical review C-6)
+**Status:** Accepted (see critical review C-6)
 
 **Context.** Bhopal and Indore police already run video-call helplines for deaf people with officers trained in sign language. A human interpreter outperforms any feature of this app for an ISL user.
 
@@ -218,7 +218,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-17 Export as a password-protected PDF
 
-**Status:** Accepted 16 October 2026 (see critical review H-2)
+**Status:** Accepted (see critical review H-2)
 
 **Context.** The custom AES-256-GCM export in SEC-12 cannot be opened by a CWC member or a station writer without special software.
 
@@ -230,7 +230,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-18 Language finder for hearing children who speak another language
 
-**Status:** Accepted 16 October 2026 (in scope; see critical review C-7)
+**Status:** Accepted (in scope; see critical review C-7)
 
 **Context.** Rescued and trafficked children often speak Bengali, Nepali, Assamese, Odia or a tribal language and cannot read; captions do not reach them.
 
@@ -242,7 +242,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-19 The app runs on officers' personal phones
 
-**Status:** Accepted 16 October 2026
+**Status:** Accepted
 
 **Context.** Officers will install the app on their own phones. There is no mobile device management, and a personal phone may be old, unpatched, rooted, or shared with family members who know its PIN.
 
@@ -259,7 +259,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-20 The stage: the character above, a camera mirror below
 
-**Status:** Accepted 16 October 2026; supersedes the camera part of D-14
+**Status:** Accepted; supersedes the camera part of D-14; the `HandTracker` seam is replaced by `LandmarkTracker` (D-25)
 
 **Context.** In the field the phone faces the subject for most of a conversation, so the subject's screen is the app's home. Children who cannot speak answer with their hands, and seeing their own hands next to the character helps them copy a gesture or show one. A partner team is building an on-device hand-detection model.
 
@@ -271,7 +271,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-21 Characters drawn in code for release 1
 
-**Status:** Accepted 16 October 2026; changes the delivery stages of D-13, not its characters or lexicons
+**Status:** Accepted; changes the delivery stages of D-13, not its characters or lexicons
 
 **Context.** Pre-rendered clips (05 §5.4 stage 1) need VRoid Studio, Blender and weeks of team time before a child sees any gesture. The app needs a moving character with readable fingers from the first pilot.
 
@@ -283,7 +283,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-22 Typed text is signed word by word, with the officer choosing how
 
-**Status:** Accepted 16 October 2026; amends the free-text rule of D-13 and FR-13
+**Status:** Accepted; amends the free-text rule of D-13 and FR-13
 
 **Context.** Officers in Chhattisgarh, including its Naxal-affected districts, need to say things the triage set and phrase bank do not cover, and reaching a prepared question took several taps. Free text shown only as a caption reaches nobody who cannot read. Grammatical text-to-ISL translation does not exist offline at no cost.
 
@@ -295,7 +295,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-23 The handle alone, without a credential, leaves the stage
 
-**Status:** Accepted 16 October 2026; amends FR-61, SEC-21 and SEC-46
+**Status:** Accepted; amends FR-61, SEC-21 and SEC-46
 
 **Context.** Officers met a fingerprint or PIN prompt on opening the app, again every time they took the phone back from the subject, and the phone locked when pinning ended. In the field this is several prompts a minute. The credential on the way back from the stage guards the notes and log against a subject who taps the officer handle, and a deliberate long press does that without a prompt.
 
@@ -309,7 +309,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-24 An optional on-device model translates typed text, with a back-translation
 
-**Status:** Accepted 16 October 2026; brings FR-68 forward from release 1.1 without a network
+**Status:** Accepted; brings FR-68 forward from release 1.1 without a network
 
 **Context.** Officers type in English or Hindi; many subjects read another language, and in the Naxal-affected districts there is often no network, so a cloud service such as Bhashini cannot be relied on. Small language models now run on mid-range phones, but they make translation mistakes, and a wrong question in a child interview can mislead.
 
@@ -317,3 +317,157 @@ Status: Proposed, Accepted, Superseded.
 
 **Consequences.** The release APK grows by 5.9 MB; with the model loaded a session exceeds the 300 MB memory target, so it loads on first use and is freed when the app locks. The Gemma licence is not OSI open source; a fully open model can replace it by hash. Language reviewers spot-check output per pilot language. Asking the model to put sentences in ISL order was tried and dropped: it produced wrong output, and the rule-based word matching of D-22 stays.
 
+
+---
+
+## D-25 On-device vision engine, sign reader and sign windows
+
+**Status:** Accepted; supersedes D-02 and the hand-model seam of D-20; delivers FR-22 as FR-84 to FR-87
+
+**Context.** A crying or frightened signer signs fast, and the officer cannot read it. The partner team's hand model was not delivered in time, and no open model reads continuous ISL. Isolated-sign recognition over a known vocabulary is achievable on a phone, and MediaPipe Holistic gives hand, face and pose landmarks on the device. Face and hand landmarks are biometric data, and a camera that analysed every frame would watch the subject without a reason.
+
+**Decision.**
+- **Engine.** MediaPipe Holistic (`tasks-vision` 1.0.0, Apache-2.0) runs on the CPU in video mode behind the `LandmarkTracker` interface: one upright RGBA frame of about 640 by 480 in; 21 points per hand, 468 face points and 33 pose points out. The model (`models/holistic_landmarker.task`, 13.7 MB, float16) is mapped from the APK, checked against the content manifest before it opens, and loaded off the main thread before the first frame. It ships for 64-bit phones only; 32-bit phones keep a plain mirror.
+- **Sign windows.** Frames are analysed only inside an explicit window. **Read signs** from the officer, or the hand button on the stage, opens a 20-second answer window; **Tell me** opens a 3-minute narrative window (D-27). Outside a window the mirror is a preview with no analysis. Inside one, analysis runs at up to 30 frames per second.
+- **Segmentation.** A pause segmenter splits the stream where the hands are absent or still (mean speed of all hand points below 0.3 frame widths per second): after 0.4 s in an answer, 0.7 s in a narrative. Chunks shorter than 0.2 s, or with fewer than 3 moving frames, are dropped. Hands leaving the frame briefly do not end the capture.
+- **Sign reader.** A 262-word isolated-sign classifier (`models/sign_reader.bin` and `.json`, 1.4 MB) trained on the INCLUDE dataset (CC BY 4.0) from the OpenHands pose release, run in plain Kotlin (`LandmarkSignReader`) with no new dependency. Input: hands and arms of one chunk, normalised to the shoulders. Output: every label with its probability. On the INCLUDE test split: top-1 97.8%, top-3 99.4%, measured on studio signers.
+- **Context limit.** `sign_words.json` (draft, needs ISL review) maps reader labels to the app's vocabulary, for example house to home and bathroom to toilet. While a question is on screen, guesses are limited to concepts among that question's answer cards; with nothing on screen every label is allowed.
+- **Proposals only.** Reader guesses are proposals, in English, for the officer. They are never shown to the subject automatically and never sent over the second-screen link (D-26).
+- **Slower cue.** The subject is never asked up front to sign one sign at a time. "A little slower, please" appears, with a picture, only after a failed read (best guess below 40%) of hands that were lost (over 30% of the chunk untracked, or gaps over 150 ms) or too fast (wrist faster than 2.5 frame widths per second).
+
+**Consequences.** The release APK grows to about 47 MB (NFR-05 amended). Face analysis enters the app; the DPIA records it as biometric processing in memory only (SEC-71). The core answer words yes, no, water, pain, help, stop and "don't know" are not in INCLUDE, so the reader cannot read them until more data is collected, and picture answers stay the main path. Accuracy with children on phone cameras is unmeasured. The partner team's model can replace the reader behind `SignReader` ([hand model integration](11-hand-model-integration.md)).
+
+---
+
+## D-26 A second screen over bonded Bluetooth
+
+**Status:** Accepted; adds FR-72 to FR-76 and SEC-66 to SEC-70
+
+**Context.** Turning one phone back and forth is slow, and a tablet is easier for a child to see. A second device must not weaken the offline rules: no INTERNET, no location, no scanning, and the subject's device keeps nothing.
+
+**Decision.**
+- A second phone or tablet, paired once in system Bluetooth settings, shows the subject's stage while the officer keeps their phone. The link is secure RFCOMM to a bonded device. The app never scans, advertises, makes itself discoverable or bonds. Rejected: Wi-Fi Direct and Wi-Fi Aware (sockets need INTERNET; discovery needs location or NEARBY_WIFI_DEVICES), BLE GATT (scan and advertise permissions; 23 to 517 byte chunks), USB (accessory mode and a cable) and NFC (Android Beam removed in API 29).
+- The officer phone is the only store. It logs every event in its encrypted database before sending it, and sends full snapshots of what is on stage, which can safely be applied twice. The stage confirms each item with Displayed; each answer is acknowledged only after it is committed.
+- Pairing uses P-256 ECDH with commit then reveal, HKDF-SHA256 and AES-256-GCM, a design reused from the MIT-licensed Ping project. The stage shows a 6-digit code that the officer types on their phone, which never shows it. Once the officer phone accepts the code it shows a 4-digit check number; the stage shows the same number when the acceptance arrives, and only then can the stage tap Match. Three wrong codes close the link.
+- Reconnecting within 120 s uses a resume key held in memory and the pinned peer address, with no code and no tap.
+- While Live the stage has no local exit. At the end it stays pinned on a hand-back screen until the stage device's own credential is given, which ends the task and the process.
+- A build flavor `nearby` swaps in Google Nearby Connections behind the same `StageTransport` interface for departments whose phones have Play services. It adds scan, advertise, Wi-Fi state, NEARBY_WIFI_DEVICES and fine location (up to API 32) and has its own application ID. The `standard` flavor is the reference build, with no Play services and none of these permissions.
+- Paired mode does not change the app's non-evidentiary status.
+
+**Consequences.** BLUETOOTH_CONNECT is a runtime permission on Android 12 and later (SEC-42 amended). Two-device behaviour cannot be tested on the emulator, which has no Bluetooth; it needs the two-phone and tablet UAT script. Sign capture runs only on the officer phone's own stage in this version.
+
+---
+
+## D-27 Narrative mode, the subject's own meaning, and landmarks kept for the session
+
+**Status:** Accepted; amends FR-66 and SEC-47
+
+**Context.** A traumatised person may need to narrate what happened, not answer one question. Machine and officer readings of signs are interpretations; a reading treated as the person's own words contaminates the account (BNSS s.173 and s.183(6), BSA s.125, POCSO s.26). A later interpreter needs the signing itself, not only the app's words.
+
+**Decision.**
+- **Tell me** (More page) opens a 3-minute narrative window. The stage says "I'm watching. Take your time." and shows no timer and no cues, only Stop and Done and one dot per sign seen. Narrative frames keep hands and pose only; face points are dropped, which also bounds memory to about 20 MB.
+- Every signed answer and narrative stays in view-model memory for the whole session, keyed by its event, so an interpreter can replay it at ¼× or ½× with sign markers and enter a word per chunk, with the reader's top three guesses as chips.
+- Landmarks are wiped when the session ends, when the app locks (the session screen is torn down) and when the view model is cleared. They are never written to disk, logged or exported.
+- The record keeps three layers: the app's reading ("Signed answer", source MACHINE, "read by the app, not checked"), the officer's reading ("Signed answer", "checked by the officer") and the subject's answer. A reading becomes the subject's only when the officer taps **Ask them to choose** and the subject picks one of two or three picture cards (the officer's reading, then the reader's guesses, then the item's own answer cards, shown shuffled) or "None of these". Each set is logged as shown before it appears; "None of these" is logged as Unclear with the alternatives.
+
+**Consequences.** Memory holds biometric data for up to the length of a session (SEC-71, DPIA P-11). An app reading never reaches the export as an answer; it appears in a separate readings section.
+
+---
+
+## D-28 Victim and accused roles
+
+**Status:** Accepted; adds FR-88
+
+**Context.** The same first conversation happens with victims, witnesses and accused persons, and the appropriate questions differ: an accused must not be led into an account (Constitution Art. 20(3), BSA s.23) and has rights to be told on arrest (BNSS s.38, 47, 48, 53 and 58). Officers often do not know the role at first contact.
+
+**Decision.**
+- A session's role is **Not known yet** until the officer sets **Victim or witness** or **Accused or in custody**. While it is not known only shared groups are offered, and the export omits the role.
+- The sensitive group is offered for a victim only, and the free-recall group "Their account" for a victim or an unknown role, never an accused. For an accused the rights groups are offered: shared rights (grounds of arrest, a lawyer during questioning, a government doctor, no forced self-incrimination), adult arrest rights (bail and surety, a relative or friend told, a Magistrate within 24 hours) and a child's rights (no lock-up or handcuffs, parent or guardian told, a child welfare police officer, the Juvenile Justice Board within 24 hours). Disability rights under the RPwD Act s.7(4) are offered for a victim.
+- A group may carry a `child` flag: true for a person who may be under 18, false for adults only. A young-child profile, or an accused the officer marks as possibly under 18, gets the child's rights and never the adult ones. Setting the accused role shows the officer the Juvenile Justice notice (logged `jj_notice`); the mark is logged as `juvenile` or `juvenile_off`.
+- Rights are shown in pictures and signs, each with "rights must also be explained through a qualified interpreter" (an officer card and a subject line on the stage). The record marks each "shown, not proof of understanding".
+
+**Consequences.** Every rights text, in English and Hindi, is draft content that needs a legal translator's and the legal adviser's sign-off before field use. Database version 2 adds the session role (migration 1 to 2; older rows read as Victim).
+
+---
+
+## D-29 Typed text in ISL order, as a draft
+
+**Status:** Accepted; amends D-22
+
+**Context.** Word-by-word signing in English order is hard for Deaf readers. Published descriptions of ISL place time signs early, negation after the verb and the question sign last, but the rules vary between signers and have not been checked by Deaf reviewers for this app.
+
+**Decision.** With **Signs** on, typed text plays in ISL order: time words first, the other words as typed (grammar words dropped), then negation, then the question word. Gestures-only and spelling-only playback keep the typed order. The caption keeps the typed text and lights each word as it is signed. Hindi "kal" plays the general time sign, because it means both yesterday and tomorrow.
+
+**Consequences.** The ordering and every new word sign stay drafts until ISL review on the content review record. Non-manual grammar beyond the asking face is not generated. A setting that turns the reordering off independently of the Signs toggle is not yet built and is required before Deaf review is complete.
+
+---
+
+## D-30 Manual and Auto conversation modes
+
+**Status:** Accepted; adds FR-77 to FR-83; D-23 unchanged
+
+**Context.** Officers asked for help choosing the next question. A free-running assistant would lead a child, and an on-device language model cannot be trusted to choose or word interview questions.
+
+**Decision.**
+- **Manual** is the default every session. **Auto** is available only when "Allow automatic conversation on this phone" is on in Settings.
+- Auto is a rule-ordered sequencer over the reviewed bank: a pure function of the session log, the bank and the role. It proposes only from the RAPPORT, GROUND_RULES, WELFARE, PRACTICAL, BREAK and CLOSING phases, and never sensitive, free-recall, follow-up or rights items, for any role. A question with no phase is never proposable.
+- Rules: R1, an item last answered unsure or Stop is not proposed again; R2, after an unsure answer to an option item, other option items of that group wait; R3, two unsure answers in a row offer a break first; R4, Stop pauses Auto; R4b, after a resume "Can we carry on?" comes first; R6, a follow-up is eligible only when its condition holds on an unchanged answer, and then goes first; R7, groups are gated by role; R8, when nothing else is left only closing items are proposed. R5 is not used.
+- Every question needs one officer tap. Only a statement may follow a statement by itself, on the subject's Next tap, at most 3 in a row.
+- The on-device model ranks nothing and writes nothing; it only translates for officer approval (D-24).
+- A manual send of typed text, a show-back, a sensitive item, or a free-recall or follow-up item turns Auto off (`mode_manual_substantive`). Stop pauses Auto; a second Stop in the same Auto run ends it.
+- Leaving the stage stays one tap in Auto too (D-23).
+
+**Consequences.** Every suggestion, approval, skip and automatic advance is logged with item ID, source and reason (database version 3); the report shows the mode, who chose each item and suggestions not acted on. Auto state is memory only: after a lock or restart the session reopens in Manual.
+
+---
+
+## D-31 A static reviewer portal for content sign-off
+
+**Status:** Accepted
+
+**Context.** ISL, language and child-welfare reviewers sign off content without an Android phone or developer tools, and the record of their verdicts must be reproducible.
+
+**Decision.** `portal/` is a static, offline web page built with Vite+ (the `vp` command line), React 19.3 and TypeScript 7.0, with no backend. It reads the app's content files at build time. Screens: ISL review (every motion on both characters through a TypeScript port of the rig, with speed and scrub), language review (captions and recordings per language) and child-welfare review (question wording and cards, with hints from the research avoid list; the hints are prompts, not a safety check). Each item takes Approve, Change or Reject, notes and the reviewer's role. Verdicts stay in the reviewer's browser and are exported as JSON, which `tools/content/review_record.py --reviews` writes into the content review record.
+
+**Consequences.** The TypeScript rig must match `Rig.kt`: `RigFixtureTest` writes `portal/src/rig-fixtures.json` and fails when the Kotlin rig changes. After a deliberate rig change the fixture is regenerated and `rig.ts` updated until `vp test` passes. The portal is a tool and is not shipped in the app.
+
+---
+
+## D-32 Stack upgrades
+
+**Status:** Accepted
+
+**Context.** Dependencies are pinned and verified (SEC-50). Upgrades are taken only as stable releases at least two weeks old.
+
+**Decision.** MediaPipe `tasks-vision` 0.10.35 to 1.0.0; NDK r27 to r30 (16 KB page alignment by default); CMake 3.22.1 to 4.1.1, with llama.cpp v0.5.0 kept. Every other library was already at its latest stable release. JDK 21 stays. The portal uses vite-plus 1.0.0, React 19.3.0 and TypeScript 7.0.2.
+
+**Consequences.** Lockfile and verification metadata regenerated; no API changes were needed. PdfBox-Android 2.0.27.0 has no newer release and remains a maintenance risk.
+
+---
+
+## D-33 MediaPipe usage statistics are blocked at build time
+
+**Status:** Accepted; implements SEC-72
+
+**Context.** MediaPipe's task runner reports usage statistics through Google's data transport library, whose upload backend (`transport-backend-cct`) declares INTERNET. The permission gate (SEC-30) refuses a build that contains it.
+
+**Decision.** The upload backend is excluded from the dependency graph. A stub destination named `none` (`com.google.android.datatransport.cct.CCTDestination`) satisfies the task runner; no backend is registered for it, so the transport runtime drops every event on the device.
+
+**Consequences.** Nothing is sent and the merged manifest has no INTERNET. The transport runtime may keep a small local statistics database (task name, latency counts, device model) that never holds images or landmarks; it is excluded from backup with the rest of the app's data. Every MediaPipe upgrade is checked for new transport dependencies.
+
+---
+
+## D-34 A layered, graded record and a fairer stage
+
+**Status:** Accepted; adds FR-89 to FR-101
+
+**Context.** Research on child interviewing and AAC shows that what the person saw, the order of the choices and how long they took matter as much as the answer, and that someone else's reading must never pass as the person's own words.
+
+**Decision.**
+- After each item shown, a "Shown as" row records exactly what the person saw: the caption in their language, the motions played, the pictures in the order offered, and the content version (the first 12 hex characters of the content manifest's SHA-256).
+- Every answer line carries a grade (Said; Confirmed, when the person picked this meaning from two or three choices shown back; Officer's reading; App's reading; Said no; Unclear) and an answer trail (time taken, every change, pause length).
+- Exports say "Communication note, not a statement. A statement needs a qualified interpreter and the statutory video recording." at the top and bottom of every page, with a grade legend, and print readings by the app or the officer in a separate section.
+- The stage opens with the officer's introduction, four ground rules and a practice round. Picture choices are shuffled and capped at four, plus "Something else" and "I don't understand". Stop and Break open a calm pause that only the person's "I'm ready" ends.
+- Thumb-up, thumb-down and open palm are not used for yes, no or stop; Stop is an octagonal sign. No body map is shown to the subject in the default flow; the body outline stays an officer tool for gesture lookup.
+
+**Consequences.** EventType gains PROMPT, with no schema change beyond D-30. The subject-screen words added for these features exist in English and Hindi only, so other subject languages show the pictures alone until they are translated.

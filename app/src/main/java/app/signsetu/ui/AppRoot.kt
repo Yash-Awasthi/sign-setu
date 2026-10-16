@@ -20,6 +20,9 @@ import app.signsetu.data.settings.whatsappNumber
 import app.signsetu.ui.settings.SettingsScreen
 import app.signsetu.ui.start.FirstRunScreen
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.SideEffect
 import androidx.core.content.FileProvider
 import app.signsetu.export.SessionReport
 import java.io.File
@@ -56,7 +59,9 @@ import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.components.LocalContentRepository
+import app.signsetu.ui.session.HandoverEffects
 import app.signsetu.ui.session.Mode
+import app.signsetu.ui.session.Conv
 import app.signsetu.ui.session.OfficerPane
 import app.signsetu.ui.session.SessionViewModel
 import app.signsetu.ui.session.Stage
@@ -70,6 +75,15 @@ import app.signsetu.ui.theme.SignSetuTheme
 import app.signsetu.ui.theme.SubjectTheme
 import kotlinx.serialization.Serializable
 import app.signsetu.ui.components.GuardedAlertDialog
+import android.view.WindowManager
+import androidx.compose.runtime.remember
+import app.signsetu.pair.ByeReason
+import app.signsetu.pair.LinkRole
+import app.signsetu.pair.LinkState
+import app.signsetu.pair.rememberPairedStage
+import app.signsetu.ui.pair.SecondScreenSheet
+import app.signsetu.ui.pair.StageDeviceScreen
+import app.signsetu.ui.pair.UseAsStageButton
 
 @Serializable data object StartKey : NavKey
 @Serializable data class SessionKey(val id: String) : NavKey
@@ -82,6 +96,7 @@ fun AppRoot(container: AppContainer, guard: DeviceGuard) {
     val repo by container.sessions.collectAsStateWithLifecycle()
     val content by produceState<ContentBundle?>(null) { value = container.content.load() }
     val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
+    val link by container.link.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val title = stringResource(R.string.lock_prompt_title)
     val subtitle = stringResource(R.string.lock_prompt_subtitle)
@@ -91,13 +106,24 @@ fun AppRoot(container: AppContainer, guard: DeviceGuard) {
             val r = repo
             val c = content
             val s = settings
+            val stage = link?.takeIf { it.role == LinkRole.STAGE }
             when {
                 s == null -> Box(Modifier.fillMaxSize())
                 !s.firstRunDone -> FirstRunScreen(c?.gestures.orEmpty(), onDone = { scope.launch { container.settings.setFirstRunDone() } })
+                // A stage device never opens the session database or the navigation (D-26).
+                stage != null && c != null -> StageDeviceScreen(stage, c, container, guard)
                 // The key stays usable for a short while after the phone itself is unlocked, so try that before prompting.
-                r == null -> LockScreen(onUnlock = { onFailed ->
-                    container.unlockAsync(onFailed = { guard.unlock(title, subtitle, { container.unlockAsync(onFailed) }, onFailed) })
-                })
+                r == null -> LockScreen(
+                    onUnlock = { onFailed ->
+                        val prompt = {
+                            guard.unlock(title, subtitle, { container.stageGuard.onStage(false); container.unlockAsync(onFailed) }, onFailed)
+                        }
+                        // Locked or killed mid-stage: the subject may be holding the phone, so never unlock silently.
+                        if (container.stageGuard.forceCredential) prompt() else container.unlockAsync(onFailed = prompt)
+                    },
+                    autoPrompt = !s.stageDevice,
+                    stageButton = { UseAsStageButton(container) },
+                )
                 c == null -> Box(Modifier.fillMaxSize())
                 else -> Navigation(r, c, s, guard, container)
             }
@@ -138,6 +164,13 @@ private fun NoPersonalisedLearning(content: @Composable () -> Unit) {
 private fun Navigation(repo: SessionRepository, content: ContentBundle, settings: AppSettings, guard: DeviceGuard, container: AppContainer) {
     val backStack = rememberNavBackStack(StartKey)
     val scope = rememberCoroutineScope()
+    var pairing by remember { mutableStateOf(false) }
+    val onSecondScreen = { pairing = true }.takeIf { container.pairTransport != null }
+    // Each reads and hashes model files, so none is built on the main thread; null until ready, as with no model.
+    val tracker by produceState<LandmarkTracker?>(null) { value = withContext(Dispatchers.IO) { container.landmarkTracker } }
+    val reader by produceState<SignReader?>(null) { value = withContext(Dispatchers.IO) { container.signReader } }
+    val modelState by produceState<ModelStore.State?>(null, backStack.size) { value = withContext(Dispatchers.IO) { container.models.state() } }
+    if (pairing) SecondScreenSheet(container, onDismiss = { pairing = false })
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
@@ -152,6 +185,7 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                     cameraWanted = settings.cameraEnabled,
                     onOpenSession = { id -> backStack.add(SessionKey(id)) },
                     onSettings = { backStack.add(SettingsKey) },
+                    onSecondScreen = onSecondScreen,
                 )
             }
             entry<SettingsKey> {
@@ -159,10 +193,12 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
             }
             entry<SessionKey> { key ->
                 SessionRoute(
-                    key.id, repo, content, settings, guard, container.report, container.landmarkTracker, container.signReader,
+                    key.id, repo, content, settings, guard, container.report, tracker, reader,
                     onFavourite = { id -> scope.launch { container.settings.toggleFavourite(id) } },
-                    assistant = container.assistant.takeIf { container.models.state() == ModelStore.State.READY },
+                    assistant = container.assistant.takeIf { modelState == ModelStore.State.READY },
                     onClosed = { backStack.removeLastOrNull() },
+                    container = container,
+                    onSecondScreen = onSecondScreen,
                 )
             }
         },
@@ -182,38 +218,64 @@ private fun SessionRoute(
     assistant: Assistant?,
     onFavourite: (String) -> Unit,
     onClosed: () -> Unit,
+    container: AppContainer,
+    onSecondScreen: (() -> Unit)?,
 ) {
     val officerLang = if (LocalConfiguration.current.locales[0].language == "hi") "hi" else "en"
     val vm: SessionViewModel = viewModel(
         key = sessionId,
         factory = viewModelFactory { initializer { SessionViewModel(sessionId, repo, content, officerLang, report, reader) } },
     )
+    SideEffect { vm.reader = reader }
+    LaunchedEffect(tracker) { tracker?.let { withContext(Dispatchers.Default) { it.warm() } } }
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val conv by vm.auto.conv.collectAsStateWithLifecycle()
     val activity = LocalActivity.current
     val title = stringResource(R.string.return_prompt_title)
     val subtitle = stringResource(R.string.return_prompt_subtitle)
     val cancel = stringResource(R.string.cancel)
     // The officer can turn the mirror off for one person, for example a child upset by seeing themself.
     var cameraOn by rememberSaveable { mutableStateOf(settings.cameraEnabled) }
+    // D-26: with a second screen the subject's stage is there, and this phone stays the officer's.
+    val link by container.link.collectAsStateWithLifecycle()
+    val officerLink = link?.takeIf { it.role == LinkRole.OFFICER }
+    val linkState = officerLink?.state?.collectAsStateWithLifecycle()?.value
+    val paired = linkState == LinkState.Live || linkState == LinkState.Lost || linkState == LinkState.Hold || linkState is LinkState.Ended
+    // A recreation for dark mode, font scale or locale keeps the session; only really leaving it ends the link.
+    DisposableEffect(Unit) { onDispose { if (activity?.isChangingConfigurations != true && container.link.value?.role == LinkRole.OFFICER) container.endLink() } }
+    KeepScreenOnWhile(activity, linkState == LinkState.Live)
     val state = ui ?: return
+    val pane = officerLink?.takeIf { paired }?.let {
+        rememberPairedStage(vm, it, settings, cameraOn, officerLang, onFallback = {
+            vm.fallbackToLocal()
+            container.endLink(ByeReason.FALLBACK)
+        })
+    }
     // A long press on the handle is the officer's way back; the screen lock is asked too only if the department wants it (D-23).
     val backToOfficer = {
         if (settings.pinToLeaveStage) guard.confirmOfficer(title, subtitle, cancel) { vm.returnToOfficer() } else vm.returnToOfficer()
     }
 
     // From the first Show until the session ends, the app stays pinned so a subject cannot reach other apps (FR-61).
-    LaunchedEffect(state.mode) {
+    val localStage = state.mode == Mode.SHOW && !paired
+    LaunchedEffect(localStage) {
         // After the stage's first frame: pinning brings up system UI that would otherwise delay it (NFR-02).
-        if (state.mode == Mode.SHOW) {
+        if (localStage) {
             withFrameNanos { }
             guard.pin()
         }
     }
-    ImmersiveWhile(activity, state.mode == Mode.SHOW)
+    ImmersiveWhile(activity, localStage)
+    // The assistant's buffers would sit beside the camera and the landmark graph on a small phone.
+    LaunchedEffect(localStage || state.signWindow != null) { if (localStage || state.signWindow != null) container.models.release() }
+    // With a second screen the officer keeps this phone, so tilt and the volume keys do not hand it over.
+    if (!paired) HandoverEffects(state, vm, settings.tiltToShow, settings.volumeKeys, container.hardKeys, container.stageGuard, backToOfficer)
     // Leaving the session by Back skips onEndSession, so the pin would otherwise outlive the screen.
-    DisposableEffect(Unit) { onDispose { guard.unpin() } }
+    DisposableEffect(Unit) { onDispose { if (activity?.isChangingConfigurations != true) guard.unpin() } }
+    // The app locking takes this screen away: landmarks go with it, though not on a mere configuration change.
+    DisposableEffect(Unit) { onDispose { if (activity?.isChangingConfigurations != true) vm.wipeSigns() } }
 
-    when (state.mode) {
+    when (if (paired) Mode.OFFICER else state.mode) {
         Mode.OFFICER -> OfficerPane(
             ui = state,
             vm = vm,
@@ -223,7 +285,10 @@ private fun SessionRoute(
             favourites = settings.favourites,
             onFavourite = onFavourite,
             assistant = assistant,
-            canReadSigns = tracker != null,
+            canReadSigns = tracker != null && !paired,
+            paired = pane,
+            onSecondScreen = onSecondScreen,
+            allowAuto = settings.allowAuto,
             onCallInterpreter = if (settings.interpreterConfigured) {
                 {
                     guard.unpin()
@@ -239,6 +304,7 @@ private fun SessionRoute(
             },
             onEndSession = {
                 vm.endSession {
+                    officerLink?.let { container.endLink() }
                     guard.unpin()
                     onClosed()
                 }
@@ -264,6 +330,10 @@ private fun SessionRoute(
                     onStartSigning = vm::startReading,
                     onDoneSigning = vm::finishReading,
                     onOfficer = backToOfficer,
+                    onNext = (vm.auto::advance).takeIf { (conv as? Conv.Proposed)?.advance == true },
+                    onSignChoice = vm::chooseSign,
+                    onNextRule = vm::nextRule,
+                    onPauseEnd = vm::endPause,
                 )
             }
         }
@@ -298,8 +368,18 @@ private fun shareReport(activity: Activity, file: File) {
     activity.startActivity(Intent.createChooser(send, null))
 }
 
+/** The officer phone must not sleep into the background mid-answer while a second screen is live. */
 @Composable
-private fun ImmersiveWhile(activity: Activity?, enabled: Boolean) {
+private fun KeepScreenOnWhile(activity: Activity?, enabled: Boolean) {
+    DisposableEffect(activity, enabled) {
+        val window = activity?.window
+        if (enabled) window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose { if (enabled) window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+    }
+}
+
+@Composable
+internal fun ImmersiveWhile(activity: Activity?, enabled: Boolean) {
     DisposableEffect(activity, enabled) {
         val window = activity?.window
         val controller = window?.let { WindowCompat.getInsetsController(it, it.decorView) }

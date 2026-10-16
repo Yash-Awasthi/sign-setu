@@ -21,8 +21,8 @@ Implements the CERT-In Guidelines for Secure Application Design, Development, Im
 
 Every pull request runs:
 
-1. Build debug and release variants. The build itself fails if the merged manifest gains INTERNET, RECORD_AUDIO or a location permission (`check<Variant>Permissions`, run before every assemble; SEC-30, SEC-42).
-2. Unit tests, and the instrumented tests on an Android 14 or later emulator: `./gradlew :app:connectedDebugAndroidTest` (Accessibility Test Framework over every stage state and the picture board in both themes; overlay touch filtering in dialog and sheet windows).
+1. Build debug and release variants. The build itself fails if the merged manifest gains INTERNET, RECORD_AUDIO or a location permission (`check<Variant>Permissions`, run before every assemble; SEC-30, SEC-42). Variants carry the transport flavor: `standard` (Bluetooth, the reference build that keeps every rule) and `nearby` (Play services), so tasks read `assembleStandardRelease`, `testStandardDebugUnitTest` and so on.
+2. Unit tests, and the instrumented tests on an Android 14 or later emulator: `./gradlew :app:connectedStandardDebugAndroidTest` (Accessibility Test Framework over every stage state and the picture board in both themes; overlay touch filtering in dialog and sheet windows).
 3. Android Lint with security checks as errors.
 4. Static analysis (Semgrep with Kotlin/Android rules or MobSF static scan).
 5. Dependency vulnerability scan: `osv-scanner scan source --lockfile app/gradle.lockfile`; fail on critical or high in anything that ships (the release runtime classpath).

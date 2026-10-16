@@ -46,7 +46,7 @@ Follow [secure development and release](../11-devsecops-release.md): protected b
 
 | Class | Examples | Handling |
 | --- | --- | --- |
-| Restricted | Session data, exports; voice and landmarks from release 1.1 | Encrypted at rest and in transit; never in logs; on-phone only |
+| Restricted | Session data, exports, face and hand landmarks (memory only), second-screen traffic; voice from release 1.1 | Encrypted at rest and in transit; never in logs; on-phone only; landmarks never stored |
 | Confidential | Keys, credentials, audit reports; gateway logs from release 1.1 | Need-to-know; encrypted; access logged |
 | Internal | Source code, documents | Team access only |
 | Public | Privacy notice, accessibility statement, store listing | Approved before publication |

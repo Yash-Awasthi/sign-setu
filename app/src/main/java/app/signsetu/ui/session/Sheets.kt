@@ -49,6 +49,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -65,6 +66,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -86,6 +88,7 @@ import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.PictureCard
 import app.signsetu.ui.start.LanguagePicker
 import app.signsetu.ui.start.RoleChoice
+import app.signsetu.ui.start.JuvenileNotice
 import app.signsetu.ui.start.profileTitle
 import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
@@ -211,7 +214,7 @@ fun BoardSheet(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry) -> Unit, onDismiss: () -> Unit) {
+fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry, List<LexiconEntry>) -> Unit, onDismiss: () -> Unit) {
     var location by rememberSaveable { mutableStateOf<BodyLocation?>(null) }
     var action by rememberSaveable { mutableStateOf<HandAction?>(null) }
     val results = content.lookup(location, action)
@@ -254,7 +257,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry) ->
                             headlineContent = { Text(entry.label.pick(lang) ?: entry.id) },
                             supportingContent = { Text(entry.how.pick(lang) ?: entry.how["en"].orEmpty()) },
                             leadingContent = { GesturePreview(content, entry) },
-                            trailingContent = { TextButton(onClick = { onPick(entry) }) { Text(stringResource(R.string.gl_show_back)) } },
+                            trailingContent = { TextButton(onClick = { onPick(entry, results) }) { Text(stringResource(R.string.gl_show_back)) } },
                             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         )
                     }
@@ -275,7 +278,8 @@ fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss:
                 Text(stringResource(R.string.log_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
             } else {
                 LazyColumn(Modifier.weight(1f), reverseLayout = true) {
-                    items(events.withQuestions().asReversed(), key = { it.first.id }) { (e, question) ->
+                    // Prompt rows are the machine layer of the record; the report prints them in full.
+                    items(events.withQuestions().filter { it.first.type != EventType.PROMPT }.asReversed(), key = { it.first.id }) { (e, question) ->
                         EventRow(e, question = question)
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
@@ -304,8 +308,13 @@ fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss:
     }
 }
 
-/** Pairs each answer with the question shown before it, so the log reads "Water? Yes" rather than a bare "Yes". */
+/**
+ * Pairs each answer with its question, so the log reads "Water? Yes" rather than a bare "Yes": by the shown item's id
+ * when the answer names it, otherwise the question shown before it.
+ */
 fun List<SessionEvent>.withQuestions(): List<Pair<SessionEvent, String?>> {
+    // Answers from a second screen name their question, since they can arrive after the next one was shown (D-26).
+    val shown = filter { it.type == EventType.QUESTION_SHOWN }.associate { it.id to it.text }
     var question: String? = null
     return map { e ->
         when (e.type) {
@@ -313,7 +322,7 @@ fun List<SessionEvent>.withQuestions(): List<Pair<SessionEvent, String?>> {
             EventType.SYSTEM -> question = null
             else -> Unit
         }
-        e to if (e.type in AnswerEvents) question else null
+        e to if (e.type in AnswerEvents) (if (e.shownId != null) shown[e.shownId] else question) else null
     }
 }
 
@@ -326,18 +335,16 @@ fun signedMark(e: SessionEvent) = if (e.source == EventSource.OFFICER) R.string.
 fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? = null) {
     ListItem(
         overlineContent = {
-            val mark = if (e.type == EventType.ANSWER_SIGNED) "  ·  ${stringResource(signedMark(e))}" else ""
+            val mark = when {
+                e.type == EventType.ANSWER_SIGNED -> "  ·  ${stringResource(signedMark(e))}"
+                e.reason == SHOWN_RIGHTS -> "  ·  ${stringResource(R.string.rights_shown_mark)}"
+                e.via != null -> "  ·  ${stringResource(R.string.report_via_stage)}"
+                else -> ""
+            }
             Text("${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))}  ·  ${stringResource(e.type.label())}$mark")
         },
         headlineContent = {
-            Text(
-                when (e.text) {
-                    SYSTEM_LANGUAGE_FINDER -> stringResource(R.string.officer_find_language)
-                    SYSTEM_DRAWING -> stringResource(R.string.officer_draw)
-                    SYSTEM_READ_SIGNS -> stringResource(R.string.officer_read_signs)
-                    else -> e.text ?: "—"
-                },
-            )
+            Text(if (e.type == EventType.SYSTEM) systemText(LocalResources.current, e.text) else app.signsetu.ui.pair.linkText(e) ?: e.text ?: "—")
         },
         supportingContent = question?.takeIf { it != e.text }?.let { q -> { Text(q, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         leadingContent = e.cardId?.let { id ->
@@ -354,9 +361,11 @@ fun ChangeSheet(
     profile: Profile,
     subjectLang: String,
     role: SessionRole,
+    juvenile: Boolean,
     onProfile: (Profile) -> Unit,
     onLanguage: (String) -> Unit,
     onRole: (SessionRole) -> Unit,
+    onJuvenile: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     OfficerSheet(onDismiss, expanded = false) {
@@ -366,6 +375,7 @@ fun ChangeSheet(
         ) {
             SheetTitle(stringResource(R.string.officer_change))
             RoleChoice(role, onRole, Modifier.padding(bottom = Spacing.sm))
+            if (role == SessionRole.ACCUSED) JuvenileNotice(juvenile, enabled = profile != Profile.YOUNG_CHILD, onJuvenile)
             Column(Modifier.selectableGroup()) {
                 Profile.entries.forEach { p ->
                     Row(
@@ -456,6 +466,12 @@ fun EventType.label() = when (this) {
     EventType.SYSTEM -> R.string.log_system
     EventType.ANSWER_TEXT -> R.string.log_typed
     EventType.ANSWER_SIGNED -> R.string.log_signed
+    EventType.LINK -> R.string.log_link
+    EventType.SUGGESTED -> R.string.log_suggested
+    EventType.APPROVED -> R.string.log_approved
+    EventType.SKIPPED -> R.string.log_skipped
+    EventType.AUTO_ADVANCED -> R.string.log_auto_advanced
+    EventType.PROMPT -> R.string.log_prompt
 }
 
 /**
@@ -464,7 +480,13 @@ fun EventType.label() = when (this) {
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun SignedSheet(segments: List<SignSegment>, onAccept: (List<String>) -> Unit, onDismiss: () -> Unit) {
+fun SignedSheet(
+    segments: List<SignSegment>,
+    onAccept: (List<String>) -> Unit,
+    onDismiss: () -> Unit,
+    onAsk: ((List<String>) -> Unit)? = null,
+    canAsk: (List<String>) -> Boolean = { true },
+) {
     val replay = rememberReplayState(segments)
     val words = remember(segments) { segments.map { s -> s.word?.takeIf { it != "?" }.orEmpty() }.toMutableStateList() }
     val colors = MaterialTheme.colorScheme
@@ -511,6 +533,14 @@ fun SignedSheet(segments: List<SignSegment>, onAccept: (List<String>) -> Unit, o
                     onClick = { onAccept(words.map { it.trim().ifEmpty { "?" } }) },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                 ) { Text(stringResource(R.string.signed_accept)) }
+            }
+            // Only the subject's own pick makes a reading their answer (FR-66).
+            onAsk?.let { ask ->
+                item {
+                    val possible = canAsk(words.toList())
+                    OutlinedButton(onClick = { ask(words.toList()) }, enabled = possible, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.signed_ask)) }
+                    Text(stringResource(if (possible) R.string.signed_ask_hint else R.string.signed_ask_none), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = Spacing.xs))
+                }
             }
         }
     }

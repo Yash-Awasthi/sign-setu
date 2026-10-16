@@ -17,6 +17,8 @@ object SignReaders {
         }
         val spec = verified("models/sign_reader.json") ?: return null
         val weights = verified("models/sign_reader.bin") ?: return null
-        LandmarkSignReader(spec.decodeToString(), weights)
+        // Without the word map the reader still works; it just cannot narrow guesses to the item on screen.
+        val signWords = verified("sign_words.json")?.let { runCatching { parseSignWords(it.decodeToString()) }.getOrNull() }.orEmpty()
+        LandmarkSignReader(spec.decodeToString(), weights, signWords)
     }.getOrNull()
 }

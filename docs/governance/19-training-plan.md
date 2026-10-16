@@ -20,7 +20,9 @@ Cascade model for national scale: a central team trains state master trainers; m
 
 - Basics of Deaf culture and ISL etiquette, ideally delivered by a Deaf trainer (ISLRTC or a Deaf association).
 - Trauma-informed first contact with children, delivered by a child-welfare professional.
-- Legal points: JJ Act section 74, POCSO section 26, why the app never records statements.
+- Legal points: JJ Act sections 10 and 74, POCSO section 26, BNSS sections 38, 47, 48, 53, 58, 173 and 183(6), BSA section 125, Constitution Article 20(3); why the app never records statements; rights shown are not proof of understanding.
+- Reading the record: evidence grades, answer trails, and why app and officer readings are not the person's answers.
+- Second screen: pairing, the check number, Break given, the hand-back screen, and keeping a child in sight.
 
 ## Measures
 

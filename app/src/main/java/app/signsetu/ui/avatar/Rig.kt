@@ -403,5 +403,6 @@ fun solveElbow(
         val outward = (e.first - Build.CENTER) * side.sign
         if (elbowOut >= 0f) outward * elbowOut + e.second * (1f - elbowOut) else -outward
     }
-    return if (score(e1) >= score(e2)) e1 else e2
+    // A level reach gives two mirror elbows with equal scores; the margin settles float noise on e1 (rig.ts matches).
+    return if (score(e1) >= score(e2) - 1e-3f) e1 else e2
 }

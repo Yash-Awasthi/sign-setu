@@ -106,7 +106,14 @@ fun Avatar(
     if (idle && !still && atSeconds == null) {
         LaunchedEffect(Unit) {
             val start = withFrameNanos { it }
-            while (true) withFrameNanos { now -> idleClock.floatValue = (now - start) / 1e9f }
+            // Breathing and blinking read fine at 20 fps; a redraw every vsync only costs the camera and battery.
+            var last = start
+            while (true) withFrameNanos { now ->
+                if (now - last >= IDLE_FRAME_NS) {
+                    idleClock.floatValue = (now - start) / 1e9f
+                    last = now
+                }
+            }
         }
     }
 
@@ -117,6 +124,8 @@ fun Avatar(
         drawCharacter(build, look, pose, idleClock.floatValue, character == Character.CHILD)
     }
 }
+
+private const val IDLE_FRAME_NS = 50_000_000L
 
 private fun DrawScope.drawCharacter(b: Build, look: Look, still: Pose, time: Float, child: Boolean) {
     // A resting body is never quite still: a slow sway, a drifting head and now and then a glance aside.
