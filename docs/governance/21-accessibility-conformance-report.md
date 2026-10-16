@@ -23,6 +23,6 @@ Standards: IS 17802 (Parts 1 and 2), GIGW 3.0, WCAG 2.1 AA as applied to native 
 | 3.3.1 Error identification | Errors stated in text | Manual | | | |
 | 4.1.2 Name, role, value | All controls exposed | TalkBack | | | |
 
-**Known exceptions:** skeleton avatar may not convey ISL facial grammar fully (recorded clips used for presets).
+**Known exceptions:** the code-drawn characters play reviewed gestures and do not sign full ISL, so captions and pictures are always shown with them.
 
 **Tested by / date / build:** ________

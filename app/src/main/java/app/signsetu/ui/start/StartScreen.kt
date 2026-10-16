@@ -8,6 +8,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -89,6 +90,7 @@ import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
+import app.signsetu.ui.components.FilterObscuredTouches
 
 /**
  * Home: the character greets on top; below, one quick choice of who is being helped and in which language.
@@ -122,23 +124,25 @@ fun StartScreen(
         Unit
     }
 
-    // A notice or an unfinished session takes room from the stage, so the sheet still fits without scrolling.
-    val stageWeight = if (open != null || rooted || expired || content.rejected.isNotEmpty()) 0.28f else 0.36f
+    // The sheet takes what its content needs, up to most of the screen; the greeting stage gets the rest.
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val sheetMax = maxHeight * 0.8f
     Column(Modifier.fillMaxSize()) {
-        Box(Modifier.weight(stageWeight).fillMaxWidth()) {
+        Box(Modifier.weight(1f).fillMaxWidth()) {
             Backdrop(Modifier.fillMaxSize())
-            Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding()) {
                 Avatar(
                     character = characterFor(profile ?: Profile.YOUNG_CHILD),
                     gesture = content.gestures["namaste"],
                     playKey = profile,
-                    modifier = Modifier.fillMaxHeight(0.80f).aspectRatio(1f).align(Alignment.BottomCenter),
+                    modifier = Modifier.size(minOf(maxHeight * 0.8f, maxWidth)).align(Alignment.BottomCenter),
                 )
                 Row(Modifier.fillMaxWidth().padding(start = Spacing.lg, top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = LocalStageColors.current.title, modifier = Modifier.weight(1f))
                     IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title), tint = LocalStageColors.current.title) }
                 }
-                content.language(lang)?.hello?.let {
+                // The greeting needs the room below the wordmark; a short stage leaves it out rather than cut it off.
+                content.language(lang)?.hello?.takeIf { maxHeight >= 132.dp }?.let {
                     Box(Modifier.align(Alignment.TopEnd).padding(top = 56.dp, end = 28.dp)) { Bubble(it) }
                 }
             }
@@ -147,11 +151,11 @@ fun StartScreen(
             color = MaterialTheme.colorScheme.background,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
             shadowElevation = 8.dp,
-            modifier = Modifier.weight(1f - stageWeight).fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().heightIn(max = sheetMax),
         ) {
-            Column(Modifier.fillMaxSize().navigationBarsPadding()) {
+            Column(Modifier.navigationBarsPadding()) {
                 Column(
-                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 18.dp),
+                    Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 18.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     if (expired) Notice(stringResource(R.string.start_expired_title), stringResource(R.string.start_expired_body), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
@@ -195,6 +199,7 @@ fun StartScreen(
                 }
             }
         }
+    }
     }
 }
 
@@ -326,6 +331,7 @@ fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) ->
             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            FilterObscuredTouches()
             content.languages.forEach { l ->
                 DropdownMenuItem(
                     text = { Text("${l.name}  ·  ${l.english}") },

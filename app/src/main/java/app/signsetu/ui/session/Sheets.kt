@@ -87,6 +87,7 @@ import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
 import java.text.DateFormat
 import java.util.Date
+import app.signsetu.ui.components.FilterObscuredTouches
 
 private const val FAVOURITES = "*favourites"
 
@@ -364,7 +365,7 @@ fun ChangeSheet(
     }
 }
 
-/** Every officer sheet. Material's drag handle is 32 dp wide, so it sits in a 48 dp touch area (NFR-20). */
+/** Every officer sheet: overlay touches filtered (SEC-45), and Material's 32 dp drag handle in a 48 dp touch area (NFR-20). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OfficerSheet(onDismiss: () -> Unit, expanded: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
@@ -372,7 +373,7 @@ fun OfficerSheet(onDismiss: () -> Unit, expanded: Boolean = true, content: @Comp
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = expanded),
         dragHandle = { Box(Modifier.sizeIn(minWidth = 48.dp), contentAlignment = Alignment.Center) { BottomSheetDefaults.DragHandle() } },
-        content = content,
+        content = { FilterObscuredTouches(); content() },
     )
 }
 

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,9 +47,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.signsetu.R
 import app.signsetu.ui.theme.Spacing
@@ -68,8 +70,10 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
     LaunchedEffect(secure) { if (secure) onUnlock { failed = true } }
 
     val ink = LocalInk.current
+    // At large font sizes the words need the room, so the character gives some up (NFR-22).
+    val stageWeight = if (LocalDensity.current.fontScale > 1.3f) 0.2f else 0.42f
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(Modifier.weight(0.42f).fillMaxWidth()) {
+        Box(Modifier.weight(stageWeight).fillMaxWidth()) {
             Backdrop(Modifier.fillMaxSize())
             Box(Modifier.fillMaxSize().statusBarsPadding()) {
                 Avatar(Character.CHILD, gesture = null, playKey = null, modifier = Modifier.fillMaxHeight(0.8f).aspectRatio(1f).align(Alignment.BottomCenter))
@@ -87,7 +91,7 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
             color = MaterialTheme.colorScheme.background,
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
             shadowElevation = 8.dp,
-            modifier = Modifier.weight(0.58f).fillMaxWidth().offset(y = (-24).dp),
+            modifier = Modifier.weight(1f - stageWeight).fillMaxWidth().riseOver(24.dp),
         ) {
             Column(
                 Modifier.navigationBarsPadding().padding(horizontal = Spacing.xl, vertical = Spacing.xl),
@@ -109,7 +113,7 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
                     textAlign = TextAlign.Center,
                 )
                 if (failed && secure) {
-                    Text(stringResource(R.string.lock_failed), color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.lock_failed), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.weight(1f))
                 Button(
@@ -137,3 +141,10 @@ fun LockScreen(onUnlock: (onFailed: () -> Unit) -> Unit) {
 
 private fun isDeviceSecure(context: Context) =
     (context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isDeviceSecure
+
+/** Draws the sheet [by] taller and that much higher, so it overlaps the stage above and still reaches the bottom. */
+private fun Modifier.riseOver(by: Dp) = layout { measurable, constraints ->
+    val extra = by.roundToPx()
+    val placeable = measurable.measure(constraints.copy(minHeight = constraints.minHeight + extra, maxHeight = constraints.maxHeight + extra))
+    layout(placeable.width, constraints.maxHeight) { placeable.place(0, -extra) }
+}

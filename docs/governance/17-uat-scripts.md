@@ -1,20 +1,25 @@
 # 17. User Acceptance Test Scripts
 
-Run by department officers on department phones with the release candidate. One tester acts as officer, one as subject. Record Pass / Fail / Notes per step. A script passes when every step passes.
+Run by department officers on department phones with the release candidate. One tester acts as officer, one as subject. Record Pass / Fail / Notes per step. A script passes when every step passes. The [user guide](18-user-guide.md) describes each screen.
 
 | Script | Steps | Pass when |
 | --- | --- | --- |
-| UAT-01 First run | Install; open; pick Hindi; read notice; skip permissions | Split view shown in under 2 s; notice says "aid, not interpreter" |
-| UAT-02 Lost child, offline | Airplane mode; Flip; ask "Are you safe?", "Are you hurt?", "Do you need water?"; subject taps answers | Clip, caption, cards appear at once; officer sees each answer with time |
-| UAT-03 Sensitive question gate | Try to reach "What happened?" | Needs a second deliberate tap; not on first screen |
-| UAT-04 Deaf subject | Network on; type "Where is your home?"; subject signs "home", "no" | Avatar plays or shows "sign not available"; officer sees recognised words with confidence |
-| UAT-05 Voice | Hold mic, ask in Hindi; edit transcript; send | Nothing reaches subject before send; caption correct after edit |
-| UAT-06 Drawing | Subject draws house; officer saves to notes | Drawing in log |
-| UAT-07 Failure | Turn data off mid-question; deny camera | Plain message and alternatives; no crash |
-| UAT-08 Interruptions | Take a phone call; lock phone; reopen after 6 minutes | Session intact; app asks for unlock |
-| UAT-09 Export and clear | End session; export; share passphrase separately; clear | Export opens only with passphrase; session gone from phone |
-| UAT-10 Privacy | Try screenshot; open recents | Screenshot blocked; recents thumbnail blank |
-| UAT-11 Auto-delete | Leave an unexported session past the auto-delete period; reopen | Session deleted |
-| UAT-12 Old phone | Repeat UAT-02 and UAT-04 on the oldest supported phone | Same results; avatar smooth |
+| UAT-01 First run | Install; open; read the three screens; pick Hindi for the app; set a screen lock if asked | The notice says "aid, not interpreter"; the app refuses to start sessions until a screen lock exists |
+| UAT-02 Lost child | Airplane mode on. Choose Young child and Hindi; start; show "I am a police officer", "Are you hurt?", "Do you want water?"; subject answers with Yes, No and a picture | Each question appears at once with the character, caption, picture and speech; officer sees each answer with its time; nothing needs a network |
+| UAT-03 Sensitive gate | Try to open the Sensitive group | Needs a deliberate confirmation; no sensitive question on the first screen |
+| UAT-04 Deaf subject | Choose Signs; show "Are you hurt?"; subject answers No; officer uses They gestured for a gesture the subject makes and shows it back | Adult character, no sound; show-back asks "Is this it?" and only Yes records the meaning |
+| UAT-05 Own words | Type "Where is your home?" with the home picture; show it | Caption and picture shown; the character does not sign the typed words; nothing reaches the subject before Show |
+| UAT-06 Phrase | Phrases, "Do you want ...?", water; show it | The full sentence appears with the picture; the character signs it in parts |
+| UAT-07 Stop and don't know | Subject taps I don't know, then Stop | Both logged; Stop shows the officer a banner with guidance until acknowledged |
+| UAT-08 Drawing | Subject draws a house and finishes | Drawing appears in the session log |
+| UAT-09 Language finder | Choose Other language; start; subject taps their language | Their greeting plays; back on the officer panel the session is in that language |
+| UAT-10 Back to officer | On the stage, try Home, Back and recents; then use the lock button with fingerprint or PIN | The subject cannot leave the stage; only the officer's credential returns to the panel |
+| UAT-11 Interruptions | Take a phone call mid-session; leave the app for six minutes; reopen | Session intact; app asks for unlock |
+| UAT-12 Interpreter | Call an interpreter from the panel | Messaging app opens at the department contact; no session details are sent |
+| UAT-13 Export and end | End session; export; share the report; give the password separately; finish | Report opens only with the password; session gone from the phone |
+| UAT-14 Privacy | Try a screenshot on the stage and the panel; open recents | Screenshot blocked; recents thumbnail blank |
+| UAT-15 Auto-delete | Leave an unended session past the auto-delete period; reopen | Session deleted |
+| UAT-16 Old and small phones | Repeat UAT-02 and UAT-04 on the oldest supported phone and on a 5-inch phone | Same results; answer cards whole; character smooth |
+| UAT-17 Large text | Set the phone's font size to largest; repeat UAT-02 | Every screen readable; no text cut off |
 
 **Sign-off:** department nominee signs the completed sheet; failures become defects with severity.

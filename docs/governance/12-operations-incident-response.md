@@ -2,6 +2,8 @@
 
 Covers monitoring, logging, incident response, breach notification, backup and continuity for the gateway and the app. Based on the CERT-In Directions of 28 April 2022 and the CERT-In Guidelines on Information Security Practices for Government Entities (2023), sections 7, 14 and 15.
 
+Release 1 has no server and no internet access: the gateway rows below (logging, outages, backups, partner services) apply from release 1.1.
+
 ## 1. Roles
 
 | Role | Responsibility |
@@ -25,7 +27,7 @@ Keep a current contact sheet (names, phones, backups) outside the systems it cov
 | Integrity | Logs shipped to a separate, append-only store with restricted access (CERT-In govt guidelines, server checklist) |
 | Alerts | Error rate, latency, integrity failures, rate-limit hits, admin logins, configuration changes |
 | Review | Alerts continuous; manual review weekly during pilot, monthly after |
-| App | No remote logging. Crash stack traces (no personal data) kept on the phone; officers share them on request |
+| App | No remote logging and no crash-reporting SDK (NFR-36); release builds strip log calls (SEC-04) |
 
 ## 3. Incident classification
 
@@ -51,26 +53,26 @@ Keep a current contact sheet (names, phones, backups) outside the systems it cov
 
 | Situation | Action |
 | --- | --- |
-| Officer's phone lost or stolen | Officer reports to supervisor at once. If MDM is used: remote lock and wipe. Otherwise the data is protected by encryption and device lock and is deleted at auto-delete expiry on next run; record the incident; assess whether any export is also exposed. |
+| Officer's phone lost or stolen | Officer reports to supervisor at once. If the phone is department-managed (MDM): remote lock and wipe. An officer's personal phone has no remote wipe: the data is protected by encryption bound to the phone's screen lock, and the background retention job deletes it after the auto-delete period. Record the incident; assess whether any export is also exposed. |
 | Export file sent to the wrong person | Ask for deletion; the file is encrypted and the passphrase was shared separately, so assess whether the passphrase also leaked. |
-| Malicious or broken app version | Halt district rollout; release fixed version; raise minimum version at the gateway so old builds stop calling services. |
-| Partner service compromise | Disable the route at the gateway; app falls back to offline features. |
+| Malicious or broken app version | Halt district rollout; release a fixed version; tell officers to update and push through MDM where used. Every build stops starting new sessions 180 days after it was built (FR-67). From release 1.1, also raise the minimum version at the gateway. |
+| Partner service compromise (release 1.1) | Disable the route at the gateway; app falls back to offline features. |
 | Signing or upload key compromise | Rotate the signing key (APK Signature Scheme v3), push via MDM and Mobile Seva; audit releases since suspected compromise. |
 
 ## 6. Backup and continuity
 
 - **App data:** deliberately not backed up (SEC-03). Continuity comes from export to the official case record.
-- **Gateway:** stateless; infrastructure defined as code so it can be rebuilt in another zone within 4 hours. Configuration and infrastructure code backed up daily to a separate location (CERT-In govt guidelines 7.10).
-- **Logs:** replicated within India; 180-day retention survives zone loss.
+- **Gateway (release 1.1):** stateless; infrastructure defined as code so it can be rebuilt in another zone within 4 hours. Configuration and infrastructure code backed up daily to a separate location (CERT-In govt guidelines 7.10).
+- **Logs (release 1.1):** replicated within India; 180-day retention survives zone loss.
 - **Partners:** each partner documents its own recovery plan [confirm].
-- **Offline core:** if the whole backend is down, triage, cards and drawing keep working (FR-40). This is the main continuity control for officers in the field.
+- **Offline core:** release 1 works entirely on the phone, so no outage stops it. From release 1.1, if the backend is down, triage, cards and drawing keep working. This is the main continuity control for officers in the field.
 
 ## 7. Contingency management
 
 | Event | Plan |
 | --- | --- |
-| Gateway outage | Status shown in app; officers use offline features; operations restores within the target time |
-| Bhashini outage | Voice and translation unavailable; typed input and preset content continue |
+| Gateway outage (release 1.1) | Status shown in app; officers use offline features; operations restores within the target time |
+| Bhashini outage (release 1.1) | Voice and translation unavailable; typed input and preset content continue |
 | Mobile Seva unavailable | Department MDM or direct signed APK with published SHA-256 |
 | Key team member unavailable | Two people know each critical procedure (release, key custody, incident reporting) |
 

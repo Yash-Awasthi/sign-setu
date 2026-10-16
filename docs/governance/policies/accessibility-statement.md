@@ -25,7 +25,7 @@ The app aims to meet:
 ## Known limitations
 
 - The sign language avatar for free text may be harder to understand than a human signer; preset questions use recorded human signers.
-- Sign recognition covers a limited vocabulary.
+- The app does not recognise signs. When an officer reads a gesture, the person confirms its meaning on the screen.
 <- Further limitations found in the accessibility review>
 
 ## Feedback

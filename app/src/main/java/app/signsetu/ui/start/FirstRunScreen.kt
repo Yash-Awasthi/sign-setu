@@ -59,6 +59,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalDensity
 import app.signsetu.ui.theme.Spacing
 
 private class Step(@StringRes val title: Int, @StringRes val body: Int, val gesture: String, val icon: @Composable () -> Painter)
@@ -120,7 +122,10 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
             Spacer(Modifier.size(Spacing.lg))
-            Box(Modifier.fillMaxWidth().height(230.dp).clip(RoundedCornerShape(32.dp))) {
+            // The character grows with the screen, so a tall phone shows more of it rather than empty space.
+            val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+            val stageHeight = (windowHeight * 0.32f).coerceIn(200.dp, 360.dp)
+            Box(Modifier.fillMaxWidth().height(stageHeight).clip(RoundedCornerShape(32.dp))) {
                 Backdrop(Modifier.fillMaxSize())
                 Avatar(
                     character = Character.CHILD,

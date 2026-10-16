@@ -19,7 +19,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -64,6 +63,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import app.signsetu.ui.components.GuardedAlertDialog
 
 private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE }
 
@@ -183,7 +183,7 @@ fun SettingsScreen(store: SettingsStore, onBack: () -> Unit, onClearAll: () -> U
             onPick = { scope.launch { store.setRetentionHours(it) }; dialog = null },
             onDismiss = { dialog = null },
         )
-        Dialog.CLEAR -> AlertDialog(
+        Dialog.CLEAR -> GuardedAlertDialog(
             onDismissRequest = { dialog = null },
             title = { Text(stringResource(R.string.settings_clear_title)) },
             text = { Text(stringResource(R.string.settings_clear_body)) },
@@ -261,7 +261,7 @@ private fun <T> ChoiceDialog(
     onPick: (T) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    GuardedAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -289,7 +289,7 @@ private fun ContactDialog(app: InterpreterApp, initial: String, onSave: (String)
     var value by rememberSaveable { mutableStateOf(initial) }
     val phone = app == InterpreterApp.WHATSAPP
     val valid = if (phone) whatsappNumber(value) != null else value.isNotBlank()
-    AlertDialog(
+    GuardedAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_interpreter_contact)) },
         text = {
@@ -328,7 +328,7 @@ private val LICENCES = listOf(
 
 @Composable
 private fun LicencesDialog(onDismiss: () -> Unit) {
-    AlertDialog(
+    GuardedAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_licences)) },
         text = {

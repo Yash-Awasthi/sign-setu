@@ -45,7 +45,7 @@ One Gradle module, organised by feature. Process numbers refer to the [system de
 | `session` | Session state, event log, end and purge, retention worker | 4.0 | FR-05, FR-06, FR-30, FR-33, FR-34 |
 | `export` | PDF report, passphrase, share sheet, interpreter hand-off | 5.0 | FR-32, FR-64 |
 | `ui.avatar` | 2D rig, the two characters, keyframe playback | 3.1 | FR-11, FR-18, FR-66 |
-| `camera` | Camera mirror; `HandTracker` interface for the partner model, created by `HandTrackers` per build type (release: the partner model; debug: a stand-in hand) | 3.1 | FR-69, FR-22 |
+| `camera` | Camera mirror; `HandTracker` interface for the partner model ([contract](11-hand-model-integration.md)), created by `HandTrackers` per build type (release: the partner model; debug: a stand-in hand) | 3.1 | FR-69, FR-22 |
 | `storage` | Room database, SQLCipher key handling, DataStore | D1, D3, D4 | NFR-30 |
 | `security` | App lock, FLAG_SECURE, build expiry, root warning | 1.0 | FR-67, NFR-31, NFR-32 |
 
@@ -62,7 +62,7 @@ assets/content/
   subject_ui.json        words the stage shows the subject (Yes, No, Stop, draw), per language
   phrases.json           phrase bank: sentence patterns, their signs, and per slot the picture, its sign and the full sentence
   cards/<id>.webp        picture cards
-  audio/<lang>/<id>.ogg  question audio, Opus, 16 kHz mono
+  audio/<lang>/<id>.ogg  question audio, Opus, mono; phrase sentences as phrase.<phrase>.<card>.ogg
   audio/greet/<lang>.ogg language finder greetings
 ```
 

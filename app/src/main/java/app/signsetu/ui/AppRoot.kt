@@ -5,7 +5,6 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import app.signsetu.data.settings.AppSettings
@@ -62,6 +61,7 @@ import app.signsetu.ui.start.StartScreen
 import app.signsetu.ui.theme.SignSetuTheme
 import app.signsetu.ui.theme.SubjectTheme
 import kotlinx.serialization.Serializable
+import app.signsetu.ui.components.GuardedAlertDialog
 
 @Serializable data object StartKey : NavKey
 @Serializable data class SessionKey(val id: String) : NavKey
@@ -94,7 +94,7 @@ fun AppRoot(container: AppContainer, guard: DeviceGuard) {
             }
             val keyReset by container.keyReset.collectAsStateWithLifecycle()
             if (keyReset && r != null) {
-                AlertDialog(
+                GuardedAlertDialog(
                     onDismissRequest = container::acknowledgeKeyReset,
                     title = { Text(stringResource(R.string.key_reset_title)) },
                     text = { Text(stringResource(R.string.key_reset_body)) },

@@ -4,22 +4,22 @@ Status: draft for review by the department's legal adviser. Legal points are sum
 
 ## 1. Why a DPIA
 
-The app processes personal data of people in a vulnerable situation, most often children, including images of their bodies (processed into landmarks), their voices and what they say about what happened to them. Even where the law may not strictly require a DPIA of this processing (see section 4), the risk justifies one. It is also the evidence auditors and the department will ask for.
+The app processes personal data of people in a vulnerable situation, most often children, including live images of their hands on the camera mirror and what they answer about their safety and needs. Even where the law may not strictly require a DPIA of this processing (see section 4), the risk justifies one. It is also the evidence auditors and the department will ask for.
 
 ## 2. Description of processing
 
 | Item | Description |
 | --- | --- |
 | Controller (Data Fiduciary) | The police department operating the app [confirm legal entity] |
-| Processors | Cloud provider hosting the gateway; ISL team service; ML team service; Bhashini (MeitY) |
+| Processors | None in release 1: the app has no internet access. The partner hand model, when installed, runs on the phone. Release 1.1 adds the gateway, Bhashini and partner services, and this DPIA is reviewed then |
 | Data principals | Subjects (lost, rescued or kidnapped persons, often children, often persons with disabilities); officers |
 | Purpose | Communicate with a subject who cannot communicate in words, to ensure their safety, meet immediate needs and identify their family, in the course of police duties |
 | Not purposes | Formal statements, evidence collection, identification of suspects, profiling, analytics |
 | Data | See [DFD data inventory](../archive/04-data-flow-diagrams.md#data-inventory) |
-| Storage | Encrypted on the officer's phone only; nothing stored server-side except access metadata |
+| Storage | Encrypted on the officer's phone only; no server |
 | Retention | Until exported or the auto-delete period ends (default 24 hours) |
 | Recipients | Officer; export recipients chosen by the officer under the SOP (case file, CWC) |
-| Transfers outside India | None intended; hosting in India before production [confirm Bhashini and cloud regions] |
+| Transfers outside India | None in release 1. The interpreter video call takes place in the department's messaging app, outside Sign Setu (see P-10) |
 
 ## 3. Necessity and proportionality
 
@@ -29,8 +29,9 @@ The app processes personal data of people in a vulnerable situation, most often 
 | Notes | Yes, officer must record what they learnt | Free text; SOP limits to what is needed |
 | Drawings | Yes, alternative answer path | Saved only on officer action |
 | Camera images | Needed for the stage mirror so the subject sees their own hands (D-20); later for the partner hand model | Shown live only; never stored, recorded or sent; analysed on the phone only when a hand model is installed; officer and department can turn the mirror off |
-| Landmarks | Needed by recognition service | Sent only when hands are visible; partner must not store |
-| Voice audio | Needed for voice questions | Officer's voice; only while button held; not stored |
+| Landmarks | Needed only to draw the hand overlay, and later for recognition (FR-22) | Computed on the phone when the partner model is installed; never stored or sent (D-02) |
+| Voice audio | Not processed in release 1 | No microphone permission; the build fails if one is added (SEC-30) |
+| Interpreter video call | Needed when pictures and gestures are not enough (FR-64) | Started by the officer in the department's messaging app to a department contact; Sign Setu passes no session data |
 | Name, address, photo of subject | Not needed by the app | No fields for them; SOP says record identity in official systems, not the app |
 
 ## 4. Legal basis
@@ -61,12 +62,14 @@ The app processes personal data of people in a vulnerable situation, most often 
 | --- | --- | --- | --- | --- | --- |
 | P-01 | Child's identity or account disclosed from a lost phone | 2 | 3 | Encryption, app lock, auto-delete (SEC-01, 20, 21, 08) | Low |
 | P-02 | Disclosure through export to the wrong person | 2 | 3 | Encrypted export, SOP, confirmation step | Medium |
-| P-03 | Audio or landmarks retained by processors | 2 | 3 | Minimisation; written no-retention terms; India hosting | Medium until terms confirmed |
-| P-04 | Wrong recognition leads to wrong decision about the child | 2 | 3 | Confidence display, ask again, SOP, cards preferred | Medium |
+| P-03 | Audio or landmarks retained by processors | 1 | 3 | No processors and no network in release 1; landmarks stay on the phone | Low; reassess for release 1.1 |
+| P-04 | A gesture is read wrongly and a wrong decision follows | 2 | 3 | No automatic recognition in release 1; the officer's reading is shown back and only the subject's Yes records it (FR-66); cards and Yes/No preferred | Low |
 | P-05 | Distress from content shown | 2 | 3 | Content policy, curated cards, no AI images | Low |
 | P-06 | Function creep: app used for surveillance or evidence | 1 | 3 | Terms of use, SOP, no such features, periodic review | Low |
-| P-07 | Bystander sees subject's answers | 2 | 2 | Focus mode, SOP | Low |
+| P-07 | Bystander sees subject's answers | 2 | 2 | The stage shows only the current question; notes and log stay on the officer side; SOP | Low |
 | P-08 | Data kept longer than needed | 2 | 2 | Auto-delete, retention policy | Low |
+| P-09 | A child is upset by seeing themself on the camera mirror | 2 | 2 | Officer turns the mirror off for that person; department can turn it off for all; nothing recorded (SEC-47) | Low |
+| P-10 | The interpreter call exposes the subject's face and words to a third-party platform | 2 | 3 | Call only to the department's contact; SOP prefers Sandes (government); Sign Setu passes no session data; the call is the department's process, outside the app | Medium |
 
 ## 6. Rights of data principals
 
