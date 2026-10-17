@@ -142,6 +142,30 @@ Reviewers: child-welfare reviewer for every gesture; ISL reviewer as well for en
 | `sign.body.arm` | "arm" |  |  |  |  |
 | `sign.body.leg` | "leg" |  |  |  |  |
 | `sign.body.back` | "back" |  |  |  |  |
+| `sign.family` | "family" |  |  |  |  |
+| `sign.brother` | "brother" |  |  |  |  |
+| `sign.sister` | "sister" |  |  |  |  |
+| `sign.city` | "city" |  |  |  |  |
+| `sign.teacher` | "teacher" |  |  |  |  |
+| `sign.favourite` | "favourite" |  |  |  |  |
+| `sign.subject` | "subject" |  |  |  |  |
+| `sign.what` | "what" |  |  |  |  |
+| `sign.where` | "where" |  |  |  |  |
+| `sign.how_many` | "how many" |  |  |  |  |
+| `sign.how` | "how" |  |  |  |  |
+| `sign.age` | "age" |  |  |  |  |
+| `sign.water` | "water" |  |  |  |  |
+| `sign.understand` | "understand" |  |  |  |  |
+| `sign.again` | "again" |  |  |  |  |
+| `sign.village` | "village" |  |  |  |  |
+| `sign.district` | "district" |  |  |  |  |
+| `sign.state` | "state" |  |  |  |  |
+| `sign.class` | "class" |  |  |  |  |
+| `sign.number` | "number" |  |  |  |  |
+| `sign.near` | "near" |  |  |  |  |
+| `sign.like` | "like" |  |  |  |  |
+| `sign.please` | "please" |  |  |  |  |
+| `sign.live` | "live" |  |  |  |  |
 
 ## 2. Phrase-bank sentences
 
@@ -167,20 +191,20 @@ Typed words the character signs, gestures or pictures (`words.json`, D-22). Revi
 | Written forms | Sign | Gesture | Picture | Language | ISL | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | i, me, my, mine, myself, मैं, मुझे, मेरा, मेरी, मेरे, main, mai, mujhe, mera, meri, mere | `me.chest` | `me.chest` | `person` |  |  |  |
-| you, your, yours, आप, तुम, तू, आपका, आपकी, आपके, आपको, तुम्हारा, तुम्हें, aap, tum, tu, aapka, aapki, aapke, aapko, tumhara, tumhe | `you.palm` | `you.palm` |  |  |  |  |
+| you, your, yours, yourself, आप, तुम, तू, आपका, आपकी, आपके, आपको, तुम्हारा, तुम्हें, aap, tum, tu, aapka, aapki, aapke, aapko, tumhara, tumhe | `you.palm` | `you.palm` |  |  |  |  |
 | mother, mom, mum, mummy, amma, maa, ma, mata, माँ, मां, माता, मम्मी, अम्मा, दाई, याया | `mother.nosering` | `mother.bindi` | `mother` |  |  |  |
 | father, dad, daddy, papa, baba, abba, पिता, पापा, बाबा, बापू, अब्बा, ददा | `father.moustache` | `father.moustache` | `father` |  |  |  |
 | grandmother, granny, dadi, nani, दादी, नानी |  | `grandparent.stick` | `grandmother` |  |  |  |
 | grandfather, grandpa, dada, nana, दादा, नाना |  | `grandparent.stick` | `grandfather` |  |  |  |
 | baby, infant, शिशु, बेबी | `baby.rock` | `baby.rock` | `baby` |  |  |  |
 | child, kid, kids, children, boy, girl, बच्चा, बच्ची, बच्चे, लड़का, लड़की, bachcha, bacha, bachchi, ladka, ladki | `sign.child` | `sign.child` |  |  |  |  |
-| brother, bhai, bhaiya, भाई, भैया |  | `sibling.rakhi` | `brother` |  |  |  |
-| sister, behen, bahan, didi, बहन, दीदी |  | `sibling.rakhi` | `sister` |  |  |  |
+| brother, brothers, bhai, bhaiya, भाई, भैया | `sign.brother` | `sibling.rakhi` | `brother` |  |  |  |
+| sister, sisters, behen, bahan, didi, बहन, बहनें, दीदी | `sign.sister` | `sibling.rakhi` | `sister` |  |  |  |
 | home, house, ghar, makaan, घर, मकान, लोन | `home.roof` | `home.roof` | `home` |  |  |  |
-| village, gaon, gaanv, गाँव, गांव |  | `home.roof` | `village` |  |  |  |
+| village, gaon, gaanv, गाँव, गांव | `sign.village` | `home.roof` | `village` |  |  |  |
 | eat, ate, eating, food, meal, khana, khaana, khao, khaya, bhojan, roti, खाना, खाओ, खाया, भोजन, रोटी, भात | `eat.fingers` | `eat.fingers` | `food` |  |  |  |
 | hungry, hunger, bhook, bhukh, bhookh, भूख, भूखा, भूखी, भूखे |  | `hungry.belly` | `food` |  |  |  |
-| water, drink, thirsty, pani, paani, pyaas, pyas, पानी, प्यास, प्यासा, प्यासी, पियो, पीना, एर | `water.thumb` | `water.cup` | `water` |  |  |  |
+| water, drink, thirsty, pani, paani, pyaas, pyas, पानी, प्यास, प्यासा, प्यासी, पियो, पीना, एर | `sign.water` | `water.cup` | `water` |  |  |  |
 | toilet, bathroom, washroom, pee, potty, latrine, शौचालय, टॉयलेट, बाथरूम, पेशाब |  | `toilet.finger` | `toilet` |  |  |  |
 | sleep, sleeping, slept, tired, rest, neend, sona, soya, aaram, नींद, सोना, सोओ, सोए, थका, थकी, थके, आराम | `sleep.palms` | `sleep.palms` | `rest` |  |  |  |
 | pain, hurt, hurts, hurting, injury, injured, dard, chot, takleef, दर्द, चोट, तकलीफ | `pain.point` | `pain.point` | `pain` |  |  |  |
@@ -196,7 +220,8 @@ Typed words the character signs, gestures or pictures (`words.json`, D-22). Revi
 | no, not, nahi, nahin, mat, na, नहीं, ना, मत | `no.shake` | `no.shake` | `no` |  |  |  |
 | ok, okay, fine, good, accha, achha, theek, thik, badhiya, अच्छा, अच्छी, ठीक, बढ़िया | `thumbs_up` | `thumbs_up` | `okay` |  |  |  |
 | bad, wrong, bura, buri, galat, kharab, बुरा, बुरी, गलत, खराब | `sign.bad` | `sign.bad` |  |  |  |  |
-| hello, hi, namaste, namaskar, johar, नमस्ते, नमस्कार, जोहार | `namaste` | `namaste` |  |  |  |  |
+| hello, hi, हेलो, हैलो | `namaste` | `namaste` |  |  |  |  |
+| namaste, namaskar, johar, नमस्ते, नमस्कार, जोहार | `namaste` | `namaste` |  |  |  |  |
 | bye, goodbye, alvida, अलविदा | `wave` | `wave` |  |  |  |  |
 | thanks, thank, dhanyavad, dhanyawad, shukriya, धन्यवाद, शुक्रिया | `sign.thanks` | `sign.thanks` |  |  |  |  |
 | sorry, maaf, maafi, माफ़, माफ, माफ़ी, माफी, क्षमा | `sign.sorry` | `sign.sorry` |  |  |  |  |
@@ -212,8 +237,13 @@ Typed words the character signs, gestures or pictures (`words.json`, D-22). Revi
 | time, when, kab, samay, waqt, kal, कब, समय, वक़्त, वक्त, कल | `sign.time` | `sign.time` |  |  |  |  |
 | see, saw, look, watch, dekho, dekha, dekhna, देखो, देखा, देखना | `sign.see` | `sign.see` |  |  |  |  |
 | know, knew, pata, jaante, jaanta, jaanti, पता, जानते, जानता, जानती | `sign.know` | `sign.know` |  |  |  |  |
+| introduce, parichay, परिचय |  | `show_me` |  |  |  |  |
 | show, dikhao, दिखाओ, दिखाइए |  | `show_me` |  |  |  |  |
-| what, where, who, why, how, which, kya, kahan, kaha, kaun, kyon, kyun, kyu, kaise, kaisa, kitna, kitne, kitni, क्या, कहाँ, कहां, कौन, क्यों, कैसे, कैसा, कितना, कितने, कितनी | `ask` | `ask` |  |  |  |  |
+| who, why, which, kaun, kyon, kyun, kyu, कौन, क्यों, किस | `ask` | `ask` |  |  |  |  |
+| what, kya, क्या | `sign.what` | `ask` |  |  |  |  |
+| where, kahan, kahaan, kaha, कहाँ, कहां | `sign.where` | `ask` |  |  |  |  |
+| how, kaise, kaisa, कैसे, कैसा, कैसी | `sign.how` | `ask` |  |  |  |  |
+| how many, how much, kitna, kitne, kitni, कितना, कितने, कितनी | `sign.how_many` | `ask` |  |  |  |  |
 | walk, walked, walking, chalo, chalna, paidal, चलो, चलना, पैदल |  | `walk.fingers` | `walk` |  |  |  |
 | road, street, sadak, rasta, सड़क, रास्ता |  | `walk.fingers` | `road` |  |  |  |
 | train, rail, railway, ट्रेन, रेल |  | `train.arm` | `train` |  |  |  |
@@ -256,6 +286,23 @@ Typed words the character signs, gestures or pictures (`words.json`, D-22). Revi
 | find, found, search, dhoondo, dhundo, dhoondh, ढूंढो, ढूँढो, ढूंढ | `sign.find` |  |  |  |  |  |
 | play, played, playing, khelo, khel, khela, खेल, खेलो, खेला | `sign.play` |  |  |  |  |  |
 | wash, washed, dho, dhoo, dhona, dhoyo, धो, धोओ, धोना | `sign.wash` |  |  |  |  |  |
+| age, old, umar, umr, उम्र, उमर, आयु, aayu | `sign.age` |  |  |  |  |  |
+| number, nambar, नंबर, संख्या, numbers, sankhya | `sign.number` |  |  |  |  |  |
+| family, parivar, परिवार | `sign.family` |  |  |  |  |  |
+| live, lives, living, rehte, rahte, रहते, रहती, रहता, रहना, stay, rehta, rehti | `sign.live` |  |  |  |  |  |
+| city, town, shahar, शहर, नगर, कस्बा, shehar, nagar | `sign.city` |  |  |  |  |  |
+| district, zila, jila, ज़िला, जिला, ज़िले, जिले | `sign.district` |  |  |  |  |  |
+| state, rajya, राज्य, प्रदेश, pradesh | `sign.state` |  |  |  |  |  |
+| near, nearby, paas, पास, नज़दीक, नजदीक, close, nazdeek | `sign.near` |  |  |  |  |  |
+| class, kaksha, कक्षा, क्लास | `sign.class` |  |  |  |  |  |
+| teacher, shikshak, शिक्षक, अध्यापक, टीचर, teachers, adhyapak, masterji | `sign.teacher` |  |  |  |  |  |
+| favourite, favorite, pasandida, पसंदीदा | `sign.favourite` |  |  |  |  |  |
+| subject, vishay, विषय | `sign.subject` |  |  |  |  |  |
+| like, pasand, पसंद, likes | `sign.like` |  |  |  |  |  |
+| understand, understood, samajh, samjha, समझ, समझा, समझी, समझे, samjhe, samjhi, समझना | `sign.understand` |  |  |  |  |  |
+| again, repeat, phir, dobara, फिर, दोबारा, fir, dubara, दुबारा | `sign.again` |  |  |  |  |  |
+| please, kripya, कृपया, kripaya | `sign.please` |  |  |  |  |  |
+| student, students, vidyarthi, chhatra, विद्यार्थी, छात्र |  |  |  |  |  |  |
 | one, ek, एक | `digit.1` |  | `n1` |  |  |  |
 | two | `digit.2` |  | `n2` |  |  |  |
 | three, teen, तीन | `digit.3` |  | `n3` |  |  |  |
@@ -299,13 +346,25 @@ The officer's prepared questions (`triage.json`) and the words on the subject's 
 | `i1` | Can you show me your name? You can write or draw it. | क्या आप अपना नाम दिखा सकते हैं? आप उसे लिख या बना सकते हैं। |  |  |  |  |
 | `i2` | How old are you? Show me with your fingers. | आपकी उम्र कितनी है? उँगलियों से दिखाइए। |  |  |  |  |
 | `i3` | Do you go to school? | क्या आप स्कूल जाते हैं? |  |  |  |  |
+| `p1` | What is your name? | आपका नाम क्या है? |  |  |  |  |
+| `p2` | What is your mobile number? | आपका मोबाइल नंबर क्या है? |  |  |  |  |
+| `p3` | Introduce yourself. | आप अपना परिचय दीजिए। |  |  |  |  |
 | `f1` | Who do you live with? | आप किसके साथ रहते हैं? |  |  |  |  |
 | `f2` | Is your mother nearby? | क्या आपकी माँ आस-पास हैं? |  |  |  |  |
 | `f3` | Is your father nearby? | क्या आपके पिता आस-पास हैं? |  |  |  |  |
 | `f4` | Do you know a phone number? You can write it. | क्या आपको कोई फ़ोन नंबर याद है? आप उसे लिख सकते हैं। |  |  |  |  |
+| `f5` | What is your father's name? | आपके पिता का नाम क्या है? |  |  |  |  |
+| `f6` | What is your mother's name? | आपकी माँ का नाम क्या है? |  |  |  |  |
+| `f7` | How many members are in your family? | आपके परिवार में कितने लोग हैं? |  |  |  |  |
+| `f8` | How many brothers and sisters do you have? | आपके कितने भाई-बहन हैं? |  |  |  |  |
 | `l1` | Can you show me where you live? | क्या आप मुझे दिखा सकते हैं कि आप कहाँ रहते हैं? |  |  |  |  |
 | `l2` | How did you come here? | आप यहाँ कैसे आए? |  |  |  |  |
 | `l3` | Is your home far from here? | क्या आपका घर यहाँ से दूर है? |  |  |  |  |
+| `a1` | Where do you live? | आप कहाँ रहते हैं? |  |  |  |  |
+| `a2` | What is the name of your village or city? | आपके गाँव या शहर का नाम क्या है? |  |  |  |  |
+| `a3` | Which district do you live in? | आप किस ज़िले में रहते हैं? |  |  |  |  |
+| `a4` | Which state do you live in? | आप किस राज्य में रहते हैं? |  |  |  |  |
+| `a5` | Which place is near your home? | आपके घर के पास कौन-सी जगह है? |  |  |  |  |
 | `x1` | Can you show me what happened? You can draw it. | क्या आप मुझे दिखा सकते हैं कि क्या हुआ? आप उसे बना सकते हैं। |  |  |  |  |
 | `x2` | Is there anything that has happened that you want to tell me about? | क्या कुछ हुआ है जिसके बारे में आप मुझे बताना चाहते हैं? |  |  |  |  |
 | `x3` | Is anything worrying you? | क्या कोई बात आपको परेशान कर रही है? |  |  |  |  |
@@ -333,6 +392,19 @@ The officer's prepared questions (`triage.json`) and the words on the subject's 
 | `pw2` | The officer will tell you about the nearest group that helps people with disabilities. | अधिकारी आपको दिव्यांगजनों की मदद करने वाली सबसे नज़दीकी संस्था के बारे में बताएँगे। |  |  |  |  |
 | `pw3` | You can get a lawyer for free. Call 15100 or the District Legal Services Authority. | आपको मुफ़्त वकील मिल सकता है। 15100 पर फ़ोन करें या ज़िला विधिक सेवा प्राधिकरण से संपर्क करें। |  |  |  |  |
 | `pw4` | You have the right to make a complaint. | आपको शिकायत दर्ज करने का अधिकार है। |  |  |  |  |
+| `sc1` | What is the name of your school? | आपके स्कूल का नाम क्या है? |  |  |  |  |
+| `sc2` | Which class do you study in? | आप किस कक्षा में पढ़ते हैं? |  |  |  |  |
+| `sc3` | What is your teacher's name? | आपके शिक्षक का नाम क्या है? |  |  |  |  |
+| `sc4` | What is your favourite subject? | आपका पसंदीदा विषय कौन-सा है? |  |  |  |  |
+| `sc5` | What do you like doing at school? | आपको स्कूल में क्या करना अच्छा लगता है? |  |  |  |  |
+| `e1` | Namaste. | नमस्ते। |  |  |  |  |
+| `e2` | How are you? | आप कैसे हैं? |  |  |  |  |
+| `e3` | Please help me. | कृपया मेरी मदद कीजिए। |  |  |  |  |
+| `e4` | I want water. | मुझे पानी चाहिए। |  |  |  |  |
+| `e5` | I did not understand. | मुझे समझ नहीं आया। |  |  |  |  |
+| `e6` | Please say it again. | कृपया फिर से बताइए। |  |  |  |  |
+| `e7` | Thank you. | धन्यवाद। |  |  |  |  |
+| `e8` | I want to go home. | मुझे घर जाना है। |  |  |  |  |
 | `is_this_it` | Is this it? | क्या यही है? |  |  |  |  |
 | `draw` | Draw | बनाओ |  |  |  |  |
 | `write` | Write | लिखो |  |  |  |  |
@@ -357,6 +429,17 @@ The officer's prepared questions (`triage.json`) and the words on the subject's 
 | `rule_wrong` | If I get something wrong, tell me. | अगर मैं कुछ ग़लत समझूँ, तो मुझे बताइए। |  |  |  |  |
 | `rule_break` | You can take a break at any time. | आप कभी भी थोड़ा आराम ले सकते हैं। |  |  |  |  |
 | `practice_morning` | Show me what you did this morning. | मुझे दिखाइए, आज सुबह आपने क्या किया। |  |  |  |  |
+| `is_this_right` | Is this right? | क्या यह सही है? |  |  |  |  |
+| `fix` | Change | बदलो |  |  |  |  |
+| `brothers` | Brothers | भाई |  |  |  |  |
+| `sisters` | Sisters | बहनें |  |  |  |  |
+| `college` | College | कॉलेज |  |  |  |  |
+| `not_in_school` | Not in school | स्कूल नहीं जाते |  |  |  |  |
+| `pick_state` | Which state? | कौन-सा राज्य? |  |  |  |  |
+| `pick_district` | Which district? | कौन-सा ज़िला? |  |  |  |  |
+| `write_place` | Village or town | गाँव या शहर |  |  |  |  |
+| `say` | Say | कहो |  |  |  |  |
+| `class_n` | Class %s | कक्षा %s |  |  |  |  |
 
 ## 6. Sign-off
 

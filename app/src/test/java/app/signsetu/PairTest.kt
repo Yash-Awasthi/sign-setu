@@ -363,6 +363,16 @@ class PairTest {
         assertFalse(ui(null, Pending.Ask(question), Mode.OFFICER).toStageView(false, 1f, true).live)
     }
 
+    @Test
+    fun aSignedAnswerIsSignedBackFromTheReadersTopLabel() {
+        val read = app.signsetu.sign.SignSegment(emptyList(), listOf(app.signsetu.sign.SignGuess("water", 0.8f), app.signsetu.sign.SignGuess("home", 0.1f)))
+        val base = ui(null, null, Mode.SHOW).copy(signed = mapOf(7L to listOf(read)))
+        val confirm = app.signsetu.sign.SignConfirm(7L, listOf(listOf(app.signsetu.sign.SignChoice("water", "water"), app.signsetu.sign.SignChoice("home", "home"))), listOf("water"))
+        assertEquals(listOf("water"), app.signsetu.ui.session.readBackLabels(base.copy(confirm = confirm)))
+        assertEquals(listOf("water"), app.signsetu.ui.session.readBackLabels(base.copy(pending = Pending.FreeText("paani", emptyList(), ref = 7L))))
+        assertEquals(emptyList<String>(), app.signsetu.ui.session.readBackLabels(base.copy(pending = Pending.FreeText("paani", emptyList()))))
+    }
+
     // ---- View model
 
     private class MemoryDao : SessionDao {

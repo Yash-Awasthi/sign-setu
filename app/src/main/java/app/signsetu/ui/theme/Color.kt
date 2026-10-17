@@ -31,22 +31,22 @@ internal val OfficerLight = lightColorScheme(
     surface = Color(0xFFF8FAFC),
     onSurface = Color(0xFF1E293B),
     surfaceVariant = Color(0xFFF1F5F9),
-    onSurfaceVariant = Color(0xFF64748B),
+    onSurfaceVariant = Color(0xFF475569),
     outline = Color(0xFF94A3B8),
-    outlineVariant = Color(0xFFE2E8F0),
+    outlineVariant = Color(0xFFDCE3EC),
     inverseSurface = Color(0xFF1E293B),
     inverseOnSurface = Color(0xFFF1F5F9),
     surfaceContainerLowest = Color(0xFFFFFFFF),
     surfaceContainerLow = Color(0xFFF8FAFC),
     surfaceContainer = Color(0xFFFFFFFF),
-    surfaceContainerHigh = Color(0xFFF1F5F9),
-    surfaceContainerHighest = Color(0xFFE2E8F0),
+    surfaceContainerHigh = Color(0xFFE2E8F0),
+    surfaceContainerHighest = Color(0xFFCBD5E1),
 )
 
 internal val OfficerDark = darkColorScheme(
     primary = Color(0xFFA5B4FC),
     onPrimary = Color(0xFF1E1B4B),
-    primaryContainer = Color(0xFF3730A3),
+    primaryContainer = Color(0xFF312E81),
     onPrimaryContainer = Color(0xFFE0E7FF),
     inversePrimary = Color(0xFF4F46E5),
     secondary = Color(0xFF93C5FD),
@@ -71,11 +71,11 @@ internal val OfficerDark = darkColorScheme(
     outlineVariant = Color(0xFF334155),
     inverseSurface = Color(0xFFE2E8F0),
     inverseOnSurface = Color(0xFF1E293B),
-    surfaceContainerLowest = Color(0xFF0B1220),
+    surfaceContainerLowest = Color(0xFF1E293B),
     surfaceContainerLow = Color(0xFF131C2E),
     surfaceContainer = Color(0xFF1E293B),
-    surfaceContainerHigh = Color(0xFF263449),
-    surfaceContainerHighest = Color(0xFF334155),
+    surfaceContainerHigh = Color(0xFF2B3A52),
+    surfaceContainerHighest = Color(0xFF3B4A63),
 )
 
 // The stage: warm paper and teal, the room the subject sees. Kept apart from the officer palette on purpose.
@@ -150,6 +150,9 @@ data class StageColors(
     /** Behind the word the character is signing; the bubble stays light in both themes. */
     val highlight: Color = Color(0xFFFFD98A),
     val onHighlight: Color = Color.Unspecified,
+    /** Neutral stage tools (draw, write, read signs), so Stop alone carries the pause colour. */
+    val tool: Color = Color(0xFFFFFFFF),
+    val onTool: Color = Color(0xFF2B2118),
 )
 
 internal val StageLight = StageColors(
@@ -180,6 +183,7 @@ internal val StageDark = StageColors(
     handle = Color(0x33FFFFFF),
     onHandle = Color(0xFFE7D8C8),
     title = Color(0xFFF6E7D6),
+    tool = Color(0xFFFFF6EC),
 )
 
 /** Sun mode: black, white and yellow, the combination that still reads in direct sunlight. */
@@ -198,6 +202,8 @@ internal val SunStageColors = StageColors(
     title = Color(0xFFFFE14D),
     highlight = Color(0xFFFFE14D),
     onHighlight = Color(0xFF000000),
+    tool = Color(0xFF000000),
+    onTool = Color(0xFFFFFFFF),
 )
 
 internal val SunAnswerColors = AnswerColors(

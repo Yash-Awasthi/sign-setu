@@ -206,6 +206,7 @@
     <string name="settings_stage">Stage</string>
     <string name="settings_camera">Camera mirror</string>
     <string name="settings_camera_summary">Shows the person their own hands on the stage. Nothing is recorded or saved.</string>
+    <string name="home_tagline">Signs, pictures and captions, all on this phone.</string>
     <string name="home_greeting_hint">Choose who you are helping, then start.</string>
     <string name="profile_isl_short">Signs</string>
     <string name="profile_other_short">Other language</string>
@@ -270,6 +271,10 @@
     <string name="signed_type">Type the word</string>
     <string name="signed_accept">Accept these words</string>
     <string name="signed_replay">Replay the signs</string>
+    <plurals name="signed_unread">
+        <item quantity="one">Signed answer, not read yet (%1$d sign)</item>
+        <item quantity="other">Signed answer, not read yet (%1$d signs)</item>
+    </plurals>
     <string name="officer_read_signs">Read signs</string>
     <string name="officer_tab_transcribe">Transcribe</string>
     <string name="officer_tab_more">More</string>
@@ -408,6 +413,17 @@
     <string name="glance_label">For the officer</string>
     <string name="glance_hide">Hide officer strip</string>
     <string name="officer_rules">Ground rules and practice</string>
+    <string name="isl_dictionary">ISL dictionary</string>
+    <string name="isl_dictionary_search">Search in English or Hindi</string>
+    <string name="isl_dictionary_all">All</string>
+    <string name="isl_dictionary_pick">Tap a word to see its sign.</string>
+    <string name="isl_dictionary_show">Show to the person</string>
+    <string name="isl_dictionary_replay">Play again</string>
+    <string name="isl_dictionary_empty">No sign found</string>
+    <string name="isl_dictionary_recorded">From a recorded Deaf signer (INCLUDE). Draft until Deaf review.</string>
+    <string name="isl_dictionary_draft">Drawn by the team. Draft until Deaf review.</string>
+    <string name="isl_dictionary_draft_tag">Draft</string>
+    <string name="isl_dictionary_attribution">Recorded signs are adapted from the INCLUDE dataset by AI4Bharat (Sridhar et al., 2020), licensed CC BY 4.0.</string>
     <string name="rules_skipped">Officer skipped the rest of the ground rules</string>
     <string name="officer_sun">Sun mode (high contrast)</string>
     <string name="stage_dont_know">I don\'t know</string>
@@ -430,4 +446,26 @@
     <string name="log_juvenile">Marked as possibly under 18</string>
     <string name="log_juvenile_off">No longer marked as under 18</string>
     <string name="start_juvenile_mark">The person may be under 18</string>
+    <string name="stage_say">Say something</string>
+    <string name="stage_no_phone">No phone</string>
+    <string name="stage_fix">Change</string>
+    <string name="stage_confirm">Yes, that is right</string>
+    <string name="stage_skip">Skip</string>
+    <string name="stage_college">College</string>
+    <string name="stage_not_in_school">Not in school</string>
+    <string name="pad_delete">Delete the last digit</string>
+    <string name="given_written">written</string>
+    <string name="given_pad">number pad</string>
+    <string name="given_picture">picture</string>
+    <string name="given_picker">chosen from a list</string>
+    <string name="given_sign">signed, read back by the officer</string>
+    <string name="given_board">picture board</string>
+    <string name="given_confirmed">confirmed by the person</string>
+    <string name="details_title">Personal details given</string>
+    <string name="details_field">Field</string>
+    <string name="details_value">Given as</string>
+    <string name="details_method">How</string>
+    <string name="details_confirmed">Confirmed</string>
+    <string name="details_yes">Yes</string>
+    <string name="details_no">No</string>
 </resources>

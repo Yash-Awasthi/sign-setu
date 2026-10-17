@@ -4,9 +4,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.LocalResources
+import app.signsetu.data.session.EventType
+import app.signsetu.ui.session.signedDisplay
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,14 +43,22 @@ fun PairedBar(pane: PairedPane, ui: SessionUi, content: ContentBundle, officerLa
     Column(Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         val s = pane.status
         val low = s != null && s.battery < 15 && !s.charging
-        Surface(shape = RoundedCornerShape(50), color = if (low) Color(0xFFFFC857) else colors.secondaryContainer, contentColor = if (low) Color(0xFF3A2A00) else colors.onSecondaryContainer) {
-            Text(
-                if (s != null) stringResource(R.string.second_screen_chip, pane.label, s.battery) else pane.label,
-                style = MaterialTheme.typography.labelMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = Spacing.md, vertical = 6.dp),
-            )
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = if (low) Color(0xFFFFC857) else colors.secondaryContainer,
+            contentColor = if (low) Color(0xFF3A2A00) else colors.onSecondaryContainer,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) {
+            Row(Modifier.padding(horizontal = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Phone, contentDescription = null, modifier = Modifier.size(20.dp))
+                Text(
+                    if (s != null) stringResource(R.string.second_screen_chip, pane.label, s.battery) else pane.label,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = Spacing.sm),
+                )
+            }
         }
         when {
             pane.unpinned -> Alert(stringResource(R.string.second_screen_unpinned), stringResource(R.string.second_screen_use_this) to pane.onUseThisPhone)
@@ -68,7 +83,8 @@ fun PairedBar(pane: PairedPane, ui: SessionUi, content: ContentBundle, officerLa
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        ui.events.lastOrNull { it.via != null && it.type in AnswerEvents }?.text?.let {
+                        val res = LocalResources.current
+                        ui.events.lastOrNull { it.via != null && it.type in AnswerEvents }?.let { e -> if (e.type == EventType.ANSWER_SIGNED) signedDisplay(res, e.text) else e.text }?.let {
                             Text(stringResource(R.string.second_screen_last_answer, it), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }

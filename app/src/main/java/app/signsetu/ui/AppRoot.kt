@@ -334,6 +334,7 @@ private fun SessionRoute(
                     onSignChoice = vm::chooseSign,
                     onNextRule = vm::nextRule,
                     onPauseEnd = vm::endPause,
+                    onGiven = vm::give,
                 )
             }
         }

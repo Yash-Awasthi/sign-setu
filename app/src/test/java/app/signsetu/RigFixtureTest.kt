@@ -8,7 +8,7 @@ import app.signsetu.ui.avatar.Pose
 import app.signsetu.ui.avatar.Side
 import app.signsetu.ui.avatar.Timeline
 import app.signsetu.ui.avatar.point
-import app.signsetu.ui.avatar.solveElbow
+import app.signsetu.ui.avatar.elbowAt
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -30,7 +30,8 @@ class RigFixtureTest {
     @Test
     fun portalFixturesMatchTheRig() {
         val json = Json { ignoreUnknownKeys = true }
-        val gestures = listOf("gestures.json", "signs.json").flatMap { json.decodeFromString<GesturesFile>(File(content, it).readText()).gestures }
+        val gestures = listOf("gestures.json", "signs.json").flatMap { json.decodeFromString<GesturesFile>(File(content, it).readText()).gestures } +
+            json.decodeFromString<GesturesFile>(File(content, "isl_signs.json").readText()).gestures.take(3) // measured "c:" shapes
         val lines = mutableListOf<String>()
         for (g in gestures) for ((name, build) in listOf("child" to ChildBuild, "adult" to AdultBuild)) {
             val timeline = Timeline(g, build)
@@ -48,7 +49,7 @@ class RigFixtureTest {
 
     private fun hand(h: HandPose, side: Side, build: app.signsetu.ui.avatar.Build): List<Float?> {
         val (sx, sy) = build.shoulder(side)
-        val (ex, ey) = solveElbow(sx, sy, h.x, h.y, build.upperArm, build.foreArm, side, h.elbowOut)
+        val (ex, ey) = h.elbowAt(sx, sy, build, side)
         val (tx, ty) = h.point("index", side, build.handScale)
         val s = h.shape
         return listOf(h.x, h.y, h.roll, h.angle.takeUnless { it.isNaN() }, h.elbowOut,

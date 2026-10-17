@@ -4,14 +4,15 @@
 
 | Level | What | Tools | When |
 | --- | --- | --- | --- |
-| Unit | Session logic, retention, content resolution, lexicon search, build expiry, segmentation, sign reader, auto sequencer, pairing protocol, handover, record and grades | JUnit, kotlinx-coroutines-test, in-process transport fake; run for both flavors (`testStandardDebugUnitTest`, `testNearbyDebugUnitTest`) | Every change |
-| Portal | Rig parity with `Rig.kt`, review flags | `vp test` (Vitest through Vite+) | Every change to the rig or portal |
-| UI | Officer and Show flows | Compose UI tests on the API 29 emulator | Every change |
-| Device | Release build on real phones | Scripts below, Macrobenchmark | End of each phase |
-| Security | MASVS L2 checks, static analysis, dependency and secret scans | Lint, Semgrep, OSV-Scanner, gitleaks, MobSF static | Every change (static); phase 2 (full) |
-| Accessibility | IS 17802 / WCAG 2.1 AA on the officer panel | Accessibility Test Framework in instrumented tests (the Accessibility Scanner engine), TalkBack | Every pull request; TalkBack at phase 1 end and phase 2 |
-| Content | Translations, clips, gestures, audio | Reviewers per the content policy | Phase 2 |
-| Acceptance | Department testers | [governance/17-uat-scripts.md](governance/17-uat-scripts.md) | Phase 2 end |
+| Unit | Session logic, retention, content resolution, lexicon search, lesson inputs, build expiry, segmentation, sign reader, auto sequencer, pairing protocol, handover, record and grades, rig | JUnit 4, kotlinx-coroutines-test, in-process transport fake; run for both flavors (`testStandardDebugUnitTest`, `testNearbyDebugUnitTest`) | Every change |
+| Portal | Rig parity with `Rig.kt`, review flags, missing captions | `vp test` (Vitest through Vite+) | Every change to the rig or portal |
+| Tools | Retarget maths, review-record merge | `python tools/isl/test_retarget.py`, `python tools/content/test_review_record.py` | Every change to the tools |
+| Instrumented | Stage accessibility, overlay filtering, database migrations | `connectedStandardDebugAndroidTest` on an emulator | Every change |
+| Device | Release build on real phones | Scripts below, Macrobenchmark | Gate 1 |
+| Security | MASVS L2 checks, static analysis, dependency and secret scans | Lint, Semgrep, OSV-Scanner, gitleaks, MobSF static | Every change (static); gate 1 (full) |
+| Accessibility | IS 17802 / WCAG 2.1 AA on the officer panel | Accessibility Test Framework in instrumented tests (the Accessibility Scanner engine), TalkBack | Every change; TalkBack at gate 1 |
+| Content | Translations, motions, audio | Reviewers per the content policy, through the reviewer portal | Gate 1 |
+| Acceptance | Department testers | [governance/17-uat-scripts.md](governance/17-uat-scripts.md) | Gate 1 |
 
 Logic with branches (retention, show-back, build expiry, export) is written test-first: the failing test, then the code.
 
@@ -46,7 +47,7 @@ Logic with branches (retention, show-back, build expiry, export) is written test
 | TC-25 | Frames reach the tracker only inside a sign window; the first frame is analysed whatever its timestamp and later frames wait for the interval (`AnalysisRateTest`) | FR-84, SEC-71 |
 | TC-26 | Segmentation: pauses split signs at exact index ranges; short holds and twitches stay inside or are dropped; incremental capture equals a full scan; hands leaving the frame do not end it; a 3-minute narrative drops faces and splits only at longer pauses (`SegmentTest`, `SignIngestionTest`) | FR-84, FR-87 |
 | TC-27 | Sign reader: Kotlin logits match the Python reference within 1e-3 on five fixtures; guesses are ranked probabilities; forward pass timed (`SignReaderTest`) | FR-85 |
-| TC-28 | Guesses are limited to the item on screen; the subject chooses among two or three alternatives with the officer's reading first; the slower cue appears only after a failed read of fast or lost hands; every sign-word maps to the reader and the vocabulary (`SignIngestionTest`) | FR-85 to FR-87 |
+| TC-28 | Guesses that fit the item on screen rank first and the others stay; the subject chooses among two or three alternatives with the officer's reading first; the slower cue appears only after a failed read of fast or lost hands; every sign-word maps to the reader and the vocabulary (`SignIngestionTest`) | FR-85 to FR-87 |
 | TC-29 | Read signs on the stage: one dot per sign, Done logs the app's reading as MACHINE; the officer's reading is logged beside it; Ask them to choose logs each set before it shows; None of these logs Unclear; ending the session, locking or clearing the view model leaves no landmarks | FR-84 to FR-87, SEC-71 |
 | TC-30 | Role gating against the real bank: sensitive only for a victim; never an account question for an accused; a child in conflict with law gets the child's rights, not the adult ones; role survives the database (`RoleTest`) | FR-88 |
 | TC-31 | Auto sequencer against the real bank: phase order; manual picks; the ceiling (no sensitive, free-recall, follow-up or rights item ever proposed); R1, R2, R3, R4b, R6 and R8; auto-advance only statement to statement, at most 3; answers pair by shown ID; content checks (`InterviewTest`) | FR-77 to FR-80 |
@@ -60,6 +61,11 @@ Logic with branches (retention, show-back, build expiry, export) is written test
 | TC-39 | Database migrations 1 to 2 (role) and 2 to 3 (item, reason, shown and via columns) keep existing rows (`SessionMigrationTest`) | FR-34, FR-81 |
 | TC-40 | Rig parity: `RigFixtureTest` regenerates nothing and `vp test` passes on the portal's TypeScript rig | D-31 |
 | TC-41 | Two phones and a tablet: the second-screen script UAT-18 | FR-72 to FR-76 |
+| TC-42 | Lesson inputs: every lesson question is in the bank in English and Hindi with its pictures; phone numbers need ten digits starting 6 to 9; ages, counts and classes stay in range; names need letters and no digits; answers read back in the subject's language; how an answer was given survives the record; the report lists each detail with how and whether confirmed; a young child is not asked for a mobile number; an accused keeps the factual questions but no welfare-only items; lesson questions are signed in draft ISL order (`LessonTest`) | FR-102 to FR-104, D-36 |
+| TC-43 | One lexicon: measured shapes parse and clamp and play on the rig; recorded signs come first, then authored, then gesture, then spelling; a concept prefers the label written as typed; homonyms and multi-word signs are handled; the dictionary finds recorded and draft signs in either language; every INCLUDE word is retargeted with attribution; every sign stays in frame and authored signs keep each hand on its side; every reader label can be signed back (`IslLexiconTest`) | FR-13, FR-106, D-35 |
+| TC-44 | Recorded keys closer than 0.35 s pass through without stopping; both hands stay inside the body view; questions get their face (`AvatarTest`) | D-35, D-37 |
+| TC-45 | Holistic results map to the subject's own sides in order with the timestamp, and empty lists mean not seen (`HolisticMappingTest`) | FR-84 |
+| TC-46 | Stage layout on a phone: the camera window keeps the 9:16 frame uncropped between the rails; Stop is the only pause control on the phone's stage; a second screen still shows its break screen after Stop | FR-107, FR-76 |
 
 ## 3. Performance
 
@@ -70,7 +76,7 @@ Release build on the API 29 emulator with 3 GB RAM, then on a real Android 10 ph
 | PT-01 | Cold start (Macrobenchmark `StartupTimingMetric`) | Under 2 s (NFR-01) |
 | PT-02 | Confirm to Show state with clip playing | Under 300 ms (NFR-02) |
 | PT-03 | Clip playback frame timing (`FrameTimingMetric`) | No janky frames at source rate (NFR-03) |
-| PT-04 | Release APK size | Under 30 MB (NFR-05) |
+| PT-04 | Release APK size | Under 50 MB (NFR-05) |
 | PT-05 | Memory over a 30-question session | Under 300 MB (NFR-06) |
 
 ## 4. Resilience
@@ -116,7 +122,8 @@ ST-06 and ST-11 (attestation, gateway fuzzing) apply from release 1.1.
 | AT-03 | TalkBack: complete triage flow as officer | NFR-23 |
 | AT-04 | Every supported script renders without clipping | NFR-25 |
 | AT-05 | Greyscale: Yes and No still distinguishable | NFR-21 |
-| AT-06 | Accessibility Test Framework over the stage device screens (waiting, code, reconnecting, hold, break, ended), the three-row answer bar, the hold screen and the Next button, in both themes, at 320 and 411 dp and font scale 1.3 | NFR-20, NFR-21 |
+| AT-06 | Accessibility Test Framework over every lesson input (age pad, phone pad with No phone, sibling pads, class grid, state picker, name entry, several pictures, inputs without words in the subject's language) and the phrase board, in both themes | NFR-20, NFR-21 |
+| AT-07 | Accessibility Test Framework over the stage device screens (waiting, code, reconnecting, hold, break, ended) | NFR-20, NFR-21 |
 
 ## 7. Content validation and testing with people
 

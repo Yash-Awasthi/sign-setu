@@ -54,10 +54,10 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| FR-10 | Preset triage questions are grouped: safety, health, needs, identity, family, location. | MUST |
+| FR-10 | Preset questions are grouped: Safety, Health, Needs, Personal, Family, Address, School, Everyday, Talking, Their account, Sensitive, and the rights groups of FR-88. | MUST |
 | FR-11 | A preset question shows in the Show state with its picture cards and caption, plus by profile the character performing the gesture, a human ISL clip, or recorded audio. No network is used. | MUST |
 | FR-12 | Sensitive questions ("what happened", "who hurt you") sit behind a deliberate second tap and never appear on the first screen. | MUST |
-| FR-13 | The officer can type free text and show it in one step. The character plays it word by word with ISL signs, everyday gestures, fingerspelling and pictures, each turned on or off by the officer (D-22). | MUST |
+| FR-13 | The officer can type free text and show it in one step. The character plays it word by word with ISL signs (recorded first, then authored), everyday gestures, fingerspelling and pictures, each turned on or off by the officer (D-22, D-35). | MUST |
 | FR-15 | Nothing reaches the Show state until the officer confirms it. | MUST |
 | FR-17 | When a gesture, clip or audio item is missing, the picture and caption are shown alone and the officer sees "not available". | MUST |
 | FR-18 | Clips and audio can be replayed and played at slow speed. | MUST |
@@ -126,7 +126,7 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | ID | Requirement | Priority |
 | --- | --- | --- |
 | FR-84 | Camera frames are analysed only inside an explicit sign window: Read signs or the stage hand button (an answer of up to 20 s) and Tell me (an account of up to 3 minutes). Outside a window the mirror is a preview with no analysis (D-25). | MUST |
-| FR-85 | Signs are split at pauses and read on the phone into ranked proposals, limited to the answer cards of the item on screen. Proposals are shown to the officer only, marked "read by the app, not checked", and are never shown to the subject automatically. | SHOULD |
+| FR-85 | Signs are split at pauses and read on the phone into ranked proposals; proposals that match the answer cards of the item on screen rank first (D-38). Proposals are shown to the officer only, marked "read by the app, not checked", and are never shown to the subject automatically. | SHOULD |
 | FR-86 | A reading becomes the subject's answer only when the subject picks it among two or three picture alternatives plus "None of these"; each set is logged as shown before it appears (D-27). | MUST |
 | FR-87 | Every signed answer and account can be replayed for the rest of the session at ¼× or ½× with sign markers, and the officer or an interpreter can enter a word per sign. The subject is asked to sign more slowly only after a failed read of lost or too-fast hands. | SHOULD |
 
@@ -152,14 +152,25 @@ Priority: **MUST** (release 1 cannot ship without it), **SHOULD** (release 1 if 
 | ID | Requirement | Priority |
 | --- | --- | --- |
 | FR-95 | A session opens with the officer's introduction, four pictured and signed ground rules and a practice round, moved on by the subject's Next; each step is logged, and taking the phone back before the practice round logs "Officer skipped the rest of the ground rules". | MUST |
-| FR-96 | After Stop a calm pause layer covers the character; only the subject's "I'm ready" ends it, and its length is logged. The officer's lock stays reachable. | MUST |
+| FR-96 | After Stop a calm pause layer covers the whole stage, so no answer can be tapped; only the subject's "I'm ready" ends it, and its length is logged. The officer's lock stays reachable. | MUST |
 | FR-97 | An officer glance strip shows the last question and answer upside down at the edge facing the officer; it is hidden for sensitive questions and while the subject draws or writes, can be hidden for the session, and never shows machine readings. | SHOULD |
 | FR-98 | Vibration codes for whoever holds the phone: Yes one long buzz, No two buzzes, Stop, Break, "I don't know", "I don't understand" or "That's wrong" three short pulses, a picture a tick; never for the young-child profile. | SHOULD |
 | FR-99 | Sun mode: in glare the stage turns black, white and yellow, on after 3 s above 10,000 lux and off after 10 s below 2,000 lux; the light sensor is read only while the stage shows; the officer can force it on. | SHOULD |
 | FR-100 | Tilt to show (tipping the phone over its top edge for about 0.6 s) and Volume Up show what is prepared; on the stage single volume presses do nothing and holding both keys for 1.5 s returns to the officer. Both can be turned off and stand aside when TalkBack is on. | SHOULD |
 | FR-101 | After a crash, low-memory kill or relock while the stage was showing, unlocking always asks for the full biometric or PIN. | MUST |
 
-### 4.12 Later releases
+### 4.12 Personal details, phrases and the ISL dictionary
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| FR-102 | A question with an answer type opens its own input under the character: number pad (age 0 to 120, counts 0 to 50, brothers then sisters), a 10-digit mobile pad starting 6 to 9 with "No phone", a written name (letters, no digits, up to 60 characters) or text (up to 80), a class grid (1 to 12, college, not in school), a state then district picker, or several pictures with Done. "I don't know", "I don't understand", "That's wrong", the sign button (where a tracker exists) and Stop stay under every input (D-36). | MUST |
+| FR-103 | A written or typed answer is read back large; it becomes the subject's own only on their Yes. One left unconfirmed when the item closes is logged as unconfirmed, with how it was given. | MUST |
+| FR-104 | The report carries a "Personal details given" table: field, value, how it was given and whether the person confirmed it. | MUST |
+| FR-105 | A phrase board on the stage offers the everyday phrases as pictures with words; a tap is logged as the subject's own. | SHOULD |
+| FR-106 | The officer can search an ISL dictionary of every recorded and authored sign in English or Hindi, play a sign, and prepare it for the stage (D-35). | SHOULD |
+| FR-107 | The stage shows the camera at its own 9:16 shape without cropping, between two rails of answers; Stop is the only pause control on the phone's stage (D-37). | MUST |
+
+### 4.13 Later releases
 
 | ID | Requirement | Release |
 | --- | --- | --- |
@@ -204,6 +215,7 @@ Delivered early: FR-22 (on-device sign recognition) as FR-84 to FR-87 (D-25). Wi
 | FR-77 to FR-83 | [decisions](07-decisions.md) D-30, [UX](03-ux.md) §4 | [test plan](06-test-plan.md) §2 |
 | FR-84 to FR-88 | [decisions](07-decisions.md) D-25, D-27, D-28, [hand model integration](11-hand-model-integration.md) | [test plan](06-test-plan.md) §2 |
 | FR-89 to FR-101 | [decisions](07-decisions.md) D-34, [UX](03-ux.md) §2, §4 | [test plan](06-test-plan.md) §2 |
+| FR-102 to FR-107 | [decisions](07-decisions.md) D-35 to D-37, [UX](03-ux.md) §2, §4 | [test plan](06-test-plan.md) §2 |
 | FR-30 to FR-34, FR-67 | [architecture](02-architecture.md) §6-8, [security](04-security.md) | [test plan](06-test-plan.md) §2, §5 |
 | NFR-01 to NFR-11 | [architecture](02-architecture.md) §10 | [test plan](06-test-plan.md) §3 |
 | NFR-20 to NFR-25 | [UX](03-ux.md) §5 | [test plan](06-test-plan.md) §6 |

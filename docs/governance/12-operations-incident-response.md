@@ -1,6 +1,6 @@
 # 12. Operations and Incident Response
 
-Covers monitoring, logging, incident response, breach notification, backup and continuity for the gateway and the app. Based on the CERT-In Directions of 28 April 2022 and the CERT-In Guidelines on Information Security Practices for Government Entities (2023), sections 7, 14 and 15.
+Covers monitoring, logging, incident response, breach notification, backup and continuity for the app and, from release 1.1, the gateway. Based on the CERT-In Directions of 28 April 2022 and the CERT-In Guidelines on Information Security Practices for Government Entities (2023), sections 7, 14 and 15.
 
 Release 1 has no server and no internet access: the gateway rows below (logging, outages, backups, partner services) apply from release 1.1.
 

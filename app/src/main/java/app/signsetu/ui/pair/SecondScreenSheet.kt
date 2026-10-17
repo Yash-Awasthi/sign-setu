@@ -8,23 +8,38 @@ import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import app.signsetu.ui.components.OfficerCard
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,7 +58,6 @@ import app.signsetu.R
 import app.signsetu.pair.Abort
 import app.signsetu.pair.LinkRole
 import app.signsetu.pair.LinkState
-import app.signsetu.pair.Peer
 import app.signsetu.pair.StageLink
 import app.signsetu.pair.StageTransports
 import app.signsetu.ui.session.OfficerSheet
@@ -79,9 +93,16 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             SheetTitle(stringResource(R.string.second_screen_title))
-            Text(stringResource(R.string.second_screen_intro), style = MaterialTheme.typography.bodyMedium)
-            Text(stringResource(R.string.notice_aid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(R.string.second_screen_dept_only), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.second_screen_intro), style = MaterialTheme.typography.bodyLarge)
+            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
+                Row(Modifier.fillMaxWidth().padding(Spacing.md), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                    Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                        Text(stringResource(R.string.second_screen_dept_only), style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.notice_aid), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
             when {
                 state == LinkState.Connecting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                     CircularProgressIndicator()
@@ -108,21 +129,33 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
                             Button(onClick = { ask.launch(perms) }) { Text(stringResource(R.string.ok)) }
                         }
                         !on -> Button(onClick = { enable.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)) }) { Text(stringResource(R.string.second_screen_open_bluetooth)) }
-                        peers.isEmpty() -> Text(stringResource(R.string.second_screen_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        else -> peers.forEach { p -> PeerRow(p) { container.pairWith(p) } }
+                        peers.isEmpty() -> Column(Modifier.fillMaxWidth().padding(vertical = Spacing.sm), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(64.dp)) {
+                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Phone, contentDescription = null, modifier = Modifier.size(32.dp)) }
+                            }
+                            Text(stringResource(R.string.second_screen_none), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = Spacing.md))
+                        }
+                        else -> OfficerCard(padding = 0.dp) {
+                            peers.forEachIndexed { i, p ->
+                                if (i > 0) HorizontalDivider(Modifier.padding(start = Spacing.lg), color = MaterialTheme.colorScheme.outlineVariant)
+                                ListItem(
+                                    headlineContent = { Text(p.label) },
+                                    leadingContent = { Icon(Icons.Filled.Phone, contentDescription = null) },
+                                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                                    modifier = Modifier.clickable(role = Role.Button) { container.pairWith(p) },
+                                )
+                            }
+                        }
                     }
-                    Text(stringResource(R.string.second_screen_not_listed), style = MaterialTheme.typography.bodySmall)
-                    TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }) { Text(stringResource(R.string.second_screen_open_bluetooth)) }
+                    Text(stringResource(R.string.second_screen_not_listed), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(
+                        onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text(stringResource(R.string.second_screen_open_bluetooth)) }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun PeerRow(peer: Peer, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
-        ListItem(headlineContent = { Text(peer.label) })
     }
 }
 

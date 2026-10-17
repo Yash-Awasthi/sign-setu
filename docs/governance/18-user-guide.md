@@ -14,8 +14,9 @@ Statements need a qualified interpreter and the video recording.
 3. Ask one question at a time: Safety first, then Health and Needs.
    Wait. Never ask what happened first.
 4. They answer with YES, NO, I DON'T KNOW, I DON'T UNDERSTAND,
-   THAT'S WRONG, BREAK, STOP, a picture, a drawing, writing or signs.
-5. STOP or BREAK means pause: check they are comfortable, offer water
+   THAT'S WRONG, STOP, a picture, a number, a name, a drawing,
+   writing or signs.
+5. STOP means pause: check they are comfortable, offer water
    or rest. Wait for them to tap I'M READY.
    Signs read by the app are a guess: let THEM choose the meaning.
 6. To take the phone back, tap the small lock at the top right of their screen.
@@ -38,7 +39,7 @@ Child in distress: Childline 1098 or 112.
 | Start | Open the app; if you have just unlocked the phone it opens straight away, otherwise use your fingerprint or phone PIN. An **Unfinished session** card offers **Continue** or **End it**. |
 | Role | On Home or in the change sheet: **Not known yet** (default), **Victim or witness**, or **Accused or in custody**. Choosing Accused shows you the Juvenile Justice notice; mark **The person may be under 18** if that may be so. |
 | Who you are helping | Tap a face: **Young child**, **Signs** (sign language users, adult character, no sound), **Other language** (they choose their language first), or **Not sure**. Then choose **Their language** and tap **Start session**. Allow the camera when asked: it shows them their own hands and records nothing. |
-| The stage | The phone faces them. The character gestures or signs, a speech bubble shows the words in their language, the picture is held up, and their hands appear in the mirror below with the answer cards. **Yes**, **No**, **I don't know** and **Stop** are always there. The app stays pinned so they cannot open other apps. |
+| The stage | The phone faces them. The character gestures or signs, a speech bubble shows the words in their language, and the picture is held up. Below, they see the whole camera picture with the answers in two rails beside it: **Yes**, **I don't know**, **I don't understand**, **Draw** and **Write** on the left; **No**, **That's wrong**, the camera button and **Stop** on the right. The app stays pinned so they cannot open other apps. |
 | Replay | The play button repeats the question; they choose the signing speed (½×, ¾×, 1×). Tapping a word replays it alone, slowly. |
 | Opening | The session starts with your introduction, four ground rules and a practice round ("Show me what you did this morning"). They tap **Next**. If you take the phone back early the log says you skipped the rest. |
 | Show without tapping | With something ready, tip the top of the phone over toward them and hold for a moment, or press **Volume Up**. The screen turns to face them. Turn either off in **Settings > Stage**. |
@@ -47,13 +48,15 @@ Child in distress: Childline 1098 or 112.
 | Their answer | Every answer gets the same small nod and "okay". Under each answer you see its grade (**Said**, **Confirmed**, **Officer's reading**, **App's reading**, **Said no**, **Unclear**), how long it took, and any change. An amber outline means look again, not that they are lying. |
 | Say it back | Under an answer, **Say it back**: edit your reading and show it. They pick the meaning among pictures; only their pick makes it **Confirmed**. |
 | Several questions at once | Long-press quick questions, or tap **Safety basics**: up to five go on one handover. Sensitive questions are never queued. |
-| Preset question | On **More**, tap a group (Safety, Health, Needs, Identity, Family, Location, Talking), tap a suggestion card, check **Ready to show**, tap the send button. The hand and speaker marks on a card show that a gesture and a recording exist. Shown questions and their answers build up as a conversation above. |
+| Preset question | On **More**, tap a group (Safety, Health, Needs, Personal, Family, Address, School, Everyday, Talking), tap a suggestion card, check **Ready to show**, tap the send button. The hand and speaker marks on a card show that a gesture and a recording exist. Shown questions and their answers build up as a conversation above. |
 | Sensitive questions | The **Sensitive** group is locked until you confirm. Ask only when the person is calm and safe, and never first. |
+| Personal details | In **Personal**, **Family**, **Address** and **School**, a question such as "What is your name?" or "How old are you?" opens its own input on their screen: a number pad, a phone pad, a place to write, a class grid, a state and district list, or pictures. They see their answer large and tap **Yes** if it is right; only then is it theirs. The report lists these details in one table. Ask only what you need to reunite or protect the person. |
+| ISL dictionary | On **More**, **ISL dictionary**: search a word in English or Hindi, tap it to see the sign, and **Show to the person** to put it on the stage. Every sign is a draft until Deaf review. |
 | Phrases | **Phrases** group: pick a sentence ("Do you want ...?"), then the picture it is about. The character signs the sentence in parts. |
 | Pictures | **Pictures** opens the board: categories, search and your **Favourites** (tap the star). Pick one or more and tap **Use**. |
 | Rights | For an accused, the rights groups appear. Show each one; a card reminds you that rights must also be explained through a qualified interpreter, and the record says shown, not understood. |
 | Auto | If your department allowed it, switch to **Auto**: a card suggests the next welfare question; tap to show it, skip it, or choose something else. Stop pauses Auto; a second Stop ends it. |
-| They sign an answer | Tap **Read signs** (or they tap the hand on their screen). They sign; tap **Done**. You see the app's reading, marked not checked. Replay it at ¼× or ½×, type a word per sign, then **Ask them to choose**: they see two or three pictures per sign and "None of these". Only their tap counts. |
+| They sign an answer | Tap **Read signs** (or they tap the camera button on their screen). They sign; tap **Done**. You see the app's reading, marked not checked. Replay it at ¼× or ½×, type a word per sign, then **Ask them to choose**: they see two or three pictures per sign and "None of these". Only their tap counts. |
 | They want to tell you what happened | On **More**, **Tell me**: up to 3 minutes of signing, with no timer on their screen. You or an interpreter can replay it later in the session. Nothing is kept after the session ends. Never treat it as a statement. |
 | Your own question | Type in the composer at the bottom and tap send. Coloured dots on the suggestions show what the character can do with a word. The character signs, gestures or spells it word by word and holds up pictures; the toggles above the composer choose Signs, Gestures, Spell and Pictures. **+** then **Add pictures** attaches answer pictures. |
 | Their language differs from yours | Type your question, tap **Assistant** (if your department installed it). Check **Which means**: it is the translation read back in English. If it is right, tap send; if not, close the card and your words are shown as typed. |

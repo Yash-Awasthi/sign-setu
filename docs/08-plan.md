@@ -1,6 +1,6 @@
 # 08. Release Path
 
-The application is built (release 1, including the on-device assistant of D-24, the vision engine and sign reader of D-25, the second screen of D-26 and the decisions up to D-34). It reaches production through four gates. A gate starts when the previous one meets its exit criteria, or when the project lead waives a criterion and records the waiver in the [decision log](07-decisions.md).
+The application is built (release 1, including the on-device assistant of D-24, the vision engine and sign reader of D-25, the second screen of D-26, the recorded signs and lesson-sheet questions of D-35 and D-36, and the decisions up to D-38). It reaches production through four gates. A gate starts when the previous one meets its exit criteria, or when the project lead waives a criterion and records the waiver in the [decision log](07-decisions.md).
 
 | Gate | Objective | Work | Exit criteria |
 | --- | --- | --- | --- |

@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.util.Size
 import androidx.camera.compose.CameraXViewfinder
-import androidx.compose.foundation.background
 import androidx.compose.ui.layout.ContentScale
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -146,7 +145,7 @@ fun CameraMirror(
         Box(modifier) { placeholder() }
         return
     }
-    Box(modifier.background(Color.Black)) {
+    Box(modifier) {
         // TextureView-backed, so the rounded window around it clips the picture. Fit: the subject sees all the camera sees.
         CameraXViewfinder(surface, Modifier.fillMaxSize(), implementationMode = ImplementationMode.EMBEDDED, contentScale = ContentScale.Fit)
         // Landmarks are read in the draw phase only, so each analysed frame redraws this canvas without recomposing.

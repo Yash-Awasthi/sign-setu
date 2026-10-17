@@ -43,7 +43,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import app.signsetu.data.content.Given
+import app.signsetu.data.content.answerText
+import app.signsetu.data.content.reason
 import app.signsetu.export.ReportRow
+import app.signsetu.export.ReportSection
 import app.signsetu.export.ReportText
 import app.signsetu.export.SessionReport
 import java.io.File
@@ -323,11 +327,12 @@ class SessionViewModel(
      * choices is logged before it is shown.
      */
     fun askSubject(eventId: Long, words: List<String>) {
-        val queue = choiceQueue(eventId, words)
-        if (queue.isEmpty()) return
+        val asked = choiceQueue(eventId, words)
+        if (asked.isEmpty()) return
+        val queue = asked.map { it.first }
         viewModelScope.launch {
             logChoices(queue.first())
-            local.update { it.copy(pending = null, mode = Mode.SHOW, answeredCard = null, answeredYes = null, confirm = SignConfirm(eventId, queue)) }
+            local.update { it.copy(pending = null, mode = Mode.SHOW, answeredCard = null, answeredYes = null, confirm = SignConfirm(eventId, queue, asked.map { it.second })) }
         }
     }
 
@@ -335,10 +340,10 @@ class SessionViewModel(
     fun canAskSubject(eventId: Long, words: List<String>) = choiceQueue(eventId, words).isNotEmpty()
 
     // Shuffled so the officer's reading does not always take the first, most tapped place.
-    private fun choiceQueue(eventId: Long, words: List<String>): List<List<SignChoice>> =
+    private fun choiceQueue(eventId: Long, words: List<String>): List<Pair<List<SignChoice>, String?>> =
         local.value.signed[eventId].orEmpty()
-            .mapIndexed { i, s -> signChoices(words.getOrNull(i), s, reader?.words.orEmpty(), content.words).shuffled(random) }
-            .filter { it.isNotEmpty() }
+            .mapIndexed { i, s -> signChoices(words.getOrNull(i), s, reader?.words.orEmpty(), content.words).shuffled(random) to s.guesses?.firstOrNull()?.word }
+            .filter { it.first.isNotEmpty() }
 
     internal var random: Random = Random.Default
 
@@ -356,7 +361,7 @@ class SessionViewModel(
             }
             if (rest.isNotEmpty()) {
                 logChoices(rest.first())
-                local.update { it.copy(confirm = SignConfirm(confirm.eventId, rest)) }
+                local.update { it.copy(confirm = SignConfirm(confirm.eventId, rest, confirm.read.drop(1))) }
             }
         }
     }
@@ -383,7 +388,10 @@ class SessionViewModel(
     override fun onCleared() = wipeSigns()
 
     private suspend fun present(prepared: Pending, lang: String) {
+        flushGiven()
         val pending = when (prepared) {
+            // A lesson-sheet input offers every picture it lists, so the subject can pick several.
+            is Pending.Ask if prepared.question.answer != null -> prepared
             is Pending.Ask -> prepared.copy(question = prepared.question.copy(cards = offered(prepared.question.cards, Random.Default)))
             is Pending.Cards -> prepared.copy(cardIds = offered(prepared.cardIds, Random.Default))
             is Pending.ShowBack -> if (prepared.asksChoice) prepared.copy(choices = offered(prepared.choices, Random.Default)) else prepared
@@ -594,6 +602,26 @@ class SessionViewModel(
         }
     }
 
+    // An answer the subject entered but has not yet confirmed on its read-back.
+    private var unconfirmed: Given? = null
+
+    /** A lesson-sheet answer: a confirmed one is logged now; an unconfirmed one is logged as such if the item closes first. */
+    fun give(g: Given?) {
+        if (g == null || !g.confirmed) { unconfirmed = g; return }
+        unconfirmed = null
+        viewModelScope.launch { logGiven(g); advanceRun() }
+    }
+
+    private suspend fun flushGiven() {
+        unconfirmed?.let { logGiven(it) }
+        unconfirmed = null
+    }
+
+    private suspend fun logGiven(g: Given) {
+        val text = content.answerText(content.question(g.question)?.answer, g, officerLang)
+        repo.log(sessionId, EventType.ANSWER_TEXT, EventSource.SUBJECT, officerLang, text = text, itemId = g.question, reason = g.reason(), shownId = local.value.itemId)
+    }
+
     fun submitDrawing(png: ByteArray) {
         viewModelScope.launch {
             repo.log(sessionId, EventType.ANSWER_DRAWING, EventSource.SUBJECT, drawingPng = png, shownId = local.value.itemId)
@@ -610,6 +638,7 @@ class SessionViewModel(
     }
 
     private suspend fun finishShown(source: EventSource) {
+        flushGiven()
         val l = local.value
         val pending = if (paired) l.onStage else l.pending
         if (pending is Pending.ShowBack && l.answeredYes == null && l.answeredCard == null) {
@@ -687,11 +716,11 @@ class SessionViewModel(
     suspend fun drawing(id: Long): ByteArray? = repo.drawing(id)
 
     /** Builds the encrypted report from everything logged so far; returns the file and its one-time passphrase. */
-    suspend fun exportReport(text: ReportText, detail: (SessionEvent) -> String): Pair<File, String> {
+    suspend fun exportReport(text: ReportText, detail: (SessionEvent) -> String, section: ReportSection? = null): Pair<File, String> {
         val events = ui.value?.events ?: emptyList()
         val grades = grades(events)
         val rows = events.withQuestions().map { (e, q) -> ReportRow(e, q, detail(e), reading = grades[e.id]?.isReading == true) }
-        return report.export(rows, text) { repo.drawing(it) }
+        return report.export(rows, text, { repo.drawing(it) }, section)
     }
 
     fun endSession(onDone: () -> Unit) {

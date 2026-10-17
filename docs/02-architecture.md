@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Release 1 is a single Android application that runs entirely on the officer's phone. It has no server, makes no network calls and declares no INTERNET permission. All content (questions, picture cards, gesture and ISL clips, audio) ships inside the signed APK; all session data stays in an encrypted database on the device until the officer exports or clears it. An optional second phone or tablet can show the subject's stage over Bluetooth (§11); it stores nothing. The reviewer portal (§12) is a separate static web page for content sign-off and is not shipped in the app.
+Release 1 is a single Android application that runs entirely on the officer's phone. It has no server, makes no network calls and declares no INTERNET permission. All content (questions, picture cards, character motions, audio, the vision and sign-reader models) ships inside the signed APK; all session data stays in an encrypted database on the device until the officer exports or clears it. An optional second phone or tablet can show the subject's stage over Bluetooth (§11); it stores nothing. The reviewer portal (§12) is a separate static web page for content sign-off and is not shipped in the app.
 
 The data flow diagrams, element catalogue and trust boundaries are in the [system design](system-design.html). This document covers how the application is built.
 
@@ -18,16 +18,16 @@ The data flow diagrams, element catalogue and trust boundaries are in the [syste
 | Layer | Choice | Reason |
 | --- | --- | --- |
 | Language, UI | Kotlin, Jetpack Compose, Material 3 | Native, smallest build, direct access to Keystore and platform security APIs |
-| SDK levels | minSdk 29; compile and target the latest stable SDK installed (37) | Android 10 floor |
-| Media | Media3 ExoPlayer | Clips and audio, gapless playlists for the phrase bank, variable speed |
-| Database | Room 2.8 with SQLCipher for Android 4.19 | Encrypted at rest |
+| SDK levels | minSdk 29; compileSdk and targetSdk 37 | Android 10 floor |
+| Media | Media3 ExoPlayer 1.11.1 | Recorded speech at normal and reduced speed |
+| Database | Room 2.8.5 (schema version 3) with SQLCipher for Android 4.19.1 | Encrypted at rest |
 | Settings | Jetpack DataStore | No personal data |
 | Background work | WorkManager | Retention purge |
 | App lock | androidx.biometric BiometricPrompt, KeyguardManager | Device credential or strong biometric |
 | PDF export | Android PdfDocument to compose, PdfBox-Android to encrypt (AES-256) | Readable in any PDF reader |
-| Characters | Compose Canvas, 2D rig, keyframes in `gestures.json` (D-21) | No video files; one gesture file plays on both characters |
-| Camera mirror | CameraX 1.6: Preview, and ImageAnalysis whose frames reach the tracker only inside a sign window (D-20, D-25) | Nothing captured or stored |
-| Vision engine | MediaPipe Tasks Vision 1.0.0: the Holistic landmarker on the CPU in video mode, model in the APK (D-25) | Hands, face and pose on the phone; 64-bit only |
+| Characters | Compose Canvas, 2D rig, keyframes in `gestures.json`, `signs.json` and `isl_signs.json` (D-21, D-35) | No video files; one motion file plays on both characters |
+| Camera mirror | CameraX 1.6.2: Preview and ImageAnalysis on one 16:9 portrait frame (analysis 640 by 360, rotated upright); frames reach the tracker only inside a sign window (D-20, D-25, D-38) | Nothing captured or stored |
+| Vision engine | MediaPipe Tasks Vision 1.0.0: the Holistic landmarker in video mode, GPU delegate first with CPU fallback, model in the APK; full `protobuf-java` 4.26.1 runtime (D-25, D-38) | Hands, face and pose on the phone; 64-bit only |
 | Sign reader | `LandmarkSignReader`: a 262-word isolated-sign classifier in plain Kotlin, weights in the APK (D-25) | No inference library to ship or audit |
 | Second screen | Bluetooth RFCOMM to bonded devices (`standard`); Google Nearby Connections in the optional `nearby` flavor (D-26) | No network, scanning or location in the reference build |
 | On-device assistant | llama.cpp v0.5.0 built with the NDK and CMake into `libassistant.so` (arm64-v8a; x86_64 for the emulator); an optional GGUF model file imported in Settings (D-24) | Offline translation with a back-translation; no network |
@@ -44,17 +44,17 @@ One Gradle module under `app.signsetu`, organised by feature. Process numbers re
 | --- | --- | --- | --- |
 | (root) | `MainActivity` (FLAG_SECURE, overlay touch filter, BiometricPrompt, screen pinning); `AppContainer` wiring, app lock and relock | 1.0 | FR-61, FR-67, NFR-31 |
 | `ui` | Navigation, lock screen, session route (officer panel or stage), app-wide no-learning keyboard | 1.0, 2.0, 3.0 | FR-02, FR-03, SEC-05 |
-| `ui.start` | Home: greeting stage, unfinished session, profile faces, language picker; first run | 2.0 | FR-05, FR-07, FR-60 |
-| `ui.session` | Officer panel in two pages, Transcribe and More (conversation, completions, question runs, answer trail and grades, composer, tools); stage (character, caption, mirror, answers, drawing, writing, ground rules, pause layer, glance strip, sign panels); handover (tilt and volume keys); auto mode (`Interview` sequencer, `AutoPilot`, `AutoPanel`); the record (`PromptRecord`, `EvidenceGrade`, `RecordText`); sheets; session view model | 2.0, 3.0 | FR-10 to FR-21, FR-31, FR-60 to FR-66, FR-70, FR-71, FR-77 to FR-101 |
+| `ui.session` | Officer panel in two pages, Transcribe and More (conversation, completions, question runs, answer trail and grades, composer, tools, `IslDictionarySheet`); stage (character, caption, mirror, rails, drawing, writing, ground rules, pause layer, glance strip, sign panels, `LessonInputs` answer inputs and phrase board); handover (tilt and volume keys, `StageGuard`); auto mode (`Interview` sequencer, `AutoPilot`, `AutoPanel`); the record (`PromptRecord`, `EvidenceGrade`, `RecordText`, `PersonalDetails`); sheets; session view model | 2.0, 3.0 | FR-10 to FR-21, FR-31, FR-60 to FR-66, FR-70, FR-71, FR-77 to FR-107 |
 | `ui.pair` | `StageDevice` (the stage device's screens), `SecondScreenSheet` (officer pairing), `PairedBar`, `LinkText` | 2.0, 3.0 | FR-72 to FR-76 |
-| `ui.avatar` | 2D rig, the two characters, keyframe playback, fingerspelling contact points | 3.1 | FR-11, FR-18 |
-| `ui.settings`, `ui.theme`, `ui.components` | Settings; officer, stage and sun-mode colour schemes and the ambient-light switch; shapes and type; shared cards and buttons | 2.0 | FR-51, FR-99 |
-| `data.content` | Loads and verifies the content bundle; resolves questions, phrases and lexicon lookup; plans typed text into signs, gestures and spelling | 3.1, D2 | FR-11, FR-13, FR-17, FR-62, FR-65 |
+| `ui.avatar` | `Rig.kt` (anchors, two-bone solver, timeline, Catmull-Rom for recorded keys), `MeasuredShape.kt` (`c:` hand shapes), `Avatar.kt` (drawing, framing to the hips), `MiniFace` | 3.1 | FR-11, FR-18 |
+| `ui.start` | Home (role and profile, language, unfinished session) and first run | 2.0 | FR-05, FR-07, FR-50, FR-60 |
+| `ui.settings`, `ui.theme`, `ui.components` | Settings; officer, stage and sun-mode colour schemes, one officer card and tile set, shapes, type and spacing tokens, the ambient-light switch; shared cards, buttons, speech player, overlay filter | 2.0 | FR-51, FR-99 |
+| `data.content` | `Content.kt` loads and verifies the bundle; `IslLexicon.kt` the one sign lookup and the dictionary; `TextSigning.kt` plans typed text; `Lesson.kt` answer types, validation and read-back text; `Completion.kt` word completions | 3.1, D2 | FR-11, FR-13, FR-17, FR-62, FR-65, FR-89, FR-102 to FR-106 |
 | `data.session` | Encrypted Room database, wrapped database key, event log, retention worker | 4.0, D1, D4 | FR-05, FR-06, FR-30, FR-33, FR-34 |
 | `data.settings` | DataStore settings and the officer's app language | D3 | FR-51 |
 | `export` | Password-protected PDF report | 5.0 | FR-32 |
-| `camera` | Camera mirror; `LandmarkTracker` interface and `LandmarkFrame`; `HolisticTracker` (MediaPipe), created by `LandmarkTrackers` per build type (release: Holistic; debug: Holistic, or a stand-in hand for tests) | 3.5 | FR-69, FR-84 |
-| `sign` | `SignCapture` and `SignWindow` (windows and pause segmentation); `SignReader`, `LandmarkSignReader` and `SignReaders` (the bundled reader); `SignChoices` (context limit, alternatives for the subject, the slower cue); `SkeletonPlayer` (slow replay) | 3.5, 3.6 | FR-84 to FR-87 |
+| `camera` | Camera mirror; `LandmarkTracker` interface and `LandmarkFrame`; `HolisticTracker` (MediaPipe, GPU then CPU), created by `LandmarkTrackers` per build type (release: Holistic; debug: Holistic, or a stand-in hand for tests) | 3.5 | FR-69, FR-84 |
+| `sign` | `SignCapture` and `SignWindow` (windows and pause segmentation); `SignReader`, `LandmarkSignReader` and `SignReaders` (the bundled reader); `SignChoices` (context ranking, alternatives for the subject, the slower cue); `SkeletonPlayer` (slow replay) | 3.5, 3.6 | FR-84 to FR-87 |
 | `pair` | `PairCrypto` (handshake, keys, frames), `StageWire` (messages and the stage view), `StageTransport` and `BluetoothTransport`, `StageLink` (link state machine), `StageBridge` (officer-side bridge to the view model), `Drawings` (bounded re-encoding) | 7.0 | FR-72 to FR-76, SEC-66 to SEC-70 |
 | Flavor source sets | `src/standard` and `src/nearby`, each with `pair/StageTransports`; `NearbyStageTransport` only in `src/nearby` | 7.0 | SEC-73 |
 | `assistant` | Model import with hash check, llama.cpp bridge, translation and back-translation | 6.0, D5 | FR-68, SEC-65 |
@@ -63,27 +63,30 @@ One Gradle module under `app.signsetu`, organised by feature. Process numbers re
 
 ```
 assets/content/
-  manifest.json          content version and the SHA-256 of every file
-  triage.json            groups (sensitive, rights, roles[], child?) and questions: id, group, phase, kind, after?, text{lang}, cards[], lexicon?, gesture?
-  cards.json             picture board categories and cards: id, category, label{lang}
-  lexicon.json           gesture and ISL entries (schema in 05-avatar-and-gestures.md §5.2)
-  gestures.json          character keyframes per gesture, written against named contact points (D-21)
-  signs.json             fingerspelling alphabet, digits and draft word signs, generated by tools/content/build_signs.py (D-22)
-  words.json             typed-word vocabulary: written forms to sign, gesture and picture (D-22)
-  languages.json         language finder: code, name in its own script, English name, greeting
-  subject_ui.json        words the stage shows the subject (Yes, No, Stop, ground rules, pause), per language
-  sign_words.json        sign-reader labels to vocabulary words (draft, D-25)
-  models/                holistic_landmarker.task (MediaPipe), sign_reader.bin and sign_reader.json (D-25)
-  phrases.json           phrase bank: sentence patterns, their signs, and per slot the picture, its sign and the full sentence
-  cards/<id>.webp        picture cards
-  audio/<lang>/<id>.ogg  question audio, Opus, mono; phrase sentences as phrase.<phrase>.<card>.ogg
-  audio/greet/<lang>.ogg language finder greetings
+  manifest.json          {"version": 1, "files": {path: SHA-256}}; its own SHA-256 is the content version
+  triage.json            15 groups (sensitive, rights, roles[], child?) and 75 questions: id, group, phase, kind, after?, text{lang}, cards[], lexicon?, gesture?, answer?, field?, roles[], hiddenFor[], signed
+  cards.json             11 categories and 102 cards: id, category, label{lang}
+  lexicon.json           33 gesture-lookup entries: id, concept, card, locations[], actions[], label{lang}, how{lang}
+  gestures.json          42 authored gestures, keyframes against named contact points (D-21)
+  signs.json             26 letters, 10 digits and 71 draft word signs, generated by tools/content/build_signs.py (D-22)
+  isl_signs.json         262 signs retargeted from INCLUDE signers by tools/isl/retarget.py, in 16 categories (D-35)
+  words.json             123 vocabulary entries, 850 written forms, to sign, gesture and picture (D-22)
+  sign_words.json        49 sign-reader labels to vocabulary words (draft, D-25)
+  languages.json         17 languages: code, name in its own script, English name, greeting
+  subject_ui.json        35 words the stage shows the subject, per language
+  phrases.json           2 sentence patterns with 10 slots: signs, and per slot the picture, its sign and the full sentence
+  places.json            36 states and union territories; Chhattisgarh with its 33 districts (D-36)
+  models/                holistic_landmarker.task (13.7 MB), sign_reader.bin (1.4 MB) and sign_reader.json (D-25)
+  cards/<id>.webp        102 picture cards, 320 px
+  audio/<lang>/<id>.ogg  question and phrase audio, Opus, mono (37 English, 37 Hindi)
+  audio/greet/<lang>.ogg 14 language finder greetings
 ```
 
-Later releases add `clips/<set>/<id>.mp4` (480x480 H.264, silent; sets child, adult and ISL).
+Human ISL video clips (`clips/<set>/<id>.mp4`) are a later release; the characters play keyframes only.
 
-- The app checks every file against the manifest hashes each time it loads the content, and never parses or shows a file that fails. A failed picture, recording or gesture file is left out and the rest still works; a failed text file stops new sessions, because the subject could otherwise be shown wrong words. Either way the officer sees a notice on the home screen (SEC-54).
-- All approved languages ship in the APK. Recorded audio is about 6 KB per question, so 22 languages fit within the size budget; video clips are the main cost (estimates in [avatar and gestures](05-avatar-and-gestures.md) §5.5).
+- The app checks every file except `models/` against the manifest each time it loads the content, and never parses or shows a file that fails. A failed picture, recording or motion file (`gestures.json`, `signs.json`, `isl_signs.json`) is left out and the rest still works; any other failed JSON file stops new sessions, because the subject could otherwise be shown wrong words. Either way the officer sees a notice on the home screen (SEC-54). Each model is checked by its own loader on first use (SEC-74).
+- `tools/content/build_content.py --manifest-only` rewrites the manifest after normalising JSON to LF line endings, so the hashes hold on every checkout (`.gitattributes` sets `eol=lf`).
+- All approved languages ship in the APK. Recorded audio averages about 10 KB per item.
 - Interface strings use Android resources; subject-facing content uses the bundle, so content changes do not touch code.
 
 ## 6. State and data model
@@ -101,11 +104,11 @@ Event      id, sessionId, ts, type, source, lang?, text?, cardId?, lexiconId?, d
 Drawing    id, sessionId, png
 ```
 
-- `itemId` names the bank item of a shown or suggested row; `reason` holds the auto-mode reason, `rights_shown`, `caption_missing` or `opening`; `shownId` links every answer to the QUESTION_SHOWN it answers; `via` is `stage` or `stage_late` for answers from a second screen.
+- `itemId` names the bank item of a shown or suggested row, and the question of a lesson-sheet answer; `reason` holds the auto-mode reason, `rights_shown`, `caption_missing` or `opening` on a shown row, and `given:<METHOD>:<0|1>` on a lesson-sheet answer (method WRITTEN, PAD, PICTURE, PICKER, SIGN or BOARD; 1 when the subject confirmed the read-back); `shownId` links every answer to the QUESTION_SHOWN it answers; `via` is `stage` or `stage_late` for answers from a second screen.
 - PROMPT rows hold the "Shown as" record (caption, motions, pictures in order, content version). A say-back carries `lexiconId` `ref:<answer id>`. SYSTEM rows use machine keys (for example `run_ended:k/n`, `break_given`, `jj_notice`, `juvenile`, `juvenile_off`, `read_signs`, `tell_me`, `mode_auto`), shown in the officer's language.
 - Database version 1 to 2 adds the session role; 2 to 3 adds `itemId`, `reason`, `shownId` and `via`. A downgrade drops the tables, because sessions live a day at most.
 
-No table has a field for a name, address, phone number or photograph of the subject.
+No table has a column for a name, address, phone number or photograph of the subject. Lesson-sheet answers (D-36) can hold such details as answer text; they live in the same encrypted rows, under the same retention, and reach only the encrypted report.
 
 ## 7. Storage and keys
 
@@ -118,7 +121,7 @@ API-level details for authentication are in [security](04-security.md) SEC-21 an
 
 ## 8. Export and hand-off
 
-**Session report.** The report is composed with Android `PdfDocument`: header (session start, profile, languages), the event log, notes, and drawings as images. It is then encrypted with PdfBox-Android using AES-256. The passphrase is 16 characters from an unambiguous 32-symbol alphabet (80 bits, `SecureRandom`), shown once in four groups of four, and shared by the officer separately from the file. The file is written to app-private cache and shared through `FileProvider` with a temporary read grant, then deleted.
+**Session report.** The report is composed with Android `PdfDocument` on A4 pages: header (session start, profile, languages, role when set), the "Personal details given" table (FR-104), the event log with grades, choice positions and trails, notes, drawings as images, and the readings section; the not-a-statement notice heads and ends every page. It is then encrypted with PdfBox-Android using AES-256 (`StandardProtectionPolicy`, random owner password). The passphrase is 16 characters from the 32-symbol alphabet `0123456789ABCDEFGHJKMNPQRSTVWXYZ` (80 bits, `SecureRandom`), shown once as four groups of four, and shared by the officer separately from the file. The file is written to app-private cache and shared through `FileProvider` with a temporary read grant, then deleted.
 
 **Interpreter hand-off.** The configured contact (D3) is opened in the configured messaging app: for WhatsApp, `https://wa.me/<number>` opens the chat, and the officer starts the video call; for Sandes, the app is launched by package name and the contact is shown on screen for the officer to select [confirm Sandes deep link]. No session data is passed.
 
@@ -127,7 +130,8 @@ API-level details for authentication are in [security](04-security.md) SEC-21 an
 - The `applicationId` is `in.signsetu`. The code namespace is `app.signsetu`, because `in` is a Kotlin keyword. The department confirms the identifier before the first signed release, because it cannot change afterwards.
 - `BuildConfig.BUILD_EPOCH_DAY` is set at build time for the build-expiry check (FR-67).
 - Two product flavors on the `transport` dimension: `standard` (default, the reference build) and `nearby` (application ID suffix `.nearby`). Tasks are named per variant, for example `assembleStandardRelease`.
-- Release builds: R8 full mode, `debuggable=false`, no logging. MediaPipe's armeabi-v7a native library is excluded; 32-bit phones keep a plain mirror. A Baseline Profile is not yet generated; it is the next step if cold start on the oldest phone misses NFR-01.
+- Version `0.1.0`, version code 1 (`app/build.gradle.kts`); the nearby flavor appends `-nearby` to the name.
+- Release builds: R8 full mode with resource shrinking, `debuggable=false`, `android.util.Log` calls stripped (`proguard-rules.pro`). Release ABIs are arm64-v8a and armeabi-v7a; MediaPipe's armeabi-v7a library is excluded and the assistant is built for arm64-v8a only, so 32-bit phones keep a plain mirror and no assistant. Debug builds add x86_64 for the emulator. No app-specific Baseline Profile is generated; it is the next step if cold start on the oldest phone misses NFR-01.
 - Signing, SBOM, scanning and release steps are in [governance/11-devsecops-release.md](governance/11-devsecops-release.md).
 
 ## 10. Performance
@@ -135,10 +139,10 @@ API-level details for authentication are in [security](04-security.md) SEC-21 an
 | Target | Approach |
 | --- | --- |
 | Cold start under 2 s (NFR-01) | No work on startup beyond unlocking; content manifest checked once per install |
-| Preset under 300 ms (NFR-02) | First-screen cards preloaded; one ExoPlayer instance reused; clips stored uncompressed in the APK so they play without extraction |
-| Smooth clips (NFR-03) | 480x480 H.264 at source frame rate; hardware decode |
-| APK under 50 MB (NFR-05) | WebP cards, Opus audio; the vision model (13.7 MB) and MediaPipe's 64-bit native code are the main cost; release APK 47.0 MB (`standard`) |
-| Memory under 300 MB (NFR-06) | Analysis only inside a sign window; the vision model mapped, not copied; a narrative keeps no face points (about 20 MB for 3 minutes); single player, cards loaded lazily |
+| Preset under 300 ms (NFR-02) | The item is logged, then drawn; the camera binds and pinning starts only after the stage's first frame; card images decoded lazily into a 48-entry cache; WebP, OGG and the `.task` model stored uncompressed in the APK |
+| Smooth motion (NFR-03) | The character's clock is read only in the draw phase, so animation redraws without recomposition; idle breathing redraws at 20 fps and stops inside a sign window |
+| APK under 50 MB (NFR-05) | WebP cards, Opus audio; the vision model (13.7 MB) and MediaPipe's 64-bit native code are the main cost; unsigned release APK 47,579,538 bytes (45.4 MiB, `standard`) and 47,697,078 bytes (45.5 MiB, `nearby`) |
+| Memory under 300 MB (NFR-06) | Analysis only inside a sign window; the vision model mapped, not copied; a narrative keeps no face points (about 20 MB for 3 minutes); the assistant and the landmark graph are freed on lock, on memory pressure, and (the assistant) while the stage shows |
 
 ## 11. Second screen
 

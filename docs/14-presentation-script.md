@@ -47,17 +47,17 @@ A spoken walk-through of Sign Setu as built, about 15 minutes with the live demo
 
 *Send "Do you want water?"*
 
-"The character asks with its hands and face, the caption is in the person's language, the picture is held up. Yes and No are always there, and under them I don't know, I don't understand and That's wrong. Break is a tea cup; Stop is a stop sign, never an open palm. Picture choices are shuffled every time, with Something else, which opens the drawing pad."
+"The character asks with its hands and face, the caption is in the person's language, the picture is held up. Below it the person sees the whole camera picture, with the answers in two rails beside it: Yes and No always, and I don't know, I don't understand and That's wrong. Stop is a stop sign, never an open palm, and it is the only way to pause. Picture choices are shuffled every time, with Something else, which opens the drawing pad."
 
 *Tap Stop.*
 
-"Stop covers the character with a calm pause: a breathing circle and bubbles, no score, no sound. Only the person's I'm ready ends it. The officer feels three short pulses and sees the answer upside down on the strip facing them."
+"Stop covers the stage with a calm pause: a breathing circle and bubbles, no score, no sound. Only the person's I'm ready ends it. The officer feels three short pulses and sees the answer upside down on the strip facing them."
 
 *Take the phone back with the small lock.*
 
 ## 6. Reading signs (2 minutes)
 
-*Tap Read signs; sign, or let the stand-in hand move; tap Done.*
+*Tap Read signs, or the camera button on the stage; sign, or let the stand-in hand move; tap Done.*
 
 "A crying person signs fast. The camera is analysed only inside this window: twenty seconds for an answer, or three minutes for an account with Tell me. MediaPipe tracks the hands on the phone, and the app splits the signing at pauses and reads each sign with a model trained on the INCLUDE dataset of Indian signs."
 
@@ -69,7 +69,13 @@ A spoken walk-through of Sign Setu as built, about 15 minutes with the live demo
 
 *Type "where is ravi mother?" and send.*
 
-"The character signs typed words in draft ISL order, question word last, spells names with the two-handed alphabet, and lights each word in the caption. For a person who reads another language, an optional assistant translates on the phone and back into English, so the officer can see a wrong meaning before sending."
+"The character signs typed words in draft ISL order, question word last, using signs retargeted from recorded Deaf signers where they exist, spells names with the two-handed alphabet, and lights each word in the caption. The ISL dictionary on the More page lets the officer look up and show any of these signs. For a person who reads another language, an optional assistant translates on the phone and back into English, so the officer can see a wrong meaning before sending."
+
+## 7a. Personal details (1 minute)
+
+*On More, open Personal; show "How old are you?"; enter an age on the pad; tap Yes on the read-back.*
+
+"For the questions on a lesson sheet, name, age, phone number, parents, address and school, the stage turns into the right input: a number pad, a phone pad, a name field, a state and district list, or pictures. The answer is read back large and only the person's Yes makes it theirs. The report lists these details in one table, with how each was given."
 
 ## 8. Roles and rights (1 minute)
 
@@ -93,7 +99,7 @@ A spoken walk-through of Sign Setu as built, about 15 minutes with the live demo
 
 ## 11. What is done and what remains (1 minute)
 
-"Done: the offline application, the stage, sign reading on the phone, roles and rights, Auto, the second screen, the graded record, and the security controls. It passes 120 unit tests, and the release is 47 MB."
+"Done: the offline application, the stage, sign reading on the phone, recorded signs and the dictionary, the personal-details questions, roles and rights, Auto, the second screen, the graded record, and the security controls. It passes 147 unit tests on both builds, and the release is about 45 megabytes."
 
 "Remaining: review of the signs, ISL order, rights wording and local-language text by ISL, legal, child-welfare and language reviewers, through the reviewer portal; sign reading measured with real phones and children; the two-phone test; TalkBack on a real phone; the CERT-In security audit; and a pilot in one district."
 
@@ -105,7 +111,7 @@ A spoken walk-through of Sign Setu as built, about 15 minutes with the live demo
 | Is it an interpreter? | No. It bridges first contact; statements still need a qualified interpreter and the statutory video recording. |
 | Are the signs correct ISL? | The gestures, signs and ISL word order are drafts awaiting Deaf review. |
 | Does it record the person? | No video, audio or photographs. Hand and face points are analysed only in a sign window, kept in memory for the session and never stored. |
-| Can it read the person's signs? | Isolated signs from a 262-word vocabulary, as proposals. The person confirms every meaning by picking it. Yes, no and pain are not yet in the vocabulary; picture answers cover them. |
+| Can it read the person's signs? | Isolated signs from a 262-word vocabulary, as proposals ranked by the question on screen. The person confirms every meaning by picking it. Yes, no and pain are not yet in the vocabulary; picture answers cover them. |
 | Can the officer use it on an accused? | Only to communicate and to show rights, each marked shown, not understood. It never asks an accused for an account. |
 | What phones does it need? | Android 10 or later. Sign reading needs a 64-bit phone; the assistant needs about 3 GB of memory. The second screen needs Bluetooth. |
 | What does it cost to run? | Nothing per use: no servers, no paid services. |

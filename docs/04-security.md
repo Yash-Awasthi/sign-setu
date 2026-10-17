@@ -18,10 +18,10 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | SEC-01 | Session database encrypted with SQLCipher; random 256-bit key wrapped by an AES key in Android Keystore (hardware-backed where available). | CERT-In 6.2.3, 6.2.4; MASVS-STORAGE-1 |
 | SEC-02 | Drawings stored only inside the encrypted database; export files only in app-private cache, deleted when the officer finishes the session, on Clear all data, and at every unlock. | MASVS-STORAGE-1 |
 | SEC-03 | `android:allowBackup="false"`; `dataExtractionRules` (API 31+) and `fullBackupContent` (API 29-30) exclude everything. | MASVS-STORAGE-2 |
-| SEC-04 | No personal data in Logcat; release builds strip `Log` calls with R8; no crash SDK. | CERT-In 6.2.5 |
+| SEC-04 | No personal data in Logcat; release builds strip `android.util.Log` calls with R8 (`-assumenosideeffects` in `proguard-rules.pro`); no crash SDK. | CERT-In 6.2.5 |
 | SEC-05 | Note fields disable autocorrect and request no personalised learning where the keyboard supports it. | MASVS-STORAGE-2 |
 | SEC-06 | Copy disabled on log entries; subject data never placed on the clipboard. | MASVS-STORAGE-2 |
-| SEC-07 | DataStore holds settings only, no personal data. | MASVS-STORAGE-1 |
+| SEC-07 | DataStore (`settings`) and two plain preference files (`locale` for the officer's language, `stage_guard` for the `stage_live` flag) hold settings only, no personal data. | MASVS-STORAGE-1 |
 | SEC-08 | Sessions purged on end or retention expiry (WorkManager and at next open, whichever is first); `secure_delete` overwrites purged rows and the rollback journal is truncated, so no write-ahead log keeps old pages. | DPDP section 8(7) |
 
 ### 2.2 Cryptography
@@ -99,7 +99,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, plus the CERT-In require
 | SEC-71 | Landmarks are biometric data. Frames are analysed only inside an explicit sign window (FR-84). Landmarks live only in view-model memory, for the session, and are wiped when the session ends, the app locks or the view model is cleared; they are never written to disk, logged, exported or sent over the second-screen link. A narrative keeps hands and pose only. The subject's stage draws hands and arms, never face points. | D-25, D-27; DPDP s.8 |
 | SEC-72 | MediaPipe's usage-statistics upload backend is excluded from the build and replaced by a stub destination that drops every event on the device (D-33). | SEC-30 |
 | SEC-73 | Build flavors: `standard` is the reference build and keeps every rule; `nearby` adds only the Nearby Connections permissions of D-26, uses its own application ID, and is offered only to departments whose phones have Play services. The permission gate runs for every variant before packaging (`check<Variant>Permissions`). | CERT-In 6.2.6 |
-| SEC-74 | The holistic model, the sign reader and its word map are verified against the content manifest before they load; a failed model is not used and the stage keeps a plain mirror. | SEC-54 |
+| SEC-74 | The holistic model, the sign reader and its word map are verified against the content manifest before they load (`HolisticTracker.verifiedModel`, `SignReaders.create`); a failed model is not used and the stage keeps a plain mirror. | SEC-54 |
 | SEC-75 | A flag holding no subject data (`stage_live`) is written while the stage shows. If the app is locked or restarted while it is set (a crash, a low-memory kill or the 5-minute relock), unlocking always asks for the full biometric or PIN instead of reusing the phone's recent unlock; a successful prompt clears it. | FR-101, SEC-21 |
 
 ## 3. Key management
@@ -144,6 +144,5 @@ The full STRIDE analysis is in [governance/07-threat-model.md](governance/07-thr
 | When | Review |
 | --- | --- |
 | Every change | Review by someone other than the author; Lint, Semgrep, OSV-Scanner and gitleaks pass |
-| End of phase 1 | MASVS self-check against this document |
-| End of phase 2 | Full internal MAS-L2 review; threat model refreshed |
-| Phase 3 | CERT-In empanelled audit (source and binary) |
+| Gate 1, hardening ([release path](08-plan.md)) | MASVS self-check against this document; full internal MAS-L2 review; threat model refreshed |
+| Gate 2, security audit | CERT-In empanelled audit (source and binary) |

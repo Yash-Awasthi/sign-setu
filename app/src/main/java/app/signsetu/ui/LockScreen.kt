@@ -1,35 +1,22 @@
 package app.signsetu.ui
 
 import app.signsetu.ui.components.BrandButton
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import app.signsetu.ui.avatar.Avatar
-import app.signsetu.ui.avatar.Character
-import app.signsetu.ui.session.Backdrop
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalInk
-import app.signsetu.ui.theme.LocalStageColors
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -37,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,12 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.signsetu.R
 import app.signsetu.ui.theme.Spacing
@@ -76,50 +59,36 @@ fun LockScreen(
     LaunchedEffect(secure) { if (secure && autoPrompt) onUnlock { failed = true } }
 
     val ink = LocalInk.current
-    // At large font sizes the words need the room, so the character gives some up (NFR-22).
-    val stageWeight = if (LocalDensity.current.fontScale > 1.3f) 0.2f else 0.42f
-    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Box(Modifier.weight(stageWeight).fillMaxWidth()) {
-            Backdrop(Modifier.fillMaxSize())
-            Box(Modifier.fillMaxSize().statusBarsPadding()) {
-                Avatar(Character.CHILD, gesture = null, playKey = null, modifier = Modifier.fillMaxHeight(0.8f).aspectRatio(1f).align(Alignment.BottomCenter))
+    Column(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding().padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
                 Text(
                     stringResource(R.string.app_name),
                     fontFamily = Baloo,
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = 24.sp,
-                    color = LocalStageColors.current.title,
-                    modifier = Modifier.padding(start = Spacing.lg, top = Spacing.md),
+                    fontSize = 22.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.fillMaxWidth(),
                 )
-            }
-        }
-        Surface(
-            color = MaterialTheme.colorScheme.background,
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-            shadowElevation = 8.dp,
-            modifier = Modifier.weight(1f - stageWeight).fillMaxWidth().riseOver(24.dp),
-        ) {
-            Column(
-                Modifier.navigationBarsPadding().padding(horizontal = Spacing.xl, vertical = Spacing.xl),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Surface(shape = CircleShape, color = Color.Transparent, modifier = Modifier.size(56.dp)) {
-                    Icon(Icons.Filled.Lock, contentDescription = null, tint = ink.onBand, modifier = Modifier.background(ink.brush).padding(14.dp))
+                Spacer(Modifier.weight(1f))
+                Box(Modifier.size(72.dp).background(ink.brush, CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Lock, contentDescription = null, tint = ink.onBand, modifier = Modifier.size(28.dp))
                 }
                 Text(
                     stringResource(if (secure) R.string.lock_title else R.string.no_lock_title),
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.sm),
                 )
                 Text(
                     stringResource(if (secure) R.string.lock_body else R.string.no_lock_body),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
                 if (failed && secure) {
-                    Text(stringResource(R.string.lock_failed), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.lock_failed), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Spacing.sm))
                 }
                 Spacer(Modifier.weight(1f))
                 BrandButton(
@@ -133,24 +102,17 @@ fun LockScreen(
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                 ) { Text(stringResource(if (secure) R.string.lock_button else R.string.no_lock_button), style = MaterialTheme.typography.titleMedium) }
+                Spacer(Modifier.height(Spacing.sm))
                 if (secure) stageButton?.invoke()
                 Text(
                     stringResource(R.string.notice_aid),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = Spacing.lg),
                 )
-            }
-        }
     }
 }
 
 private fun isDeviceSecure(context: Context) =
     (context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isDeviceSecure
-
-/** Draws the sheet [by] taller and that much higher, so it overlaps the stage above and still reaches the bottom. */
-private fun Modifier.riseOver(by: Dp) = layout { measurable, constraints ->
-    val extra = by.roundToPx()
-    val placeable = measurable.measure(constraints.copy(minHeight = constraints.minHeight + extra, maxHeight = constraints.maxHeight + extra))
-    layout(placeable.width, constraints.maxHeight) { placeable.place(0, -extra) }
-}

@@ -12,8 +12,8 @@ Sign Setu is an offline Android application that helps a police officer communic
 | Network | None: the application declares no INTERNET permission and the build fails if one is added |
 | Languages for the subject | 17 in the language finder, including Chhattisgarhi, Gondi and Halbi; question captions in English and Hindi |
 | Officer interface languages | English, Hindi |
-| Release APK | 47.0 MB (standard build) |
-| Automated tests | 120 unit tests (both build flavors) and 756 portal tests pass; 19 instrumented tests |
+| Release APK | 45.4 MiB (47,579,538 bytes, standard build, unsigned) |
+| Automated tests | 147 unit tests in 19 classes pass for both build flavors; 918 portal tests pass; 28 instrumented test methods |
 
 ## 2. How a session works
 
@@ -29,20 +29,21 @@ Sign Setu is an offline Android application that helps a police officer communic
 
 ### 3.1 Officer side
 
-The officer page has two tabs. **Transcribe** holds the conversation, quick questions and the composer; **More** holds every question group and phrase, They gestured, the picture board, Draw, the language finder, Tell me, the session log with notes, and profile, role or language. Picking something on More returns to Transcribe.
+The officer page has two tabs, built from one card and tile style. **Transcribe** holds the conversation, quick questions and the composer; **More** holds every question group and phrase, They gestured, the picture board, Draw, the language finder, Tell me, the ISL dictionary, the session log with notes, and profile, role or language. Picking something on More returns to Transcribe.
 
 | Feature | Description |
 | --- | --- |
 | Profiles | Young child (child character, automatic speech), signs (adult character, no sound), other language (language finder first), not sure |
 | Role | Not known yet (default), victim or witness, accused or in custody; sets which question groups appear (§4.8). An accused may be marked "may be under 18" |
 | Conversation | A messaging-style view: items shown to the subject on the right, the subject's answers with pictures on the left, notes and steps in between |
-| Prepared questions | 50 questions in 13 groups: Safety, Health, Needs, Identity, Family, Location, Talking (ground rules, breaks, closing), Their account, Sensitive (victim only, locked until the officer confirms), Rights, Arrest rights (adult), Child's rights, Disability rights |
+| Prepared questions | 75 questions in 15 groups: Safety, Health, Needs, Personal, Family, Address, School, Everyday, Talking (ground rules, breaks, closing), Their account, Sensitive (victim only, locked until the officer confirms), Rights, Arrest rights (adult), Child's rights, Disability rights. A young child is not asked for a mobile number; an accused gets the factual Personal, Family, Address and School questions but not the welfare-only ones (introduce yourself, favourite subject, what they like at school) |
+| Lesson-sheet questions | An ISL lesson sheet in full: name, age, mobile, introduction; father's and mother's names, family size, brothers and sisters, who they live with; where they live, village or city, district, state, nearby place; school, class, teacher, favourite subject, what they like at school; and eight everyday phrases. Each has an answer type that opens its own input on the stage (§3.2), and the character signs it through the typed-text path in draft ISL order |
 | Quick questions | Hurt, water, hungry, toilet, doctor, mother nearby, age and where you live, each disappearing once asked |
 | Question run | Long-press questions to queue them, or tap "Safety basics": up to 5 on one handover, each 1.4 s after the previous answer. Sensitive questions are never queued. Stop, "Something else" or taking the phone back ends the run, logged "Run ended after k of n" |
 | Phrase bank | 10 reviewed sentences built from two patterns, "Do you want [water]?" and "Are you [cold]?" |
 | Type anything | Typed text is shown at once; the character plays it word by word under four toggles: Signs, Gestures, Spell, Pictures. With Signs on, the order is draft ISL order (§4.4) |
 | Word completions | Above the keyboard; each typed word is tinted by what the character will do with it: green for a sign, teal for a gesture, amber for a picture, no tint when it will be spelled. Reviewed phrase templates about the word prepare a phrase in one tap |
-| Vocabulary | 100 entries covering 726 written forms in English, Hindi, Hindi in Latin letters and local words |
+| Vocabulary | 123 entries covering 850 written forms in English, Hindi, Hindi in Latin letters and local words |
 | Answer trail | Under each answer: time taken, every answer in the order given if the person changed it, and the length of a pause after Stop. A changed answer, or one slower than 20 s, gets an amber outline, which means "look again", never deceit |
 | Evidence grades | Said (the person tapped, wrote or drew it), Confirmed (the person picked this meaning from two or three choices shown back), Officer's reading, App's reading, Said no, Unclear |
 | Say it back | Shows the officer's reading, edited if needed, to the person among the item's other pictures; only their pick makes it Confirmed; No marks the line "Said no" |
@@ -52,7 +53,8 @@ The officer page has two tabs. **Transcribe** holds the conversation, quick ques
 | Media marks | Each question card shows whether a gesture and a recording exist and whether the caption is missing in the subject's language; "Ready to show" lists what the subject will get |
 | Assistant (optional) | Translates typed text into the subject's language and back into English on the phone; the officer sees both before sending |
 | They gestured | The officer marks where the subject's hand went and what it did; matching entries from the 33-entry gesture lexicon are shown back to the subject, who confirms the meaning |
-| Picture board | 64 picture cards in 9 categories, with search and favourites |
+| Picture board | 102 picture cards in 11 categories, with search and favourites |
+| ISL dictionary | Every recorded and draft sign by category (262 recorded signs in 16 categories, plus the authored word signs), searched in English, Hindi or any written form; a tap plays the sign for the officer, Show prepares it for the stage |
 | Draw, language finder | A drawing pad for the subject; a grid of greetings in every language |
 | Interpreter call | Opens the department's Sandes or WhatsApp contact; no session data is passed |
 | Second screen | Pairs a department phone or tablet as the subject's screen (§3.3) |
@@ -64,18 +66,20 @@ The officer page has two tabs. **Transcribe** holds the conversation, quick ques
 
 | Feature | Description |
 | --- | --- |
-| Characters | A child and an adult character with jointed fingers and facial expressions; 125 motions: 42 gestures, the 26-letter two-handed ISL alphabet, 10 digits and 47 draft word signs |
+| Characters | A child and an adult character framed to the hips, with jointed fingers and facial expressions; 411 motions: 262 ISL signs retargeted from recorded Deaf signers, 42 gestures, the 26-letter two-handed ISL alphabet, 10 digits and 71 draft word signs |
 | Opening | The officer's introduction (s1), then four pictured and signed ground rules ("I was not there", "you can say I don't know", "tell me if I'm wrong", "you can take a break") and a neutral practice round, "Show me what you did this morning", answered by drawing, writing or signing. The subject moves on with Next; each step is logged as shown. If the officer takes the phone back before the practice round, the log records "Officer skipped the rest of the ground rules" |
 | Caption | The question in the subject's language in large type; during typed text the current word is lit, a spelled word shows its current letter, and a word's picture is held up. Tapping a word replays it alone at half speed; tapping the question replays it |
 | Speech | 88 recordings (placeholders until re-recorded); automatic for a young child or another language, never for a signer |
-| Answers | Small buttons in rails either side of the camera: Yes, "I don't know" and "I don't understand" on the left; No, "That's wrong" and Stop (an octagonal stop sign, never an open palm) on the right. Stop also stays on the drawing, language-finder and greeting screens. Every tap is logged right after the prompt that was on screen |
+| Answers | Rails either side of a 9:16 camera window: Yes, "I don't know", "I don't understand", Draw and Write on the left; Next (opening or Auto), No, "That's wrong", the camera button and Stop (an octagonal stop sign, never an open palm, and the only pause control) on the right. Stop also stays on the drawing, writing and language-finder screens. Every tap is logged right after the prompt that was on screen |
 | Picture choices | Shuffled every time and capped at four pictures, plus "Something else" (which opens the drawing pad) and "I don't understand". Yes/no, number and single-picture questions are not shuffled |
+| Answer inputs | For a lesson-sheet question the panel under the character becomes its input: a number pad with large digits (age 0 to 120, counts, brothers then sisters), a 10-digit mobile pad grouped 5 and 5 with "No phone", a written name or place, a class grid (1 to 12, college, not in school), a state list (Chhattisgarh first, all states and union territories) then its district or a written one, and several pictures with Done. A written or typed answer is read back large and becomes the subject's own only on their Yes; one left unconfirmed is logged as unconfirmed. "I don't know", "I don't understand", "That's wrong" and Stop stay under every input |
+| Phrase board | A button by the character opens the eight everyday phrases as pictures with words; a tap logs the phrase as the subject's own |
 | Draw and Write | A drawing pad; Write opens the keyboard for every profile except a young child; written answers are capped at 2,000 characters |
-| Sign an answer | The hand button opens a 20-second sign window; the stage shows one dot per sign seen, never the reader's guesses (§6) |
+| Sign an answer | The camera button opens a 20-second sign window; the stage shows one dot per sign seen, never the reader's guesses (§6) |
 | Choosing a meaning | After the officer taps Ask them to choose: two or three picture cards per sign in the subject's language, and "None of these" |
-| Camera mirror | The subject sees their own hands below the character, with a hand-and-arm skeleton during a sign window, never face points; nothing is captured or stored |
-| Replay and speed | The subject sets the signing speed (½×, ¾×, 1×), kept for the session in memory only; a young child starts at ¾× |
-| Pause | After Stop, a calm night-sky layer with a breathing circle and bubbles to pop covers the character, with no score and no sound. Only the subject's "I'm ready" ends it; the officer's lock stays reachable. The log records "Pause ended after N s" |
+| Camera mirror | The subject sees the whole camera frame below the character, uncropped at 9:16, with a hand-and-arm skeleton during a sign window, never face points; nothing is captured or stored |
+| Replay and speed | The subject sets the signing speed (½×, ¾×, 1×), kept for the session in memory only; a young child starts at ¾× at most |
+| Pause | After Stop, a calm night-sky layer with a breathing circle and bubbles to pop covers the whole stage, with no score and no sound. Only the subject's "I'm ready" ends it; the officer's lock stays reachable. The log records "Pause ended after N s" |
 | Officer glance strip | A band at the edge facing the officer shows the last question and answer upside down, for an officer sitting opposite. Hidden for sensitive questions and while the subject draws or writes; a long press hides it for the session. Machine sign readings never appear on it |
 | Vibration codes | Felt by whoever holds the phone: Yes one long buzz; No two buzzes; Stop, Break, "I don't know", "I don't understand" or "That's wrong" three short pulses; a picture a tick. Never for the young-child profile |
 | Sun mode | The stage turns black, white and yellow in glare: on after 3 s above 10,000 lux, off after 10 s below 2,000 lux. The light sensor is read only while the stage shows; the officer can force it on from the menu |
@@ -101,13 +105,13 @@ A second phone or tablet, paired once in system Bluetooth settings, shows the su
 | Integrity | Every content file, the vision and sign-reader models and the assistant model are checked by SHA-256 before use |
 | Landmarks | Biometric data: analysed only inside a sign window, kept in memory for the session, never stored or exported |
 | Expiry | A build refuses new sessions 180 days after it was made; rooted phones are warned |
-| Excluded by design | Identity fields, statements, audio or video recording, identity recognition, thumb or open-palm signals for yes, no or stop, body maps for the subject |
+| Excluded by design | Identity columns in the database (personal details exist only as the subject's own logged answers, purged with the session, D-36), statements, audio or video recording, identity recognition, thumb or open-palm signals for yes, no or stop, body maps for the subject |
 
 ## 4. Mechanisms
 
 ### 4.1 Unlock and keys
 
-A random 32-byte database key is stored only in wrapped form, encrypted by an AES-GCM key in Android Keystore that is usable for 30 seconds after the officer passes the phone lock. On launch the app first tries the key silently, which succeeds straight after a phone unlock; otherwise it shows the fingerprint or PIN prompt. While the stage shows, a flag holding no subject data (`stage_live`) is written to disk; if the app is locked or restarted while it is set, unlocking always asks for the full credential, and a successful prompt clears it. If the phone's lock is removed or reset, Android destroys the Keystore key; the app then deletes the unreadable data and tells the officer once.
+A random 32-byte database key is stored only in wrapped form (`noBackupFilesDir/dek.bin`), encrypted by an AES-256-GCM key in Android Keystore that is usable for 30 seconds after the officer passes the phone lock. On launch the app first tries the key silently, which succeeds straight after a phone unlock; otherwise it shows the fingerprint or PIN prompt. While the stage shows, a flag holding no subject data (`stage_live`) is written to disk; if the app is locked or restarted while it is set, unlocking always asks for the full credential, and a successful prompt clears it. If the phone's lock is removed or reset, Android destroys the Keystore key; the app then deletes the unreadable data and tells the officer once.
 
 ### 4.2 Write before show, and the layered record
 
@@ -123,7 +127,7 @@ Every event (item shown, answer, note) is written to the encrypted database befo
 
 ### 4.4 Typed text into signs
 
-Typed text is split into words (a possessive keeps its stem). Each word becomes, in order of preference: the ISL sign, then the everyday gesture (with Signs on); the everyday gesture (with Gestures on); fingerspelling (with Spell on; grammar words such as "is" and "का" are skipped); or a short pause that holds the word's picture (with Pictures only). With Signs on, words play in draft ISL order: time words first, the other words as typed, then negation, then the question word; the caption keeps the typed order and lights each word as it is signed. Hindi is spelled in Latin letters (पानी to PANI), dropping the final silent vowel. A question mark adds the asking face. The ordering is a draft until Deaf review (D-29).
+Typed text is split into words (a possessive keeps its stem; runs of up to three words that form one entry, such as "thank you" or "how many", stay together). Each word becomes, in order of preference: the recorded ISL sign, the authored sign, then the everyday gesture (with Signs on); the everyday gesture (with Gestures on); fingerspelling (with Spell on; grammar words such as "is" and "का" are skipped); or a short pause that holds the word's picture (with Pictures only). With Signs on, words play in draft ISL order: time words first, the other words as typed, then negation, then the question word; the caption keeps the typed order and lights each word as it is signed. Hindi is spelled in Latin letters (पानी to PANI), dropping the final silent vowel. A question mark adds the asking face. The ordering is a draft until Deaf review (D-29).
 
 ### 4.5 Show-back and say-back
 
@@ -168,18 +172,18 @@ The character is not a 3D model, a video or a machine-learning model. It is a pa
 
 | Part | Location | Content |
 | --- | --- | --- |
-| Drawing | `ui/avatar/Avatar.kt` | Head, hair, torso, arms, five three-joint fingers, brows, eyes and mouth as vector shapes with soft shading; rimmed arms, a lighter palm tone and nails on the back of straight fingers |
-| Rig | `ui/avatar/Rig.kt` | A 200 by 200 unit space, named body points, a two-bone arm solver, handshapes, face presets, keyframe interpolation |
+| Drawing | `ui/avatar/Avatar.kt` | Head, hair, torso, arms, five three-joint fingers, brows, eyes and mouth as vector shapes with soft shading; rimmed arms, a lighter palm tone and nails on the back of straight fingers; a view box to the hips |
+| Rig | `ui/avatar/Rig.kt`, `MeasuredShape.kt` | A 200 by 200 unit space, named body points, a two-bone arm solver or a recorded elbow, named and measured handshapes, face presets, keyframe interpolation with Catmull-Rom for recorded keys |
 | Characters | `ChildBuild`, `AdultBuild`, `ChildLook`, `AdultLook` | One skeleton, two sets of proportions and colours |
-| Motions | `assets/content/gestures.json`, `signs.json` | Keyframes: time, each hand's target point, handshape, palm roll and angle, face, head and body |
+| Motions | `assets/content/gestures.json`, `signs.json`, `isl_signs.json` | Keyframes: time, each hand's target point, handshape, palm roll and angle, optional elbow, face, head and body |
 
-Each frame: the clock time selects two keyframes, which are blended with easing; each hand is placed at a named point (for example `mouth`, `chest`, or `index_opp`, the other hand's index fingertip); the elbow is solved from the shoulder and wrist; fingers bend by curl values; the face preset sets brows, eyes and mouth; breathing, blinking, sway and occasional glances are added; the result is painted as vectors. Because positions are named body points, one motion file plays on both characters. The reviewer portal draws the same motions through a TypeScript port of the rig, checked against `Rig.kt` by a shared fixture file.
+Each frame: the clock time selects two keyframes, which are blended with easing (or, for recorded keys less than 0.35 s apart, a Catmull-Rom curve); each hand is placed at a named point (for example `mouth`, `chest`, or `index_opp`, the other hand's index fingertip); the elbow is the recorded one or is solved from the shoulder and wrist; fingers bend by curl values; the face preset sets brows, eyes and mouth; breathing, blinking, sway and occasional glances are added; the result is painted as vectors. Because positions are named body points, one motion file plays on both characters. The reviewer portal draws the same motions through a TypeScript port of the rig, checked against `Rig.kt` by a shared fixture file.
 
 | Strengths | Limits |
 | --- | --- |
-| Small; offline; a motion is corrected by editing numbers; motions chain smoothly; faces carry ISL facial grammar | Flat 2D front view with faked depth; motions are authored or generated, not captured from a signer, and the alphabet and signs await ISL review; no mouthing; cartoon style |
+| Small; offline; a motion is corrected by editing numbers; motions chain smoothly; faces carry ISL facial grammar; 262 signs follow real signers | Flat 2D front view with faked depth, so fingers pointing at the camera read as bent; the alphabet, authored and recorded signs await ISL review; no mouthing; cartoon style |
 
-The planned upgrade is a 3D rig (VRoid, Blender, glTF or VRM) rendered with Filament, with motion captured from a Deaf signer's video and cleaned ([avatar and gestures](05-avatar-and-gestures.md) §5.4).
+A 3D rig (VRoid, Blender, glTF or VRM) rendered with Filament is the upgrade path if 2D cannot show what reviewers need ([avatar and gestures](05-avatar-and-gestures.md) §5.4).
 
 ## 6. Camera and sign reading
 
@@ -192,7 +196,7 @@ The camera's frames are analysed only inside an explicit sign window (D-25):
 | Answer | "Read signs" (officer) or the stage hand button | Up to 20 s |
 | Account | "Tell me" (More page) | Up to 3 minutes |
 
-Outside a window the mirror is a live preview with no analysis, or off per the camera setting. Inside a window MediaPipe Holistic runs at up to 30 fps on about 640 by 480 frames. The subject sees a hand-and-arm skeleton over the mirror, never face points.
+Outside a window the mirror is a live preview with no analysis, or off per the camera setting. Inside a window MediaPipe Holistic runs on the GPU (the CPU when the GPU fails) on 16:9 frames of about 640 by 360, at most one frame per 30 ms. The subject sees a hand-and-arm skeleton over the mirror, never face points.
 
 While signing:
 - The stage shows one dot per sign seen. It does not show the reader's guesses, which are proposals in English for the officer.
@@ -217,7 +221,7 @@ For the whole session:
 ### 6.3 Context-limited vocabulary
 
 - `assets/content/sign_words.json` (draft, needs ISL review) maps the reader's INCLUDE labels to the app's vocabulary concepts, for example house to home and bathroom to toilet.
-- While a question is on screen, the reader's guesses are limited to concepts whose picture card is one of that question's cards. With no item on screen, all labels are allowed.
+- While a question is on screen, the reader's guesses whose concept has a picture card among that question's cards rank first; the others stay, so the officer always sees the reader's best guesses (D-38).
 - Core answer words the bundled reader cannot read: yes, no, water, pain, help, stop, don't know. Mother, father, police, home (house) and toilet (bathroom) are covered.
 
 ### 6.4 Engine and reader
@@ -225,7 +229,7 @@ For the whole session:
 | Component | State |
 | --- | --- |
 | Camera mirror (CameraX Preview) | Built; nothing captured or stored |
-| Vision engine (MediaPipe Holistic, `tasks-vision` 1.0.0) | Built; 21 points per hand, 468 face and 33 pose points per frame, on the CPU; 64-bit phones only; usage statistics dropped on the device (D-33) |
+| Vision engine (MediaPipe Holistic, `tasks-vision` 1.0.0) | Built; 21 points per hand, 468 face and 33 pose points per frame, GPU delegate with CPU fallback; 64-bit phones only; usage statistics dropped on the device (D-33) |
 | Segmentation, capture and slow replay | Built |
 | Sign reader | Built: a 262-word isolated-sign classifier trained on INCLUDE (CC BY 4.0), 1.4 MB, plain Kotlin; INCLUDE test top-1 97.8%, top-3 99.4% on studio signers; unmeasured with children on phone cameras |
 | Partner team's model | Can replace the reader or tracker behind the same interfaces ([hand model integration](11-hand-model-integration.md)) |
@@ -240,6 +244,7 @@ Export works without a network. The PDF is written on the phone and handed to An
 | --- | --- | --- |
 | Answers, confirmed meanings, notes, typed and written answers | Yes, each with its grade in brackets, its choice position and its trail | Part of the session record |
 | "Shown as" rows | Yes | What the person actually saw |
+| Personal details given | Yes, as a table before the conversation: each field, the value, how it was given (written, number pad, picture, list, sign read back by the officer) and whether the person confirmed it | Lesson-sheet answers in one place |
 | Assistant caption with the officer's own words | Yes | Both are logged |
 | Readings by the sign reader or the officer | Yes, in a separate section after the conversation ("Readings by the app or the officer. These are not the person's own answers.") | Proposals, not answers; source MACHINE or OFFICER |
 | Subject confirmations of a signed meaning | Yes, as ordinary answers after a "Shown: Is this it? A / B / C" row | The subject's own pick |
@@ -254,11 +259,11 @@ Export works without a network. The PDF is written on the phone and handed to An
 | Layer | Technology |
 | --- | --- |
 | Language | Kotlin 2.4.21; C++ for the assistant bridge |
-| Build | Android Gradle Plugin 9.4.1, Gradle 9.8.1, JDK 21, KSP 2.3.12, R8 full mode, version catalog, lockfile, SHA-256 dependency verification, CycloneDX SBOM, per-variant permission build gate; product flavors `standard` and `nearby` |
-| User interface | Jetpack Compose (BOM 2026.09.00), Material 3, Material Icons 1.7.8, Activity Compose 1.13.0, Navigation 3 (1.2.0), Lifecycle 2.11.0 |
+| Build | Android Gradle Plugin 9.4.1, Gradle 9.8.1, JDK 21 (Java 17 bytecode), KSP 2.3.12, R8 full mode, version catalog, lockfiles, SHA-256 dependency verification, CycloneDX SBOM, per-variant permission build gate; product flavors `standard` and `nearby` |
+| User interface | Jetpack Compose (BOM 2026.09.00), Material 3, Material Icons 1.7.8, Activity Compose 1.13.0, Fragment 1.9.1, Navigation 3 (1.2.0), Lifecycle 2.11.0, Core KTX 1.19.1 |
 | Graphics | Compose Canvas for the characters, overlays, skeleton replay and drawing pad |
 | Media | Media3 ExoPlayer 1.11.1 |
-| Camera and vision | CameraX 1.6.2 with `camera-compose`; MediaPipe Tasks Vision 1.0.0 (Holistic landmarker) |
+| Camera and vision | CameraX 1.6.2 with `camera-compose`; MediaPipe Tasks Vision 1.0.0 (Holistic landmarker) with `protobuf-java` 4.26.1 |
 | Sign reader | Plain Kotlin forward pass; trained with Python tools in `tools/ml` |
 | Second screen | Bluetooth RFCOMM (standard); Google Play services Nearby Connections 19.5.1 (`nearby` flavor only) |
 | Storage | Room 2.8.5 (database version 3), SQLCipher for Android 4.19.1, androidx.sqlite 2.7.1, DataStore 1.2.1 |
@@ -268,9 +273,9 @@ Export works without a network. The PDF is written on the phone and handed to An
 | Data | kotlinx.serialization 1.11.0, coroutines 1.11.0 |
 | Assistant | llama.cpp v0.5.0 through NDK r30 and CMake 4.1.1; Gemma 3 1B GGUF model file |
 | Fonts | Baloo 2 (SIL OFL) |
-| Tests | JUnit 4.13.2; kotlinx-coroutines-test; Accessibility Test Framework instrumented tests; Android Lint |
+| Tests | JUnit 4.13.2; kotlinx-coroutines-test; Compose UI tests with the Accessibility Test Framework; Vitest through Vite+; Python unittest; Android Lint |
 | Reviewer portal | Vite+ 1.0.0 (`vp`), React 19.3.0, TypeScript 7.0.2 |
-| Content tools | Python: content manifest, sign generator, review record, placeholder speech (Indic Parler-TTS), sign-reader training |
+| Content tools | Python: content manifest, sign generator, sign retargeting from INCLUDE, review record, placeholder speech (Indic Parler-TTS), sign-reader training |
 | Not used | Networking libraries, analytics, crash reporting, Firebase, WebView, microphone, camera recording; Play services in the standard build |
 
 ## 9. Frontend architecture
@@ -295,10 +300,12 @@ MainActivity  window security, edge-to-edge, biometric prompt, pinning, volume k
 app/src/
   main/java/app/signsetu/
     camera/      CameraMirror, LandmarkTracker, HolisticTracker
+    data/        content (Content, IslLexicon, TextSigning, Lesson, Completion), session, settings
     sign/        SignCapture, SignReader, LandmarkSignReader, SignReaders, SignChoices, SkeletonPlayer
     pair/        PairCrypto, StageWire, StageTransport, BluetoothTransport, StageLink, StageBridge, Drawings
     ui/pair/     StageDevice, SecondScreenSheet, PairedBar, LinkText
-    ui/session/  OfficerPane, Stage, SessionViewModel, AutoPilot, Interview, Handover, GroundRules, PauseLayer, ...
+    ui/session/  OfficerPane, Stage, SessionViewModel, LessonInputs, IslDictionarySheet, AutoPilot, Interview, Handover, GroundRules, PauseLayer, ...
+    ui/avatar/   Avatar, Rig, MeasuredShape, MiniFace
   standard/java/app/signsetu/pair/StageTransports.kt   Bluetooth only
   nearby/java/app/signsetu/pair/StageTransports.kt     Nearby Connections, Bluetooth fallback
   nearby/java/app/signsetu/pair/NearbyStageTransport.kt
@@ -309,9 +316,9 @@ portal/                                                 reviewer portal (not shi
 | Package | Content |
 | --- | --- |
 | `ui.start` | Home (profile, role, language) and first run |
-| `ui.session` | Officer page (conversation, completions, runs, trails and grades, composer, auto panel), stage (character, caption, mirror, answers, opening, pause, glance strip, sign panels, drawing, writing), handover, sheets, session view model |
+| `ui.session` | Officer page (conversation, completions, runs, trails and grades, composer, auto panel, ISL dictionary), stage (character, caption, mirror, rails, lesson inputs, phrase board, opening, pause, glance strip, sign panels, drawing, writing), handover, sheets, session view model |
 | `ui.pair` | The stage device's screens and the officer's pairing sheet |
-| `ui.avatar` | Drawing, rig, small faces |
+| `ui.avatar` | Drawing, rig, measured hand shapes, small faces |
 | `ui.settings` | Grouped settings cards |
 | `ui.components` | Brand button, picture cards, speech player, overlay filter, guarded dialog |
 | `ui.theme` | Colour schemes (officer, stage, sun), shapes, type, ambient light |
@@ -319,12 +326,12 @@ portal/                                                 reviewer portal (not shi
 
 ### 9.2 State
 
-The session view model combines the database's event flow with local state into one `SessionUi` value, collected with lifecycle awareness. The officer's draft is a sealed `Pending` value (question, typed text, cards, show-back, phrase, language finder, drawing, ground rules); what is on the stage is a separate `onStage` value, set only after it is logged. Landmark frames of signed answers live in the same local state, keyed by event, and are never persisted. Auto mode's state lives beside it in `AutoPilot`, memory only. Screens send events up as lambdas; the view model writes the event before the screen changes. Settings come from DataStore; content is an immutable bundle loaded once; screen-local state uses `rememberSaveable`. Wiring is manual through `AppContainer`, which also holds the at-most-one `StageLink`.
+The session view model combines the database's event flow with local state into one `SessionUi` value, collected with lifecycle awareness. The officer's draft is a sealed `Pending` value (question, typed text, cards, show-back, phrase, language finder, drawing, ground rules); a lesson-sheet question is a question with an answer type, and a dictionary sign is shown as a question with id `dict.<gesture id>`; what is on the stage is a separate `onStage` value, set only after it is logged. Landmark frames of signed answers live in the same local state, keyed by event, and are never persisted. Auto mode's state lives beside it in `AutoPilot`, memory only. Screens send events up as lambdas; the view model writes the event before the screen changes. Settings come from DataStore; content is an immutable bundle loaded once; screen-local state uses `rememberSaveable`. Wiring is manual through `AppContainer`, which also holds the at-most-one `StageLink`.
 
 ### 9.3 Rendering and theming
 
 - The character's clock lives in state read only during drawing, so animation runs without recomposition; typed-text playback derives only the current word and letter, so only those changes recompose.
-- Three colour schemes: slate and indigo for the officer, warm peach and teal for the stage, and black, white and yellow for sun mode. Shapes are 12, 14, 20 and 24 dp; headings use Baloo 2 and the stage uses a larger type scale.
+- Three colour schemes: slate and indigo for the officer, warm peach and teal for the stage, and black, white and yellow for sun mode. Shapes are 8, 12, 14, 20 and 24 dp; spacing tokens run from 4 to 32 dp; one outlined officer card (`OfficerCard`) and one choice tile (`ChoiceTile`) serve every officer screen; headings use Baloo 2 and the stage uses a larger type scale.
 - The officer interface uses Android resources in English and Hindi; everything the subject sees comes from content files keyed by language, so a new subject language needs no code change.
 - Touch targets are at least 48 dp and answer cards 96 dp; layouts reflow above 1.3 font scale; instrumented accessibility tests cover the stage states and the stage device screens in both themes and two screen sizes.
 
@@ -332,10 +339,10 @@ The session view model combines the database's event flow with local state into 
 
 | Item | State | Needed |
 | --- | --- | --- |
-| Application | Built; 120 unit tests pass; smoke-tested on the Android 14 emulator | Instrumented suite on the merged build |
-| Content: gestures, alphabet, signs, ISL order, vocabulary, sign-word map, local-language wording, recordings | Built, awaiting review | Sign-off by ISL, child-welfare and language reviewers through the reviewer portal and the [content review record](governance/forms/content-review-record.md) |
+| Application | Built; 147 unit tests pass for both flavors | Instrumented suite, Lint and a device run on the current build |
+| Content: gestures, alphabet, authored and recorded signs, ISL order, vocabulary, sign-word map, lesson-sheet and local-language wording, recordings | Built, awaiting review | Sign-off by ISL, child-welfare and language reviewers through the reviewer portal and the [content review record](governance/forms/content-review-record.md) |
 | Rights wording (English and Hindi), reworded x2 and x3 | Draft | Legal adviser and a legal translator |
-| Vision engine and sign reader | Built | Frame rate, memory and hand sides on a real 64-bit phone; accuracy with children; data for the core answer words |
+| Vision engine and sign reader | Built | Frame rate on the GPU delegate, memory and hand sides on a real 64-bit phone; accuracy with children; data for the core answer words |
 | Second screen | Built | Two-phone and tablet UAT; department devices and SOP |
 | Auto mode | Built, off by default | Department decision to allow it |
 | Assistant | Optional | Model file from the department; speed on an arm64 phone; language spot-checks |

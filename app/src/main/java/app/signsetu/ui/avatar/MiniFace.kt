@@ -32,6 +32,7 @@ fun MiniFace(
             playKey = null,
             idle = false,
             atSeconds = atSeconds,
+            view = AvatarView.Head,
             modifier = Modifier.requiredSize(canvas).offset(y = canvas * (if (character == Character.CHILD) 0.12f else 0.15f)),
         )
     }

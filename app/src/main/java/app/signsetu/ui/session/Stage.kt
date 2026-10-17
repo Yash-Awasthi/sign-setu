@@ -28,6 +28,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -107,12 +108,14 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.signsetu.R
 import app.signsetu.camera.CameraMirror
@@ -121,6 +124,8 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.pick
 import app.signsetu.data.content.planText
 import app.signsetu.ui.avatar.Timeline
+import app.signsetu.ui.avatar.chain
+import app.signsetu.data.content.signBack
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.text.SpanStyle
@@ -128,6 +133,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import app.signsetu.data.session.Profile
 import app.signsetu.ui.avatar.Avatar
+import app.signsetu.ui.avatar.AVATAR_ASPECT
+import app.signsetu.data.content.questionKind
 import app.signsetu.ui.avatar.Character
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.rememberSpeechPlayer
@@ -157,6 +164,18 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.movableContentOf
 import app.signsetu.data.content.WordBeat
+import app.signsetu.data.content.Given
+
+/** FR-86: the reader's top labels a signed answer's confirm or say-back signs back before asking. */
+fun readBackLabels(ui: SessionUi): List<String> {
+    val confirm = ui.confirm?.takeIf { it.queue.isNotEmpty() }
+    val sayBack = ui.pending as? Pending.FreeText
+    return when {
+        confirm != null -> listOfNotNull(confirm.read.firstOrNull())
+        sayBack?.ref != null -> ui.signed[sayBack.ref].orEmpty().mapNotNull { it.guesses?.firstOrNull()?.word }
+        else -> emptyList()
+    }
+}
 
 /** Profiles whose subjects hear the questions without the officer pressing play (03-ux §3). */
 private val AutoSpeech = setOf(Profile.YOUNG_CHILD, Profile.OTHER_LANGUAGE)
@@ -190,6 +209,8 @@ fun Stage(
     onSignChoice: (SignChoice?) -> Unit = {},
     onNextRule: () -> Unit = {},
     onPauseEnd: () -> Unit = {},
+    /** Lesson-sheet answers and phrases (LessonInputs.kt); null where they cannot be logged, as on a second screen. */
+    onGiven: ((Given?) -> Unit)? = null,
 ) {
     val stage = LocalStageColors.current
     val lang = ui.session.subjectLang
@@ -204,6 +225,9 @@ fun Stage(
     val signing = ui.reading != null
     val narrative = ui.signWindow == SignWindow.NARRATIVE
     val choices = ui.confirm?.queue?.firstOrNull()
+    // Lesson-sheet hook (LessonInputs.kt): an answer input or the phrase board takes the panel under the character.
+    var saying by remember(pending) { mutableStateOf(false) }
+    val lesson = lessonQuestion(pending)?.takeIf { onGiven != null && !signing }
     var replays by remember(pending) { mutableIntStateOf(0) }
     StagePace.forSession(ui.session.id, initialPace(profile, gestureSpeed))
     val pace = StagePace.speed.floatValue
@@ -248,7 +272,13 @@ fun Stage(
         pending == Pending.LanguageFinder -> "wave"
         else -> "namaste"
     }
-    val plan = remember(pending, content) { (pending as? Pending.FreeText)?.takeIf { !it.asksChoice }?.let { content.planText(it.text, it.modes) } }
+    val readLabels = readBackLabels(ui)
+    val readBack = remember(readLabels, content) {
+        readLabels.mapNotNull(content::signBack).takeIf { it.isNotEmpty() }?.let { chain("read_back", it + listOfNotNull(content.gestures["ask"])) }
+    }
+    val plan = remember(pending, content, readBack) {
+        (pending as? Pending.FreeText)?.takeIf { !it.asksChoice && readBack == null }?.let { content.planText(it.text, it.modes) }
+    }
     // Word highlighting follows the planned words, so it shows only when the caption is those same words.
     val highlightable = (pending as? Pending.FreeText)?.caption == null
     val focusGesture = remember(focus) {
@@ -256,9 +286,11 @@ fun Stage(
     }
     val gesture = when {
         focusGesture != null -> focusGesture
+        readBack != null && (gestureId == null || gestureId == "ask") -> readBack
         gestureId != null -> content.gestures[gestureId]
         pending is Pending.PhraseAsk -> content.gestureFor(pending.phrase, pending.slot)
         pending is Pending.FreeText -> plan?.gesture ?: content.gestures["ask"]
+        pending is Pending.Ask -> content.gestureFor(pending.question) // ISL hook: signed through the lexicon
         else -> null
     }
     // Follows the character through typed text, so the word being signed is lit and its picture or letters shown.
@@ -310,7 +342,7 @@ fun Stage(
         ) {
             // A panel that needs width and height gets more room; otherwise the character and the camera split the screen.
             val rightsNotice = (pending as? Pending.Ask)?.question?.takeIf(content::isRights)?.let { content.subjectText("rights_interpreter", lang) }
-            val topWeight = if (drawing || writing || choices != null || pending == Pending.LanguageFinder) 0.36f else 0.5f
+            val topWeight = if (drawing || writing || choices != null || pending == Pending.LanguageFinder || saying || lesson != null) 0.36f else 0.5f
             val topAnimated by animateFloatAsState(topWeight, spring(stiffness = 300f), label = "split")
             Box(
                 Modifier
@@ -320,23 +352,26 @@ fun Stage(
                 Backdrop(Modifier.fillMaxSize())
                 BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
                     val roomy = maxHeight >= 240.dp
+                    val avatarHeight = minOf(maxHeight - if (roomy) 64.dp else 48.dp, (maxWidth - SideBand * 2) / AVATAR_ASPECT).coerceAtLeast(0.dp)
                     Avatar(
                         character = characterFor(profile),
                         gesture = gesture,
                         playKey = when {
                             reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
                             focus != null -> "word:$wordTaps"
-                            else -> Triple(pending, replays, ui.chosenLanguage)
+                            // Each sign being confirmed plays its own read-back.
+                            else -> Triple(pending ?: choices, replays, ui.chosenLanguage)
                         },
                         speed = if (focus != null) 0.5f else pace,
                         // Breathing redraws every frame; inside a sign window the landmark tracker needs that time.
                         idle = !signing,
                         glance = pending != null && !drawing && !reacting,
+                        question = if (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) questionKind(item.caption.orEmpty()) else null,
                         onFinished = { reacting = false; focus = null },
-                        // Room is left above for a caption, so on short screens a long one covers the hair, never the face.
+                        // Side bands keep the replay pill and held cards out of the signing space.
                         modifier = Modifier
-                            .height(minOf(maxHeight * 0.76f, maxHeight - 72.dp))
-                            .aspectRatio(1f)
+                            .height(avatarHeight)
+                            .aspectRatio(AVATAR_ASPECT)
                             .align(Alignment.BottomCenter),
                     )
                     val sensitiveGroups = remember(content) { content.groups.filter { it.sensitive }.map { it.id } }
@@ -352,10 +387,13 @@ fun Stage(
                         pending is Pending.Ask || pending is Pending.PhraseAsk || rule != null -> { _ -> replays++; audio?.let { speech.play(it, audioRate(pace)) } }
                         else -> null
                     }
+                    val captionTop = if (glance != null) 44.dp else 12.dp
                     AnimatedContent(
                         targetState = caption,
                         transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.92f)) togetherWith fadeOut() },
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = if (glance != null) 44.dp else 12.dp, start = 52.dp, end = 52.dp),
+                        // A long caption may reach the hair, never the brows; the text shrinks to fit instead.
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = captionTop, start = 52.dp, end = 52.dp)
+                            .heightIn(max = (maxHeight - avatarHeight * 0.8f - captionTop).coerceAtLeast(48.dp)),
                         label = "caption",
                     ) { text ->
                         if (text != null) {
@@ -373,14 +411,14 @@ fun Stage(
                         LetterTile(
                             spelled,
                             letter,
-                            Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 20.dp),
+                            Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg),
                         )
                     } else if (shownCard != null) {
                         key(shownCard) {
                             HeldCard(
                                 shownCard,
                                 content.cards[shownCard]?.label?.pick(lang),
-                                Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 20.dp).popIn(rememberPopIn(0)),
+                                Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg).popIn(rememberPopIn(0)),
                             )
                         }
                     } else item.held?.let { id ->
@@ -388,7 +426,7 @@ fun Stage(
                             HeldCard(
                                 id,
                                 content.cards[id]?.label?.pick(lang),
-                                Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 20.dp).popIn(rememberPopIn(150)),
+                                Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg).popIn(rememberPopIn(150)),
                             )
                         }
                     }
@@ -404,9 +442,11 @@ fun Stage(
                                 replays++
                                 audio?.let { speech.play(it, audioRate(next)) }
                             },
-                            modifier = Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 12.dp),
+                            modifier = Modifier.align(Alignment.CenterStart).padding(start = Spacing.lg),
                         )
                     }
+                    // Lesson-sheet hook: the phrase board's button.
+                    if (onGiven != null && !signing && !saying) SayButton(content, lang, { saying = true }, Modifier.align(Alignment.TopStart).padding(start = 4.dp, top = if (glance != null) 44.dp else 4.dp))
                     glance?.let { GlanceStrip(it, onHide = { StagePace.glanceHidden.value = true }, Modifier.align(Alignment.TopCenter)) }
                 }
             }
@@ -432,6 +472,12 @@ fun Stage(
                         pauseRow = { PauseRow(content, lang, ui.answeredCard, onCard, compact = true) },
                         modifier = Modifier.weight(1f),
                     )
+                    // Lesson-sheet hook: phrase board and answer inputs.
+                    saying && onGiven != null -> PhraseBoard(content, lang, ui.answeredCard, onCard, { onGiven(it); saying = false; reacting = true }, { saying = false }, Modifier.weight(1f))
+                    lesson != null && onGiven != null -> AnswerPanel(
+                        lesson, content, lang, ui.answeredCard, onCard, { onGiven(it); if (it?.confirmed == true) reacting = true },
+                        onStartSigning.takeIf { tracker != null }, Modifier.weight(1f),
+                    )
                     pending == Pending.LanguageFinder -> {
                         LanguageGrid(content, ui.chosenLanguage, Modifier.weight(1f)) { code ->
                             onLanguage(code)
@@ -455,8 +501,8 @@ fun Stage(
                                         RailCard(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answer.unsure, answer.onUnsure, chosen == DONT_UNDERSTAND) { onCard(DONT_UNDERSTAND) }
                                     }
                                 }
-                                if (!signing && item.canDraw) RailIcon(Icons.Filled.Create, content.subjectText("draw", lang), stringResource(R.string.stage_draw), Color(0xFFFFE7BF), Color(0xFF3D2700)) { drawing = true }
-                                if (!signing && canWrite) RailIcon(Icons.Filled.Edit, content.subjectText("write", lang), stringResource(R.string.stage_write), Color(0xFFFFE7BF), Color(0xFF3D2700)) { writing = true }
+                                if (!signing && item.canDraw) RailIcon(Icons.Filled.Create, content.subjectText("draw", lang), stringResource(R.string.stage_draw), stage.tool, stage.onTool, tool = true) { drawing = true }
+                                if (!signing && canWrite) RailIcon(Icons.Filled.Edit, content.subjectText("write", lang), stringResource(R.string.stage_write), stage.tool, stage.onTool, tool = true) { writing = true }
                             }
                             Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                                 val window = Modifier.aspectRatio(CAMERA_ASPECT)
@@ -480,7 +526,8 @@ fun Stage(
                                         RailIcon(Icons.Filled.Close, content.subjectText("no", lang), stringResource(R.string.show_no), answer.no, answer.onNo, ui.answeredYes == false) { onYesNo(false) }
                                         RailCard("wrong", content.subjectText("wrong", lang), stringResource(R.string.stage_wrong), answer.unsure, answer.onUnsure, chosen == "wrong") { onCard("wrong") }
                                     }
-                                    if (canWrite && tracker != null) RailIcon(painterResource(R.drawable.ic_hand), null, stringResource(R.string.officer_read_signs), Color(0xFFFFE7BF), Color(0xFF3D2700), onClick = onStartSigning)
+                                    // A camera, not an open palm, so nothing beside Stop looks like a stop sign.
+                                    if (canWrite && tracker != null) RailIcon(painterResource(R.drawable.ic_videocam), null, stringResource(R.string.officer_read_signs), stage.tool, stage.onTool, tool = true, onClick = onStartSigning)
                                     RailCard("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosen == "stop") { onCard("stop") }
                                 }
                             }
@@ -552,6 +599,9 @@ internal fun Backdrop(modifier: Modifier) {
 
 private val BubbleTail = 12.dp
 
+/** Each side of the character: the replay pill on the left, a held card or letter tile on the right. */
+private val SideBand = 88.dp
+
 /** A speech bubble whose tail points down at the character. */
 private object BubbleShape : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
@@ -584,16 +634,18 @@ internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = fal
     val tap = if (onWordTap == null) Modifier else Modifier
         .pointerInput(Unit) { detectTapGestures { p -> layout?.let { onTap?.invoke(it.getOffsetForPosition(p)) } } }
         .semantics { onClick(replayName) { onTap?.invoke(0); true } }
+    // Line height in em so a caption shrunk to fit gains lines instead of clipping.
     val style = when {
         large -> MaterialTheme.typography.headlineMedium
         compact -> MaterialTheme.typography.titleMedium
         else -> MaterialTheme.typography.titleLarge
-    }
+    }.copy(lineHeight = 1.2.em)
     Surface(
         shape = BubbleShape,
         color = stage.bubble,
         contentColor = stage.onBubble,
-        shadowElevation = 6.dp,
+        border = BorderStroke(1.dp, stage.onBubble.copy(alpha = 0.18f)),
+        shadowElevation = 3.dp,
         modifier = Modifier.widthIn(max = 340.dp),
     ) {
         // A right or a question must be read to its end: the text shrinks to fit rather than being cut off.
@@ -614,15 +666,15 @@ internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = fal
 @Composable
 private fun HeldCard(cardId: String, label: String?, modifier: Modifier) {
     Surface(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(18.dp),
         color = Color.White,
-        shadowElevation = 8.dp,
-        modifier = modifier.rotate(-5f).size(width = 108.dp, height = if (label != null) 132.dp else 108.dp),
+        shadowElevation = 4.dp,
+        modifier = modifier.rotate(-4f).size(width = SideBand, height = if (label != null) 108.dp else SideBand),
     ) {
-        Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             CardImage(cardId, Modifier.fillMaxWidth().aspectRatio(1f))
             label?.let {
-                Text(it, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color(0xFF2B2118))
+                Text(it, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color(0xFF2B2118), modifier = Modifier.padding(top = 2.dp))
             }
         }
     }
@@ -631,14 +683,14 @@ private fun HeldCard(cardId: String, label: String?, modifier: Modifier) {
 /** The word being fingerspelled, its current letter large, so a reader can follow the hands. */
 @Composable
 private fun LetterTile(letters: String, current: Int, modifier: Modifier) {
-    Surface(shape = RoundedCornerShape(22.dp), color = Color.White, shadowElevation = 8.dp, modifier = modifier.rotate(-5f).widthIn(min = 108.dp, max = 160.dp)) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Surface(shape = RoundedCornerShape(18.dp), color = Color.White, shadowElevation = 4.dp, modifier = modifier.rotate(-4f).size(SideBand, 108.dp)) {
+        Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(
                 letters.getOrNull(current)?.uppercase() ?: "",
                 fontFamily = Baloo,
                 fontWeight = FontWeight.Bold,
-                fontSize = 56.sp,
-                lineHeight = 60.sp,
+                fontSize = 44.sp,
+                lineHeight = 48.sp,
                 color = Color(0xFF2B2118),
             )
             Text(
@@ -647,8 +699,8 @@ private fun LetterTile(letters: String, current: Int, modifier: Modifier) {
                         withStyle(SpanStyle(color = if (i == current) Color(0xFF2B2118) else Color(0xFFB8A99A), fontWeight = if (i == current) FontWeight.Bold else FontWeight.Normal)) { append(c) }
                     }
                 },
-                style = MaterialTheme.typography.titleMedium,
-                letterSpacing = 2.sp,
+                style = MaterialTheme.typography.labelMedium,
+                letterSpacing = 1.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -676,10 +728,17 @@ private fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
 
 @Composable
 private fun ReplayControls(pace: Float, onReplay: () -> Unit, onPace: () -> Unit, modifier: Modifier) {
-    Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.85f), shadowElevation = 2.dp, modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    val stage = LocalStageColors.current
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = stage.tool.copy(alpha = 0.9f),
+        contentColor = stage.onTool,
+        border = BorderStroke(1.dp, stage.onTool.copy(alpha = 0.14f)),
+        modifier = modifier.width(56.dp),
+    ) {
+        Column(Modifier.padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onReplay), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.show_replay), tint = Color(0xFF2B2118), modifier = Modifier.size(28.dp))
+                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.show_replay), modifier = Modifier.size(26.dp))
             }
             val shown = when { pace < 0.6f -> "½×"; pace < 0.9f -> "¾×"; else -> "1×" }
             val paceName = stringResource(R.string.show_pace, shown)
@@ -688,8 +747,7 @@ private fun ReplayControls(pace: Float, onReplay: () -> Unit, onPace: () -> Unit
                     shown,
                     fontFamily = Baloo,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = Color(0xFF2B2118),
+                    fontSize = 16.sp,
                     modifier = Modifier.clearAndSetSemantics { },
                 )
             }
@@ -754,13 +812,13 @@ private fun MirrorWindow(
 @Composable
 private fun Modifier.mirrorFrame(): Modifier {
     val stage = LocalStageColors.current
-    val shape = RoundedCornerShape(28.dp)
+    val shape = RoundedCornerShape(20.dp)
+    // The letterbox around the whole camera frame is the window colour, so the window reads as one calm pane.
     return fillMaxWidth()
-        .shadow(6.dp, shape)
-        .background(stage.windowFrame, shape)
-        .padding(5.dp)
-        .clip(RoundedCornerShape(24.dp))
+        .shadow(3.dp, shape)
+        .clip(shape)
         .background(stage.window)
+        .border(4.dp, stage.windowFrame.copy(alpha = 0.4f), shape)
 }
 
 /**
@@ -788,9 +846,11 @@ private fun SigningPanel(
                 progress = { used.value },
                 color = answer.yes,
                 trackColor = Color.White.copy(alpha = 0.3f),
-                modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(Spacing.md),
+                gapSize = 0.dp,
+                drawStopIndicator = {},
+                modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md).height(6.dp).clip(CircleShape),
             )
-            SignSlowerCue(segments.lastOrNull()?.slower == true, content, lang, Modifier.align(Alignment.TopCenter).padding(top = 36.dp))
+            SignSlowerCue(segments.lastOrNull()?.takeIf { it.slower }, content, lang, Modifier.align(Alignment.TopCenter).padding(top = 30.dp, start = Spacing.sm, end = Spacing.sm))
         }
         SeenSigns(segments, Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(Spacing.md))
     }
@@ -819,7 +879,7 @@ private fun Modifier.popIn(progress: Animatable<Float, AnimationVector1D>) = gra
 private fun MirrorPlaceholder() {
     val stage = LocalStageColors.current
     Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color(0xFF4A4352), stage.window))), contentAlignment = Alignment.Center) {
-        Icon(painterResource(R.drawable.ic_hand), contentDescription = null, tint = Color.White.copy(alpha = 0.55f), modifier = Modifier.size(96.dp))
+        Icon(painterResource(R.drawable.ic_videocam), contentDescription = null, tint = Color.White.copy(alpha = 0.45f), modifier = Modifier.size(56.dp))
     }
 }
 
@@ -830,8 +890,8 @@ internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
-        border = if (chosen) BorderStroke(4.dp, answer.selection) else null,
-        modifier = modifier.heightIn(min = 96.dp).semantics { (label ?: name)?.let { contentDescription = it } },
+        border = if (chosen) BorderStroke(4.dp, answer.selection) else TileEdge,
+        modifier = modifier.heightIn(min = 96.dp).semantics { (label ?: name)?.let { contentDescription = it }; selected = chosen },
     ) {
         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             // Without a word in their language the picture carries the meaning alone, so it gets the room.
@@ -848,7 +908,8 @@ private fun NumberButton(digit: String, chosen: Boolean, onClick: () -> Unit, mo
         onClick = onClick,
         shape = CircleShape,
         color = if (chosen) answer.selection else Color.White,
-        modifier = modifier.aspectRatio(1f),
+        border = if (chosen) null else TileEdge,
+        modifier = modifier.aspectRatio(1f).semantics { selected = chosen },
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(digit, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 26.sp, color = if (chosen) answer.onSelection else Color(0xFF2B2118))
@@ -869,32 +930,42 @@ private fun PauseRow(content: ContentBundle, lang: String, chosenCard: String?, 
  */
 @Composable
 private fun Rail(content: @Composable ColumnScope.() -> Unit) =
-    Column(Modifier.width(68.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically), content = content)
+    Column(Modifier.width(60.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically), content = content)
 
 @Composable
 private fun ColumnScope.RailCard(cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit) =
-    RailButton(label, name, color, onColor, chosen, onClick) { CardImage(cardId, Modifier.size(if (label != null) 28.dp else 40.dp)) }
+    RailButton(label, name, color, onColor, chosen, false, onClick) { CardImage(cardId, Modifier.size(if (label != null) 24.dp else 32.dp)) }
 
 @Composable
-private fun ColumnScope.RailIcon(icon: ImageVector, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, onClick: () -> Unit) =
-    RailIcon(rememberVectorPainter(icon), label, name, color, onColor, chosen, onClick)
+private fun ColumnScope.RailIcon(icon: ImageVector, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, tool: Boolean = false, onClick: () -> Unit) =
+    RailIcon(rememberVectorPainter(icon), label, name, color, onColor, chosen, tool, onClick)
 
 @Composable
-private fun ColumnScope.RailIcon(icon: Painter, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, onClick: () -> Unit) =
-    RailButton(label, name, color, onColor, chosen, onClick) { Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.size(28.dp)) }
+private fun ColumnScope.RailIcon(icon: Painter, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, tool: Boolean = false, onClick: () -> Unit) =
+    RailButton(label, name, color, onColor, chosen, tool, onClick) { Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.size(24.dp)) }
 
 @Composable
-private fun ColumnScope.RailButton(label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, icon: @Composable () -> Unit) {
+private fun ColumnScope.RailButton(label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, tool: Boolean, onClick: () -> Unit, icon: @Composable () -> Unit) {
     PressableSurface(
         onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = color,
-        border = if (chosen) BorderStroke(3.dp, onColor) else null,
-        modifier = Modifier.weight(1f, fill = false).fillMaxWidth().heightIn(min = 56.dp, max = 72.dp).semantics { contentDescription = label ?: name },
+        border = when {
+            chosen -> BorderStroke(3.dp, onColor)
+            tool -> BorderStroke(1.dp, onColor.copy(alpha = 0.16f))
+            else -> null
+        },
+        // 64 dp fits an icon over two lines of Hindi; five in one rail on a 640 dp phone share the height, still above 48 dp.
+        modifier = Modifier.weight(1f, fill = false).fillMaxWidth().height(64.dp)
+            .semantics { contentDescription = label ?: name; selected = chosen },
     ) {
         Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             icon()
-            label?.let { Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 12.sp, lineHeight = 13.sp, color = onColor, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+            label?.let { Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, lineHeight = 12.sp, color = onColor, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis, autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 11.sp, stepSize = 0.5.sp)) }
+        }
+        // A tick as well as the ring: the chosen answer never relies on colour or a thin line alone.
+        if (chosen) Box(Modifier.fillMaxSize().padding(3.dp), contentAlignment = Alignment.TopEnd) {
+            Icon(Icons.Filled.Check, contentDescription = null, tint = color, modifier = Modifier.size(14.dp).background(onColor, CircleShape).padding(1.dp))
         }
     }
 }
@@ -978,7 +1049,7 @@ private fun LanguageGrid(content: ContentBundle, chosen: String?, modifier: Modi
                         onClick = { onLanguage(l.code) },
                         shape = RoundedCornerShape(18.dp),
                         color = Color.White,
-                        border = if (selected) BorderStroke(4.dp, answer.selection) else BorderStroke(1.dp, Color(0x22000000)),
+                        border = if (selected) BorderStroke(4.dp, answer.selection) else TileEdge,
                         shadowElevation = 1.dp,
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                     ) {
@@ -1012,7 +1083,7 @@ private fun WritingPanel(
     val answer = LocalAnswerColors.current
     val send = { if (text.isNotBlank()) onDone(text) }
     Column(modifier.imePadding(), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        Surface(shape = RoundedCornerShape(28.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Surface(shape = RoundedCornerShape(20.dp), color = Color.White, border = TileEdge, shadowElevation = 2.dp, modifier = Modifier.weight(1f).fillMaxWidth()) {
             BasicTextField(
                 value = text,
                 // Input past the cap is ignored, never cut later: the receiver logs what was sent (D-26).
@@ -1035,7 +1106,7 @@ private fun WritingPanel(
                 onClick = send,
                 shape = RoundedCornerShape(50),
                 color = if (text.isNotBlank()) answer.yes else Color(0xFFBFD8CB),
-                modifier = Modifier.weight(1f).height(64.dp).named(R.string.stage_done, content.subjectText("done", lang) == null),
+                modifier = Modifier.weight(1f).height(56.dp).named(R.string.stage_done, content.subjectText("done", lang) == null),
             ) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYes)
@@ -1050,13 +1121,15 @@ private fun WritingPanel(
 @Composable
 private fun BackButton(content: ContentBundle, lang: String, onBack: () -> Unit) {
     val name = stringResource(R.string.stage_back)
+    val stage = LocalStageColors.current
     PressableSurface(
         onClick = onBack,
         shape = CircleShape,
-        color = Color(0xFFFFE7BF),
-        modifier = Modifier.size(64.dp).semantics { contentDescription = content.subjectText("back", lang) ?: name },
+        color = stage.tool,
+        border = BorderStroke(1.dp, stage.onTool.copy(alpha = 0.16f)),
+        modifier = Modifier.size(56.dp).semantics { contentDescription = content.subjectText("back", lang) ?: name },
     ) {
-        Box(contentAlignment = Alignment.Center) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color(0xFF3D2700)) }
+        Box(contentAlignment = Alignment.Center) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = stage.onTool) }
     }
 }
 
@@ -1077,9 +1150,10 @@ private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArra
     val paper = Color.White
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(20.dp),
             color = paper,
-            shadowElevation = 4.dp,
+            border = TileEdge,
+            shadowElevation = 2.dp,
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) {
             Canvas(
@@ -1107,10 +1181,14 @@ private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArra
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
             onBack?.let { BackButton(content, lang, it) }
-            PressableSurface(onClick = { strokes.clear() }, shape = RoundedCornerShape(50), color = Color(0xFFFFE7BF), modifier = Modifier.weight(1f).height(64.dp).named(R.string.stage_clear, content.subjectText("clear", lang) == null)) {
+            val stage = LocalStageColors.current
+            PressableSurface(
+                onClick = { strokes.clear() }, shape = RoundedCornerShape(50), color = stage.tool, border = BorderStroke(1.dp, stage.onTool.copy(alpha = 0.16f)),
+                modifier = Modifier.weight(1f).height(56.dp).named(R.string.stage_clear, content.subjectText("clear", lang) == null),
+            ) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Refresh, contentDescription = null, tint = Color(0xFF3D2700))
-                    content.subjectText("clear", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Color(0xFF3D2700), modifier = Modifier.padding(start = Spacing.sm)) }
+                    Icon(Icons.Filled.Refresh, contentDescription = null, tint = stage.onTool)
+                    content.subjectText("clear", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = stage.onTool, modifier = Modifier.padding(start = Spacing.sm)) }
                 }
             }
             val answer = LocalAnswerColors.current
@@ -1118,7 +1196,7 @@ private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArra
                 onClick = { if (strokes.isNotEmpty()) onDone(renderPng(strokes, canvasSize, ink.toArgb(), paper.toArgb())) },
                 shape = RoundedCornerShape(50),
                 color = if (strokes.isNotEmpty()) answer.yes else Color(0xFFBFD8CB),
-                modifier = Modifier.weight(1f).height(64.dp).named(R.string.stage_done, content.subjectText("done", lang) == null),
+                modifier = Modifier.weight(1f).height(56.dp).named(R.string.stage_done, content.subjectText("done", lang) == null),
             ) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYes)

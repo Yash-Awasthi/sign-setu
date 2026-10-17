@@ -62,6 +62,20 @@
         "en": "Things",
         "hi": "चीज़ें"
       }
+    },
+    {
+      "id": "school",
+      "label": {
+        "en": "School",
+        "hi": "स्कूल"
+      }
+    },
+    {
+      "id": "everyday",
+      "label": {
+        "en": "Everyday",
+        "hi": "रोज़ की बातें"
+      }
     }
   ],
   "cards": [
@@ -575,6 +589,310 @@
       "label": {
         "en": "10",
         "hi": "१०"
+      }
+    },
+    {
+      "id": "spouse",
+      "category": "people",
+      "label": {
+        "en": "Husband or wife",
+        "hi": "पति या पत्नी"
+      }
+    },
+    {
+      "id": "children",
+      "category": "people",
+      "label": {
+        "en": "Children",
+        "hi": "बच्चे"
+      }
+    },
+    {
+      "id": "relatives",
+      "category": "people",
+      "label": {
+        "en": "Other relatives",
+        "hi": "दूसरे रिश्तेदार"
+      }
+    },
+    {
+      "id": "friends",
+      "category": "people",
+      "label": {
+        "en": "Friends",
+        "hi": "दोस्त"
+      }
+    },
+    {
+      "id": "alone",
+      "category": "people",
+      "label": {
+        "en": "Alone",
+        "hi": "अकेले"
+      }
+    },
+    {
+      "id": "someone_else",
+      "category": "people",
+      "label": {
+        "en": "Someone else",
+        "hi": "कोई और"
+      }
+    },
+    {
+      "id": "temple",
+      "category": "places",
+      "label": {
+        "en": "Temple",
+        "hi": "मंदिर"
+      }
+    },
+    {
+      "id": "mosque",
+      "category": "places",
+      "label": {
+        "en": "Mosque",
+        "hi": "मस्जिद"
+      }
+    },
+    {
+      "id": "church",
+      "category": "places",
+      "label": {
+        "en": "Church",
+        "hi": "चर्च"
+      }
+    },
+    {
+      "id": "market",
+      "category": "places",
+      "label": {
+        "en": "Market",
+        "hi": "बाज़ार"
+      }
+    },
+    {
+      "id": "police_station",
+      "category": "places",
+      "label": {
+        "en": "Police station",
+        "hi": "थाना"
+      }
+    },
+    {
+      "id": "bus_stand",
+      "category": "places",
+      "label": {
+        "en": "Bus stand",
+        "hi": "बस स्टैंड"
+      }
+    },
+    {
+      "id": "railway_station",
+      "category": "places",
+      "label": {
+        "en": "Railway station",
+        "hi": "रेलवे स्टेशन"
+      }
+    },
+    {
+      "id": "river",
+      "category": "places",
+      "label": {
+        "en": "River",
+        "hi": "नदी"
+      }
+    },
+    {
+      "id": "pond",
+      "category": "places",
+      "label": {
+        "en": "Pond",
+        "hi": "तालाब"
+      }
+    },
+    {
+      "id": "field",
+      "category": "places",
+      "label": {
+        "en": "Field",
+        "hi": "खेत"
+      }
+    },
+    {
+      "id": "forest",
+      "category": "places",
+      "label": {
+        "en": "Forest",
+        "hi": "जंगल"
+      }
+    },
+    {
+      "id": "other",
+      "category": "places",
+      "label": {
+        "en": "Other",
+        "hi": "कुछ और"
+      }
+    },
+    {
+      "id": "hindi",
+      "category": "school",
+      "label": {
+        "en": "Hindi",
+        "hi": "हिंदी"
+      }
+    },
+    {
+      "id": "english",
+      "category": "school",
+      "label": {
+        "en": "English",
+        "hi": "अंग्रेज़ी"
+      }
+    },
+    {
+      "id": "maths",
+      "category": "school",
+      "label": {
+        "en": "Maths",
+        "hi": "गणित"
+      }
+    },
+    {
+      "id": "science",
+      "category": "school",
+      "label": {
+        "en": "Science",
+        "hi": "विज्ञान"
+      }
+    },
+    {
+      "id": "social_science",
+      "category": "school",
+      "label": {
+        "en": "Social science",
+        "hi": "सामाजिक विज्ञान"
+      }
+    },
+    {
+      "id": "computer",
+      "category": "school",
+      "label": {
+        "en": "Computer",
+        "hi": "कंप्यूटर"
+      }
+    },
+    {
+      "id": "art",
+      "category": "school",
+      "label": {
+        "en": "Art",
+        "hi": "चित्रकला"
+      }
+    },
+    {
+      "id": "music",
+      "category": "school",
+      "label": {
+        "en": "Music",
+        "hi": "संगीत"
+      }
+    },
+    {
+      "id": "sports",
+      "category": "school",
+      "label": {
+        "en": "Sports",
+        "hi": "खेलकूद"
+      }
+    },
+    {
+      "id": "studying",
+      "category": "school",
+      "label": {
+        "en": "Studying",
+        "hi": "पढ़ाई"
+      }
+    },
+    {
+      "id": "playing",
+      "category": "school",
+      "label": {
+        "en": "Playing",
+        "hi": "खेलना"
+      }
+    },
+    {
+      "id": "drawing",
+      "category": "school",
+      "label": {
+        "en": "Drawing",
+        "hi": "चित्र बनाना"
+      }
+    },
+    {
+      "id": "reading",
+      "category": "school",
+      "label": {
+        "en": "Reading",
+        "hi": "किताब पढ़ना"
+      }
+    },
+    {
+      "id": "lunch",
+      "category": "school",
+      "label": {
+        "en": "Lunch",
+        "hi": "खाने की छुट्टी"
+      }
+    },
+    {
+      "id": "nothing",
+      "category": "school",
+      "label": {
+        "en": "Nothing",
+        "hi": "कुछ नहीं"
+      }
+    },
+    {
+      "id": "namaste",
+      "category": "everyday",
+      "label": {
+        "en": "Namaste",
+        "hi": "नमस्ते"
+      }
+    },
+    {
+      "id": "help",
+      "category": "everyday",
+      "label": {
+        "en": "Help",
+        "hi": "मदद"
+      }
+    },
+    {
+      "id": "again",
+      "category": "everyday",
+      "label": {
+        "en": "Again",
+        "hi": "फिर से"
+      }
+    },
+    {
+      "id": "thank_you",
+      "category": "everyday",
+      "label": {
+        "en": "Thank you",
+        "hi": "धन्यवाद"
+      }
+    },
+    {
+      "id": "no_phone",
+      "category": "things",
+      "label": {
+        "en": "No phone",
+        "hi": "फ़ोन नहीं है"
       }
     }
   ]

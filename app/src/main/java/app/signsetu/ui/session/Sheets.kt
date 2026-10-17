@@ -1,5 +1,7 @@
 package app.signsetu.ui.session
 
+import android.content.res.Resources
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.height
 import app.signsetu.ui.components.BrandButton
 import app.signsetu.ui.avatar.Avatar
@@ -331,6 +333,14 @@ val AnswerEvents = setOf(EventType.ANSWER_CARD, EventType.ANSWER_DRAWING, EventT
 /** A signed answer is always marked as the app's reading or the officer's, never as the subject's own words. */
 fun signedMark(e: SessionEvent) = if (e.source == EventSource.OFFICER) R.string.signed_officer else R.string.signed_app
 
+/** Words of a signed answer for display; null when no sign has been read yet. The record keeps its "?" marks. */
+fun signedWords(text: String?): String? =
+    text?.split(' ')?.takeUnless { w -> w.all { it == "?" } }?.joinToString(" ") { if (it == "?") "…" else it }
+
+/** How a signed answer reads on screen and in the export: its words, or how many signs wait to be read. */
+fun signedDisplay(res: Resources, text: String?): String =
+    signedWords(text) ?: (text?.split(' ')?.size ?: 0).let { res.getQuantityString(R.plurals.signed_unread, it, it) }
+
 @Composable
 fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? = null) {
     ListItem(
@@ -344,7 +354,14 @@ fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? =
             Text("${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))}  ·  ${stringResource(e.type.label())}$mark")
         },
         headlineContent = {
-            Text(if (e.type == EventType.SYSTEM) systemText(LocalResources.current, e.text) else app.signsetu.ui.pair.linkText(e) ?: e.text ?: "—")
+            val res = LocalResources.current
+            Text(
+                when (e.type) {
+                    EventType.SYSTEM -> systemText(res, e.text)
+                    EventType.ANSWER_SIGNED -> signedDisplay(res, e.text)
+                    else -> app.signsetu.ui.pair.linkText(e) ?: e.text ?: "—"
+                },
+            )
         },
         supportingContent = question?.takeIf { it != e.text }?.let { q -> { Text(q, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         leadingContent = e.cardId?.let { id ->
@@ -413,7 +430,7 @@ fun SheetTitle(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.padding(bottom = Spacing.md).semantics { heading() },
+        modifier = Modifier.padding(bottom = Spacing.lg).semantics { heading() },
     )
 }
 
@@ -502,11 +519,16 @@ fun SignedSheet(
                 item { Text(stringResource(R.string.signed_manual), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant) }
             }
             itemsIndexed(segments) { i, s ->
-                Surface(shape = MaterialTheme.shapes.medium, color = if (replay.segment == i) colors.primaryContainer else colors.surfaceContainerLow) {
-                    Column(Modifier.padding(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                val current = replay.segment == i
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = if (current) colors.surfaceContainerHigh else colors.surfaceContainerLow,
+                    border = if (current) BorderStroke(2.dp, colors.primary) else null,
+                ) {
+                    Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val name = stringResource(R.string.signed_sign, i + 1)
-                            TextButton(onClick = { replay.play(i) }) {
+                            TextButton(onClick = { replay.play(i) }, modifier = Modifier.heightIn(min = 48.dp)) {
                                 Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(name, modifier = Modifier.padding(start = Spacing.xs))
                             }

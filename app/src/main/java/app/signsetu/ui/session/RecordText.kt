@@ -70,6 +70,7 @@ fun recordDetail(res: Resources, content: ContentBundle, lang: String, events: L
             listOfNotNull(
                 grades[e.id]?.let { "[${res.getString(it.label())}]" },
                 base(e),
+                givenText(res, e),
                 positions[e.id]?.let { (n, of) -> "(${res.getString(R.string.choice_position, n, of)})" },
                 trails[e.id]?.let { "· ${trailText(res, it)}" },
             ).joinToString(" ")

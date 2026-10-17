@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Role
 import app.signsetu.ui.avatar.Gesture
 import app.signsetu.ui.avatar.chain
@@ -33,9 +34,12 @@ data class Group(
     val child: Boolean? = null,
 )
 
-/** Where an item sits in a first-contact conversation; declaration order is the auto mode's proposal order. */
+/**
+ * Where an item sits in a first-contact conversation; declaration order is the auto mode's proposal order. MANUAL items,
+ * such as personal details and everyday phrases, are only ever picked by the officer.
+ */
 @Serializable
-enum class Phase { RAPPORT, GROUND_RULES, WELFARE, PRACTICAL, CLOSING, BREAK, RIGHTS, FREE_RECALL, FOLLOW_UP }
+enum class Phase { RAPPORT, GROUND_RULES, WELFARE, PRACTICAL, CLOSING, BREAK, RIGHTS, FREE_RECALL, FOLLOW_UP, MANUAL }
 
 @Serializable
 enum class Kind { STATEMENT, INVITATION, DIRECTIVE, OPTION }
@@ -53,7 +57,27 @@ data class Question(
     val kind: Kind = Kind.DIRECTIVE,
     /** "s2:yes" or "s2:any": asked only after that answer to that item. */
     val after: String? = null,
+    /** How the subject gives the answer on the stage (LessonInputs.kt); null keeps the usual answers. */
+    val answer: AnswerType? = null,
+    /** What the answer is, as a field of the report's personal details. */
+    val field: Localized? = null,
+    /** Roles this item is for, empty for everyone: welfare-only items leave out an accused. */
+    val roles: List<Role> = emptyList(),
+    /** Profiles never asked this item, such as a young child for a mobile number. */
+    val hiddenFor: List<Profile> = emptyList(),
+    /** The character signs the English text through the text-to-sign path, in draft ISL order. */
+    val signed: Boolean = false,
 )
+
+@Serializable
+enum class AnswerType { NAME, TEXT, AGE, COUNT, PHONE, SIBLINGS, CLASS, STATE, DISTRICT, PLACE, PICTURES }
+
+@Immutable @Serializable
+data class District(val id: String, val name: Localized)
+
+/** A state or union territory; only some carry their districts. */
+@Immutable @Serializable
+data class State(val id: String, val name: Localized, val districts: List<District> = emptyList())
 
 @Immutable @Serializable
 data class Card(val id: String, val category: String, val label: Localized)
@@ -99,12 +123,17 @@ data class Phrase(val id: String, val label: Localized, val signs: List<String>,
 @Serializable private data class CardsFile(val categories: List<CardCategory>, val cards: List<Card>)
 @Serializable private data class LexiconFile(val entries: List<LexiconEntry>)
 @Serializable private data class LanguagesFile(val languages: List<Language>)
+@Serializable private data class PlacesFile(val states: List<State>)
 @Serializable private data class Manifest(val files: Map<String, String>)
 
 /** Files hashed on every load. Models are large and their loaders check them against the manifest on first use. */
 internal fun eagerlyChecked(path: String) = !path.startsWith("models/")
 @Serializable private data class GesturesFile(val gestures: List<Gesture>)
 @Serializable private data class WordsFile(val words: List<WordEntry>)
+@Serializable private data class SignWordsFile(val words: Map<String, String>)
+
+/** Motion files: a failed one only loses the character's motions, never the words a subject is shown. */
+private val MOTION_FILES = setOf("gestures.json", "signs.json", "isl_signs.json")
 
 @Immutable
 data class ContentBundle(
@@ -127,16 +156,27 @@ data class ContentBundle(
     val manifestHash: String = "",
     /** Start of the manifest's SHA-256: names the exact content a prompt was drawn from. */
     val version: String = "",
+    /** Signs retargeted from recorded signers (isl_signs.json); their motions are also in [gestures]. */
+    val isl: IslSigns = IslSigns(),
+    /** Sign reader labels to a written form in [words] (sign_words.json). */
+    val signWords: Map<String, String> = emptyMap(),
+    /** States and union territories for the place picker, Chhattisgarh first. */
+    val states: List<State> = emptyList(),
 ) {
     /** A group with no roles listed is for everyone. */
     fun groupsFor(role: Role, child: Boolean = false): List<Group> =
         groups.filter { (it.roles.isEmpty() || role in it.roles) && (it.child == null || it.child == child) }
 
+    fun questionsIn(group: String, role: Role, profile: Profile): List<Question> =
+        questions.filter { it.group == group && askable(it, role, profile) }
+
     fun group(id: String): Group? = groups.firstOrNull { it.id == id }
     fun question(id: String): Question? = questions.firstOrNull { it.id == id }
     fun isRights(q: Question) = group(q.group)?.rights == true
 
-    fun gestureFor(q: Question): Gesture? = (q.gesture ?: q.lexicon)?.let { gestures[it] }
+    /** A question with no gesture of its own is signed from its English wording through the lexicon. */
+    fun gestureFor(q: Question): Gesture? =
+        (q.gesture ?: q.lexicon)?.let { gestures[it] } ?: q.text["en"]?.let { planText(it, setOf(SignMode.SIGNS)).gesture }
 
     /** The phrase's signs as one gesture; a sign with no reviewed animation is left out. */
     fun gestureFor(phrase: Phrase, slot: PhraseSlot): Gesture? =
@@ -154,7 +194,7 @@ data class ContentBundle(
     fun hasCardImage(id: String) = "cards/$id.webp" in files
 
     /** A text file failed its check, so the subject could be shown wrong words: no session may start (SEC-54). */
-    val damaged: Boolean get() = rejected.any { it.endsWith(".json") && it != "gestures.json" && it != "signs.json" }
+    val damaged: Boolean get() = rejected.any { it.endsWith(".json") && it !in MOTION_FILES }
 
     /** Gesture lookup: both location and action match first, then location only, then action only. */
     fun lookup(location: BodyLocation?, action: HandAction?): List<LexiconEntry> {
@@ -186,10 +226,12 @@ class ContentRepository(private val assets: AssetManager) {
         val lexicon = verified("lexicon.json", rejected) ?: LexiconFile(emptyList())
         val languages = verified("languages.json", rejected) ?: LanguagesFile(emptyList())
         val subjectUi = verified<Map<String, Localized>>("subject_ui.json", rejected).orEmpty()
+        val isl = verified<IslSigns>("isl_signs.json", rejected) ?: IslSigns()
         val gestures = verified<GesturesFile>("gestures.json", rejected)?.gestures.orEmpty() +
-            verified<GesturesFile>("signs.json", rejected)?.gestures.orEmpty()
+            verified<GesturesFile>("signs.json", rejected)?.gestures.orEmpty() + isl.gestures.map { it.gesture }
         val words = verified<WordsFile>("words.json", rejected)?.words.orEmpty()
         val phrases = verified<PhrasesFile>("phrases.json", rejected)?.phrases.orEmpty()
+        val states = verified<PlacesFile>("places.json", rejected)?.states.orEmpty()
         ContentBundle(
             groups = triage.groups,
             questions = triage.questions,
@@ -204,8 +246,11 @@ class ContentRepository(private val assets: AssetManager) {
             phrases = phrases,
             words = words.flatMap { e -> e.w.map { it to e } }.toMap(),
             manifestHash = sha256("manifest.json").orEmpty(),
+            isl = isl,
+            signWords = verified<SignWordsFile>("sign_words.json", rejected)?.words.orEmpty(),
             version = MessageDigest.getInstance("SHA-256").digest(manifestText.toByteArray()).take(6).joinToString("") { "%02x".format(it) },
-        ).also { bundle = it }
+            states = states,
+        ).withSignedQuestions().also { bundle = it }
     }
 
     suspend fun cardImage(id: String): ImageBitmap? {

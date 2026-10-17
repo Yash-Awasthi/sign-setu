@@ -25,7 +25,8 @@ The app processes personal data of people in a vulnerable situation, most often 
 
 | Data | Necessary? | Minimisation |
 | --- | --- | --- |
-| Questions and answers | Yes, core purpose | Short-lived; no identity fields required |
+| Questions and answers | Yes, core purpose | Short-lived; no identity columns |
+| Personal details (lesson-sheet answers: name, age, mobile number, parents' names, family size, address, district, state, school, class, teacher) | Needed to reunite a found child or adult with family and to keep them safe (D-36) | Asked only when the officer chooses the question; a young child is not asked for a mobile number; entered by the person and read back for their confirmation; stored as answer rows in the encrypted session store under the same retention; printed only in the encrypted report's "Personal details given" table; never sent anywhere. The last answer, including a confirmed detail, also shows on the officer glance strip unless the officer hides it for the session (FR-97) |
 | Notes | Yes, officer must record what they learnt | Free text; SOP limits to what is needed |
 | Drawings | Yes, alternative answer path | Saved only on officer action |
 | Camera images | Needed for the stage mirror so the subject sees their own hands (D-20), and for sign reading inside a sign window (D-25) | Shown live only; never stored, recorded or sent; analysed only inside a window the officer or subject opens (20 s for an answer, 3 minutes for an account); officer and department can turn the mirror off |
@@ -36,7 +37,7 @@ The app processes personal data of people in a vulnerable situation, most often 
 | Second-screen link records | Needed to show which answers came from a second screen | Device model, version code, the first 8 characters of the content hash and the last 4 hex of the SHA-256 of the peer address; never the Bluetooth friendly name, which may carry a child's name (JJ Act s.74). Answers are encrypted in transit and the stage stores nothing |
 | Voice audio | Not processed in release 1 | No microphone permission; the build fails if one is added (SEC-30) |
 | Interpreter video call | Needed when pictures and gestures are not enough (FR-64) | Started by the officer in the department's messaging app to a department contact; Sign Setu passes no session data |
-| Name, address, photo of subject | Not needed by the app | No fields for them; SOP says record identity in official systems, not the app |
+| Photograph of the subject | Not needed by the app | No camera capture; no field for it |
 
 ## 4. Legal basis
 
@@ -82,6 +83,7 @@ The app processes personal data of people in a vulnerable situation, most often 
 | P-12 | A signed account recorded by the app is treated as a statement | 2 | 3 | Readings marked as readings and printed apart from answers; not-a-statement notice on every export page; SOP; landmarks never exported | Low |
 | P-13 | An accused is led into giving an account | 1 | 3 | Free-recall and sensitive groups never offered for an accused; Auto never proposes them; rights recorded as shown, not understood (D-28, D-30) | Low |
 | P-14 | A paired stage device leaks or keeps session content | 1 | 3 | Encrypted link; stage stores nothing; pinned hand-back screen; department devices only; Bluetooth friendly names never recorded (SEC-66 to SEC-70) | Low |
+| P-15 | Personal details entered on the stage are disclosed or kept beyond need | 1 | 3 | Encrypted store, app lock and auto-delete as for every answer; lesson inputs not offered on a second screen; export encrypted and shared under the SOP; SOP limits the questions to what reuniting or safety needs (D-36) | Low |
 
 ## 6. Rights of data principals
 

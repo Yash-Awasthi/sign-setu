@@ -101,8 +101,8 @@ SIGNS = {
                    {"at": "rest"}, step=0.25, face="smile"),
     "go": moving([r("front", "FLAT", "wrist", roll=0, angle=0, dx=0, dy=-24), r("front", "FLAT", "wrist", roll=0, angle=70, dx=34, dy=-30)], {"at": "rest"}, step=0.45),
     "stop": held(r("shoulder", "FLAT", "wrist", roll=1, angle=0, dx=6, dy=-36, elbow="down"), {"at": "rest"}, hold=0.7, face="neutral"),
-    "finish": moving([r("front", "FLAT", "wrist", roll=1, angle=-20, dx=-4, dy=-30), r("front", "FLAT", "wrist", roll=-1, angle=60, dx=26, dy=-24)],
-                     base(shape="FLAT", roll=1, angle=-20, dx=-4, dy=-30), step=0.45),
+    "finish": moving([r("front", "FLAT", "wrist", roll=1, angle=-20, dx=6, dy=-30), r("front", "FLAT", "wrist", roll=-1, angle=60, dx=26, dy=-24)],
+                     base(shape="FLAT", roll=1, angle=-20, dx=6, dy=-30), step=0.45),
     "child": held(r("side", "FLAT", "palm", roll=-1, angle=90, dx=18, dy=-6), {"at": "rest"}, hold=0.7, face="smile"),
     "sit": moving([r("front", "FLAT", "palm", roll=-1, angle=90, dx=10, dy=-30), r("front", "FLAT", "palm", roll=-1, angle=90, dx=10, dy=-6)], {"at": "rest"}, step=0.5),
     "sorry": held(r("ear", "PINCH", "thumb", roll=0, angle=0), {"at": "ear", "shape": "PINCH", "touch": "thumb", "roll": 0, "angle": 0}, hold=0.8, face="gentle"),
@@ -155,11 +155,82 @@ SIGNS |= {
 # Body parts are signed by pointing at them on the character's own body.
 POINT_AT = {
     "head": r("temple", angle=-60), "eye": r("eye", angle=-30, dy=10), "ear": r("ear", angle=-40),
-    "nose": r("nose", angle=-20, dy=6), "mouth": r("mouth", angle=-20, dy=4), "stomach": r("belly", angle=-70),
+    "nose": r("nose", angle=-20, dy=6), "mouth": r("mouth", angle=-20, dy=4), "stomach": r("belly", angle=-70, dy=-8),
     "arm": r("arm_opp", angle=-85, dy=-6), "leg": r("hip", angle=170, dy=6),
     "back": r("shoulder", "THUMB", "wrist", roll=0, angle=30, dy=-16, elbow="down"),
 }
 SIGNS |= {f"body.{k}": held(v, {"at": "rest"}, hold=0.6) for k, v in POINT_AT.items()}
+
+# Lesson-sheet vocabulary for family, place and school; the question words and phrases are in GAP below.
+SIDE_BY_SIDE = r("index_opp", "POINT", "tip", roll=0, angle=-15, dx=6, dy=4)
+ROOF_R = r("index_opp", "FLAT", "tip", roll=0, angle=-35, dy=-6)
+ROOF_L = base(shape="FLAT", roll=0, angle=35, dy=-30)
+SIGNS |= {
+    # The person.
+    "family": moving([r("front", "CUP", "wrist", roll=0, angle=-30, dx=4, dy=-26), r("front", "CUP", "wrist", roll=0, angle=-30, dx=30, dy=-18),
+                      r("front", "CUP", "wrist", roll=0, angle=-30, dx=4, dy=-10)], base(shape="CUP", roll=0, angle=30), step=0.3),
+    "brother": moving([r("chin", "THUMB", "wrist", roll=0, angle=-20, dy=6), SIDE_BY_SIDE], UPRIGHT_INDEX, step=0.45),
+    "sister": moving([r("nose_side", angle=-30), SIDE_BY_SIDE], UPRIGHT_INDEX, step=0.45),
+    # Home and place.
+    "city": moving([ROOF_R, {**ROOF_R, "dy": -18}, {**ROOF_R, "dx": 14}, {**ROOF_R, "dx": 14, "dy": -18}], ROOF_L, step=0.25),
+    # School.
+    "teacher": moving([r("temple", angle=-30), r("front", "POINT", "tip", roll=0, angle=-50, dx=30, dy=-46)], {"at": "rest"}, step=0.45),
+    "favourite": moving([r("chin", angle=-20), r("chin", angle=-20, dy=6), r("chin", angle=-20)], {"at": "rest"}, step=0.25, face="smile"),
+    "subject": moving([r("palm_opp", "FLAT", "palm", roll=-1, angle=-90, dy=-4), r("palm_opp", "FLAT", "palm", roll=1, angle=-30, dx=16, dy=-8)], PALM_UP, step=0.45),
+}
+
+
+def mirrored(frames, step=0.35, face=None):
+    """Both hands doing the same thing on their own side: dx is outward, so one key serves both."""
+    keys = [{"t": round(i * step, 2), "R": f, "L": f} for i, f in enumerate(frames)]
+    if face:
+        keys[0]["face"] = face
+    return keys
+
+
+ROOF = {"at": "front", "dy": -46, "shape": "FLAT", "touch": "tip", "roll": -0.6, "angle": -45}
+
+
+def palm_up(dx, dy, shape="FLAT", angle=-80):
+    return {"at": "front", "dx": dx, "dy": dy, "shape": shape, "roll": 1, "angle": angle}
+
+
+# Lesson-sheet words INCLUDE lacks, in the common ISL citation form. Each is a draft until Deaf review.
+GAP = {
+    "what": moving([r("shoulder", "POINT", "wrist", roll=1, angle=-20, dx=8, dy=-30, elbow="down"),
+                    r("shoulder", "POINT", "wrist", roll=1, angle=15, dx=8, dy=-30, elbow="down"),
+                    r("shoulder", "POINT", "wrist", roll=1, angle=-20, dx=8, dy=-30, elbow="down")], {"at": "rest"}, step=0.25, face="ask"),
+    "where": mirrored([palm_up(24, -22), palm_up(34, -26), palm_up(24, -22)], step=0.3, face="ask"),
+    "how_many": mirrored([palm_up(30, -24, "BUNCH", -20), palm_up(34, -28, "OPEN", -10), palm_up(30, -24, "BUNCH", -20),
+                          palm_up(34, -28, "OPEN", -10)], step=0.25, face="ask"),
+    "how": mirrored([{"at": "front", "dx": 6, "dy": -26, "shape": "CUP", "roll": -1, "angle": -70},
+                     {"at": "front", "dx": 8, "dy": -26, "shape": "CUP", "roll": 1, "angle": -70}], step=0.45, face="ask"),
+    "age": moving([r("chin", "FIST", "wrist", roll=0, angle=-10, dy=8), r("chin", "FIST", "wrist", roll=0, angle=-10, dy=30)], {"at": "rest"}, step=0.5),
+    "water": moving([r("mouth", "CUP", "tip", roll=0, angle=-30, dx=6), r("mouth", "CUP", "tip", roll=0, angle=-60, dx=2)], {"at": "rest"}, step=0.45),
+    "understand": moving([r("temple", angle=-20, dx=4), r("temple", "OPEN", "wrist", roll=1, angle=20, dx=10, dy=-4)], {"at": "rest"}, step=0.45),
+    "again": moving([r("palm_opp", "CUP", "tip", roll=0, angle=0, dy=-26), r("palm_opp", "CUP", "tip", roll=0, angle=-80, dy=-4),
+                     r("palm_opp", "CUP", "tip", roll=0, angle=0, dy=-26), r("palm_opp", "CUP", "tip", roll=0, angle=-80, dy=-4)], PALM_UP, step=0.3),
+    # Roofs side by side: a positive dx moves the right hand to the viewer's left and a negative one the left hand too.
+    "village": [{"t": round(i * 0.4, 2), "R": {**ROOF, "dx": s}, "L": {**ROOF, "dx": -s}} for i, s in enumerate((0, 16, -16))],
+    "district": moving([r("palm_opp", "FLAT", "palm", roll=-1, angle=90, dx=10, dy=-6), r("palm_opp", "FLAT", "palm", roll=-1, angle=90, dx=0, dy=-6),
+                        r("palm_opp", "POINT", "tip", roll=0, angle=-40, dy=-2)], PALM_UP, step=0.35),
+    "state": moving([r("front", "FLAT", "palm", roll=-1, angle=90, dx=20, dy=-24), r("front", "FLAT", "palm", roll=-1, angle=90, dx=12, dy=-30),
+                     r("front", "FLAT", "palm", roll=-1, angle=90, dx=20, dy=-34), r("front", "FLAT", "palm", roll=-1, angle=90, dx=30, dy=-28)],
+                    {"at": "rest"}, step=0.3),
+    "class": mirrored([{"at": "front", "dx": 14, "dy": -24, "shape": "CUP", "roll": 0, "angle": 0},
+                       {"at": "front", "dx": 30, "dy": -22, "shape": "CUP", "roll": 0, "angle": -20},
+                       {"at": "front", "dx": 20, "dy": -16, "shape": "CUP", "roll": -1, "angle": -40}], step=0.35),
+    "number": mirrored([{"at": "front", "dx": 16, "dy": -20, "shape": "BUNCH", "roll": 0, "angle": -60, "elbow": "down"},
+                        {"at": "front", "dx": 10, "dy": -20, "shape": "BUNCH", "roll": 0, "angle": -60, "elbow": "down"},
+                        {"at": "front", "dx": 16, "dy": -20, "shape": "BUNCH", "roll": 0, "angle": -60, "elbow": "down"},
+                        {"at": "front", "dx": 10, "dy": -20, "shape": "BUNCH", "roll": 0, "angle": -60, "elbow": "down"}], step=0.25),
+    "near": moving([r("front", "FLAT", "wrist", roll=0, angle=-10, dx=30, dy=-26), r("palm_opp", "FLAT", "palm", roll=0, angle=-10, dx=10)],
+                   base(shape="FLAT", roll=0, angle=-10), step=0.5),
+    "like": moving([{**CHEST, "dy": -6}, r("chest", "PINCH", "thumb", roll=0, angle=-60, dx=12, dy=-14)], {"at": "rest"}, step=0.45, face="smile"),
+    "please": moving([{**CHEST, "dx": -4}, {**CHEST, "dx": 6, "dy": 6}, {**CHEST, "dx": -4}], {"at": "rest"}, step=0.3, face="gentle"),
+    "live": mirrored([{"at": "chest", "dx": 16, "dy": 14, "shape": "FLAT", "touch": "palm", "roll": -1, "angle": -60},
+                      {"at": "chest", "dx": 16, "dy": -4, "shape": "FLAT", "touch": "palm", "roll": -1, "angle": -60}], step=0.45),
+}
 
 
 def main() -> None:
@@ -167,6 +238,7 @@ def main() -> None:
         [{"id": f"letter.{k}", "keys": v} for k, v in LETTERS.items()]
         + [{"id": f"digit.{k}", "keys": v} for k, v in DIGITS.items()]
         + [{"id": f"sign.{k}", "keys": v} for k, v in SIGNS.items()]
+        + [{"id": f"sign.{k}", "review": "draft", "keys": v} for k, v in GAP.items()]
     )
     lines = ",\n".join("  " + json.dumps(g, ensure_ascii=False) for g in made)
     SIGNS_FILE.write_text(f'{{"note": {json.dumps(NOTE)},\n "gestures": [\n{lines}\n]}}\n', encoding="utf-8", newline="\n")

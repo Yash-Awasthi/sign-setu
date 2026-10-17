@@ -163,7 +163,7 @@ fun AnswerMeta(grade: Grade?, trail: Trail?, position: Pair<Int, Int>?, onSayBac
             val (bg, fg) = when (g) {
                 Grade.CONFIRMED -> answer.yesContainer to answer.onYesContainer
                 Grade.SAID_NO -> answer.noContainer to answer.onNoContainer
-                Grade.OFFICER_READ, Grade.MACHINE_READ -> colors.surfaceContainerHighest to colors.onSurfaceVariant
+                Grade.OFFICER_READ, Grade.MACHINE_READ -> colors.surfaceContainerHigh to colors.onSurface
                 Grade.UNCLEAR -> colors.tertiaryContainer to colors.onTertiaryContainer
                 Grade.SAID -> colors.secondaryContainer to colors.onSecondaryContainer
             }

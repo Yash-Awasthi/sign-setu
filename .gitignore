@@ -29,3 +29,5 @@ keystore.properties
 .claude/
 .DS_Store
 Thumbs.db
+__pycache__/
+.kotlin/

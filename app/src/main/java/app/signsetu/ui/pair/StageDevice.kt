@@ -20,7 +20,17 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.ui.text.font.FontWeight
+import app.signsetu.ui.theme.Baloo
+import app.signsetu.ui.theme.LocalStageColors
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -201,26 +211,21 @@ fun StageDeviceScreen(link: StageLink, content: ContentBundle, container: AppCon
         when (val s = state) {
             LinkState.Idle, LinkState.Connecting, is LinkState.Failed -> Centered {
                 Text(stringResource(R.string.stage_waiting, container.pairTransport?.localName() ?: Build.MODEL), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-                CircularProgressIndicator()
-                OutlinedButton(onClick = { container.endLink(ByeReason.CANCEL) }) { Text(stringResource(R.string.cancel)) }
+                CircularProgressIndicator(color = LocalContentColor.current)
+                StageOutlinedButton(onClick = { container.endLink(ByeReason.CANCEL) }) { Text(stringResource(R.string.cancel)) }
             }
             is LinkState.Code -> Centered {
-                Text(
-                    s.code.orEmpty().chunked(3).joinToString(" "),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 56.sp,
-                    modifier = Modifier.semantics { contentDescription = s.code.orEmpty().toCharArray().joinToString(" ") },
-                )
+                CodeBoxes(s.code.orEmpty())
                 Text(stringResource(R.string.stage_code), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
                 s.check?.let { CheckValue(it) }
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    OutlinedButton(onClick = { link.cancelCode() }) { Text(stringResource(R.string.cancel)) }
-                    Button(onClick = { link.match() }, enabled = s.check != null) { Text(stringResource(R.string.stage_match)) }
+                    StageOutlinedButton(onClick = { link.cancelCode() }) { Text(stringResource(R.string.cancel)) }
+                    Button(onClick = { link.match() }, enabled = s.check != null, shape = MaterialTheme.shapes.medium, modifier = Modifier.height(48.dp)) { Text(stringResource(R.string.stage_match)) }
                 }
             }
             is LinkState.Ended -> Centered {
                 Text(stringResource(R.string.stage_handback), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-                TextButton(onClick = exit) { Text(stringResource(R.string.stage_officer_unlock)) }
+                TextButton(onClick = exit, colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current)) { Text(stringResource(R.string.stage_officer_unlock)) }
             }
             else -> LiveStage(link, content, s, exit, scope)
         }
@@ -322,6 +327,7 @@ private fun LiveStage(link: StageLink, content: ContentBundle, state: LinkState,
             Text(
                 stringResource(if (unacked.any { it.itemId == id }) R.string.stage_sending else R.string.stage_sent),
                 style = MaterialTheme.typography.labelMedium,
+                color = LocalStageColors.current.title,
                 modifier = Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(Spacing.md),
             )
         }
@@ -332,7 +338,8 @@ private fun LiveStage(link: StageLink, content: ContentBundle, state: LinkState,
 /** Lost or Hold: the item is hidden; Stop and "I don't know" still work and are sent once the link is back. */
 @Composable
 private fun Cover(state: LinkState, content: ContentBundle, lang: String, onStop: () -> Unit, onUnsure: () -> Unit, onExit: () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+    val stage = LocalStageColors.current
+    Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize()) {
         Column(
             Modifier.safeDrawingPadding().padding(Spacing.xl),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
@@ -343,14 +350,14 @@ private fun Cover(state: LinkState, content: ContentBundle, lang: String, onStop
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
-            if (state == LinkState.Lost) CircularProgressIndicator()
+            if (state == LinkState.Lost) CircularProgressIndicator(color = stage.title)
             // The same pictures the subject has used on the stage, not bare words or symbols.
             val answer = LocalAnswerColors.current
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), modifier = Modifier.fillMaxWidth()) {
                 StripAnswer("dont_know", content.subjectText("dont_know", lang), stringResource(R.string.stage_dont_know), false, onUnsure, Modifier.weight(1f))
                 SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, false, onStop, Modifier.weight(1f), height = 76.dp)
             }
-            TextButton(onClick = onExit) { Text(stringResource(R.string.stage_officer_unlock), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            TextButton(onClick = onExit) { Text(stringResource(R.string.stage_officer_unlock), color = stage.title.copy(alpha = 0.8f)) }
         }
     }
 }
@@ -377,11 +384,42 @@ private fun BatteryStatus(link: StageLink, cameraOn: Boolean) {
     }
 }
 
+/** The pairing code, one digit per box in two groups of three, read out digit by digit. */
+@Composable
+private fun CodeBoxes(code: String) {
+    val stage = LocalStageColors.current
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        modifier = Modifier.clearAndSetSemantics { contentDescription = code.toCharArray().joinToString(" ") },
+    ) {
+        code.forEachIndexed { i, c ->
+            if (i > 0 && i % 3 == 0) Spacer(Modifier.width(Spacing.sm))
+            Surface(shape = MaterialTheme.shapes.medium, color = stage.bubble, contentColor = stage.onBubble, border = BorderStroke(1.dp, stage.onBubble.copy(alpha = 0.2f)), modifier = Modifier.size(48.dp, 56.dp)) {
+                Box(contentAlignment = Alignment.Center) { Text(c.toString(), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 28.sp) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StageOutlinedButton(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
+    val ink = LocalContentColor.current
+    OutlinedButton(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = ink),
+        border = BorderStroke(1.dp, ink.copy(alpha = 0.5f)),
+        modifier = Modifier.height(48.dp),
+        content = content,
+    )
+}
+
 @Composable
 private fun Centered(body: @Composable () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+    val stage = LocalStageColors.current
+    Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize()) {
         Column(
-            Modifier.safeDrawingPadding().padding(Spacing.xl).fillMaxWidth(),
+            Modifier.safeDrawingPadding().padding(horizontal = Spacing.lg, vertical = Spacing.xl).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) { body() }

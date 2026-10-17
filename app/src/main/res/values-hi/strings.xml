@@ -199,6 +199,7 @@
     <string name="settings_stage">स्टेज</string>
     <string name="settings_camera">कैमरा आईना</string>
     <string name="settings_camera_summary">स्टेज पर व्यक्ति को उनके अपने हाथ दिखते हैं। कुछ भी रिकॉर्ड या सेव नहीं होता।</string>
+    <string name="home_tagline">संकेत, चित्र और कैप्शन, सब इसी फ़ोन पर।</string>
     <string name="home_greeting_hint">चुनिए कि आप किसकी मदद कर रहे हैं, फिर शुरू करें।</string>
     <string name="profile_isl_short">संकेत भाषा</string>
     <string name="profile_other_short">दूसरी भाषा</string>
@@ -263,6 +264,10 @@
     <string name="signed_type">शब्द लिखें</string>
     <string name="signed_accept">ये शब्द स्वीकार करें</string>
     <string name="signed_replay">संकेत फिर से देखें</string>
+    <plurals name="signed_unread">
+        <item quantity="one">संकेत में जवाब, अभी पढ़ा नहीं गया (%1$d संकेत)</item>
+        <item quantity="other">संकेत में जवाब, अभी पढ़ा नहीं गया (%1$d संकेत)</item>
+    </plurals>
     <string name="officer_read_signs">संकेत पढ़ें</string>
     <string name="officer_tab_transcribe">बातचीत</string>
     <string name="officer_tab_more">और</string>
@@ -401,6 +406,17 @@
     <string name="glance_label">अधिकारी के लिए</string>
     <string name="glance_hide">अधिकारी पट्टी छिपाएँ</string>
     <string name="officer_rules">शुरुआती नियम और अभ्यास</string>
+    <string name="isl_dictionary">ISL शब्दकोश</string>
+    <string name="isl_dictionary_search">अंग्रेज़ी या हिंदी में खोजिए</string>
+    <string name="isl_dictionary_all">सभी</string>
+    <string name="isl_dictionary_pick">संकेत देखने के लिए किसी शब्द पर टैप कीजिए।</string>
+    <string name="isl_dictionary_show">व्यक्ति को दिखाइए</string>
+    <string name="isl_dictionary_replay">फिर से चलाइए</string>
+    <string name="isl_dictionary_empty">कोई संकेत नहीं मिला</string>
+    <string name="isl_dictionary_recorded">रिकॉर्ड किए गए बधिर संकेतकर्ता से (INCLUDE)। बधिर समीक्षा तक मसौदा।</string>
+    <string name="isl_dictionary_draft">टीम द्वारा बनाया गया। बधिर समीक्षा तक मसौदा।</string>
+    <string name="isl_dictionary_draft_tag">मसौदा</string>
+    <string name="isl_dictionary_attribution">रिकॉर्ड किए गए संकेत AI4Bharat के INCLUDE डेटासेट (श्रीधर और अन्य, 2020) से लिए गए हैं, लाइसेंस CC BY 4.0।</string>
     <string name="rules_skipped">अधिकारी ने बाकी शुरुआती नियम छोड़ दिए</string>
     <string name="officer_sun">धूप मोड (गहरा कंट्रास्ट)</string>
     <string name="stage_dont_know">मुझे नहीं पता</string>
@@ -423,4 +439,26 @@
     <string name="log_juvenile">18 से कम उम्र का हो सकता है, यह चिह्नित किया</string>
     <string name="log_juvenile_off">18 से कम उम्र का चिह्न हटाया</string>
     <string name="start_juvenile_mark">व्यक्ति की उम्र 18 से कम हो सकती है</string>
+    <string name="stage_say">कुछ कहें</string>
+    <string name="stage_no_phone">फ़ोन नहीं है</string>
+    <string name="stage_fix">बदलें</string>
+    <string name="stage_confirm">हाँ, यह सही है</string>
+    <string name="stage_skip">छोड़ें</string>
+    <string name="stage_college">कॉलेज</string>
+    <string name="stage_not_in_school">स्कूल नहीं जाते</string>
+    <string name="pad_delete">आख़िरी अंक मिटाएँ</string>
+    <string name="given_written">लिखकर</string>
+    <string name="given_pad">नंबर पैड से</string>
+    <string name="given_picture">चित्र से</string>
+    <string name="given_picker">सूची से चुनकर</string>
+    <string name="given_sign">संकेत से, अधिकारी ने पढ़कर दिखाया</string>
+    <string name="given_board">चित्र बोर्ड से</string>
+    <string name="given_confirmed">व्यक्ति ने पुष्टि की</string>
+    <string name="details_title">दी गई व्यक्तिगत जानकारी</string>
+    <string name="details_field">विवरण</string>
+    <string name="details_value">जो बताया</string>
+    <string name="details_method">कैसे</string>
+    <string name="details_confirmed">पुष्टि</string>
+    <string name="details_yes">हाँ</string>
+    <string name="details_no">नहीं</string>
 </resources>

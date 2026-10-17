@@ -19,7 +19,7 @@ Status: Proposed, Accepted, Superseded.
 - Flutter: good performance and smaller than React Native; acceptable second choice if the team knows Dart.
 - React Native: largest builds of the cross-platform options in published comparisons.
 
-**Consequences.** Smallest build, direct use of CameraX, MediaPipe, Keystore and key attestation. Costs 2-3 days if the team must learn Kotlin. No iOS (out of scope).
+**Consequences.** Smallest build, direct use of CameraX, MediaPipe, Keystore and key attestation. The team needs Kotlin skills. No iOS (out of scope).
 
 ---
 
@@ -97,7 +97,7 @@ Status: Proposed, Accepted, Superseded.
 
 **Status:** Accepted
 
-**Context.** No department identity system integration is available within 15 days.
+**Context.** No department identity system integration is available for release 1.
 
 **Decision.** Protect the app with the device credential and biometrics; authenticate the app to the gateway with Android Key Attestation. Revisit with department SSO (for example Parichay) after the pilot.
 
@@ -200,7 +200,7 @@ Status: Proposed, Accepted, Superseded.
 
 **Decision.** v1 ships without the INTERNET permission. Voice input through Bhashini, free-text caption translation, the gateway and attestation arrive in v1.1, after the pilot shows they are needed.
 
-**Consequences.** Threats T-07 to T-13 and DPIA risk P-03 do not apply to v1; the first CERT-In audit covers the app only; phase 1 fits in 15 days. Officers type instead of speaking in v1. D-04 and D-07 apply from v1.1.
+**Consequences.** Threats T-07 to T-13 and DPIA risk P-03 do not apply to v1; the first CERT-In audit covers the app only. Officers type instead of speaking in v1. D-04 and D-07 apply from v1.1.
 
 ---
 
@@ -259,7 +259,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-20 The stage: the character above, a camera mirror below
 
-**Status:** Accepted; supersedes the camera part of D-14; the `HandTracker` seam is replaced by `LandmarkTracker` (D-25)
+**Status:** Accepted; supersedes the camera part of D-14; the `HandTracker` seam is replaced by `LandmarkTracker` (D-25); the stage layout is amended by D-37
 
 **Context.** In the field the phone faces the subject for most of a conversation, so the subject's screen is the app's home. Children who cannot speak answer with their hands, and seeing their own hands next to the character helps them copy a gesture or show one. A partner team is building an on-device hand-detection model.
 
@@ -271,7 +271,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-21 Characters drawn in code for release 1
 
-**Status:** Accepted; changes the delivery stages of D-13, not its characters or lexicons
+**Status:** Accepted; changes the delivery stages of D-13, not its characters or lexicons; D-35 adds motions retargeted from recorded signers
 
 **Context.** Pre-rendered clips (05 §5.4 stage 1) need VRoid Studio, Blender and weeks of team time before a child sees any gesture. The app needs a moving character with readable fingers from the first pilot.
 
@@ -283,7 +283,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-22 Typed text is signed word by word, with the officer choosing how
 
-**Status:** Accepted; amends the free-text rule of D-13 and FR-13
+**Status:** Accepted; amends the free-text rule of D-13 and FR-13; amended by D-29 (word order) and D-35 (recorded signs)
 
 **Context.** Officers in Chhattisgarh, including its Naxal-affected districts, need to say things the triage set and phrase bank do not cover, and reaching a prepared question took several taps. Free text shown only as a caption reaches nobody who cannot read. Grammatical text-to-ISL translation does not exist offline at no cost.
 
@@ -322,20 +322,20 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-25 On-device vision engine, sign reader and sign windows
 
-**Status:** Accepted; supersedes D-02 and the hand-model seam of D-20; delivers FR-22 as FR-84 to FR-87
+**Status:** Accepted; supersedes D-02 and the hand-model seam of D-20; delivers FR-22 as FR-84 to FR-87; the engine runtime and the context rule are amended by D-38
 
 **Context.** A crying or frightened signer signs fast, and the officer cannot read it. The partner team's hand model was not delivered in time, and no open model reads continuous ISL. Isolated-sign recognition over a known vocabulary is achievable on a phone, and MediaPipe Holistic gives hand, face and pose landmarks on the device. Face and hand landmarks are biometric data, and a camera that analysed every frame would watch the subject without a reason.
 
 **Decision.**
-- **Engine.** MediaPipe Holistic (`tasks-vision` 1.0.0, Apache-2.0) runs on the CPU in video mode behind the `LandmarkTracker` interface: one upright RGBA frame of about 640 by 480 in; 21 points per hand, 468 face points and 33 pose points out. The model (`models/holistic_landmarker.task`, 13.7 MB, float16) is mapped from the APK, checked against the content manifest before it opens, and loaded off the main thread before the first frame. It ships for 64-bit phones only; 32-bit phones keep a plain mirror.
+- **Engine.** MediaPipe Holistic (`tasks-vision` 1.0.0, Apache-2.0) runs in video mode behind the `LandmarkTracker` interface (GPU first, CPU fallback, D-38): one upright RGBA frame in; 21 points per hand, 468 face points and 33 pose points out. The model (`models/holistic_landmarker.task`, 13.7 MB, float16) is mapped from the APK, checked against the content manifest before it opens, and loaded off the main thread before the first frame. It ships for 64-bit phones only; 32-bit phones keep a plain mirror.
 - **Sign windows.** Frames are analysed only inside an explicit window. **Read signs** from the officer, or the hand button on the stage, opens a 20-second answer window; **Tell me** opens a 3-minute narrative window (D-27). Outside a window the mirror is a preview with no analysis. Inside one, analysis runs at up to 30 frames per second.
 - **Segmentation.** A pause segmenter splits the stream where the hands are absent or still (mean speed of all hand points below 0.3 frame widths per second): after 0.4 s in an answer, 0.7 s in a narrative. Chunks shorter than 0.2 s, or with fewer than 3 moving frames, are dropped. Hands leaving the frame briefly do not end the capture.
 - **Sign reader.** A 262-word isolated-sign classifier (`models/sign_reader.bin` and `.json`, 1.4 MB) trained on the INCLUDE dataset (CC BY 4.0) from the OpenHands pose release, run in plain Kotlin (`LandmarkSignReader`) with no new dependency. Input: hands and arms of one chunk, normalised to the shoulders. Output: every label with its probability. On the INCLUDE test split: top-1 97.8%, top-3 99.4%, measured on studio signers.
-- **Context limit.** `sign_words.json` (draft, needs ISL review) maps reader labels to the app's vocabulary, for example house to home and bathroom to toilet. While a question is on screen, guesses are limited to concepts among that question's answer cards; with nothing on screen every label is allowed.
+- **Context limit.** `sign_words.json` (draft, needs ISL review) maps reader labels to the app's vocabulary, for example house to home and bathroom to toilet. While a question is on screen, guesses whose concept is among that question's answer cards come first (ranked, not filtered, D-38).
 - **Proposals only.** Reader guesses are proposals, in English, for the officer. They are never shown to the subject automatically and never sent over the second-screen link (D-26).
 - **Slower cue.** The subject is never asked up front to sign one sign at a time. "A little slower, please" appears, with a picture, only after a failed read (best guess below 40%) of hands that were lost (over 30% of the chunk untracked, or gaps over 150 ms) or too fast (wrist faster than 2.5 frame widths per second).
 
-**Consequences.** The release APK grows to about 47 MB (NFR-05 amended). Face analysis enters the app; the DPIA records it as biometric processing in memory only (SEC-71). The core answer words yes, no, water, pain, help, stop and "don't know" are not in INCLUDE, so the reader cannot read them until more data is collected, and picture answers stay the main path. Accuracy with children on phone cameras is unmeasured. The partner team's model can replace the reader behind `SignReader` ([hand model integration](11-hand-model-integration.md)).
+**Consequences.** The release APK grows to about 45 MiB (NFR-05 amended). Face analysis enters the app; the DPIA records it as biometric processing in memory only (SEC-71). The core answer words yes, no, water, pain, help, stop and "don't know" are not in INCLUDE, so the reader cannot read them until more data is collected, and picture answers stay the main path. Accuracy with children on phone cameras is unmeasured. The partner team's model can replace the reader behind `SignReader` ([hand model integration](11-hand-model-integration.md)).
 
 ---
 
@@ -433,15 +433,15 @@ Status: Proposed, Accepted, Superseded.
 
 ---
 
-## D-32 Stack upgrades
+## D-32 Pinned stack and upgrade rule
 
 **Status:** Accepted
 
-**Context.** Dependencies are pinned and verified (SEC-50). Upgrades are taken only as stable releases at least two weeks old.
+**Context.** Dependencies are pinned and verified (SEC-50). An upgrade changes the lockfile, the verification metadata and possibly the merged manifest.
 
-**Decision.** MediaPipe `tasks-vision` 0.10.35 to 1.0.0; NDK r27 to r30 (16 KB page alignment by default); CMake 3.22.1 to 4.1.1, with llama.cpp v0.5.0 kept. Every other library was already at its latest stable release. JDK 21 stays. The portal uses vite-plus 1.0.0, React 19.3.0 and TypeScript 7.0.2.
+**Decision.** Libraries are taken only as stable releases at least two weeks old. The pinned set includes MediaPipe `tasks-vision` 1.0.0, NDK r30 (`30.0.16248370`, 16 KB page alignment by default), CMake 4.1.1 with llama.cpp v0.5.0, JDK 21 for the build (Java 17 bytecode), and for the portal vite-plus 1.0.0, React 19.3.0 and TypeScript 7.0.2. Every other version is in `gradle/libs.versions.toml`.
 
-**Consequences.** Lockfile and verification metadata regenerated; no API changes were needed. PdfBox-Android 2.0.27.0 has no newer release and remains a maintenance risk.
+**Consequences.** Each upgrade regenerates `app/gradle.lockfile` and `gradle/verification-metadata.xml` and reruns the permission gate. PdfBox-Android 2.0.27.0 has no newer release and remains a maintenance risk.
 
 ---
 
@@ -459,7 +459,7 @@ Status: Proposed, Accepted, Superseded.
 
 ## D-34 A layered, graded record and a fairer stage
 
-**Status:** Accepted; adds FR-89 to FR-101
+**Status:** Accepted; adds FR-89 to FR-101; the stage's pause answers are amended by D-37
 
 **Context.** Research on child interviewing and AAC shows that what the person saw, the order of the choices and how long they took matter as much as the answer, and that someone else's reading must never pass as the person's own words.
 
@@ -471,3 +471,71 @@ Status: Proposed, Accepted, Superseded.
 - Thumb-up, thumb-down and open palm are not used for yes, no or stop; Stop is an octagonal sign. No body map is shown to the subject in the default flow; the body outline stays an officer tool for gesture lookup.
 
 **Consequences.** EventType gains PROMPT, with no schema change beyond D-30. The subject-screen words added for these features exist in English and Hindi only, so other subject languages show the pictures alone until they are translated.
+
+---
+
+## D-35 Recorded ISL signs and one sign lexicon
+
+**Status:** Accepted; amends D-22 and D-29
+
+**Context.** Authored word signs are slow to make and read as drawn approximations. The INCLUDE pose release (CC BY 4.0) holds MediaPipe Holistic landmarks of Deaf signers for 262 isolated ISL words. Typed text, questions without a gesture of their own, the sign-back of a reader label and an officer reference each needed a word lookup.
+
+**Decision.**
+- `tools/isl/retarget.py` retargets one recording per INCLUDE word onto the adult rig and writes `isl_signs.json` (ids `isl.<word>`, 16 categories, Hindi glosses from `tools/isl/hindi.json`). Each key carries an anchor with an offset, a measured hand shape written as `c:` percentages, palm roll, hand angle and the signer's elbow as `ex`/`ey` from the shoulder.
+- Words the lesson sheet needs and INCLUDE lacks (for example what, where, how many, age, understand, again, district, state, class, number, near, like, please, live, village, water, favourite, subject) are authored drafts in `signs.json`.
+- One lookup (`ContentBundle.motionFor`, `IslLexicon.kt`) serves typed text, unsigned questions, sign-back and the dictionary: with Signs on, the recorded sign, then the authored sign, then the everyday gesture; with Gestures on, the gesture; otherwise fingerspelling or a picture beat. Homonyms (23 words such as fall, light and key) stay in the dictionary and are never used for typed text.
+- Recorded keys less than 0.35 s apart are joined by a Catmull-Rom curve, so the hands pass through them; authored signs keep their holds and overshoot. A recorded elbow is used when both keys of a segment carry it, and eases from or to the two-bone solve when only one does.
+- The More page opens an ISL dictionary: every recorded and authored sign by category, searched in English, Hindi or any written form; Show prepares the sign like a question.
+
+**Consequences.** Every recorded and authored sign is a draft until Deaf review. The INCLUDE attribution travels with the app (open-source licences and the dictionary). Fingers pointing at the camera read as bent, a limit of the 2D rig.
+
+---
+
+## D-36 Lesson-sheet questions with stage answer inputs
+
+**Status:** Accepted; adds FR-102 to FR-106
+
+**Context.** The first conversation with a found child is mostly about who they are and where they live. Yes, No and pictures cannot carry a name, an age or a phone number, and an officer's reading of such an answer is not the child's own.
+
+**Decision.**
+- The bank holds the groups Personal, Family, Address, School and Everyday: name, age, mobile, introduction; father's and mother's names, family size, brothers and sisters, who they live with; where they live, village or city, district, state, a place nearby; school, class, teacher, favourite subject, what they like at school; and eight everyday phrases. The new items have phase MANUAL, so Auto never proposes them.
+- A question may carry an answer type (NAME, TEXT, AGE, COUNT, PHONE, SIBLINGS, CLASS, STATE, DISTRICT, PLACE, PICTURES). The panel under the character becomes its input: a number pad, a 10-digit phone pad grouped 5 and 5 with "No phone", a written name or place, a class grid, a state then district picker (Chhattisgarh first, with its districts), or several pictures with Done.
+- A written or typed answer is read back large and becomes the subject's own only on their Yes; one left unconfirmed when the item closes is logged as unconfirmed. The method and confirmation are stored in the answer row's `reason` as `given:<METHOD>:<0|1>`.
+- `hiddenFor` and `roles` keep items from people they do not suit: a young child is not asked for a mobile number; an accused is not asked the welfare-only items (introduce yourself, favourite subject, what they like at school).
+- Items marked `signed` get one motion from the text-to-sign path in draft ISL order.
+- The report lists these answers in a "Personal details given" table: field, value, how it was given and whether the person confirmed it.
+- A phrase board on the stage lets the subject say the eight everyday phrases; a tap is logged as the subject's own.
+
+**Consequences.** The app collects identifying answers (names, phone number, address, school). They exist only as answer rows in the encrypted session store under the same retention; there are still no identity columns. The DPIA records the data category. Lesson inputs are not offered on a second screen, which keeps its usual answers.
+
+---
+
+## D-37 The stage in two halves, with Stop as the only pause
+
+**Status:** Accepted; amends D-20 and D-34; adds FR-107
+
+**Context.** On a phone the camera window was cropped and the answers competed with it for space; Break and Stop side by side read as one control to a child.
+
+**Decision.**
+- The stage splits in half: the character, caption and held picture on top; below, a camera window at the camera's own 9:16 shape, fitted so nothing is cropped, between two narrow rails of answers. Panels that need room (drawing, writing, choices, the language finder, lesson inputs, the phrase board) take 64% of the height.
+- Left rail: Yes, "I don't know", "I don't understand", Draw, Write. Right rail: Next (in the opening or Auto), No, "That's wrong", the camera button that opens a sign window, Stop. Tool buttons use neutral colours so Stop stands alone.
+- Stop is the only pause control on the phone's stage; it opens the pause layer. Break remains as Auto's item "Do you want a break?" and as the break screen of a second screen (FR-76).
+- The character is framed to the hips (a view box of 220 by 258 units), so both hands stay in view at rest and at waist level.
+
+**Consequences.** The camera window is narrower than the screen; rail buttons stay 56 dp tall. The stage's sign button is a camera icon, never an open palm.
+
+---
+
+## D-38 Vision engine runtime and ranked sign guesses
+
+**Status:** Accepted; amends D-25
+
+**Context.** On a mid-range phone the CPU ran Holistic at about 9 frames per second. MediaPipe 1.0.0's classes are compiled against the full protobuf runtime and fail at run time with the lite one. Limiting guesses to the item on screen left the officer with none when the reader lacked the answer word.
+
+**Decision.**
+- `HolisticTracker` opens the graph on the GPU delegate and falls back to the CPU when the GPU fails to open or the first inference throws; the next frame then reopens on the CPU.
+- The build uses `protobuf-java` 4.26.1 and excludes `protobuf-javalite` from MediaPipe.
+- Preview and analysis share a 16:9 portrait frame; analysis requests 640 by 360 and receives each frame rotated upright.
+- Guesses whose concept answers the item on screen are ranked first; the others stay, each group by score (`inContext`). The officer sees the top three.
+
+**Consequences.** Frame rate depends on the phone's GPU. Context ranking no longer guarantees that every guess fits the question, so the subject's pick (FR-86) remains the only way a meaning becomes theirs.

@@ -3,6 +3,7 @@ package app.signsetu.data.content
 import androidx.compose.runtime.Immutable
 import app.signsetu.ui.avatar.Gesture
 import app.signsetu.ui.avatar.Key
+import app.signsetu.ui.avatar.QuestionKind
 import app.signsetu.ui.avatar.chain
 import kotlinx.serialization.Serializable
 
@@ -34,8 +35,10 @@ private val TIME_SIGNS = setOf("sign.today", "sign.yesterday", "sign.tomorrow", 
 private val WHEN = setOf("when", "kab", "कब")
 
 /** ISL order: time first, then the rest as typed, then negation, then the question word. */
+private val QUESTION_SIGNS = setOf("ask", "sign.what", "sign.where", "sign.how", "sign.how_many")
+
 private fun islRank(word: String, entry: WordEntry?) = when {
-    entry?.sign == "ask" || word in WHEN -> 3
+    entry?.sign in QUESTION_SIGNS || word in WHEN -> 3
     entry?.sign == "no.shake" -> 2
     entry?.sign in TIME_SIGNS -> 0
     else -> 1
@@ -57,18 +60,17 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
         t += g.keys.maxOf { it.t } + GAP
     }
     // "Ravi's" plays as Ravi: a possessive or contraction keeps only its stem.
-    val tokens = TOKEN.findAll(text).map { it to it.value.lowercase().split('\'', '’').first() }.toList()
+    val tokens = phrases(TOKEN.findAll(text).map { it.range to it.value.lowercase().split('\'', '’').first() }.toList(), modes)
     // Hindi "do" (give) ends its sentence; anywhere else it is the English helper word.
-    fun entryOf(i: Int) = tokens[i].second.let { w -> words[w]?.takeIf { w !in FILLER || i == tokens.lastIndex } }
+    fun grammar(i: Int) = tokens[i].second in FILLER && i != tokens.lastIndex
+    fun entryOf(i: Int) = tokens[i].second.let { w -> words[w]?.takeIf { !grammar(i) } }
     val order = tokens.indices.let { all -> if (SignMode.SIGNS in modes) all.sortedBy { islRank(tokens[it].second, entryOf(it)) } else all }
     for (i in order) {
-        val (m, word) = tokens[i]
+        val (range, word) = tokens[i]
         val entry = entryOf(i)
         val start = t
         val card = if (SignMode.PICTURES in modes) entry?.card ?: word.toIntOrNull()?.takeIf { it in 1..10 }?.let { "n$it" } else null
-        // A signer reads an everyday gesture far faster than a spelled word, so Signs falls back to it before spelling.
-        val motion = entry?.sign?.takeIf { SignMode.SIGNS in modes }?.let(gestures::get)
-            ?: entry?.gesture?.takeIf { SignMode.GESTURES in modes || SignMode.SIGNS in modes }?.let(gestures::get)
+        val motion = if (grammar(i)) null else motionFor(word, entry, modes)
         var letters: String? = null
         when {
             motion != null -> add(motion)
@@ -78,15 +80,43 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
             }
             card != null -> add(PAUSE)
         }
-        if (t > start) beats += WordBeat(m.range, card, letters?.ifEmpty { null }, start, t)
+        if (t > start) beats += WordBeat(range, card, letters?.ifEmpty { null }, start, t)
     }
-    if (text.trimEnd().endsWith("?") && parts.none { it.id == "ask" }) gestures["ask"]?.let(::add)
+    if (text.trimEnd().endsWith("?") && parts.none { it.id in QUESTION_SIGNS }) gestures["ask"]?.let(::add)
     return TextPlan(chain("text", parts, GAP).takeIf { it.keys.isNotEmpty() }, beats, parts.map { it.id })
+}
+
+/** Joins runs of up to three words that the lexicon knows as one ("thank you", "how many"), longest first. */
+private fun ContentBundle.phrases(tokens: List<Pair<IntRange, String>>, modes: Set<SignMode>): List<Pair<IntRange, String>> {
+    val out = mutableListOf<Pair<IntRange, String>>()
+    var i = 0
+    while (i < tokens.size) {
+        val n = (minOf(3, tokens.size - i) downTo 2).firstOrNull { n -> isPhrase(tokens.subList(i, i + n).joinToString(" ") { it.second }, modes) } ?: 1
+        out += (tokens[i].first.first..tokens[i + n - 1].first.last) to tokens.subList(i, i + n).joinToString(" ") { it.second }
+        i += n
+    }
+    return out
 }
 
 /** The letters to fingerspell: Latin as typed, Devanagari transliterated. */
 fun spelling(word: String): String =
     (if (word.any { it in 'ऀ'..'ॿ' }) devanagariToLatin(word) else word).lowercase().filter { it in 'a'..'z' || it.isDigit() }
+
+private val WH_WORDS = setOf(
+    "what", "where", "who", "whom", "whose", "when", "why", "how", "which",
+    "kya", "kahan", "kaun", "kab", "kyon", "kyun", "kaise", "kitna", "kitne", "kitni",
+    "क्या", "कहाँ", "कहां", "कौन", "कब", "क्यों", "कैसे", "कितना", "कितने", "कितनी", "किसका", "किसने",
+)
+
+/** The question face for typed text: none unless it ends in a question mark, then wh- or yes-no. */
+fun questionKind(text: String): QuestionKind? {
+    val t = text.trimEnd()
+    if (!t.endsWith("?") && !t.endsWith("؟")) return null
+    val words = TOKEN.findAll(t.lowercase()).map { it.value }.toList()
+    // A leading "kya" is the Hindi yes-no particle, not "what".
+    val rest = if (words.firstOrNull() in setOf("kya", "क्या")) words.drop(1) else words
+    return if (rest.any { it in WH_WORDS }) QuestionKind.WH else QuestionKind.YES_NO
+}
 
 private fun letterId(c: Char) = if (c.isDigit()) "digit.$c" else "letter.$c"
 

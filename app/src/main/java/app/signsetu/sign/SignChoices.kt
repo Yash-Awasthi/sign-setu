@@ -42,9 +42,12 @@ fun inContext(guesses: List<SignGuess>, context: Set<String>, signWords: Map<Str
 @Immutable
 data class SignChoice(val card: String?, val text: String)
 
-/** The signs whose meaning the subject is choosing, one at a time; [eventId] is the signed answer they came from. */
+/**
+ * The signs whose meaning the subject is choosing, one at a time; [eventId] is the signed answer they came from.
+ * [read] is the reader's top label for each, signed back on the character.
+ */
 @Immutable
-data class SignConfirm(val eventId: Long, val queue: List<List<SignChoice>>)
+data class SignConfirm(val eventId: Long, val queue: List<List<SignChoice>>, val read: List<String?> = emptyList())
 
 /**
  * Two or three alternatives for one sign, picked in this priority: the officer's reading, the reader's guesses, then the

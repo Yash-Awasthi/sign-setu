@@ -1,19 +1,19 @@
 package app.signsetu.ui.start
 
 import app.signsetu.ui.components.BrandButton
+import app.signsetu.ui.components.ChoiceTile
+import app.signsetu.ui.components.OfficerCard
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,27 +23,24 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.selection.toggleable
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.ui.session.SYSTEM_JJ_NOTICE
 import app.signsetu.ui.session.SYSTEM_JUVENILE
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -53,9 +50,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,9 +65,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -93,8 +87,6 @@ import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.MiniFace
-import app.signsetu.ui.session.Backdrop
-import app.signsetu.ui.session.Bubble
 import app.signsetu.ui.session.characterFor
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalInk
@@ -151,40 +143,37 @@ fun StartScreen(
         Unit
     }
 
-    // The sheet takes what its content needs, up to most of the screen; the greeting stage gets the rest.
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-    val sheetMax = maxHeight * 0.8f
-    Column(Modifier.fillMaxSize()) {
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            Backdrop(Modifier.fillMaxSize())
-            BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding()) {
+    val header = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding()) {
+        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = header, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
+            Box(Modifier.background(ink.brush).statusBarsPadding().height(128.dp).fillMaxWidth().clip(RectangleShape)) {
+                // Shown head and shoulders only: the officer's screen, where the character just says hello.
                 Avatar(
                     character = characterFor(profile ?: Profile.YOUNG_CHILD),
                     gesture = content.gestures["namaste"],
                     playKey = profile,
-                    modifier = Modifier.size(minOf(maxHeight * 0.8f, maxWidth)).align(Alignment.BottomCenter),
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = Spacing.lg).size(96.dp, 110.dp).offset(y = 34.dp),
                 )
-                Row(Modifier.fillMaxWidth().padding(start = Spacing.lg, top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = LocalStageColors.current.title, modifier = Modifier.weight(1f))
-                    onSecondScreen?.let { IconButton(onClick = it) { Icon(Icons.Filled.Phone, contentDescription = stringResource(R.string.second_screen), tint = LocalStageColors.current.title) } }
-                    IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title), tint = LocalStageColors.current.title) }
-                }
-                // The greeting needs the room below the wordmark; a short stage leaves it out rather than cut it off.
-                content.language(lang)?.hello?.takeIf { maxHeight >= 132.dp }?.let {
-                    Box(Modifier.align(Alignment.TopEnd).padding(top = 56.dp, end = 28.dp)) { Bubble(it) }
+                Column {
+                    Row(Modifier.fillMaxWidth().height(56.dp).padding(start = Spacing.lg, end = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.weight(1f).semantics { heading() })
+                        onSecondScreen?.let { IconButton(onClick = it) { Icon(Icons.Filled.Phone, contentDescription = stringResource(R.string.second_screen)) } }
+                        IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title)) }
+                    }
+                    Text(
+                        listOfNotNull(content.language(lang)?.hello, stringResource(R.string.home_tagline)).joinToString(" · "),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = ink.onBandMuted,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = Spacing.lg, end = 128.dp),
+                    )
                 }
             }
         }
-        Surface(
-            color = MaterialTheme.colorScheme.background,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            shadowElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth().heightIn(max = sheetMax),
-        ) {
-            Column(Modifier.navigationBarsPadding()) {
                 Column(
-                    Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.lg).padding(top = Spacing.lg, bottom = Spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.md),
                 ) {
                     if (expired) Notice(stringResource(R.string.start_expired_title), stringResource(R.string.start_expired_body), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
                     if (content.damaged) {
@@ -201,24 +190,33 @@ fun StartScreen(
                             onEnd = { scope.launch { repo.purge(session.id); refresh++ } },
                         )
                     }
-                    Text(stringResource(R.string.start_who), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-                    Row(Modifier.selectableGroup().fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Profile.entries.forEach { p -> ProfileFace(p, content, selected = profile == p, onSelect = { profile = p }) }
+                    // Profile, language and role are one decision, so they share one card.
+                    OfficerCard {
+                        Text(stringResource(R.string.start_who), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+                        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            Profile.entries.chunked(2).forEach { pair ->
+                                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                                    pair.forEach { p -> ProfileTile(p, content, selected = profile == p, onSelect = { profile = p }, Modifier.weight(1f).fillMaxHeight()) }
+                                }
+                            }
+                        }
+                        Text(
+                            profile?.let { stringResource(profileDescription(it)) } ?: stringResource(R.string.home_greeting_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        if (profile == Profile.OTHER_LANGUAGE) {
+                            Text(stringResource(R.string.start_language_finder), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                        } else {
+                            LanguagePicker(content, lang, onPick = { lang = it }, label = stringResource(R.string.start_language))
+                        }
+                        content.language(lang)?.takeIf { profile != Profile.OTHER_LANGUAGE && content.subjectText("yes", lang) == null }?.let {
+                            Notice(null, stringResource(R.string.start_pictures_only, it.name), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        RoleChoice(role, onRole = { role = it })
                     }
-                    Text(
-                        profile?.let { stringResource(profileDescription(it)) } ?: stringResource(R.string.home_greeting_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    if (profile == Profile.OTHER_LANGUAGE) {
-                        Text(stringResource(R.string.start_language_finder), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                    } else {
-                        LanguagePicker(content, lang, onPick = { lang = it }, label = stringResource(R.string.start_language))
-                    }
-                    content.language(lang)?.takeIf { profile != Profile.OTHER_LANGUAGE && content.subjectText("yes", lang) == null }?.let {
-                        Notice(null, stringResource(R.string.start_pictures_only, it.name), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
-                    }
-                    RoleChoice(role, onRole = { role = it })
                     if (role == SessionRole.ACCUSED) {
                         JuvenileNotice(underAge || profile == Profile.YOUNG_CHILD, enabled = profile != Profile.YOUNG_CHILD, onChecked = { underAge = it })
                     }
@@ -231,57 +229,32 @@ fun StartScreen(
                     Text(stringResource(R.string.start_button), style = MaterialTheme.typography.titleMedium)
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.padding(start = Spacing.sm))
                 }
-            }
-        }
-    }
     }
 }
 
-/** One profile as a face: quick to scan, and the face the person will meet on the stage. */
+/** One profile: the face the person will meet on the stage, and a short name. */
 @Composable
-private fun ProfileFace(profile: Profile, content: ContentBundle, selected: Boolean, onSelect: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    val stage = LocalStageColors.current
-    val scale by animateFloatAsState(if (selected) 1.08f else 1f, spring(dampingRatio = 0.55f), label = "face")
-    Column(
-        Modifier
-            .width(78.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton)
-            .padding(vertical = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(Modifier.scale(scale)) {
-            Box(
-                Modifier
-                    .size(64.dp)
-                    .border(if (selected) 3.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant, CircleShape)
-                    .padding(4.dp),
-            ) {
+private fun ProfileTile(profile: Profile, content: ContentBundle, selected: Boolean, onSelect: () -> Unit, modifier: Modifier) {
+    ChoiceTile(selected, onSelect, modifier.heightIn(min = 64.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box {
                 MiniFace(
                     characterFor(profile),
-                    56.dp,
-                    stage.skyTop,
+                    36.dp,
+                    LocalStageColors.current.skyTop,
                     gesture = if (profile == Profile.NOT_SURE) content.gestures["ask"] else null,
                     atSeconds = if (profile == Profile.NOT_SURE) 0.9f else null,
                 )
+                ProfileBadge(profile, Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 4.dp))
             }
-            ProfileBadge(profile, Modifier.align(Alignment.BottomEnd))
-            if (selected) {
-                Surface(shape = CircleShape, color = colors.primary, modifier = Modifier.align(Alignment.TopEnd).size(22.dp)) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.padding(3.dp))
-                }
-            }
+            Text(
+                stringResource(profileShort(profile)),
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = Spacing.md, end = Spacing.sm),
+            )
         }
-        Text(
-            stringResource(profileShort(profile)),
-            style = MaterialTheme.typography.labelMedium,
-            color = if (selected) colors.primary else colors.onSurface,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            minLines = 2,
-            modifier = Modifier.padding(top = 6.dp),
-        )
     }
 }
 
@@ -294,10 +267,10 @@ private fun ProfileBadge(profile: Profile, modifier: Modifier) {
         else -> null
     }
     if (icon == null && profile != Profile.NOT_SURE) return
-    Surface(shape = CircleShape, color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = modifier.size(24.dp)) {
+    Surface(shape = CircleShape, color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, border = BorderStroke(1.dp, colors.surfaceContainerLowest), modifier = modifier.size(22.dp)) {
         Box(contentAlignment = Alignment.Center) {
             if (icon != null) Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(14.dp))
-            else Text("?", fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            else Text("?", fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
     }
 }
@@ -317,13 +290,11 @@ private fun Notice(title: String?, body: String, container: Color, content: Colo
 
 @Composable
 private fun ResumeCard(session: Session, languageName: String, onResume: () -> Unit, onEnd: () -> Unit) {
-    val ink = LocalInk.current
-    Surface(color = Color.Transparent, contentColor = ink.onBand, shape = MaterialTheme.shapes.extraLarge, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.background(ink.brush).padding(start = Spacing.lg, end = 10.dp, top = Spacing.lg, bottom = 6.dp)) {
+    OfficerCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            MiniFace(characterFor(session.profile), 40.dp, Color(0xFFFFDDBE))
+            MiniFace(characterFor(session.profile), 40.dp, LocalStageColors.current.skyTop)
             Column(Modifier.weight(1f).padding(start = Spacing.md)) {
-                Text(stringResource(R.string.start_resume_title), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.start_resume_title), style = MaterialTheme.typography.titleMedium)
                 Text(
                     stringResource(
                         R.string.start_resume_body,
@@ -332,17 +303,16 @@ private fun ResumeCard(session: Session, languageName: String, onResume: () -> U
                         DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(session.startedAt)),
                     ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = ink.onBandMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                 )
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onEnd) { Text(stringResource(R.string.start_end), color = ink.onBandMuted) }
-            Button(onClick = onResume, shape = RoundedCornerShape(50), colors = ButtonDefaults.buttonColors(containerColor = ink.chipSelected, contentColor = ink.onChipSelected)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.End)) {
+            TextButton(onClick = onEnd, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.start_end), color = MaterialTheme.colorScheme.error) }
+            FilledTonalButton(onClick = onResume, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.start_resume))
             }
-        }
         }
     }
 }
@@ -400,15 +370,13 @@ fun JuvenileNotice(checked: Boolean, enabled: Boolean, onChecked: (Boolean) -> U
 
 @Composable
 fun RoleChoice(role: SessionRole, onRole: (SessionRole) -> Unit, modifier: Modifier = Modifier) {
-    Text(stringResource(R.string.report_role), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-    SingleChoiceSegmentedButtonRow(modifier.fillMaxWidth()) {
-        SessionRole.entries.forEachIndexed { i, r ->
-            SegmentedButton(
-                selected = r == role,
-                onClick = { onRole(r) },
-                shape = SegmentedButtonDefaults.itemShape(i, SessionRole.entries.size),
-                label = { Text(stringResource(roleTitle(r)), maxLines = 2, textAlign = TextAlign.Center) },
-            )
+    Text(stringResource(R.string.report_role), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+    // Equal-height tiles: labels wrap in Hindi and at 360 dp, and a segmented row clips them.
+    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        SessionRole.entries.forEach { r ->
+            ChoiceTile(r == role, onClick = { onRole(r) }, modifier = Modifier.weight(1f).fillMaxHeight()) {
+                Text(stringResource(roleTitle(r)), style = MaterialTheme.typography.labelLarge, maxLines = 3, textAlign = TextAlign.Center)
+            }
         }
     }
 }

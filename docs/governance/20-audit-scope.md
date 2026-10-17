@@ -24,7 +24,7 @@ Release 1 has no server: the app declares no INTERNET permission and sends nothi
 3. Camera and landmarks: preview outside sign windows; analysis only inside a window; landmarks held in memory for the session and wiped on end, lock and clear; MediaPipe's usage statistics dropped on the device (SEC-47, SEC-71, SEC-72).
 3a. Second screen: pairing handshake, frame encryption and counters, resume, stage-device storage and exit, per-flavor permissions (SEC-66 to SEC-70, SEC-73).
 4. Leakage: logs, screenshots, recents, clipboard, notifications, exported components, intents.
-5. Subject isolation: screen pinning, return to the officer side only with the officer's credential, touch filtering against overlays in every window.
+5. Subject isolation: screen pinning, return to the officer side by one tap on the handle (plus the officer's credential where the department turns it on, D-23), the full credential after a crash on the stage (SEC-75), touch filtering against overlays in every window.
 6. Integrity: content hash verification, build expiry, rooted-device warning, behaviour of repackaged apps.
 7. Supply chain: SBOM completeness, vulnerable dependencies, dependency verification, build reproducibility of the tagged commit.
 

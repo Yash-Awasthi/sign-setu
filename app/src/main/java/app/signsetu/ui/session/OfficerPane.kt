@@ -42,7 +42,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material3.minimumInteractiveComponentSize
+import app.signsetu.ui.components.OfficerCard
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
@@ -154,7 +157,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.VisualTransformation
 import app.signsetu.data.content.PhraseSlot
 
-private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, LOG, CHANGE }
+private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, LOG, CHANGE, DICTIONARY }
 
 /** The phrase bank sits beside the triage groups as one more group (FR-62). */
 private const val PHRASES = "phrases"
@@ -264,11 +267,12 @@ fun OfficerPane(
             Tool.DRAW -> { vm.prepare(Pending.Drawing); page = 0 }
             Tool.LANGUAGE -> { vm.prepare(Pending.LanguageFinder); page = 0 }
             Tool.RULES -> { vm.prepare(Pending.GroundRules()); page = 0 }
+            Tool.DICTIONARY -> sheet = Sheet.DICTIONARY // ISL hook: IslDictionarySheet.kt
         }
     }
 
     Surface(color = MaterialTheme.colorScheme.background) { Column(Modifier.fillMaxSize().imePadding()) {
-        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp), shadowElevation = 6.dp) {
+        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp), shadowElevation = 4.dp) {
             Row(
                 Modifier.background(ink.brush).statusBarsPadding().fillMaxWidth().padding(start = Spacing.lg, end = Spacing.xs, top = Spacing.sm, bottom = Spacing.md),
                 verticalAlignment = Alignment.CenterVertically,
@@ -281,10 +285,17 @@ fun OfficerPane(
                         .padding(vertical = Spacing.xs),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    MiniFace(characterFor(ui.session.profile), 44.dp, Color(0xFFFFDDBE))
+                    MiniFace(characterFor(ui.session.profile), 40.dp, Color(0xFFFFDDBE))
+                    // Who the person is at a glance: profile, then language and role.
                     Column(Modifier.padding(start = Spacing.md)) {
                         Text(stringResource(profileTitle(ui.session.profile)), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(subjectLanguage?.let { "${it.name} · ${it.english}" } ?: subjectLang, style = MaterialTheme.typography.bodySmall, color = ink.onBandMuted, maxLines = 1)
+                        Text(
+                            listOf(subjectLanguage?.let { "${it.name} · ${it.english}" } ?: subjectLang, stringResource(roleTitle(ui.session.role))).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = ink.onBandMuted,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
                 onCallInterpreter?.let { call ->
@@ -338,9 +349,9 @@ fun OfficerPane(
 
         paired?.let { PairedBar(it, ui, content, officerLang) }
 
-        PrimaryTabRow(selectedTabIndex = page) {
-            Tab(selected = page == 0, onClick = { page = 0 }, text = { Text(stringResource(R.string.officer_tab_transcribe)) })
-            Tab(selected = page == 1, onClick = { page = 1 }, text = { Text(stringResource(R.string.officer_tab_more)) })
+        PrimaryTabRow(selectedTabIndex = page, containerColor = MaterialTheme.colorScheme.background) {
+            Tab(selected = page == 0, onClick = { page = 0 }, text = { Text(stringResource(R.string.officer_tab_transcribe), style = MaterialTheme.typography.titleSmall) })
+            Tab(selected = page == 1, onClick = { page = 1 }, text = { Text(stringResource(R.string.officer_tab_more), style = MaterialTheme.typography.titleSmall) })
         }
 
         if (page == 1) {
@@ -445,6 +456,8 @@ fun OfficerPane(
         Sheet.BOARD_ATTACH -> BoardSheet(content, officerLang, attached.toList(), favourites, onFavourite, onUse = { attached.clear(); attached.addAll(it); sheet = null }, onDismiss = { sheet = null })
         Sheet.GESTURE -> GestureSheet(content, officerLang, onPick = { entry, found -> vm.prepare(Pending.ShowBack(entry, checkChoices(entry.card, found.map { it.card }))); sheet = null; page = 0 }, onDismiss = { sheet = null })
         Sheet.LOG -> LogSheet(ui.events, onAddNote = vm::addNote, onDismiss = { sheet = null })
+        // ISL hook: the dictionary's Show prepares the sign like a question.
+        Sheet.DICTIONARY -> IslDictionarySheet(content, officerLang, onShow = { vm.prepare(Pending.Ask(it)); sheet = null; page = 0 }, onDismiss = { sheet = null })
         // Profile and language stay fixed while an item is on a second screen.
         Sheet.CHANGE -> if (paired == null || ui.onStage == null) ChangeSheet(
             content, ui.session.profile, subjectLang, ui.session.role, ui.juvenile,
@@ -481,7 +494,9 @@ fun OfficerPane(
                         scope.launch {
                             val by = shownBy(ui.events)
                             val idle = notActedOn(ui.events)
-                            export = runCatching { vm.exportReport(reportText(res, ui, content), recordDetail(res, content, officerLang, ui.events) { eventDetail(res, it, by, idle) }) }
+                            // Lesson-sheet hook: the report's personal details section (PersonalDetails.kt).
+                            val section = detailsSection(res, content, officerLang, ui.events)
+                            export = runCatching { vm.exportReport(reportText(res, ui, content), recordDetail(res, content, officerLang, ui.events) { eventDetail(res, it, by, idle) }, section) }
                                 .fold({ (file, pass) -> ExportState.Ready(file, pass) }, { ExportState.Failed })
                         }
                     }) { Text(stringResource(R.string.end_export)) }
@@ -534,8 +549,8 @@ private fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map
     LazyColumn(
         modifier,
         reverseLayout = true,
-        contentPadding = PaddingValues(horizontal = Spacing.lg, vertical = Spacing.lg),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.xl),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         items(newestFirst, key = { it.id }) { e ->
             Box(Modifier.animateItem()) {
@@ -568,6 +583,7 @@ private fun Shown(e: SessionEvent, by: ShownBy? = null) {
     Column(Modifier.fillMaxWidth().padding(start = 48.dp), horizontalAlignment = Alignment.End) {
         Box(
             Modifier
+                .widthIn(max = 300.dp)
                 .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 6.dp))
                 .background(ink.brush)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -611,8 +627,7 @@ private fun Answered(
             Surface(
                 shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 6.dp, bottomEnd = 20.dp),
                 color = colors.surfaceContainerLowest,
-                shadowElevation = 1.dp,
-                border = trailBorder(trail),
+                border = trailBorder(trail) ?: BorderStroke(1.dp, colors.outlineVariant),
             ) {
                 Row(Modifier.padding(start = 8.dp, end = 14.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Surface(shape = RoundedCornerShape(12.dp), color = well, modifier = Modifier.size(40.dp)) {
@@ -623,10 +638,12 @@ private fun Answered(
                             else -> Icon(painterResource(R.drawable.ic_hand), contentDescription = null, modifier = Modifier.padding(10.dp))
                         }
                     }
+                    val signed = e.type == EventType.ANSWER_SIGNED
                     Text(
-                        e.text ?: stringResource(e.type.label()),
+                        if (signed) signedDisplay(LocalResources.current, e.text) else e.text ?: stringResource(e.type.label()),
                         style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(start = 10.dp),
+                        color = if (signed && signedWords(e.text) == null) colors.onSurfaceVariant else colors.onSurface,
+                        modifier = Modifier.padding(start = 10.dp).weight(1f, fill = false),
                     )
                     onReplay?.let { play ->
                         IconButton(onClick = play, modifier = Modifier.padding(start = 4.dp)) {
@@ -654,7 +671,7 @@ private fun Aside(text: String, note: Boolean) {
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Surface(
             shape = RoundedCornerShape(50),
-            color = if (note) colors.tertiaryContainer else colors.surfaceContainerHighest,
+            color = if (note) colors.tertiaryContainer else colors.surfaceContainerHigh,
             contentColor = if (note) colors.onTertiaryContainer else colors.onSurfaceVariant,
         ) {
             Text(text, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
@@ -662,7 +679,7 @@ private fun Aside(text: String, note: Boolean) {
     }
 }
 
-private enum class Tool { GESTURE, BOARD, DRAW, LANGUAGE, ATTACH, RULES }
+private enum class Tool { GESTURE, BOARD, DRAW, LANGUAGE, ATTACH, RULES, DICTIONARY }
 
 /** Quick questions and the composer: everything the officer reaches with a thumb. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -702,7 +719,7 @@ private fun Dock(
     val asked = remember(ui.events) { ui.events.filter { it.type == EventType.QUESTION_SHOWN }.mapNotNull { it.text }.toSet() }
     val quick = QuickQuestions.mapNotNull { id -> content.questions.firstOrNull { it.id == id } }
         .filter { q -> q.text.pick(officerLang) !in asked || (pending as? Pending.Ask)?.question?.id == q.id }
-    Surface(color = colors.surfaceContainerLowest, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), shadowElevation = 12.dp) {
+    Surface(color = colors.surfaceContainerLowest, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), shadowElevation = 8.dp) {
         Column(Modifier.navigationBarsPadding().padding(top = Spacing.md)) {
             AnimatedVisibility(!typing && quick.isNotEmpty(), enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(horizontal = Spacing.lg), modifier = Modifier.padding(bottom = Spacing.sm)) {
@@ -810,7 +827,8 @@ private fun MorePage(
                         )
                     }
                 }
-                items(content.questions.filter { it.group == ui.selectedGroup }, key = { it.id }) { q ->
+                // Lesson-sheet hook: role and profile filter (Lesson.kt askable).
+                items(content.questionsIn(ui.selectedGroup, ui.session.role, ui.session.profile), key = { it.id }) { q ->
                     Suggestion(
                         cardId = q.cards.firstOrNull(),
                         title = q.text.pick(officerLang) ?: q.text.values.first(),
@@ -833,24 +851,31 @@ private fun MorePage(
             ToolButton(rememberVectorPainter(Icons.Filled.Create), stringResource(R.string.action_draw), pending == Pending.Drawing) { onTool(Tool.DRAW) }
             ToolButton(painterResource(R.drawable.ic_translate), stringResource(R.string.action_language), pending == Pending.LanguageFinder) { onTool(Tool.LANGUAGE) }
         }
-        // Up to three minutes of signing with nothing on screen to interrupt; replayed later with an interpreter.
-        onTell?.let { MoreRow(painterResource(R.drawable.ic_hand), stringResource(R.string.tell_me_long), null, it) }
-        SectionLabel(stringResource(R.string.more_session), Modifier.padding(horizontal = Spacing.lg))
-        MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.List), stringResource(R.string.officer_log), answers.takeIf { it > 0 }?.toString(), onLog)
-        MoreRow(rememberVectorPainter(Icons.Filled.Person), stringResource(R.string.officer_change), null, onChange)
-        onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, it) }
-        MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
+        SectionLabel(stringResource(R.string.more_session), Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.md))
+        OfficerCard(Modifier.padding(horizontal = Spacing.lg), padding = 0.dp) {
+            // Up to three minutes of signing with nothing on screen to interrupt; replayed later with an interpreter.
+            onTell?.let { MoreRow(painterResource(R.drawable.ic_hand), stringResource(R.string.tell_me_long), null, first = true, onClick = it) }
+            MoreRow(painterResource(R.drawable.ic_hand), stringResource(R.string.isl_dictionary), null, first = onTell == null) { onTool(Tool.DICTIONARY) } // ISL hook
+            MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.List), stringResource(R.string.officer_log), answers.takeIf { it > 0 }?.toString(), onClick = onLog)
+            MoreRow(rememberVectorPainter(Icons.Filled.Person), stringResource(R.string.officer_change), null, onClick = onChange)
+            onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, onClick = it) }
+            MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
+        }
     }
 }
 
 @Composable
-private fun MoreRow(icon: Painter, label: String, badge: String?, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg).heightIn(min = 56.dp)) {
-        Row(Modifier.padding(horizontal = Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null)
-            Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f).padding(start = Spacing.md))
-            badge?.let { Badge { Text(it) } }
-        }
+private fun MoreRow(icon: Painter, label: String, badge: String?, first: Boolean = false, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    if (!first) HorizontalDivider(Modifier.padding(start = 56.dp), color = colors.outlineVariant)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button, onClick = onClick).padding(horizontal = Spacing.lg),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(24.dp))
+        Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f).padding(start = Spacing.lg))
+        badge?.let { Badge(Modifier.padding(end = Spacing.sm)) { Text(it) } }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -896,7 +921,7 @@ private fun Composer(
                 Icon(Icons.Filled.Add, contentDescription = stringResource(if (text.isEmpty()) R.string.action_board else R.string.officer_add_pictures), modifier = Modifier.padding(8.dp))
             }
         }
-        Surface(shape = RoundedCornerShape(26.dp), color = colors.surfaceContainerHigh, modifier = Modifier.weight(1f).padding(horizontal = 4.dp)) {
+        Surface(shape = RoundedCornerShape(24.dp), color = colors.surfaceContainerHigh, modifier = Modifier.weight(1f).padding(horizontal = 4.dp)) {
             BasicTextField(
                 value = text,
                 onValueChange = onText,
@@ -951,7 +976,7 @@ private fun CategoryChip(label: String, selected: Boolean, locked: Boolean, onLo
         shape = RoundedCornerShape(50),
         color = if (selected) colors.primary else colors.surfaceContainerHigh,
         contentColor = if (selected) colors.onPrimary else colors.onSurfaceVariant,
-        modifier = Modifier.height(36.dp).clip(RoundedCornerShape(50)).runnable(onClick, onLongClick, longClickLabel).semantics { this.selected = selected },
+        modifier = Modifier.minimumInteractiveComponentSize().height(36.dp).clip(RoundedCornerShape(50)).runnable(onClick, onLongClick, longClickLabel).semantics { this.selected = selected },
     ) {
         Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (locked) Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(14.dp))
@@ -965,6 +990,7 @@ private fun AssistChip(thinking: Boolean, onClick: () -> Unit) {
     val ink = LocalInk.current
     Box(
         Modifier
+            .minimumInteractiveComponentSize()
             .height(32.dp)
             .clip(RoundedCornerShape(50))
             .background(ink.brush)
@@ -1010,7 +1036,7 @@ private fun ModeChip(label: String, on: Boolean, onClick: () -> Unit) {
         shape = RoundedCornerShape(50),
         color = if (on) colors.primary else colors.surfaceContainerHigh,
         contentColor = if (on) colors.onPrimary else colors.onSurfaceVariant,
-        modifier = Modifier.height(32.dp).semantics { selected = on },
+        modifier = Modifier.minimumInteractiveComponentSize().height(32.dp).semantics { selected = on },
     ) {
         Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             if (on) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(14.dp))
@@ -1036,9 +1062,9 @@ private fun Suggestion(
     val colors = MaterialTheme.colorScheme
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = if (selected) colors.primaryContainer else colors.surfaceContainerHigh,
-        border = if (selected) BorderStroke(2.dp, colors.primary) else null,
-        modifier = Modifier.width(if (wide) 280.dp else 208.dp).height(if (wide) 156.dp else 116.dp)
+        color = if (selected) colors.primaryContainer else colors.surfaceContainerLowest,
+        border = if (selected) BorderStroke(2.dp, colors.primary) else BorderStroke(1.dp, colors.outlineVariant),
+        modifier = Modifier.width(if (wide) 272.dp else 200.dp).heightIn(min = if (wide) 148.dp else 104.dp)
             .clip(MaterialTheme.shapes.large).runnable(onClick, onLongClick, onLongClick?.let { stringResource(R.string.run_add) })
             .semantics { this.selected = selected },
     ) {
@@ -1088,17 +1114,17 @@ private fun ToolButton(icon: Painter, label: String, selected: Boolean, onClick:
             shape = CircleShape,
             color = if (selected) colors.primary else colors.secondaryContainer,
             contentColor = if (selected) colors.onPrimary else colors.onSecondaryContainer,
-            modifier = Modifier.size(52.dp),
+            modifier = Modifier.size(48.dp),
         ) {
             Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null) }
         }
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
             textAlign = TextAlign.Center,
             autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 12.sp),
-            modifier = Modifier.padding(top = 4.dp).width(76.dp),
+            modifier = Modifier.padding(top = 4.dp).width(80.dp),
         )
     }
 }
@@ -1107,13 +1133,13 @@ private fun ToolButton(icon: Painter, label: String, selected: Boolean, onClick:
 private fun StopBanner(onOk: () -> Unit) {
     val answer = LocalAnswerColors.current
     Surface(shape = MaterialTheme.shapes.large, color = answer.pause, contentColor = answer.onPause, shadowElevation = 4.dp, modifier = Modifier.padding(top = Spacing.md)) {
-        Row(Modifier.padding(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
             CardImage("stop", Modifier.size(40.dp))
             Column(Modifier.weight(1f).padding(horizontal = Spacing.md)) {
                 Text(stringResource(R.string.officer_stop_title), style = MaterialTheme.typography.titleSmall)
                 Text(stringResource(R.string.officer_stop_body), style = MaterialTheme.typography.bodySmall)
             }
-            TextButton(onClick = onOk) { Text(stringResource(R.string.ok), color = answer.onPause) }
+            TextButton(onClick = onOk, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ok), color = answer.onPause) }
         }
     }
 }
@@ -1214,7 +1240,7 @@ private fun reportText(res: Resources, ui: SessionUi, content: ContentBundle): R
 
 private fun eventDetail(res: Resources, e: SessionEvent, by: Map<Long, ShownBy> = emptyMap(), idle: Set<Long> = emptySet()): String = when {
     e.type == EventType.SYSTEM -> systemText(res, e.text)
-    e.type == EventType.ANSWER_SIGNED -> "${e.text.orEmpty()} (${res.getString(signedMark(e))})"
+    e.type == EventType.ANSWER_SIGNED -> "${signedDisplay(res, e.text)} (${res.getString(signedMark(e))})"
     e.drawingId != null -> res.getString(R.string.report_drawing)
     else -> (linkText(res, e) ?: e.text.orEmpty()) + autoSuffix(res, e, by, idle)
 }.let { if (e.via != null) "$it (${res.getString(R.string.report_via_stage)})" else it }

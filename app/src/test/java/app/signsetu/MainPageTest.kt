@@ -26,6 +26,7 @@ import app.signsetu.ui.session.encode
 import app.signsetu.ui.session.grades
 import app.signsetu.ui.session.offered
 import app.signsetu.ui.session.prompts
+import app.signsetu.ui.session.signedWords
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -151,5 +152,13 @@ class MainPageTest {
         )
         assertEquals(record, prompts(events)[q.id])
         assertEquals(2 to 3, choicePositions(events)[events[2].id])
+    }
+
+    @Test
+    fun unreadSignsNeverShowAsQuestionMarks() {
+        assertEquals(null, signedWords("? ? ?"))
+        assertEquals("water … home", signedWords("water ? home"))
+        assertEquals("water", signedWords("water"))
+        assertEquals(null, signedWords(null))
     }
 }

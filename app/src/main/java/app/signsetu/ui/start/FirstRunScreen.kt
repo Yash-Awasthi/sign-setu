@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import android.app.Activity
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import app.signsetu.data.settings.OfficerLocale
 import app.signsetu.ui.settings.languageName
 import app.signsetu.ui.avatar.Avatar
@@ -121,10 +122,10 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
             Spacer(Modifier.size(Spacing.lg))
-            // The character grows with the screen, so a tall phone shows more of it rather than empty space.
+            // Capped so the step text, not the character, leads on the officer's screen.
             val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-            val stageHeight = (windowHeight * 0.32f).coerceIn(200.dp, 360.dp)
-            Box(Modifier.fillMaxWidth().height(stageHeight).clip(RoundedCornerShape(32.dp))) {
+            val stageHeight = minOf(windowHeight * 0.32f, 240.dp)
+            Box(Modifier.fillMaxWidth().height(stageHeight).clip(MaterialTheme.shapes.large)) {
                 Backdrop(Modifier.fillMaxSize())
                 Avatar(
                     character = Character.CHILD,
@@ -157,7 +158,12 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit) {
                         FilterChip(
                             selected = current == tag,
                             onClick = { OfficerLocale.set(context, tag); (context as? Activity)?.recreate() },
-                            label = { Text(stringResource(languageName(tag))) },
+                            label = { Text(stringResource(languageName(tag)), style = MaterialTheme.typography.labelLarge) },
+                            shape = RoundedCornerShape(50),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
                         )
                     }
                 }

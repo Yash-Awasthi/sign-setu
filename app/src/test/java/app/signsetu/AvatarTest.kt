@@ -2,9 +2,12 @@ package app.signsetu
 
 import app.signsetu.data.content.Phrase
 import app.signsetu.ui.avatar.AdultBuild
+import app.signsetu.ui.avatar.AvatarView
+import app.signsetu.ui.avatar.HandPose
 import app.signsetu.ui.avatar.ChildBuild
 import app.signsetu.ui.avatar.Gesture
 import app.signsetu.ui.avatar.HandShape
+import app.signsetu.ui.avatar.Key
 import app.signsetu.ui.avatar.Side
 import app.signsetu.ui.avatar.Timeline
 import app.signsetu.ui.avatar.chain
@@ -14,6 +17,9 @@ import app.signsetu.data.content.SignMode
 import app.signsetu.data.content.WordEntry
 import app.signsetu.data.content.planText
 import app.signsetu.data.content.spelling
+import app.signsetu.data.content.questionKind
+import app.signsetu.ui.avatar.QuestionKind
+import app.signsetu.ui.avatar.elbowAt
 import app.signsetu.ui.avatar.solveElbow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -34,6 +40,7 @@ class AvatarTest {
     private val content = File("src/main/assets/content")
     private val json = Json { ignoreUnknownKeys = true }
     private val gestures = listOf("gestures.json", "signs.json").flatMap { json.decodeFromString<GesturesFile>(File(content, it).readText()).gestures }
+    private val recorded = json.decodeFromString<GesturesFile>(File(content, "isl_signs.json").readText()).gestures
 
     @Serializable private data class PhrasesFile(val phrases: List<Phrase>)
 
@@ -51,6 +58,15 @@ class AvatarTest {
                 assertTrue("${p.id}/${slot.card}: no $code audio", File(content, "audio/$code/phrase.${p.id}.${slot.card}.ogg").exists())
             }
         }
+    }
+
+    @Test
+    fun aPictureBeatHoldsThePreviousPoseInsteadOfDroppingToRest() {
+        val sign = gestures.first { it.keys.last().R != null }
+        val pause = Gesture("pause", listOf(Key(0f), Key(0.6f)))
+        val chained = chain("text", listOf(sign, pause))
+        val held = chained.keys.takeLast(2)
+        held.forEach { assertEquals(sign.keys.maxBy { it.t }.R, it.R) }
     }
 
     @Test
@@ -183,6 +199,69 @@ class AvatarTest {
         assertEquals(35f, hypot(90f - ex, 80f - ey), 0.05f)
         // "Out" bends the right elbow away from the body's midline (the viewer's left).
         assertTrue(ex < 75f)
+    }
+
+    /** Wrist and every fingertip as drawn: a hand that follows its forearm points along it. */
+    private fun handPoints(h: HandPose, side: Side, build: app.signsetu.ui.avatar.Build): List<Pair<Float, Float>> {
+        val (sx, sy) = build.shoulder(side)
+        val (ex, ey) = h.elbowAt(sx, sy, build, side)
+        val drawn = if (h.angle.isNaN()) h.copy(angle = Math.toDegrees(kotlin.math.atan2((h.x - ex).toDouble(), (ey - h.y).toDouble())).toFloat()) else h
+        return listOf("wrist", "thumb", "index", "middle", "ring", "pinky").map { drawn.point(it, side, build.handScale) }
+    }
+
+    @Test
+    fun bothHandsStayInsideTheBodyView() {
+        val v = AvatarView.Body
+        val outside = mutableListOf<String>()
+        for ((name, build) in listOf("child" to ChildBuild, "adult" to AdultBuild)) {
+            val rest = Timeline.restPose(build)
+            for ((h, side) in listOf(rest.r to Side.R, rest.l to Side.L)) for ((_, y) in handPoints(h, side, build)) {
+                assertTrue("$name rest fingertip at $y is under 4 units from the bottom", y <= v.top + v.height - 4f)
+            }
+            for (g in gestures + recorded) {
+                val t = Timeline(g, build)
+                var s = 0f
+                while (s <= t.duration) {
+                    val pose = t.pose(s)
+                    for ((h, side) in listOf(pose.r to Side.R, pose.l to Side.L)) for ((x, y) in handPoints(h, side, build)) {
+                        val inside = x >= v.left + 2f && x <= v.left + v.width - 2f && y >= v.top + 2f && y <= v.top + v.height - 2f
+                        if (!inside) outside += "${g.id} $name ${s}s $side (${x.toInt()}, ${y.toInt()})"
+                    }
+                    s += 0.05f
+                }
+            }
+        }
+        assertTrue("hand points leave the view: " + outside.distinctBy { it.split(' ').take(2) }.joinToString("; "), outside.isEmpty())
+    }
+
+    @Test
+    fun recordedSignsPassThroughCloseKeysWithoutStopping() {
+        var moving = 0
+        for (g in recorded) {
+            val t = Timeline(g, AdultBuild)
+            val keys = g.keys.sortedBy { it.t }
+            for (k in 1 until keys.lastIndex) {
+                if (keys[k].t - keys[k - 1].t >= 0.35f || keys[k + 1].t - keys[k].t >= 0.35f) continue
+                val at = Timeline.LEAD_IN + keys[k].t
+                fun velocity(s0: Float) = t.pose(s0 + 5e-4f).r.let { b -> t.pose(s0).r.let { a -> (b.x - a.x) / 5e-4f to (b.y - a.y) / 5e-4f } }
+                val before = velocity(at - 5e-4f)
+                val after = velocity(at)
+                val speed = maxOf(hypot(before.first, before.second), hypot(after.first, after.second))
+                assertTrue("${g.id} jerks at ${keys[k].t}s: $before then $after", hypot(before.first - after.first, before.second - after.second) < 0.15f * speed + 4f)
+                if (speed > 20f) moving++
+            }
+        }
+        assertTrue("no recorded key is passed at speed", moving > 50)
+    }
+
+    @Test
+    fun questionsGetTheirFace() {
+        assertEquals(QuestionKind.YES_NO, questionKind("Are you hurt?"))
+        assertEquals(QuestionKind.WH, questionKind("Where is your mother?"))
+        assertEquals(QuestionKind.YES_NO, questionKind("क्या आपको चोट लगी है?"))
+        assertEquals(QuestionKind.WH, questionKind("आप कहाँ रहते हैं?"))
+        assertEquals(QuestionKind.WH, questionKind("kya tum kahan rehte ho?"))
+        assertEquals(null, questionKind("Ravi"))
     }
 
     @Test

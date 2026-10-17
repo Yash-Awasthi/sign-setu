@@ -24,7 +24,7 @@ For police officers using the app in the field. Keep it short in training: the q
 3. Do not ask about what happened until the person is calm and safe. Sensitive questions are behind a second tap on purpose.
 4. Do not ask leading questions ("Did he hit you?"). Use open questions or show choices.
 5. If you type your own question, keep it short and use plain words: the character signs or spells it word by word, which is not full ISL grammar. Prefer a prepared question when one fits.
-6. If they tap **Stop** or **Break**, pause. Check they are comfortable, offer water or a rest, and go on only when they tap **I'm ready**.
+6. If they tap **Stop** (on a second screen, also **Break**), pause. Check they are comfortable, offer water or a rest, and go on only when they tap **I'm ready**.
 7. If your department allows **Auto**, it only suggests welfare questions; you still approve every one. Never use it to ask about what happened.
 
 ## 4. Understanding answers
@@ -38,7 +38,7 @@ For police officers using the app in the field. Keep it short in training: the q
 
 ## 5. Privacy
 
-1. Do not type names, addresses or phone numbers unless they are needed now; put identity details in the official record.
+1. Do not type names, addresses or phone numbers unless they are needed now. Use the personal-details questions (name, phone number, parents, address, school) only when you need them to reunite or protect the person, and put identity details in the official record.
 2. Do not take screenshots or photos of the screen (the app blocks screenshots).
 3. Do not show the screen to bystanders.
 4. When finished, export to the official record if needed, then **End session**. Share the export password separately, never in the same message as the file.
