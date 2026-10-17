@@ -60,9 +60,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -527,6 +525,7 @@ fun SignedSheet(
             if (segments.all { it.guesses.isNullOrEmpty() }) {
                 item { Text(stringResource(R.string.signed_manual), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant) }
             }
+            item { Text(stringResource(R.string.signed_teach), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
             itemsIndexed(segments) { i, s ->
                 val current = replay.segment == i
                 Surface(

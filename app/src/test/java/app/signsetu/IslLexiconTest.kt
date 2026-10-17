@@ -1,5 +1,6 @@
 package app.signsetu
 
+import app.signsetu.data.content.ALPHABET
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.DRAFT_CATEGORY
 import app.signsetu.data.content.IslSign
@@ -78,12 +79,20 @@ class IslLexiconTest {
         assertEquals("water.cup", small.motionFor("water", water, setOf(SignMode.GESTURES))?.id)
         assertNull(small.motionFor("teacher", null, setOf(SignMode.GESTURES)))
         assertNull(small.motionFor("ravi", null, signs))
+        // A letter is a fingerspelling key, never the sign for a typed word.
+        val letter = IslSign("isl.x", "x", category = ALPHABET, rec = "Alphabet/x/MVI_1", keys = gesture("isl.x").keys)
+        assertNull(small.copy(isl = small.isl.copy(gestures = small.isl.gestures + letter)).motionFor("x", null, signs))
     }
 
     @Test
     fun aConceptPrefersTheLabelWrittenAsTyped() {
         assertEquals("isl.cell phone", small.motionFor("mobile", phone, signs)?.id)
         assertEquals("isl.telephone", small.motionFor("phone", phone, signs)?.id)
+        // A reader label with no recording of its own signs back as the word it stands for.
+        val unrecorded = small.copy(signWords = small.signWords + ("cellular" to "phone"))
+        val back = unrecorded.signBack("cellular")
+        assertNotNull(back)
+        assertEquals(small.planText("phone", setOf(SignMode.SIGNS, SignMode.SPELL)).gesture, back)
     }
 
     @Test
@@ -137,12 +146,16 @@ class IslLexiconTest {
     fun everyIncludeWordIsRetargetedWithAttribution() {
         val labels = json.parseToJsonElement(File(content, "models/sign_reader.json").readText()).jsonObject["labels"]!!.jsonArray.map { it.jsonPrimitive.content }
         assertTrue(islFile.source.contains("CC BY 4.0"))
-        assertEquals(labels.toSet(), islFile.gestures.map { it.word }.toSet())
-        for (s in islFile.gestures) {
+        // Words INCLUDE lacks come from the ISLRTC dictionary (retarget_islrtc.py) and are credited there.
+        val (dictionary, include) = islFile.gestures.partition { it.rec.startsWith("ISLRTC/") }
+        assertEquals(labels.toSet(), include.map { it.word }.toSet())
+        for (s in include) {
             assertTrue("${s.id}: no recording", s.rec.count { it == '/' } == 2)
             assertTrue("${s.id}: no category name", s.category in islFile.categories)
             assertTrue("${s.id}: no Hindi", s.hi.isNotBlank())
         }
+        assertTrue(dictionary.isEmpty() || islFile.source.contains("Government Open Data License"))
+        for (s in dictionary) assertTrue("${s.id}: no category name", s.category in islFile.categories)
         // A word read from the camera can be signed back for the subject to confirm.
         for (label in labels) assertNotNull("cannot sign back $label", bundle.signBack(label))
     }
@@ -158,10 +171,10 @@ class IslLexiconTest {
 
     private val manifest = json.parseToJsonElement(File(content, "manifest.json").readText()).jsonObject["files"]!!.jsonObject.keys
 
-    /** Labels of a reader the manifest lists; one listed but not bundled fails rather than passing on nothing. */
+    /** Labels of a bundled reader; one missing from the manifest or the assets fails rather than passing on nothing. */
     private fun readerLabels(file: String): List<String> {
         val path = "models/$file.json"
-        if (path !in manifest) return emptyList()
+        assertTrue("$path is not in the manifest", path in manifest)
         val f = File(content, path)
         assertTrue("$path is in the manifest but missing", f.isFile)
         val spec = json.parseToJsonElement(f.readText()).jsonObject

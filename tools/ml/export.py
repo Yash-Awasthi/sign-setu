@@ -13,6 +13,7 @@ import numpy as np
 import torch
 
 from features import FEATURES, FRAMES
+import runtime
 from train import HIDDEN, KERNEL, SignNet, features
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -20,7 +21,7 @@ MODELS = ROOT / "app" / "src" / "main" / "assets" / "content" / "models"
 RESOURCES = ROOT / "app" / "src" / "test" / "resources"
 DATASETS = {
     "sign_reader": "INCLUDE (AI4Bharat), OpenHands pose release, zenodo.org/records/6674324, CC BY 4.0",
-    "isl_spell": "synthetic: the app's ISL letter and digit keyframes (signs.json) posed on the rig, jittered",
+    "isl_spell": "Multimodal ISL alphabet photographs (CC BY 4.0, doi:10.17632/2tj6c7pzfk.1) plus the app's ISL letter and digit keyframes posed on the rig; tested on ISLAN signers (doi:10.17632/rc349j45m5.1)",
     "asl_reader": "PopSign ASL v1.0 (Georgia Tech, NTID), signdata.cc.gatech.edu, CC BY 4.0; frames from "
                   "huggingface.co/datasets/sign/popsign-images, landmarks by MediaPipe Holistic",
 }
@@ -56,7 +57,8 @@ def main(name: str, ckpt_path: pathlib.Path, cache_path: pathlib.Path) -> None:
         c1w, c1b = folded(model.conv1, model.bn1)
         c2w, c2b = folded(model.conv2, model.bn2)
         tensors = [model.embed.weight, model.embed.bias, c1w, c1b, c2w, c2b, model.head.weight, model.head.bias]
-        blob = b"".join(t.detach().numpy().astype("<f4").tobytes() for t in tensors)
+        # Half precision halves the APK share of the readers (NFR-05); the fixture below is computed from the same halves.
+        blob = b"".join(t.detach().numpy().astype("<f2").tobytes() for t in tensors)
     MODELS.mkdir(parents=True, exist_ok=True)
     (MODELS / f"{name}.bin").write_bytes(blob)
     spec = {
@@ -65,7 +67,8 @@ def main(name: str, ckpt_path: pathlib.Path, cache_path: pathlib.Path) -> None:
                         "global average and max pooling concatenated; linear to logits",
         "frames": FRAMES, "features": FEATURES, "hidden": HIDDEN, "kernel": KERNEL, "classes": len(labels),
         "tensors": [{"shape": list(t.shape)} for t in tensors],
-        "weights": "float32 little-endian, tensors in the order above, row-major; conv weight is [out][in][kernel]",
+        "dtype": "float16",
+        "weights": "float16 little-endian, tensors in the order above, row-major; conv weight is [out][in][kernel]",
         "feature_spec": "MediaPipe Holistic normalised image points, unmirrored; y scaled by height/width; "
                         "centre = mean shoulder midpoint (pose 11, 12) over the segment, scale = mean shoulder width; "
                         "per frame: left hand 21x(x,y), right hand 21x(x,y), pose 11..16 (x,y), left and right "
@@ -73,6 +76,7 @@ def main(name: str, ckpt_path: pathlib.Path, cache_path: pathlib.Path) -> None:
                         "(i*(n-1)*2 + frames-1) div (2*(frames-1))",
         "dataset": DATASETS.get(name, name),
         **({"synthetic": True} if cache.get("synthetic") else {}),
+        **({"norm": "hands"} if cache.get("norm") == "hands" else {}),
         "epochs": ckpt.get("epochs"),
         "test_top1": round(ckpt["top1"], 4), "test_top3": round(ckpt["top3"], 4),
         "labels": labels,
@@ -81,16 +85,19 @@ def main(name: str, ckpt_path: pathlib.Path, cache_path: pathlib.Path) -> None:
     print(f"{name}: weights {len(blob)} bytes, {len(labels)} classes")
 
     aspect = cache["aspect"]
-    test = [s for s in cache["samples"] if s["split"] == "test" and s["has_pose"][:7].any()]
+    test = [s for s in cache["samples"] if s["split"] == "test" and (s["has_pose"][:7].any() or s.get("norm") == "hands")]
     pick = lambda i: test[i % len(test)]
     one_hand = dict(pick(3), has_left=np.zeros_like(pick(3)["has_left"]))
     short = {k: (v[:7] if isinstance(v, np.ndarray) else v) for k, v in pick(5).items()}
     cases = []
+    # The fixture is what the shipped file computes, half-precision weights included, so Kotlin must match it exactly.
+    _, shipped = runtime.reader(name)
     for s in (pick(0), pick(200), pick(400), one_hand, short):
         s = rounded(s)
-        x = torch.tensor(features(s, aspect)[None])
-        with torch.no_grad():
-            logits = model(x)[0].double().numpy()
+        f = features(s, aspect)
+        if f is None:  # a one-hand case cut from a photograph with only that hand
+            continue
+        logits = shipped(f[None].astype(np.float64))[0]
         cases.append({"word": s["label"], "frames": frames_json(s), "logits": [round(float(v), 6) for v in logits]})
     RESOURCES.mkdir(parents=True, exist_ok=True)
     (RESOURCES / f"{name}_fixture.json").write_text(json.dumps({"aspect": aspect, "cases": cases}), encoding="utf-8")

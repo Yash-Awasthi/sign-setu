@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { languages } from "./content";
+import { aslGestures, languages } from "./content";
 import { exportJson, keyOf, load, save, type Review } from "./reviews";
 import { IslReview, LanguageReview, WelfareReview } from "./screens";
 
@@ -7,12 +7,13 @@ import { IslReview, LanguageReview, WelfareReview } from "./screens";
 const ROLES = [
   "Child-welfare reviewer",
   "ISL reviewer",
+  "ASL reviewer",
   "Language reviewer (English)",
   ...languages.map((l) => `Language reviewer (${l.english})`),
   "Content owner",
 ];
 
-const TABS = { isl: "ISL review", language: "Language review", welfare: "Child-welfare review" } as const;
+const TABS = { isl: "ISL review", asl: "ASL review", language: "Language review", welfare: "Child-welfare review" } as const;
 type Tab = keyof typeof TABS;
 
 export default function App() {
@@ -53,8 +54,8 @@ export default function App() {
         <button onClick={download}>Export JSON</button>
       </header>
       <p className="note">
-        Every item stays a candidate until it is approved. Verdicts are kept in this browser only; export them and pass the file to{" "}
-        <code>tools/content/review_record.py --reviews</code>.
+        Every item stays a candidate until it is approved. Verdicts are kept in this browser only; export them and keep the file as the
+        review record.
       </p>
       <div role="tablist" className="tabs">
         {(Object.keys(TABS) as Tab[]).map((t) => (
@@ -64,6 +65,7 @@ export default function App() {
         ))}
       </div>
       {tab === "isl" && <IslReview {...props} />}
+      {tab === "asl" && <IslReview key="asl" {...props} items={aslGestures} />}
       {tab === "language" && <LanguageReview {...props} />}
       {tab === "welfare" && <WelfareReview {...props} />}
     </>

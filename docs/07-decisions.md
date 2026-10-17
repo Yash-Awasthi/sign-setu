@@ -317,7 +317,6 @@ Status: Proposed, Accepted, Superseded.
 
 **Consequences.** The release APK grows by 5.9 MB; with the model loaded a session exceeds the 300 MB memory target, so it loads on first use and is freed when the app locks. The Gemma licence is not OSI open source; a fully open model can replace it by hash. Language reviewers spot-check output per pilot language. Asking the model to put sentences in ISL order was tried and dropped: it produced wrong output, and the rule-based word matching of D-22 stays.
 
-
 ---
 
 ## D-25 On-device vision engine, sign reader and sign windows
@@ -327,7 +326,7 @@ Status: Proposed, Accepted, Superseded.
 **Context.** A crying or frightened signer signs fast, and the officer cannot read it. The partner team's hand model was not delivered in time, and no open model reads continuous ISL. Isolated-sign recognition over a known vocabulary is achievable on a phone, and MediaPipe Holistic gives hand, face and pose landmarks on the device. Face and hand landmarks are biometric data, and a camera that analysed every frame would watch the subject without a reason.
 
 **Decision.**
-- **Engine.** MediaPipe Holistic (`tasks-vision` 1.0.0, Apache-2.0) runs in video mode behind the `LandmarkTracker` interface (GPU first, CPU fallback, D-38): one upright RGBA frame in; 21 points per hand, 468 face points and 33 pose points out. The model (`models/holistic_landmarker.task`, 13.7 MB, float16) is mapped from the APK, checked against the content manifest before it opens, and loaded off the main thread before the first frame. It ships for 64-bit phones only; 32-bit phones keep a plain mirror.
+- **Engine.** MediaPipe Holistic (`tasks-vision` 1.0.0, Apache-2.0) runs in video mode behind the `LandmarkTracker` interface (GPU first, CPU fallback, D-38): one upright RGBA frame in; 21 points per hand, 468 face points and 33 pose points out. The model (`models/holistic_landmarker.task`, 13.7 MB, float16) is mapped from the APK, checked against the content manifest before it opens, and loaded off the main thread before the first frame. It ships for 64-bit phones only, and the release APK is arm64-v8a only.
 - **Sign windows.** Frames are analysed only inside an explicit window. **Read signs** from the officer, or the hand button on the stage, opens a 20-second answer window; **Tell me** opens a 3-minute narrative window (D-27). Outside a window the mirror is a preview with no analysis. Inside one, analysis runs at up to 30 frames per second.
 - **Segmentation.** A pause segmenter splits the stream where the hands are absent or still (mean speed of all hand points below 0.3 frame widths per second): after 0.4 s in an answer, 0.7 s in a narrative. Chunks shorter than 0.2 s, or with fewer than 3 moving frames, are dropped. Hands leaving the frame briefly do not end the capture.
 - **Sign reader.** A 262-word isolated-sign classifier (`models/sign_reader.bin` and `.json`, 1.4 MB) trained on the INCLUDE dataset (CC BY 4.0) from the OpenHands pose release, run in plain Kotlin (`LandmarkSignReader`) with no new dependency. Input: hands and arms of one chunk, normalised to the shoulders. Output: every label with its probability. On the INCLUDE test split: top-1 97.8%, top-3 99.4%, measured on studio signers.
@@ -427,7 +426,7 @@ Status: Proposed, Accepted, Superseded.
 
 **Context.** ISL, language and child-welfare reviewers sign off content without an Android phone or developer tools, and the record of their verdicts must be reproducible.
 
-**Decision.** `portal/` is a static, offline web page built with Vite+ (the `vp` command line), React 19.3 and TypeScript 7.0, with no backend. It reads the app's content files at build time. Screens: ISL review (every motion on both characters through a TypeScript port of the rig, with speed and scrub), language review (captions and recordings per language) and child-welfare review (question wording and cards, with hints from the research avoid list; the hints are prompts, not a safety check). Each item takes Approve, Change or Reject, notes and the reviewer's role. Verdicts stay in the reviewer's browser and are exported as JSON, which `tools/content/review_record.py --reviews` writes into the content review record.
+**Decision.** `portal/` is a static, offline web page built with Vite+ (the `vp` command line), React 19.3 and TypeScript 7.0, with no backend. It reads the app's content files at build time. Screens: ISL review (every motion on both characters through a TypeScript port of the rig, with speed and scrub), language review (captions and recordings per language) and child-welfare review (question wording and cards, with hints from the research avoid list; the hints are prompts, not a safety check). Each item takes Approve, Change or Reject, notes and the reviewer's role. Verdicts stay in the reviewer's browser and are exported as JSON, kept as the review record.
 
 **Consequences.** The TypeScript rig must match `Rig.kt`: `RigFixtureTest` writes `portal/src/rig-fixtures.json` and fails when the Kotlin rig changes. After a deliberate rig change the fixture is regenerated and `rig.ts` updated until `vp test` passes. The portal is a tool and is not shipped in the app.
 
@@ -536,7 +535,7 @@ Status: Proposed, Accepted, Superseded.
 - `HolisticTracker` opens the graph on the GPU delegate and falls back to the CPU when the GPU fails to open or the first inference throws; the next frame then reopens on the CPU.
 - The build uses `protobuf-java` 4.26.1 and excludes `protobuf-javalite` from MediaPipe.
 - Preview and analysis share a 16:9 portrait frame; analysis requests 640 by 360 and receives each frame rotated upright.
-- Guesses whose concept answers the item on screen are ranked first; the others stay, each group by score (`inContext`). The officer sees the top three.
+- Of the reader's top three guesses, those whose concept answers the item on screen are ranked first; the others stay, each group by score (`inContext`). A less likely guess is never lifted above them because it fits the item.
 
 **Consequences.** Frame rate depends on the phone's GPU. Context ranking no longer guarantees that every guess fits the question, so the subject's pick (FR-86) remains the only way a meaning becomes theirs.
 
@@ -557,3 +556,25 @@ Status: Proposed, Accepted, Superseded.
 **Alternatives.** Kaggle `asl-signs` and `asl-fingerspelling` (redistribution barred, credentials needed); one merged lexicon (ASL and ISL words would collide).
 
 **Consequences.** A reading, in either language, still becomes the subject's answer only through their pick (FR-86). Sources and licences are in the [open-source register](09-open-source.md).
+
+---
+
+## D-40 Live landmarks on the stage, everyday gestures as proposals, and signs learned in the session
+
+**Status:** Accepted; adds FR-109 to FR-112; amends D-25 and SEC-71
+
+**Context.** Officers saw a plain mirror outside sign windows and read it as hand detection not working. Many subjects do not sign: children, people with intellectual disability, and frightened adults answer with a nod, a thumbs up, a raised palm or a pointing finger. Some Deaf subjects use home signs that no dataset holds. ISL marks yes/no questions with raised brows, not a sign.
+
+**Decision.**
+- While the stage camera shows, frames are analysed for the overlay at up to 10 frames a second, and at up to 30 inside a sign window. Only inside a sign window do landmarks go to sign capture. The overlay draws hands, arms, brows and lips; the face oval and eyes stay off.
+- Brows raised above the subject's own running baseline, over most signs of an answer, make its written draft a question. Mouth opening is marked per frame for later use.
+- A nod or head shake, a thumbs up or down held 0.5 s, a raised open palm held 0.8 s, a shrug (both hands open, low and wide) held 0.6 s, and a finger held 0.6 s on the head, mouth, stomach, arm or leg only make the matching Yes, No, Stop, "I don't know" or picture pulse. Nothing is logged until the subject taps; inside a sign window these proposals are muted, because open hands and pointing are signs there. When the tap matches the proposal, the answer's record line says so, for example "(after a nod or thumbs up)".
+- A wrist at the frame edge lights that edge of the camera window during a sign window.
+- When the officer reads a sign as a word the reader did not offer, the sign's feature sequence is kept for the session and offered first when signed again (dynamic time warping). It lives in view-model memory only.
+- A paired stage phone runs the same overlay and proposals on its own camera; only the cue name travels with the tapped answer, never landmarks.
+- With no one in view for 10 s outside a sign window, the overlay slows to about 3 frames a second.
+- The tuning values (brow raise, mouth opening, head swing, home-sign distance, pointing regions) are calibration settings to be set on devices.
+
+**Alternatives.** Reading words INCLUDE lacks from one ISLRTC signer each by dynamic time warping (measured: 0.07 top-1 across 60 words on INCLUDE signers, too often wrong to offer); analysis only inside sign windows (the overlay looked broken); treating a nod or point as an answer (would put words in the subject's mouth); a per-subject trained model for home signs (needs storage and training on the phone).
+
+**Consequences.** More frames are analysed, bounded at 10 a second outside sign windows. Landmarks and home-sign templates remain memory-only biometric data under SEC-71. Every proposal still needs the subject's tap, so FR-66 holds.

@@ -1,6 +1,16 @@
 package app.signsetu.ui.session
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.FocusRequester
@@ -109,6 +119,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -151,6 +162,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import app.signsetu.camera.CAMERA_ASPECT
+import app.signsetu.camera.Head
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.sign.SIGN_LIMIT_MS
 import app.signsetu.sign.SignChoice
@@ -218,6 +230,8 @@ fun Stage(
     onPauseEnd: () -> Unit = {},
     /** Lesson-sheet answers and phrases (LessonInputs.kt); null hides them. */
     onGiven: ((Given?) -> Unit)? = null,
+    /** Called just before a tap that matches a gesture proposal (D-40): nod, shake, point or palm. */
+    onCue: (String) -> Unit = {},
 ) {
     val stage = LocalStageColors.current
     val lang = ui.session.subjectLang
@@ -226,6 +240,8 @@ fun Stage(
     val rule = ruleStep(pending)
     var drawing by remember(pending) { mutableStateOf(pending == Pending.Drawing) }
     var writing by remember(pending) { mutableStateOf(false) }
+    // Held here, not in the panel: turning a tablet swaps the stage layout and would drop the panel's own state.
+    val drawn = remember(pending) { mutableStateListOf<DrawStroke>() }
     // A young child is not asked to write; anyone else, signers above all, can answer in their own words.
     // A ground rule asks for no answer, so only the practice round opens the other ways to answer.
     val canWrite = pending != null && profile != Profile.YOUNG_CHILD && (rule == null || isPractice(pending))
@@ -261,8 +277,18 @@ fun Stage(
     // A show-back or say-back with pictures asks which one; the character must not act out the officer's reading.
     val checking = pending.asksChoice
     // One camera for the stage: a sign window adds analysis to it instead of restarting the preview.
+    // A nod or shake only highlights Yes or No; the subject's tap is the answer.
+    // One state object: the remembered camera keeps the first one it captured.
+    val nod = remember { mutableStateOf<Boolean?>(null) }
+    val point = remember { mutableStateOf<String?>(null) }
+    val palm = remember { mutableStateOf(false) }
+    val shrugged = remember { mutableStateOf(false) }
+    LaunchedEffect(pending) { nod.value = null; point.value = null; palm.value = false; shrugged.value = false }
+    val nodded = nod.value
     val camera = remember(tracker) {
-        movableContentOf { frames: ((LandmarkFrame) -> Unit)? -> CameraMirror(tracker, Modifier.fillMaxSize(), onFrame = frames) { MirrorPlaceholder() } }
+        movableContentOf { frames: ((LandmarkFrame) -> Unit)? ->
+            CameraMirror(tracker, Modifier.fillMaxSize(), onFrame = frames, onHead = { nod.value = it == Head.Nod }, onPoint = { point.value = it }, onStopPalm = { palm.value = true }, onShrug = { shrugged.value = true }) { MirrorPlaceholder() }
+        }
     }
     val gestureId = when {
         reacting -> "okay"
@@ -340,22 +366,21 @@ fun Stage(
 
     Surface(color = stage.skyBottom, modifier = Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize()) {
-        Column(
+        BoxWithConstraints(
             Modifier
                 .fillMaxSize()
                 .graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
                 // Covered by the pause layer: screen readers must not reach answers that cannot be tapped.
                 .then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),
         ) {
+            // Landscape, which Android 16 forces on tablets, puts the character beside the camera instead of above it.
+            val wide = maxWidth > maxHeight
             // A panel that needs width and height gets more room; otherwise the character and the camera split the screen.
             val rightsNotice = (pending as? Pending.Ask)?.question?.takeIf(content::isRights)?.let { content.subjectText("rights_interpreter", lang) }
             val topWeight = if (drawing || writing || choices != null || pending == Pending.LanguageFinder || saying || lesson != null) 0.36f else 0.5f
             val topAnimated by animateFloatAsState(topWeight, spring(stiffness = 300f), label = "split")
-            Box(
-                Modifier
-                    .weight(topAnimated)
-                    .fillMaxWidth(),
-            ) {
+            val characterPane: @Composable (Modifier) -> Unit = { m ->
+            Box(m) {
                 Backdrop(Modifier.fillMaxSize())
                 BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
                     val roomy = maxHeight >= 240.dp
@@ -457,17 +482,15 @@ fun Stage(
                     glance?.let { GlanceStrip(it, onHide = { StagePace.glanceHidden.value = true }, Modifier.align(Alignment.TopCenter)) }
                 }
             }
+            }
+            val answerPane: @Composable (Modifier) -> Unit = { m ->
             Column(
-                Modifier
-                    .weight(1f - topAnimated)
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.lg)
-                    .padding(top = Spacing.md, bottom = Spacing.md),
+                m.padding(horizontal = Spacing.lg).padding(top = Spacing.md, bottom = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 when {
                     choices != null -> {
-                        val last = ui.confirm?.queue?.size == 1
+                        val last = ui.confirm.queue.size == 1
                         SignChoicePanel(choices, content, lang, {
                             onSignChoice(it)
                             reacting = true
@@ -477,7 +500,7 @@ fun Stage(
                     }
                     drawing -> {
                         // Only a picture that was asked for has nothing to go back to.
-                        DrawingPanel(content, lang, onDone = onDrawing, onBack = { drawing = false }.takeIf { pending != Pending.Drawing }, modifier = Modifier.weight(1f))
+                        DrawingPanel(content, lang, drawn, onDone = onDrawing, onBack = { drawing = false }.takeIf { pending != Pending.Drawing }, modifier = Modifier.weight(1f))
                         PauseRow(content, lang, ui.answeredCard, onCard)
                     }
                     writing -> WritingPanel(
@@ -511,8 +534,8 @@ fun Stage(
                                     // A Yes under a right would read as the person accepting or waiving it; it is only shown.
                                     rightsNotice != null -> RailCard(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answer.unsure, answer.onUnsure, chosen == DONT_UNDERSTAND) { onCard(DONT_UNDERSTAND) }
                                     asks -> {
-                                        RailIcon(Icons.Filled.Check, content.subjectText("yes", lang), stringResource(R.string.show_yes), answer.yes, answer.onYes, ui.answeredYes == true) { onYesNo(true) }
-                                        RailCard("dont_know", content.subjectText("dont_know", lang), stringResource(R.string.stage_dont_know), answer.unsure, answer.onUnsure, chosen == "dont_know") { onCard("dont_know") }
+                                        RailIcon(Icons.Filled.Check, content.subjectText("yes", lang), stringResource(R.string.show_yes), answer.yes, answer.onYes, ui.answeredYes == true, proposed = nodded == true) { if (nodded == true) onCue("nod"); onYesNo(true) }
+                                        RailCard("dont_know", content.subjectText("dont_know", lang), stringResource(R.string.stage_dont_know), answer.unsure, answer.onUnsure, chosen == "dont_know", proposed = shrugged.value) { if (shrugged.value) onCue("shrug"); onCard("dont_know") }
                                         RailCard(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answer.unsure, answer.onUnsure, chosen == DONT_UNDERSTAND) { onCard(DONT_UNDERSTAND) }
                                     }
                                 }
@@ -522,7 +545,7 @@ fun Stage(
                             Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                                 val window = Modifier.aspectRatio(CAMERA_ASPECT)
                                 if (signing) SigningPanel(camera, ui.reading.orEmpty(), content, lang, narrative, onFrame = onSignFrame, modifier = window)
-                                else MirrorWindow(camera, cameraOn, item.choices, item.numbers, chosen, content, lang, onCard, window)
+                                else MirrorWindow(camera, cameraOn, item.choices, item.numbers, chosen, content, lang, { id -> if (id == point.value) onCue("point"); onCard(id) }, window, proposedCard = point.value)
                                 rightsNotice?.let {
                                     Text(
                                         it, style = MaterialTheme.typography.labelLarge, color = Color.White, textAlign = TextAlign.Center, maxLines = 3,
@@ -538,7 +561,8 @@ fun Stage(
                                     val next = if (rule != null) onNextRule else onNext
                                     next?.let { RailIcon(Icons.AutoMirrored.Filled.ArrowForward, content.subjectText("next", lang), stringResource(R.string.stage_next), answer.yes, answer.onYes, onClick = it) }
                                     if (asks) {
-                                        RailIcon(Icons.Filled.Close, content.subjectText("no", lang), stringResource(R.string.show_no), answer.no, answer.onNo, ui.answeredYes == false) {
+                                        RailIcon(Icons.Filled.Close, content.subjectText("no", lang), stringResource(R.string.show_no), answer.no, answer.onNo, ui.answeredYes == false, proposed = nodded == false) {
+                                            if (nodded == false) onCue("shake")
                                             onYesNo(false)
                                             if (reopensInput(pending, false)) { if (canWrite) writing = true else drawing = true }
                                         }
@@ -546,12 +570,21 @@ fun Stage(
                                     }
                                     // A camera, not an open palm, so nothing beside Stop looks like a stop sign.
                                     if (canWrite && tracker != null) RailIcon(painterResource(R.drawable.ic_videocam), null, stringResource(R.string.officer_read_signs), stage.tool, stage.onTool, tool = true, onClick = onStartSigning)
-                                    RailCard("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosen == "stop") { onCard("stop") }
+                                    RailCard("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosen == "stop", proposed = palm.value) { if (palm.value) onCue("palm"); onCard("stop") }
                                 }
                             }
                         }
                     }
                 }
+            }
+            }
+            if (wide) Row(Modifier.fillMaxSize()) {
+                characterPane(Modifier.weight(topAnimated).fillMaxHeight())
+                // Room above the panels for the officer's handle, which would otherwise sit on a drawing or a keyboard.
+                answerPane(Modifier.weight(1f - topAnimated).fillMaxHeight().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.End)).padding(top = 48.dp))
+            } else Column(Modifier.fillMaxSize()) {
+                characterPane(Modifier.weight(topAnimated).fillMaxWidth())
+                answerPane(Modifier.weight(1f - topAnimated).fillMaxWidth())
             }
         }
         // Over the whole stage, so no answer can be tapped during a break; the officer's way out stays above it.
@@ -790,6 +823,7 @@ private fun MirrorWindow(
     lang: String,
     onCard: (String) -> Unit,
     modifier: Modifier,
+    proposedCard: String? = null,
 ) {
     Box(modifier.mirrorFrame()) {
         if (cameraOn) {
@@ -808,12 +842,14 @@ private fun MirrorWindow(
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
                 if (numbers) {
-                    choices.chunked(5).forEach { row ->
+                    // Five to a row leaves each key under 48 dp in the camera window of a 360 dp phone.
+                    choices.chunked(4).forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
                             row.forEach { id ->
                                 val delay = 40 * choices.indexOf(id)
                                 NumberButton(id.removePrefix("n"), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(delay)))
                             }
+                            repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
                 } else {
@@ -821,7 +857,7 @@ private fun MirrorWindow(
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
                             row.forEach { id ->
                                 val delay = 70 * choices.indexOf(id)
-                                ChoiceTile(id, content.cards[id]?.label?.pick(lang), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(delay)), name = content.cards[id]?.label?.pick("en"))
+                                ChoiceTile(id, content.cards[id]?.label?.pick(lang), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(delay)), name = content.cards[id]?.label?.pick("en"), proposed = proposedCard == id)
                             }
                             repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
@@ -907,14 +943,16 @@ private fun MirrorPlaceholder() {
 }
 
 @Composable
-internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, name: String? = label) {
+internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, name: String? = label, proposed: Boolean = false) {
     val answer = LocalAnswerColors.current
+    val pulse = if (proposed && !chosen) rememberInfiniteTransition(label = "proposed").animateFloat(0.25f, 1f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "ring").value else 0f
+    val suggested = if (proposed && !chosen) stringResource(R.string.stage_proposed) else null
     PressableSurface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
-        border = if (chosen) BorderStroke(4.dp, answer.selection) else TileEdge,
-        modifier = modifier.heightIn(min = 96.dp).semantics { (label ?: name)?.let { contentDescription = it }; selected = chosen },
+        border = if (chosen) BorderStroke(4.dp, answer.selection) else if (pulse > 0f) BorderStroke(4.dp, answer.selection.copy(alpha = pulse)) else TileEdge,
+        modifier = modifier.heightIn(min = 96.dp).semantics { (label ?: name)?.let { contentDescription = it }; selected = chosen; suggested?.let { stateDescription = it } },
     ) {
         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             // Without a word in their language the picture carries the meaning alone, so it gets the room.
@@ -956,31 +994,35 @@ private fun Rail(content: @Composable ColumnScope.() -> Unit) =
     Column(Modifier.width(60.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically), content = content)
 
 @Composable
-private fun ColumnScope.RailCard(cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit) =
-    RailButton(label, name, color, onColor, chosen, false, onClick) { CardImage(cardId, Modifier.size(if (label != null) 24.dp else 32.dp)) }
+private fun ColumnScope.RailCard(cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, proposed: Boolean = false, onClick: () -> Unit) =
+    RailButton(label, name, color, onColor, chosen, false, onClick, proposed) { CardImage(cardId, Modifier.size(if (label != null) 24.dp else 32.dp)) }
 
 @Composable
-private fun ColumnScope.RailIcon(icon: ImageVector, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, tool: Boolean = false, onClick: () -> Unit) =
-    RailIcon(rememberVectorPainter(icon), label, name, color, onColor, chosen, tool, onClick)
+private fun ColumnScope.RailIcon(icon: ImageVector, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, tool: Boolean = false, proposed: Boolean = false, onClick: () -> Unit) =
+    RailIcon(rememberVectorPainter(icon), label, name, color, onColor, chosen, tool, proposed, onClick)
 
 @Composable
-private fun ColumnScope.RailIcon(icon: Painter, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, tool: Boolean = false, onClick: () -> Unit) =
-    RailButton(label, name, color, onColor, chosen, tool, onClick) { Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.size(24.dp)) }
+private fun ColumnScope.RailIcon(icon: Painter, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, tool: Boolean = false, proposed: Boolean = false, onClick: () -> Unit) =
+    RailButton(label, name, color, onColor, chosen, tool, onClick, proposed) { Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.size(24.dp)) }
 
 @Composable
-private fun ColumnScope.RailButton(label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, tool: Boolean, onClick: () -> Unit, icon: @Composable () -> Unit) {
+private fun ColumnScope.RailButton(label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, tool: Boolean, onClick: () -> Unit, proposed: Boolean = false, icon: @Composable () -> Unit) {
+    val pulse = if (proposed && !chosen) rememberInfiniteTransition(label = "proposed").animateFloat(0.25f, 1f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "ring").value else 0f
+    // The pulse is the only sign of a proposal, so screen readers hear it too.
+    val suggested = if (proposed && !chosen) stringResource(R.string.stage_proposed) else null
     PressableSurface(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         color = color,
         border = when {
             chosen -> BorderStroke(3.dp, onColor)
+            pulse > 0f -> BorderStroke(4.dp, onColor.copy(alpha = pulse))
             tool -> BorderStroke(1.dp, onColor.copy(alpha = 0.16f))
             else -> null
         },
         // 64 dp fits an icon over two lines of Hindi; five in one rail on a 640 dp phone share the height, still above 48 dp.
         modifier = Modifier.weight(1f, fill = false).fillMaxWidth().height(64.dp)
-            .semantics { contentDescription = label ?: name; selected = chosen },
+            .semantics { contentDescription = label ?: name; selected = chosen; suggested?.let { stateDescription = it } },
     ) {
         Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             icon()
@@ -1090,6 +1132,9 @@ private fun LanguageGrid(content: ContentBundle, chosen: String?, modifier: Modi
 
 private class DrawStroke(val points: List<Offset>)
 
+private fun Offset.fraction(size: IntSize) = Offset(x / size.width.coerceAtLeast(1), y / size.height.coerceAtLeast(1))
+private fun Offset.scaled(size: IntSize) = Offset(x * size.width, y * size.height)
+
 /** The subject's own words, typed large on the stage; the keyboard opens at once and Done sends them. */
 @Composable
 private fun WritingPanel(
@@ -1158,15 +1203,14 @@ private fun BackButton(content: ContentBundle, lang: String, onBack: () -> Unit)
 
 /** A name for a control whose word is missing in the subject's language, so a screen reader still has one. */
 @Composable
-private fun Modifier.named(@StringRes id: Int, needed: Boolean = true): Modifier {
+private fun Modifier.named(@StringRes id: Int, needed: Boolean): Modifier {
     if (!needed) return this
     val name = stringResource(id)
     return semantics { contentDescription = name }
 }
 
 @Composable
-private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArray) -> Unit, onBack: (() -> Unit)?, modifier: Modifier) {
-    val strokes = remember { mutableStateListOf<DrawStroke>() }
+private fun DrawingPanel(content: ContentBundle, lang: String, strokes: SnapshotStateList<DrawStroke>, onDone: (ByteArray) -> Unit, onBack: (() -> Unit)?, modifier: Modifier) {
     var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     val ink = Color(0xFF2B2118)
@@ -1187,12 +1231,13 @@ private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArra
                         detectDragGestures(
                             onDragStart = { current = listOf(it) },
                             onDrag = { change, _ -> current = current + change.position },
-                            onDragEnd = { strokes.add(DrawStroke(current)); current = emptyList() },
+                            // Kept in canvas fractions, so a drawing survives the canvas changing size.
+                            onDragEnd = { strokes.add(DrawStroke(current.map { it.fraction(canvasSize) })); current = emptyList() },
                             onDragCancel = { current = emptyList() },
                         )
                     },
             ) {
-                (strokes + DrawStroke(current)).forEach { s ->
+                (strokes.map { s -> DrawStroke(s.points.map { it.scaled(canvasSize) }) } + DrawStroke(current)).forEach { s ->
                     if (s.points.size < 2) return@forEach
                     val path = Path().apply {
                         moveTo(s.points[0].x, s.points[0].y)
@@ -1216,7 +1261,7 @@ private fun DrawingPanel(content: ContentBundle, lang: String, onDone: (ByteArra
             }
             val answer = LocalAnswerColors.current
             PressableSurface(
-                onClick = { if (strokes.isNotEmpty()) onDone(renderPng(strokes, canvasSize, ink.toArgb(), paper.toArgb())) },
+                onClick = { if (strokes.isNotEmpty()) onDone(renderPng(strokes.map { s -> DrawStroke(s.points.map { it.scaled(canvasSize) }) }, canvasSize, ink.toArgb(), paper.toArgb())) },
                 shape = RoundedCornerShape(50),
                 color = if (strokes.isNotEmpty()) answer.yes else Color(0xFFBFD8CB),
                 modifier = Modifier.weight(1f).height(56.dp).named(R.string.stage_done, content.subjectText("done", lang) == null),

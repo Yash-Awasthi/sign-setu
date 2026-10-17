@@ -15,24 +15,25 @@ import numpy as np
 import torch
 from torch import nn
 
-from features import ARMS, ARMS_FLIPPED, FEATURES, FRAMES, featurize, isotropic
+from features import ARMS, ARMS_FLIPPED, FEATURES, FRAMES, featurize, featurize_hands, isotropic
 
 HIDDEN, KERNEL = int(os.environ.get("SIGN_HIDDEN", 160)), 5
+STRONG = os.environ.get("SIGN_AUG") == "strong"
 DROPOUT = float(os.environ.get("SIGN_DROPOUT", 0.4))
 
 
 class SignNet(nn.Module):
     """Per-frame linear layer, two temporal convolutions, average and max pooling, linear classifier."""
 
-    def __init__(self, classes: int):
+    def __init__(self, classes: int, hidden: int = HIDDEN):
         super().__init__()
-        self.embed = nn.Linear(FEATURES, HIDDEN)
-        self.conv1 = nn.Conv1d(HIDDEN, HIDDEN, KERNEL, padding=KERNEL // 2)
-        self.bn1 = nn.BatchNorm1d(HIDDEN)
-        self.conv2 = nn.Conv1d(HIDDEN, HIDDEN, KERNEL, padding=KERNEL // 2)
-        self.bn2 = nn.BatchNorm1d(HIDDEN)
+        self.embed = nn.Linear(FEATURES, hidden)
+        self.conv1 = nn.Conv1d(hidden, hidden, KERNEL, padding=KERNEL // 2)
+        self.bn1 = nn.BatchNorm1d(hidden)
+        self.conv2 = nn.Conv1d(hidden, hidden, KERNEL, padding=KERNEL // 2)
+        self.bn2 = nn.BatchNorm1d(hidden)
         self.drop = nn.Dropout(DROPOUT)
-        self.head = nn.Linear(2 * HIDDEN, classes)
+        self.head = nn.Linear(2 * hidden, classes)
 
     def forward(self, x):  # x: (B, FRAMES, FEATURES)
         h = torch.relu(self.embed(x)).transpose(1, 2)
@@ -42,6 +43,7 @@ class SignNet(nn.Module):
 
 
 def features(s, aspect, rng=None):
+    aspect = s.get("aspect") or aspect
     left, right, pose = isotropic(s["left"], s["right"], s["pose"], aspect)
     hl, hr, hp = s["has_left"], s["has_right"], s["has_pose"]
     if rng is not None:
@@ -61,7 +63,13 @@ def features(s, aspect, rng=None):
         left, right, pose = left @ m.T, right @ m.T, pose @ m.T
         left = left + rng.normal(0, 0.003, left.shape)
         right = right + rng.normal(0, 0.003, right.shape)
-    return featurize(left, right, pose, hl, hr, hp)
+        if STRONG:
+            # Other signers: hands held higher, lower or wider than INCLUDE's, and larger or smaller against the body.
+            sw = np.linalg.norm(pose[hp][:, 11] - pose[hp][:, 12], axis=1).mean() if hp.any() else 0.0
+            for h in (left, right):
+                c = h.mean(1, keepdims=True)
+                h[:] = c + (h - c) * rng.uniform(0.85, 1.2) + rng.normal(0, 0.12 * sw, 2)
+    return (featurize_hands if s.get("norm") == "hands" else featurize)(left, right, pose, hl, hr, hp)
 
 
 def batch(samples, aspect, rng=None):
