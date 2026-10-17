@@ -3,7 +3,10 @@ package app.signsetu
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.PhraseSlot
+import app.signsetu.data.content.IslSign
+import app.signsetu.data.content.IslSigns
 import app.signsetu.data.content.Signability
+import app.signsetu.data.content.signability
 import app.signsetu.data.content.WordEntry
 import app.signsetu.data.content.complete
 import app.signsetu.data.content.signabilitySpans
@@ -26,6 +29,7 @@ import app.signsetu.ui.session.encode
 import app.signsetu.ui.session.grades
 import app.signsetu.ui.session.offered
 import app.signsetu.ui.session.prompts
+import app.signsetu.ui.session.signedWords
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -52,6 +56,16 @@ class MainPageTest {
         assertTrue("one letter of Latin is too little", bundle.complete("w").isEmpty())
         assertEquals(listOf("पानी"), bundle.complete("पा").map { it.form })
         assertTrue("the prefix itself is never offered", bundle.complete("water").isEmpty())
+    }
+
+    @Test
+    fun aWordWithOnlyARecordedSignTintsAsSignable() {
+        val recorded = bundle.copy(
+            gestures = bundle.gestures + ("isl.teacher" to Gesture("isl.teacher", listOf(Key(0f)))),
+            isl = IslSigns(gestures = listOf(IslSign("isl.teacher", "teacher", category = "People", rec = "People/teacher/MVI_1", keys = listOf(Key(0f))))),
+        )
+        assertEquals(Signability.SIGN, recorded.signability("Teacher"))
+        assertEquals(Signability.SPELL, bundle.signability("teacher"))
     }
 
     @Test
@@ -151,5 +165,13 @@ class MainPageTest {
         )
         assertEquals(record, prompts(events)[q.id])
         assertEquals(2 to 3, choicePositions(events)[events[2].id])
+    }
+
+    @Test
+    fun unreadSignsNeverShowAsQuestionMarks() {
+        assertEquals(null, signedWords("? ? ?"))
+        assertEquals("water … home", signedWords("water ? home"))
+        assertEquals("water", signedWords("water"))
+        assertEquals(null, signedWords(null))
     }
 }

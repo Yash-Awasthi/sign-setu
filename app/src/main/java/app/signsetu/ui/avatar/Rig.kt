@@ -63,6 +63,9 @@ data class HandKey(
     /** Degrees; 0 is fingers up, positive tips the fingers outward. Null follows the forearm. */
     val angle: Float? = null,
     val elbow: String = "out",
+    /** A recorded elbow as an offset from this side's shoulder, +ex outward; replaces [elbow] when both keys have it. */
+    val ex: Float? = null,
+    val ey: Float? = null,
     /** Which part of the hand reaches the anchor: "wrist", "palm", "tip" (index fingertip) or "thumb". */
     val touch: String = "wrist",
     /** Something held, drawn with the hand: "stick". */
@@ -131,7 +134,14 @@ data class HandPose(
     val angle: Float,
     val elbowOut: Float,
     val prop: String? = null,
+    /** Recorded elbow minus shoulder on screen, NaN to solve it from [elbowOut]. */
+    val elbowX: Float = Float.NaN,
+    val elbowY: Float = Float.NaN,
 )
+
+/** The elbow for the (possibly shifted) shoulder [sx], [sy]: recorded if the keys carry it, else the two-bone solve. */
+fun HandPose.elbowAt(sx: Float, sy: Float, build: Build, side: Side): Pair<Float, Float> =
+    if (elbowX.isNaN()) solveElbow(sx, sy, x, y, build.upperArm, build.foreArm, side, elbowOut) else (sx + elbowX) to (sy + elbowY)
 
 /**
  * A point on this hand in character space: "wrist", "palm", "thumb" or a fingertip ("index" to "pinky").
@@ -170,6 +180,8 @@ data class Pose(
     val lean: Float, val shrug: Float, val hunch: Float, val shiver: Float,
     /** 0 looks ahead, 1 looks down at the answers below the character. */
     val gaze: Float = 0f,
+    /** The right hand is placed on the left one, so it draws in front. */
+    val rFront: Boolean = false,
 )
 
 /** Proportions and anchor points of one character. */
@@ -204,7 +216,7 @@ val ChildBuild = Build(
     neckTop = 110f, neckWidth = 17f,
     shoulderY = 140f, shoulderHalf = 39f,
     upperArm = 38f, foreArm = 35f, armWidth = 12f,
-    handScale = 1.6f,
+    handScale = 1.85f,
     anchors = mapOf(
         "hairline" to (100f to 40f), "forehead" to (100f to 56f), "eye" to (84f to 74f), "nose" to (100f to 85f),
         "nose_side" to (95f to 86f), "mouth" to (100f to 99f), "chin" to (100f to 114f), "cheek" to (78f to 92f),
@@ -219,7 +231,7 @@ val AdultBuild = Build(
     neckTop = 104f, neckWidth = 17f,
     shoulderY = 136f, shoulderHalf = 44f,
     upperArm = 41f, foreArm = 38f, armWidth = 13f,
-    handScale = 1.4f,
+    handScale = 2.0f,
     anchors = mapOf(
         "hairline" to (100f to 38f), "forehead" to (100f to 52f), "eye" to (88f to 67f), "nose" to (100f to 78f),
         "nose_side" to (96f to 80f), "mouth" to (100f to 91f), "chin" to (100f to 104f), "cheek" to (84f to 84f),
@@ -237,13 +249,19 @@ private val RestKey = HandKey()
  */
 fun chain(id: String, parts: List<Gesture>, gap: Float = 0.3f): Gesture {
     var offset = 0f
+    var last: Key? = null
     val keys = parts.filter { it.keys.isNotEmpty() }.flatMap { part ->
         val sorted = part.keys.sortedBy { it.t }
-        val first = sorted.first().let {
-            it.copy(R = it.R ?: RestKey, L = it.L ?: RestKey, face = it.face ?: "neutral", head = it.head ?: HeadKey(), body = it.body ?: BodyKey())
+        // A part with no hands (a picture beat) holds the previous pose; dropping to rest mid-sentence reads as an end.
+        val hold = last?.takeIf { sorted.all { k -> k.R == null && k.L == null } }
+        val shifted = if (hold != null) sorted.map { it.copy(R = hold.R, L = hold.L, t = it.t + offset) } else {
+            val first = sorted.first().let {
+                it.copy(R = it.R ?: RestKey, L = it.L ?: RestKey, face = it.face ?: "neutral", head = it.head ?: HeadKey(), body = it.body ?: BodyKey())
+            }
+            (listOf(first) + sorted.drop(1)).map { it.copy(t = it.t + offset) }
         }
-        val shifted = (listOf(first) + sorted.drop(1)).map { it.copy(t = it.t + offset) }
         offset += sorted.last().t + gap
+        last = shifted.last()
         shifted
     }
     return Gesture(id, keys)
@@ -262,8 +280,11 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
         val i = frames.indexOfLast { it.t <= t }.coerceAtLeast(0)
         val a = frames[i]
         val b = frames.getOrElse(i + 1) { a }
-        val f = if (b.t > a.t) ease(((t - a.t) / (b.t - a.t)).coerceIn(0f, 1f)) else 0f
-        return blend(a, b, f)
+        if (flows(frames, i)) return flow(frames, i, ((t - a.t) / (b.t - a.t)).coerceIn(0f, 1f))
+        // Each move lands a little early and holds, so a sign's shape reads before the next one starts.
+        val hold = minOf(0.08f, 0.25f * (b.t - a.t))
+        val raw = if (b.t > a.t) ((t - a.t) / (b.t - a.t - hold)).coerceIn(0f, 1f) else 0f
+        return blend(a, b, raw)
     }
 
     private data class Frame(
@@ -287,17 +308,59 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
         }
     }
 
-    private fun blend(a: Frame, b: Frame, f: Float): Pose {
+    private fun measured(f: Frame) = f.r.shape.startsWith("c:") || f.l.shape.startsWith("c:")
+
+    /** Recorded keys close together sample one movement, so the hands pass through them without stopping. */
+    private fun flows(frames: List<Frame>, i: Int) =
+        i in 0 until frames.lastIndex && frames[i + 1].t - frames[i].t < FLOW && measured(frames[i]) && measured(frames[i + 1])
+
+    /** Catmull-Rom through the recorded keys: velocity carries across a key, and is zero where a run starts or ends. */
+    private fun flow(frames: List<Frame>, i: Int, u: Float): Pose {
+        val base = blend(frames[i], frames[i + 1], u)
+        fun key(k: Int, side: Side) = if (side == Side.R) frames[k].r else frames[k].l
+        fun track(k: Int, side: Side): FloatArray {
+            val key = key(k, side)
+            val (x, y) = resolve(key, side, null)
+            val s = handShape(key.shape) ?: HandShape.ALL.getValue("RELAX")
+            val e = recordedElbow(key, side) ?: solvedElbow(x to y, side, elbow(key.elbow))
+            return floatArrayOf(x, y, key.roll, (key.angle ?: 0f) * side.sign, s.thumb, s.index, s.middle, s.ring, s.pinky, s.thumbAcross, s.spread, e.first, e.second)
+        }
+        fun at(side: Side, h: HandPose): HandPose {
+            val p1 = track(i, side)
+            val p2 = track(i + 1, side)
+            val p0 = if (flows(frames, i - 1)) track(i - 1, side) else null
+            val p3 = if (flows(frames, i + 1)) track(i + 2, side) else null
+            val t1 = frames[i].t
+            val t2 = frames[i + 1].t
+            val v = FloatArray(p1.size) { j ->
+                val m1 = p0?.let { (p2[j] - it[j]) / (t2 - frames[i - 1].t) } ?: 0f
+                val m2 = p3?.let { (it[j] - p1[j]) / (frames[i + 2].t - t1) } ?: 0f
+                hermite(p1[j], p2[j], m1 * (t2 - t1), m2 * (t2 - t1), u)
+            }
+            fun curl(j: Int) = v[j].coerceIn(0f, 1f)
+            val rec = recordedElbow(key(i, side), side) != null || recordedElbow(key(i + 1, side), side) != null
+            return h.copy(
+                elbowX = if (rec) v[11] else h.elbowX, elbowY = if (rec) v[12] else h.elbowY,
+                x = v[0], y = v[1], roll = v[2],
+                angle = if (key(i, side).angle != null && key(i + 1, side).angle != null) v[3] else h.angle,
+                shape = HandShape(curl(4), curl(5), curl(6), curl(7), curl(8), curl(9), v[10].coerceIn(-1f, 1f)),
+            )
+        }
+        return base.copy(r = at(Side.R, base.r), l = at(Side.L, base.l))
+    }
+
+    private fun blend(a: Frame, b: Frame, raw: Float): Pose {
+        val f = ease(raw)
         // The hand placed on the other one is solved second; fingerspelling places the right hand on the left.
         val rFollows = a.r.at in OTHER_HAND || b.r.at in OTHER_HAND
         val r: HandPose
         val l: HandPose
         if (rFollows) {
-            l = hand(a.l, b.l, f, Side.L)
-            r = hand(a.r, b.r, f, Side.R, l)
+            l = hand(a.l, b.l, raw, Side.L)
+            r = hand(a.r, b.r, raw, Side.R, l)
         } else {
-            r = hand(a.r, b.r, f, Side.R)
-            l = hand(a.l, b.l, f, Side.L, r)
+            r = hand(a.r, b.r, raw, Side.R)
+            l = hand(a.l, b.l, raw, Side.L, r)
         }
         return Pose(
             r = r, l = l,
@@ -305,30 +368,52 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
             tilt = lerp(a.head.tilt, b.head.tilt, f), nod = lerp(a.head.nod, b.head.nod, f), turn = lerp(a.head.turn, b.head.turn, f),
             lean = lerp(a.body.lean, b.body.lean, f), shrug = lerp(a.body.shrug, b.body.shrug, f),
             hunch = lerp(a.body.hunch, b.body.hunch, f), shiver = lerp(a.body.shiver, b.body.shiver, f),
+            rFront = rFollows,
         )
     }
 
-    private fun hand(a: HandKey, b: HandKey, f: Float, side: Side, other: HandPose? = null): HandPose {
+    private fun hand(a: HandKey, b: HandKey, raw: Float, side: Side, other: HandPose? = null): HandPose {
+        val f = ease(raw)
+        // A free move overshoots slightly and settles; contacts and moves to or from rest never pass their target.
+        val free = b.touch == "wrist" && b.at !in OTHER_HAND && b.at != "rest" && a.at != "rest"
+        val m = if (free) easeOutBack(raw) else f
         val pa = resolve(a, side, other)
         val pb = resolve(b, side, other)
-        val sa = HandShape.ALL[a.shape] ?: HandShape.ALL.getValue("RELAX")
-        val sb = HandShape.ALL[b.shape] ?: HandShape.ALL.getValue("RELAX")
+        // ISL hook: handShape (MeasuredShape.kt) also reads measured "c:" shapes from isl_signs.json.
+        val sa = handShape(a.shape) ?: HandShape.ALL.getValue("RELAX")
+        val sb = handShape(b.shape) ?: HandShape.ALL.getValue("RELAX")
         val angleA = a.angle?.let { it * side.sign } ?: Float.NaN
         val angleB = b.angle?.let { it * side.sign } ?: Float.NaN
+        val ea = recordedElbow(a, side)
+        val eb = recordedElbow(b, side)
+        // A recorded elbow next to a solved one starts or ends at the solve, so it moves without a jump.
+        val oa = if (eb != null) ea ?: solvedElbow(pa, side, elbow(a.elbow)) else ea
+        val ob = if (ea != null) eb ?: solvedElbow(pb, side, elbow(b.elbow)) else eb
         return HandPose(
-            x = lerp(pa.first, pb.first, f),
-            y = lerp(pa.second, pb.second, f),
+            x = lerp(pa.first, pb.first, m),
+            y = lerp(pa.second, pb.second, m),
             shape = blendShape(sa, sb, f),
             roll = lerp(a.roll, b.roll, f),
             angle = when {
                 angleA.isNaN() && angleB.isNaN() -> Float.NaN
                 angleA.isNaN() -> if (f < 0.5f) Float.NaN else angleB
                 angleB.isNaN() -> if (f < 0.5f) angleA else Float.NaN
-                else -> lerp(angleA, angleB, f)
+                else -> lerp(angleA, angleB, m)
             },
             elbowOut = lerp(elbow(a.elbow), elbow(b.elbow), f),
             prop = if (f < 0.5f) a.prop else b.prop,
+            elbowX = if (oa != null && ob != null) lerp(oa.first, ob.first, m) else Float.NaN,
+            elbowY = if (oa != null && ob != null) lerp(oa.second, ob.second, m) else Float.NaN,
         )
+    }
+
+    private fun recordedElbow(k: HandKey, side: Side) = if (k.ex != null && k.ey != null) k.ex * side.sign to k.ey else null
+
+    /** The two-bone elbow for wrist [p] as an offset from the unshifted shoulder, like a recorded one. */
+    private fun solvedElbow(p: Pair<Float, Float>, side: Side, out: Float): Pair<Float, Float> {
+        val (sx, sy) = build.shoulder(side)
+        val (ex, ey) = solveElbow(sx, sy, p.first, p.second, build.upperArm, build.foreArm, side, out)
+        return (ex - sx) to (ey - sy)
     }
 
     private fun resolve(k: HandKey, side: Side, other: HandPose?): Pair<Float, Float> {
@@ -346,7 +431,7 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
         val reach = when (k.touch) {
             "palm" -> 6.5f
             "thumb" -> 9f
-            "tip" -> 12f + 9.5f * (1f - 0.75f * (HandShape.ALL[k.shape]?.index ?: 0f))
+            "tip" -> 12f + 9.5f * (1f - 0.75f * (handShape(k.shape)?.index ?: 0f))
             else -> return point
         } * build.handScale
         val a = Math.toRadians(((k.angle ?: 0f) * side.sign).toDouble())
@@ -358,6 +443,7 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
         val OTHER_HAND = setOf("wrist_opp", "palm_opp", "thumb_opp", "index_opp", "middle_opp", "ring_opp", "pinky_opp")
         const val LEAD_IN = 0.35f
         const val LEAD_OUT = 0.45f
+        const val FLOW = 0.35f
 
         fun restPose(build: Build): Pose {
             val r = build.rest(Side.R)
@@ -381,6 +467,17 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
 fun lerp(a: Float, b: Float, f: Float) = a + (b - a) * f
 
 private fun ease(f: Float) = if (f < 0.5f) 4 * f * f * f else 1 - (-2 * f + 2).let { it * it * it } / 2
+
+private fun hermite(p1: Float, p2: Float, m1: Float, m2: Float, u: Float): Float {
+    val u2 = u * u
+    val u3 = u2 * u
+    return (2 * u3 - 3 * u2 + 1) * p1 + (u3 - 2 * u2 + u) * m1 + (-2 * u3 + 3 * u2) * p2 + (u3 - u2) * m2
+}
+
+private fun easeOutBack(f: Float, c1: Float = 1.1f): Float {
+    val g = f - 1f
+    return 1f + (c1 + 1f) * g * g * g + c1 * g * g
+}
 
 private fun blendShape(a: HandShape, b: HandShape, f: Float) = HandShape(
     lerp(a.thumb, b.thumb, f), lerp(a.index, b.index, f), lerp(a.middle, b.middle, f), lerp(a.ring, b.ring, f),

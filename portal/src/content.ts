@@ -1,6 +1,7 @@
 // The app's content files, read straight from the Android assets at build time.
 import cardsFile from "../../app/src/main/assets/content/cards.json";
 import gesturesFile from "../../app/src/main/assets/content/gestures.json";
+import islFile from "../../app/src/main/assets/content/isl_signs.json";
 import languagesFile from "../../app/src/main/assets/content/languages.json";
 import lexiconFile from "../../app/src/main/assets/content/lexicon.json";
 import phrasesFile from "../../app/src/main/assets/content/phrases.json";
@@ -31,7 +32,10 @@ export interface Card {
   label: Text;
 }
 
-export const gestures = [...gesturesFile.gestures, ...signsFile.gestures] as Gesture[];
+// Retargeted INCLUDE signs and the hand-authored lesson signs (review "draft") both await Deaf review.
+export const gestures = [...gesturesFile.gestures, ...signsFile.gestures, ...islFile.gestures] as Gesture[];
+const isl = new Map(islFile.gestures.map((g) => [g.id, g]));
+const drafts = new Set(signsFile.gestures.filter((g) => "review" in g).map((g) => g.id));
 export const groups = triageFile.groups as Group[];
 export const questions = triageFile.questions as Question[];
 export const phrases = phrasesFile.phrases;
@@ -51,6 +55,9 @@ export function meaning(id: string): { label: string; how: string } {
   if (e) return { label: e.label.en, how: e.how.en };
   if (id.startsWith("letter.")) return { label: `Letter ${id.slice(-1).toUpperCase()}`, how: "" };
   if (id.startsWith("digit.")) return { label: `Number ${id.slice(-1)}`, how: "" };
+  const s = isl.get(id);
+  if (s) return { label: `${s.word} (${s.hi})`, how: `Recorded signer, ${islFile.source}, recording ${s.rec}. Draft until Deaf review.` };
+  if (drafts.has(id)) return { label: wordFor.get(id) ?? id, how: "Authored lesson sign. Draft until Deaf review." };
   return { label: wordFor.get(id) ?? id, how: "" };
 }
 

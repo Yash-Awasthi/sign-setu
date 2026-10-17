@@ -239,28 +239,30 @@ officer = features("Officer side", [
     ("Who you are helping", "Four faces on the home screen: young child, signs, other language, not sure. The choice decides what the subject sees and hears, and which character appears. 17 languages in the language finder, including Chhattisgarhi, Gondi and Halbi.", BUILT),
     ("Role", "Not known yet (default), victim or witness, or accused or in custody. Sensitive and free-recall questions never for an accused; rights groups for an accused, with the child's rights for anyone who may be under 18. Rights are recorded as shown, not proof of understanding.", REVIEW),
     ("Conversation", "Two pages, Transcribe and More. What was shown on the right, the subject's answers on the left, each with its evidence grade (Said, Confirmed, Officer's reading, App's reading, Said no, Unclear) and its trail (time, changes, pauses).", BUILT),
-    ("Prepared questions", "50 questions in 13 groups, including ground rules, breaks, closing, a victim-only sensitive group and four rights groups, plus a phrase bank of 10 sentences. Question runs put up to 5 safe questions on one handover.", REVIEW),
-    ("Type anything", "The composer shows any typed text in one tap, with word completions tinted by sign, gesture or picture. The character signs, gestures or fingerspells it word by word in draft ISL order. 100 vocabulary entries cover 726 written forms.", REVIEW),
+    ("Prepared questions", "75 questions in 15 groups, including ground rules, breaks, closing, the lesson-sheet groups Personal, Family, Address, School and Everyday, a victim-only sensitive group and four rights groups, plus a phrase bank of 10 sentences. Question runs put up to 5 safe questions on one handover.", REVIEW),
+    ("Personal details", "Lesson-sheet questions open their own input on the stage: number and phone pads, name and place entry, a class grid, a state and district picker, several pictures. Each written or typed answer is read back and becomes the subject's only on their Yes; the report lists them in one table.", REVIEW),
+    ("ISL dictionary", "Every recorded and authored sign by category, searched in English or Hindi; a tap plays it for the officer, Show prepares it for the stage.", REVIEW),
+    ("Type anything", "The composer shows any typed text in one tap, with word completions tinted by sign, gesture or picture. The character signs, gestures or fingerspells it word by word in draft ISL order. 123 vocabulary entries cover 850 written forms.", REVIEW),
     ("Say it back", "The officer's reading of an answer is shown to the subject among the item's pictures; only the subject's pick makes it Confirmed.", BUILT),
     ("Read signs and Tell me", "Open a sign window: an answer of up to 20 s or an account of up to 3 minutes. The app's reading per sign, slow replay at quarter or half speed for an interpreter, and Ask them to choose.", BUILT),
     ("Manual and Auto", "Auto, when a department allows it, proposes the next welfare item from the reviewed bank in rule order; the officer approves each one. Never sensitive, free-recall or rights items.", BUILT),
     ("Assistant", "Translates typed text into the subject's language and back into English, on the phone, so the officer sees a wrong translation before Send. Gemma 3 1B through llama.cpp, imported once from a file.", OPTIONAL),
     ("They gestured", "The officer taps where the hand went and what it did; the app lists matching entries from the 33-entry gesture lexicon, and the subject confirms the meaning before anything is logged as theirs.", BUILT),
-    ("Picture board", "64 picture cards in 9 categories, with search and favourites, shown as answer choices.", BUILT),
+    ("Picture board", "102 picture cards in 11 categories, with search and favourites, shown as answer choices.", BUILT),
     ("Second screen", "A department phone or tablet paired in Bluetooth settings shows the stage; code, check number and Match; reconnect within 120 s; everything is logged on the officer's phone only.", BUILT),
     ("Notes, log and export", "Officer notes and the full session log; on ending, a PDF communication note, not a statement, encrypted with AES-256 under a one-time password shown once.", BUILT),
     ("Settings", "Camera mirror, large captions, slower gestures, screen lock to leave the stage, tilt to show, volume keys, allow automatic conversation, retention period (4 to 72 hours), app language, the assistant model, delete all data.", BUILT),
 ])
 
 subject = features("Subject side: the stage", [
-    ("Character", "A child and an adult character drawn in code, with jointed fingers, facial grammar and a living idle. 125 motions: 42 gestures, the 26-letter two-handed ISL alphabet, 10 digits and 47 draft word signs.", REVIEW),
+    ("Character", "A child and an adult character drawn in code, with jointed fingers, facial grammar and a living idle. 411 motions: 262 ISL signs retargeted from recorded Deaf signers (INCLUDE), 42 gestures, the 26-letter two-handed ISL alphabet, 10 digits and 71 draft word signs. Framed to the hips.", REVIEW),
     ("Opening", "The officer's introduction, four pictured and signed ground rules and a practice round, each moved on by the subject's Next.", REVIEW),
     ("Caption and pictures", "A speech bubble in the subject's language. Typed text lights the word being signed; tapping a word replays it slowly. Picture choices are shuffled and capped at four, plus Something else and I don't understand.", BUILT),
     ("Recorded speech", "88 placeholder recordings in Hindi and English, played by themselves for a young child or another language, never for a signer.", REVIEW),
-    ("Answers", "Yes and No always; I don't know, I don't understand and That's wrong; Break and an octagonal Stop. Draw; Write for anyone but a young child.", BUILT),
-    ("Sign an answer", "The hand button opens a 20-second sign window; one dot per sign, never the reader's guesses; a slower cue only after a failed read. The subject picks the meaning among two or three pictures.", BUILT),
+    ("Answers", "Two rails beside a 9:16 camera window: Yes and No always; I don't know, I don't understand and That's wrong; an octagonal Stop, the only pause. Draw; Write and the camera button for anyone but a young child.", BUILT),
+    ("Sign an answer", "The camera button opens a 20-second sign window; one dot per sign, never the reader's guesses; a slower cue only after a failed read. The subject picks the meaning among two or three pictures.", BUILT),
     ("Camera mirror", "The subject sees their own hands, with a hand-and-arm skeleton during a sign window. Nothing is captured or stored.", BUILT),
-    ("Pause, strip and buzz", "A calm pause after Stop or Break that only the subject ends; an upside-down strip for the officer; vibration codes for Yes, No and the other answers.", BUILT),
+    ("Pause, strip and buzz", "A calm pause after Stop that only the subject ends; an upside-down strip for the officer; vibration codes for Yes, No and the other answers.", BUILT),
     ("Sun mode", "Black, white and yellow in glare, from the light sensor while the stage shows.", BUILT),
     ("Stays on the stage", "The app is pinned; Back and single volume presses do nothing; one tap on the small lock, or both volume keys held, returns to the officer.", BUILT),
 ])
@@ -291,8 +293,8 @@ elements = table("External entities and processes", ["ID", "Name", "Description"
     ["3.2", "Present to subject", "Draws the character, caption, pictures, mirror and skeleton on the pinned stage."],
     ["3.3", "Capture input", "Answer taps, drawing strokes and written answers."],
     ["3.4", "Validate response", "Binds input to what was on screen; a reading becomes the subject's only by their pick."],
-    ["3.5", "Track landmarks", "MediaPipe Holistic on camera frames, only inside a sign window; frames are discarded after each call."],
-    ["3.6", "Read signs", "Splits landmarks into signs at pauses, reads each on the phone, limits guesses to the item on screen, builds the subject's choices."],
+    ["3.5", "Track landmarks", "MediaPipe Holistic on camera frames (GPU, CPU fallback), only inside a sign window; frames are discarded after each call."],
+    ["3.6", "Read signs", "Splits landmarks into signs at pauses, reads each on the phone, ranks guesses that fit the item on screen first, builds the subject's choices."],
     ["4.0", "Maintain session record", "Writes each event before the screen updates; serves the log; purges on end or retention expiry."],
     ["5.0", "Export and hand off", "Builds the encrypted PDF communication note; opens the interpreter contact."],
     ["6.0", "Translate typed text", "Runs the assistant model: caption in the subject's language and its back-translation, for the officer to accept."],
@@ -300,8 +302,8 @@ elements = table("External entities and processes", ["ID", "Name", "Description"
 ], "ids")
 
 stores = table("Data stores", ["ID", "Store", "Contents", "Protection", "Kept"], [
-    ["D1", "Session store", "Session, role, events with item and answer links, \"Shown as\" records, notes, drawings, typed answers", "SQLCipher (AES-256); key wrapped by D4; excluded from backup", "Until session end or retention expiry"],
-    ["D2", "Content bundle", "Questions, phrases, picture cards, gestures and signs, vocabulary, sign-word map, audio, languages, vision and sign-reader models", "Read-only in the signed APK; SHA-256 manifest", "Until app update"],
+    ["D1", "Session store", "Session, role, events with item and answer links, \"Shown as\" records, notes, drawings, typed answers, personal details given", "SQLCipher (AES-256); key wrapped by D4; excluded from backup", "Until session end or retention expiry"],
+    ["D2", "Content bundle", "Questions, phrases, picture cards, gestures, authored and recorded signs, vocabulary, sign-word map, places, audio, languages, vision and sign-reader models", "Read-only in the signed APK; SHA-256 manifest", "Until app update"],
     ["D3", "Configuration", "App settings, retention period, interpreter contact, favourite cards, stage-device flag", "No personal data", "Until uninstall"],
     ["D4", "Key store", "Key-encryption key", "Android Keystore; non-exportable; bound to user authentication", "Until Delete all data or uninstall"],
     ["D5", "Assistant model", "GGUF model file", "App-private storage; accepted only by SHA-256 allow-list", "Until removed in Settings"],
@@ -318,9 +320,9 @@ flows = table("Data flows", ["Flow", "From", "To", "Composition"], [
     ["model file / model", "E7, D5", "D5, 6.0", "GGUF file copied in once and checked by hash"],
     ["subject request", "2.0", "3.0", "Confirmed item with profile, toggles, accepted caption, or a sign window"],
     ["presentation", "3.0", "E2", "Character motion, caption, pictures, audio, mirror, skeleton"],
-    ["subject input", "E2", "3.0", "Answer tap, drawing, written answer, camera frames inside a sign window"],
+    ["subject input", "E2", "3.0", "Answer tap, lesson-sheet input, drawing, written answer, camera frames inside a sign window"],
     ["landmarks / signs, replay", "3.5, 3.6, D7", "3.6, D7, 2.0", "Hand, face and pose points; sign segments; memory only"],
-    ["app reading", "3.6", "2.0", "Top three guesses per sign, limited to the item on screen; a proposal, never shown to the subject automatically"],
+    ["app reading", "3.6", "2.0", "Top three guesses per sign, those fitting the item on screen first; a proposal, never shown to the subject automatically"],
     ["subject response", "3.0", "2.0", "Card, Yes or No, drawing, written text, picked meaning, or unclear"],
     ["items, answers / stage view", "3.0, 7.0", "7.0, E6", "Snapshot of what is on stage; answers back with item and number; encrypted with AES-256-GCM"],
     ["session events / records / session log", "2.0, 4.0", "4.0, D1, E1", "Timestamped events, appended and read back, purged on end"],
@@ -341,28 +343,28 @@ boundaries = table("Trust boundaries", ["ID", "Boundary", "Crossing", "Controls"
 stack = table(None, ["Layer", "Choice", "Why"], [
     ["Language, UI", "Kotlin, Jetpack Compose, Material 3", "Native, small, direct access to Keystore and platform security"],
     ["Platform", "Android 10 (API 29) to Android 17 (API 37)", "The oldest phones officers carry"],
-    ["Characters", "Compose Canvas 2D rig; keyframes in " + code("gestures.json") + " and " + code("signs.json"), "No video files; one file plays on both characters"],
+    ["Characters", "Compose Canvas 2D rig; keyframes in " + code("gestures.json") + ", " + code("signs.json") + " and " + code("isl_signs.json"), "No video files; one file plays on both characters"],
     ["Typed text", code("TextSigning.kt") + " with " + code("words.json"), "Rule-based word planning in draft ISL order; deterministic and reviewable"],
     ["Media", "Media3 ExoPlayer", "Recorded speech at normal and slow speed"],
-    ["Camera and vision", "CameraX 1.6; MediaPipe Tasks Vision 1.0.0 (Holistic)", "Landmarks on the phone, only inside a sign window"],
+    ["Camera and vision", "CameraX 1.6.2; MediaPipe Tasks Vision 1.0.0 (Holistic, GPU then CPU)", "Landmarks on the phone, only inside a sign window"],
     ["Sign reader", "262-word INCLUDE classifier in plain Kotlin", "No inference library; proposals only"],
     ["Second screen", "Bluetooth RFCOMM; Nearby Connections in the " + code("nearby") + " flavor only", "No network, scanning or location in the standard build"],
-    ["Storage", "Room (version 3) with SQLCipher for Android 4.19; DataStore", "Encrypted at rest; settings hold no personal data"],
+    ["Storage", "Room 2.8.5 (schema version 3) with SQLCipher for Android 4.19.1; DataStore", "Encrypted at rest; settings hold no personal data"],
     ["Security", "BiometricPrompt, Android Keystore, screen pinning, FLAG_SECURE; P-256, HKDF, AES-GCM for the link", "Platform controls, no third-party security SDK"],
     ["Export", "Android PdfDocument, PdfBox-Android (AES-256)", "Readable in any PDF reader"],
     ["Assistant", "llama.cpp v0.5.0 (MIT) via NDK r30 and CMake 4.1.1; Gemma 3 1B GGUF", "Offline translation; optional"],
     ["Background", "WorkManager", "Retention purge"],
     ["Build", "Gradle with version catalog, lockfile and dependency verification; R8 full mode; flavors " + code("standard") + " and " + code("nearby"), "Small, fast to start, verifiable supply chain"],
-    ["Tests", "JUnit unit tests; instrumented Accessibility Test Framework; Android Lint; portal tests", "120 unit tests pass for both flavors"],
+    ["Tests", "JUnit unit tests; instrumented Accessibility Test Framework; Android Lint; portal tests", "147 unit tests pass for both flavors; 918 portal tests"],
     ["Reviewer portal", "Vite+ 1.0, React 19.3, TypeScript 7.0", "Static, offline content sign-off; not shipped in the app"],
-    ["Content tools", "Python: content manifest, sign generator, review record, placeholder audio (Indic Parler-TTS), sign-reader training", "Content is data, reviewed outside the code"],
+    ["Content tools", "Python: content manifest, sign generator, sign retargeting, review record, placeholder audio (Indic Parler-TTS), sign-reader training", "Content is data, reviewed outside the code"],
 ])
 
 ready = table(None, ["Item", "State", "Needs"], [
-    ["Application", badge(BUILT), "Built; 120 unit tests pass; 47.0 MB release APK; instrumented suite to run on the merged build"],
+    ["Application", badge(BUILT), "Built; 147 unit tests pass; 45.4 MiB release APK; instrumented suite and a device run on the current build"],
     ["Vision engine and sign reader", badge(BUILT), "Frame rate, memory and hand sides on a real 64-bit phone; accuracy with children; data for yes, no, water, pain, help, stop and don't know"],
     ["Second screen", badge(BUILT), "Two-phone and tablet acceptance script; department devices and SOP"],
-    ["Gestures, signs, ISL order, alphabet, vocabulary, sign-word map, recordings", badge(REVIEW), "Sign-off by ISL, child-welfare and language reviewers through the reviewer portal and the content review record"],
+    ["Gestures, authored and recorded signs, lesson-sheet wording, ISL order, alphabet, vocabulary, sign-word map, recordings", badge(REVIEW), "Sign-off by ISL, child-welfare and language reviewers through the reviewer portal and the content review record"],
     ["Rights wording", badge(REVIEW), "Legal adviser and a legal translator, English and Hindi"],
     ["Assistant model", badge(OPTIONAL), "The department hands out the file; speed checked on an arm64 phone; output spot-checked per language"],
     ["Field tests", badge(PENDING), "Timing and TalkBack on a real Android 10 phone; transfer test on two phones"],
@@ -380,6 +382,7 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--font-body)}
 .page{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:56px}
 header{display:grid;gap:12px}
+.docset{display:flex;flex-wrap:wrap;gap:6px;font:500 13px/1 var(--font-body)}.docset>*{padding:7px 12px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;background:var(--panel)}.docset b{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:600}.docset a:hover{border-color:var(--accent)}
 .eyebrow{font:500 12px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
 h1,h2{font-family:var(--font-display);font-stretch:85%;text-wrap:balance;margin:0;letter-spacing:-.01em}
 h1{font-size:clamp(2.2rem,5vw,3.2rem);font-weight:750;line-height:1.05}
@@ -465,6 +468,7 @@ doc = f"""<!doctype html>
 <body>
 <div class="page">
 <header>
+<nav class="docset" aria-label="Document set"><b>System design</b><a href="sign-setu-docs.html">Documentation</a><a href="teammate-handoff.html">Engineering handoff</a></nav>
 <p class="eyebrow">System design · Release 1</p>
 <h1>Sign Setu</h1>
 <p class="deck">An offline Android app that helps a police officer communicate with a lost, rescued or kidnapped person who cannot communicate in words: often a child who is deaf, non-verbal, traumatised, or speaks another language. Officer and subject share the officer's phone. The app is a communication aid, not an interpreter, and never records statements.</p>
@@ -476,11 +480,11 @@ doc = f"""<!doctype html>
 <div class="cards">
 {stat("Network permission", "None")}
 {stat("Languages", "17")}
-{stat("Character motions", "125")}
-{stat("Prepared questions", "50 + 10")}
-{stat("Picture cards", "64")}
-{stat("Release APK", "47.0 MB")}
-{stat("Unit tests", "120")}
+{stat("Character motions", "411")}
+{stat("Prepared questions", "75 + 10")}
+{stat("Picture cards", "102")}
+{stat("Release APK", "45.4 MiB")}
+{stat("Unit tests", "147")}
 {stat("Sign reading", "On device")}
 </div>
 </section>
@@ -526,7 +530,7 @@ doc = f"""<!doctype html>
 {ready}
 </section>
 
-<footer>Sources: requirements (01), architecture (02), UX (03), security (04), avatar and gestures (05), test plan and report (06, 10), decisions D-01 to D-34 (07), release path (08), vision engine and sign reader (11), on-device assistant (12), and the code. Generated by docs/tools/build_system_design.py.</footer>
+<footer>Sources: requirements (01), architecture (02), UX (03), security (04), avatar and gestures (05), test plan and report (06, 10), decisions D-01 to D-38 (07), release path (08), vision engine and sign reader (11), on-device assistant (12), and the code. Generated by docs/tools/build_system_design.py.</footer>
 </div>
 </body>
 </html>

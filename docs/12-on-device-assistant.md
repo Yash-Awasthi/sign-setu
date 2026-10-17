@@ -17,7 +17,7 @@ The assistant is skipped when the subject's language is English, or Hindi typed 
 | --- | --- | --- |
 | Runtime | llama.cpp v0.5.0 (MIT), built from source by CMake, the archive pinned by SHA-256 | Open source, CPU only, runs on arm64 phones and the x86_64 emulator |
 | Model | Gemma 3 1B instruction-tuned, Q4_K_M GGUF, 806 MB (Gemma Terms of Use) | Best Hindi of the small models tried; Qwen2.5-1.5B (Apache-2.0) mistranslated three of four test questions |
-| Decoding | Greedy, at most 120 tokens per direction, empty context per request; the prompt is fed in batches of 256 tokens | The same input always gives the same output; a small batch keeps the compute buffer small |
+| Decoding | Greedy, at most 120 tokens per direction, a 1,024-token context emptied per request, 2 to 4 threads; the prompt is fed in batches of 256 tokens | The same input always gives the same output; a small batch keeps the compute buffer small |
 | Native library | `libassistant.so`, arm64-v8a only in release (5.9 MB) | 32-bit phones cannot map the model |
 
 The Gemma licence is free for government use but is not an OSI open-source licence; it passes on Google's prohibited-use policy. A fully open model of the same size with good Indic output can replace it by adding its hash (§3).
@@ -38,8 +38,8 @@ The Gemma licence is free for government use but is not an OSI open-source licen
 
 | Resource | Measured or set | Note |
 | --- | --- | --- |
-| Phone memory | Offered only on phones reporting at least 2.4 GB in total; loaded only when at least 1.2 GB is free and the system is not low on memory | A 3 GB phone reports well under 3 GB. The model maps about 0.9 GB; with it loaded the session exceeds NFR-06's 300 MB, so it is loaded on first use and freed when the app locks. The free-memory check at load time accounts for the camera and the vision engine |
-| APK | `libassistant.so` adds 5.9 MB; the release APK is 47.0 MB with the vision models | Within NFR-05's 50 MB |
+| Phone memory | Offered only on phones reporting at least 2.4 GB in total; loaded only when at least 1.2 GB is free and the system is not low on memory | A 3 GB phone reports well under 3 GB. The model maps about 0.9 GB; with it loaded the session exceeds NFR-06's 300 MB, so it is loaded on first use and freed when the app locks, under memory pressure, and whenever the stage shows or a sign window opens. The free-memory check at load time accounts for the camera and the vision engine |
+| APK | `libassistant.so` adds 5.9 MB; the release APK is 45.4 MiB with the vision models | Within NFR-05's 50 MB |
 | Time | 66 s on the x86_64 emulator for one question, including loading the model | To be measured on the oldest supported arm64 phone (PT-02); arm64 is built for the plain ARMv8 baseline |
 
 ## 5. Tests

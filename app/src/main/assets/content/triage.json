@@ -24,8 +24,8 @@
     {
       "id": "identity",
       "label": {
-        "en": "Identity",
-        "hi": "पहचान"
+        "en": "Personal",
+        "hi": "व्यक्तिगत"
       }
     },
     {
@@ -38,8 +38,22 @@
     {
       "id": "location",
       "label": {
-        "en": "Location",
-        "hi": "जगह"
+        "en": "Address",
+        "hi": "पता"
+      }
+    },
+    {
+      "id": "school",
+      "label": {
+        "en": "School",
+        "hi": "स्कूल"
+      }
+    },
+    {
+      "id": "everyday",
+      "label": {
+        "en": "Everyday",
+        "hi": "रोज़ की बातें"
       }
     },
     {
@@ -343,7 +357,12 @@
         "hi": "आपकी उम्र कितनी है? उँगलियों से दिखाइए।"
       },
       "gesture": "count",
-      "phase": "PRACTICAL"
+      "phase": "PRACTICAL",
+      "answer": "AGE",
+      "field": {
+        "en": "Age",
+        "hi": "उम्र"
+      }
     },
     {
       "id": "i3",
@@ -359,15 +378,76 @@
       "phase": "PRACTICAL"
     },
     {
+      "id": "p1",
+      "group": "identity",
+      "cards": [],
+      "text": {
+        "en": "What is your name?",
+        "hi": "आपका नाम क्या है?"
+      },
+      "signed": true,
+      "answer": "NAME",
+      "field": {
+        "en": "Name",
+        "hi": "नाम"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "p2",
+      "group": "identity",
+      "cards": [
+        "phone"
+      ],
+      "text": {
+        "en": "What is your mobile number?",
+        "hi": "आपका मोबाइल नंबर क्या है?"
+      },
+      "signed": true,
+      "answer": "PHONE",
+      "field": {
+        "en": "Mobile number",
+        "hi": "मोबाइल नंबर"
+      },
+      "hiddenFor": [
+        "YOUNG_CHILD"
+      ],
+      "phase": "MANUAL"
+    },
+    {
+      "id": "p3",
+      "group": "identity",
+      "cards": [
+        "draw"
+      ],
+      "text": {
+        "en": "Introduce yourself.",
+        "hi": "आप अपना परिचय दीजिए।"
+      },
+      "signed": true,
+      "kind": "INVITATION",
+      "roles": [
+        "NOT_KNOWN",
+        "VICTIM"
+      ],
+      "phase": "MANUAL"
+    },
+    {
       "id": "f1",
       "group": "family",
       "cards": [
         "mother",
         "father",
+        "brother",
+        "sister",
         "grandmother",
         "grandfather",
-        "brother",
-        "sister"
+        "spouse",
+        "children",
+        "relatives",
+        "friends",
+        "alone",
+        "someone_else"
       ],
       "text": {
         "en": "Who do you live with?",
@@ -375,7 +455,12 @@
       },
       "gesture": "home.roof",
       "phase": "PRACTICAL",
-      "kind": "OPTION"
+      "kind": "OPTION",
+      "answer": "PICTURES",
+      "field": {
+        "en": "Lives with",
+        "hi": "किसके साथ रहते हैं"
+      }
     },
     {
       "id": "f2",
@@ -416,6 +501,77 @@
       },
       "gesture": "phone.ear",
       "phase": "PRACTICAL"
+    },
+    {
+      "id": "f5",
+      "group": "family",
+      "cards": [
+        "father"
+      ],
+      "text": {
+        "en": "What is your father's name?",
+        "hi": "आपके पिता का नाम क्या है?"
+      },
+      "signed": true,
+      "answer": "NAME",
+      "field": {
+        "en": "Father's name",
+        "hi": "पिता का नाम"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "f6",
+      "group": "family",
+      "cards": [
+        "mother"
+      ],
+      "text": {
+        "en": "What is your mother's name?",
+        "hi": "आपकी माँ का नाम क्या है?"
+      },
+      "signed": true,
+      "answer": "NAME",
+      "field": {
+        "en": "Mother's name",
+        "hi": "माँ का नाम"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "f7",
+      "group": "family",
+      "cards": [],
+      "text": {
+        "en": "How many members are in your family?",
+        "hi": "आपके परिवार में कितने लोग हैं?"
+      },
+      "signed": true,
+      "answer": "COUNT",
+      "field": {
+        "en": "Family members",
+        "hi": "परिवार के सदस्य"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "f8",
+      "group": "family",
+      "cards": [
+        "brother",
+        "sister"
+      ],
+      "text": {
+        "en": "How many brothers and sisters do you have?",
+        "hi": "आपके कितने भाई-बहन हैं?"
+      },
+      "signed": true,
+      "answer": "SIBLINGS",
+      "field": {
+        "en": "Brothers and sisters",
+        "hi": "भाई-बहन"
+      },
+      "phase": "MANUAL"
     },
     {
       "id": "l1",
@@ -466,6 +622,105 @@
         "hi": "क्या आपका घर यहाँ से दूर है?"
       },
       "phase": "PRACTICAL"
+    },
+    {
+      "id": "a1",
+      "group": "location",
+      "cards": [
+        "home"
+      ],
+      "text": {
+        "en": "Where do you live?",
+        "hi": "आप कहाँ रहते हैं?"
+      },
+      "signed": true,
+      "answer": "PLACE",
+      "field": {
+        "en": "Where they live",
+        "hi": "कहाँ रहते हैं"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "a2",
+      "group": "location",
+      "cards": [
+        "village"
+      ],
+      "text": {
+        "en": "What is the name of your village or city?",
+        "hi": "आपके गाँव या शहर का नाम क्या है?"
+      },
+      "signed": true,
+      "answer": "TEXT",
+      "field": {
+        "en": "Village or city",
+        "hi": "गाँव या शहर"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "a3",
+      "group": "location",
+      "cards": [],
+      "text": {
+        "en": "Which district do you live in?",
+        "hi": "आप किस ज़िले में रहते हैं?"
+      },
+      "signed": true,
+      "answer": "DISTRICT",
+      "field": {
+        "en": "District",
+        "hi": "ज़िला"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "a4",
+      "group": "location",
+      "cards": [],
+      "text": {
+        "en": "Which state do you live in?",
+        "hi": "आप किस राज्य में रहते हैं?"
+      },
+      "signed": true,
+      "answer": "STATE",
+      "field": {
+        "en": "State",
+        "hi": "राज्य"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "a5",
+      "group": "location",
+      "cards": [
+        "temple",
+        "mosque",
+        "church",
+        "school",
+        "market",
+        "hospital",
+        "police_station",
+        "bus_stand",
+        "railway_station",
+        "river",
+        "pond",
+        "field",
+        "forest",
+        "other"
+      ],
+      "text": {
+        "en": "Which place is near your home?",
+        "hi": "आपके घर के पास कौन-सी जगह है?"
+      },
+      "signed": true,
+      "answer": "PICTURES",
+      "field": {
+        "en": "Near their home",
+        "hi": "घर के पास"
+      },
+      "phase": "MANUAL"
     },
     {
       "id": "x1",
@@ -852,6 +1107,230 @@
       "phase": "RIGHTS",
       "kind": "STATEMENT",
       "note": "RPwD Act 2016 s.7(4)(d); draft, needs legal review."
+    },
+    {
+      "id": "sc1",
+      "group": "school",
+      "cards": [
+        "school"
+      ],
+      "text": {
+        "en": "What is the name of your school?",
+        "hi": "आपके स्कूल का नाम क्या है?"
+      },
+      "signed": true,
+      "answer": "TEXT",
+      "field": {
+        "en": "School",
+        "hi": "स्कूल"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "sc2",
+      "group": "school",
+      "cards": [],
+      "text": {
+        "en": "Which class do you study in?",
+        "hi": "आप किस कक्षा में पढ़ते हैं?"
+      },
+      "signed": true,
+      "answer": "CLASS",
+      "field": {
+        "en": "Class",
+        "hi": "कक्षा"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "sc3",
+      "group": "school",
+      "cards": [],
+      "text": {
+        "en": "What is your teacher's name?",
+        "hi": "आपके शिक्षक का नाम क्या है?"
+      },
+      "signed": true,
+      "answer": "NAME",
+      "field": {
+        "en": "Teacher's name",
+        "hi": "शिक्षक का नाम"
+      },
+      "phase": "MANUAL"
+    },
+    {
+      "id": "sc4",
+      "group": "school",
+      "cards": [
+        "hindi",
+        "english",
+        "maths",
+        "science",
+        "social_science",
+        "computer",
+        "art",
+        "music",
+        "sports",
+        "other"
+      ],
+      "text": {
+        "en": "What is your favourite subject?",
+        "hi": "आपका पसंदीदा विषय कौन-सा है?"
+      },
+      "signed": true,
+      "answer": "PICTURES",
+      "field": {
+        "en": "Favourite subject",
+        "hi": "पसंदीदा विषय"
+      },
+      "roles": [
+        "NOT_KNOWN",
+        "VICTIM"
+      ],
+      "phase": "MANUAL"
+    },
+    {
+      "id": "sc5",
+      "group": "school",
+      "cards": [
+        "studying",
+        "playing",
+        "friends",
+        "drawing",
+        "reading",
+        "lunch",
+        "sports",
+        "nothing"
+      ],
+      "text": {
+        "en": "What do you like doing at school?",
+        "hi": "आपको स्कूल में क्या करना अच्छा लगता है?"
+      },
+      "signed": true,
+      "answer": "PICTURES",
+      "field": {
+        "en": "Likes at school",
+        "hi": "स्कूल में क्या पसंद है"
+      },
+      "roles": [
+        "NOT_KNOWN",
+        "VICTIM"
+      ],
+      "phase": "MANUAL"
+    },
+    {
+      "id": "e1",
+      "group": "everyday",
+      "cards": [
+        "namaste"
+      ],
+      "text": {
+        "en": "Namaste.",
+        "hi": "नमस्ते।"
+      },
+      "signed": true,
+      "kind": "STATEMENT",
+      "phase": "MANUAL"
+    },
+    {
+      "id": "e2",
+      "group": "everyday",
+      "cards": [
+        "okay",
+        "sad",
+        "scared"
+      ],
+      "text": {
+        "en": "How are you?",
+        "hi": "आप कैसे हैं?"
+      },
+      "signed": true,
+      "kind": "OPTION",
+      "phase": "MANUAL"
+    },
+    {
+      "id": "e3",
+      "group": "everyday",
+      "cards": [
+        "help"
+      ],
+      "text": {
+        "en": "Please help me.",
+        "hi": "कृपया मेरी मदद कीजिए।"
+      },
+      "signed": true,
+      "kind": "STATEMENT",
+      "phase": "MANUAL"
+    },
+    {
+      "id": "e4",
+      "group": "everyday",
+      "cards": [
+        "water"
+      ],
+      "text": {
+        "en": "I want water.",
+        "hi": "मुझे पानी चाहिए।"
+      },
+      "signed": true,
+      "kind": "STATEMENT",
+      "phase": "MANUAL"
+    },
+    {
+      "id": "e5",
+      "group": "everyday",
+      "cards": [
+        "dont_understand"
+      ],
+      "text": {
+        "en": "I did not understand.",
+        "hi": "मुझे समझ नहीं आया।"
+      },
+      "signed": true,
+      "kind": "STATEMENT",
+      "phase": "MANUAL"
+    },
+    {
+      "id": "e6",
+      "group": "everyday",
+      "cards": [
+        "again"
+      ],
+      "text": {
+        "en": "Please say it again.",
+        "hi": "कृपया फिर से बताइए।"
+      },
+      "signed": true,
+      "kind": "STATEMENT",
+      "phase": "MANUAL"
+    },
+    {
+      "id": "e7",
+      "group": "everyday",
+      "cards": [
+        "thank_you"
+      ],
+      "text": {
+        "en": "Thank you.",
+        "hi": "धन्यवाद।"
+      },
+      "signed": true,
+      "kind": "STATEMENT",
+      "phase": "MANUAL"
+    },
+    {
+      "id": "e8",
+      "group": "everyday",
+      "cards": [
+        "home"
+      ],
+      "text": {
+        "en": "I want to go home.",
+        "hi": "मुझे घर जाना है।"
+      },
+      "signed": true,
+      "kind": "STATEMENT",
+      "phase": "MANUAL"
     }
   ]
 }

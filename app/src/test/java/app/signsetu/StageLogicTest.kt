@@ -32,20 +32,67 @@ import java.io.File
 class StageLogicTest {
 
     private var id = 0L
+    private val none = { _: String -> false }
     private fun event(type: EventType, text: String?, cardId: String? = null, ts: Long = 0) =
         SessionEvent(++id, ts, type, EventSource.SUBJECT, "en", text, cardId, null, null)
 
     @Test
     fun glanceShowsTheLastQuestionAndItsLatestAnswer() {
-        assertNull(glanceText(emptyList()))
+        assertNull(glanceText(emptyList(), none))
         val asked = event(EventType.QUESTION_SHOWN, "Hurt?")
-        assertEquals("Hurt?", glanceText(listOf(asked)))
-        assertEquals("Hurt? → YES", glanceText(listOf(asked, event(EventType.ANSWER_CARD, "Yes", "yes"))))
+        assertEquals("Hurt?", glanceText(listOf(asked), none))
+        assertEquals("Hurt? → YES", glanceText(listOf(asked, event(EventType.ANSWER_CARD, "Yes", "yes")), none))
         // A machine reading is nobody's answer yet.
-        assertEquals("Hurt?", glanceText(listOf(asked, event(EventType.ANSWER_SIGNED, "pain"))))
-        val long = glanceText(listOf(event(EventType.QUESTION_SHOWN, "Where were you before the police found you?\nsecond line")))!!
+        assertEquals("Hurt?", glanceText(listOf(asked, event(EventType.ANSWER_SIGNED, "pain")), none))
+        val long = glanceText(listOf(event(EventType.QUESTION_SHOWN, "Where were you before the police found you?\nsecond line")), none)!!
         assertEquals(32, long.length)
         assertTrue(long.endsWith("…"))
+    }
+
+    @Test
+    fun glanceNeverShowsAWrittenAnswer() {
+        val asked = event(EventType.QUESTION_SHOWN, "Who hurt you?")
+        assertEquals("Who hurt you?", glanceText(listOf(asked, event(EventType.ANSWER_TEXT, "Ravi Kumar")), none))
+    }
+
+    @Test
+    fun glanceSayBackNeverLeaksTheAnswer() {
+        val asked = event(EventType.QUESTION_SHOWN, "Who hurt you?")
+        val written = event(EventType.ANSWER_TEXT, "Ravi Kumar").copy(shownId = asked.id)
+        val sayBack = event(EventType.QUESTION_SHOWN, "Ravi Kumar").copy(lexiconId = "ref:${written.id}")
+        assertEquals("Who hurt you?", glanceText(listOf(asked, written, sayBack), none))
+        val reading = event(EventType.ANSWER_GESTURE, "Ravi Kumar")
+        assertEquals("Who hurt you?", glanceText(listOf(asked, written, sayBack, reading), none))
+    }
+
+    @Test
+    fun glanceNeverShowsAPersonalDetail() {
+        val personal = { item: String -> item == "name" }
+        val asked = event(EventType.QUESTION_SHOWN, "Your name?").copy(itemId = "name")
+        val typed = event(EventType.ANSWER_TEXT, "Ravi Kumar").copy(shownId = asked.id)
+        assertEquals("Your name?", glanceText(listOf(asked, typed), personal))
+        val signed = event(EventType.ANSWER_SIGNED, "ravi").copy(shownId = asked.id)
+        val sayBack = event(EventType.QUESTION_SHOWN, "Ravi").copy(lexiconId = "ref:${signed.id}")
+        assertNull(glanceText(listOf(asked, signed, sayBack), personal))
+        val other = event(EventType.QUESTION_SHOWN, "Hurt?").copy(itemId = "h1")
+        assertEquals("Hurt? → YES", glanceText(listOf(other, event(EventType.ANSWER_CARD, "Yes", "yes")), personal))
+    }
+
+    @Test
+    fun glanceChainedSayBackFollowsBackToTheQuestion() {
+        val personal = { item: String -> item == "name" }
+        fun chain(question: String, item: String): List<SessionEvent> {
+            val asked = event(EventType.QUESTION_SHOWN, question).copy(itemId = item)
+            val signed = event(EventType.ANSWER_SIGNED, "ravi").copy(shownId = asked.id)
+            val s1 = event(EventType.QUESTION_SHOWN, "Ravi").copy(lexiconId = "ref:${signed.id}")
+            val typed = event(EventType.ANSWER_TEXT, "Ravi").copy(shownId = s1.id)
+            val s2 = event(EventType.QUESTION_SHOWN, "Ravi").copy(lexiconId = "ref:${typed.id}")
+            return listOf(asked, signed, s1, typed, s2)
+        }
+        assertNull(glanceText(chain("Your name?", "name"), personal))
+        assertEquals("Who hurt you?", glanceText(chain("Who hurt you?", "who"), personal))
+        val broken = chain("Who hurt you?", "who").let { it.filterNot { e -> e == it[1] } }
+        assertNull(glanceText(broken, personal))
     }
 
     @Test

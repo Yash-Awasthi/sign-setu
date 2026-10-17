@@ -26,6 +26,7 @@ import app.signsetu.ui.components.LocalContentRepository
 import app.signsetu.ui.session.BoardSheet
 import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.Pending
+import app.signsetu.ui.session.PhraseBoard
 import app.signsetu.ui.session.RuleSteps
 import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.Stage
@@ -77,7 +78,7 @@ class StageAccessibilityTest(private val dark: Boolean) {
         if (atf) rule.onAllNodes(isRoot()).onLast().tryPerformAccessibilityChecks()
     }
 
-    private fun stage(pending: Pending?, profile: Profile = Profile.YOUNG_CHILD, answeredCard: String? = null, lang: String = "hi", size: DpSize? = null, atf: Boolean = true) {
+    private fun stage(pending: Pending?, profile: Profile = Profile.YOUNG_CHILD, answeredCard: String? = null, lang: String = "hi", size: DpSize? = null, atf: Boolean = true, lesson: Boolean = false) {
         val ui = SessionUi(
             session = Session("test", 0L, profile, lang),
             selectedGroup = "safety",
@@ -95,7 +96,7 @@ class StageAccessibilityTest(private val dark: Boolean) {
         show(atf) {
             SubjectTheme {
                 Box(if (size != null) Modifier.size(size) else Modifier) {
-                    Stage(ui, content, tracker = null, cameraOn = false, largeCaptions = false, gestureSpeed = 1f, {}, {}, {}, {}, {}, {}, {}, {}, {})
+                    Stage(ui, content, tracker = null, cameraOn = false, largeCaptions = false, gestureSpeed = 1f, {}, {}, {}, {}, {}, {}, {}, {}, {}, onGiven = if (lesson) { _ -> } else null)
                 }
             }
         }
@@ -146,4 +147,23 @@ class StageAccessibilityTest(private val dark: Boolean) {
 
     @Test
     fun pictureBoard() = show { BoardSheet(content, "en", emptyList(), setOf("water"), {}, {}, {}) }
+
+    // Lesson-sheet answer inputs, each with the ways out below them.
+    @Test fun agePad() = stage(ask("i2"), Profile.ISL_USER, lesson = true)
+
+    @Test fun phonePadWithNoPhone() = stage(ask("p2"), Profile.ISL_USER, lesson = true)
+
+    @Test fun siblingPads() = stage(ask("f8"), Profile.NOT_SURE, lang = "en", lesson = true)
+
+    @Test fun classGrid() = stage(ask("sc2"), Profile.YOUNG_CHILD, lesson = true)
+
+    @Test fun statePicker() = stage(ask("a4"), Profile.ISL_USER, lesson = true)
+
+    @Test fun manyPictures() = stage(ask("f1"), Profile.YOUNG_CHILD, lesson = true)
+
+    @Test fun inputsWithoutWordsInTheSubjectsLanguage() = stage(ask("a5"), Profile.NOT_SURE, lang = "bn", lesson = true)
+
+    @Test fun phraseBoard() = show { SubjectTheme { PhraseBoard(content, "hi", null, {}, {}, {}, Modifier) } }
+
+    @Test fun nameEntry() = stage(ask("p1"), Profile.ISL_USER, lesson = true)
 }

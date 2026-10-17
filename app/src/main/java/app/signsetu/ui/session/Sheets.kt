@@ -1,5 +1,7 @@
 package app.signsetu.ui.session
 
+import android.content.res.Resources
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.height
 import app.signsetu.ui.components.BrandButton
 import app.signsetu.ui.avatar.Avatar
@@ -61,6 +63,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -137,16 +140,17 @@ fun BoardSheet(
     onFavourite: (String) -> Unit,
     onUse: (List<String>) -> Unit,
     onDismiss: () -> Unit,
+    onDraft: (List<String>) -> Unit = {},
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     // Favourites open first once the officer has starred any (FR-19).
     var category by rememberSaveable { mutableStateOf(if (favourites.isNotEmpty()) FAVOURITES else null) }
-    val chosen = remember { mutableStateListOf<String>().apply { addAll(initial) } }
+    val chosen = rememberSaveable(saver = listSaver(save = { l -> l.toList() }, restore = { l -> l.toMutableStateList() })) { initial.toMutableStateList() }
     val cards = content.cards.values.filter { c ->
         (category == null || c.category == category || (category == FAVOURITES && c.id in favourites)) &&
             (query.isBlank() || c.label.values.any { it.contains(query.trim(), ignoreCase = true) })
     }
-    OfficerSheet(onDismiss) {
+    OfficerSheet({ onDraft(chosen.toList()); onDismiss() }) {
         Column(Modifier.fillMaxHeight(0.92f).padding(horizontal = Spacing.lg)) {
             SheetTitle(stringResource(R.string.board_title))
             OutlinedTextField(
@@ -269,8 +273,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry, Li
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss: () -> Unit) {
-    var note by rememberSaveable { mutableStateOf("") }
+fun LogSheet(events: List<SessionEvent>, note: String, onNote: (String) -> Unit, onAddNote: (String) -> Unit, onDismiss: () -> Unit) {
     OfficerSheet(onDismiss) {
         Column(Modifier.fillMaxHeight(0.92f).padding(horizontal = Spacing.lg).imePadding()) {
             SheetTitle(stringResource(R.string.officer_log))
@@ -291,7 +294,7 @@ fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss:
             ) {
                 OutlinedTextField(
                     value = note,
-                    onValueChange = { note = it },
+                    onValueChange = onNote,
                     placeholder = { Text(stringResource(R.string.log_note_hint)) },
                     // SEC-05: the keyboard should not learn or suggest from what is noted about a subject.
                     keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
@@ -299,7 +302,7 @@ fun LogSheet(events: List<SessionEvent>, onAddNote: (String) -> Unit, onDismiss:
                     modifier = Modifier.weight(1f),
                 )
                 Button(
-                    onClick = { onAddNote(note); note = "" },
+                    onClick = { onAddNote(note); onNote("") },
                     enabled = note.isNotBlank(),
                     modifier = Modifier.padding(start = Spacing.sm),
                 ) { Text(stringResource(R.string.log_add)) }
@@ -331,6 +334,14 @@ val AnswerEvents = setOf(EventType.ANSWER_CARD, EventType.ANSWER_DRAWING, EventT
 /** A signed answer is always marked as the app's reading or the officer's, never as the subject's own words. */
 fun signedMark(e: SessionEvent) = if (e.source == EventSource.OFFICER) R.string.signed_officer else R.string.signed_app
 
+/** Words of a signed answer for display; null when no sign has been read yet. The record keeps its "?" marks. */
+fun signedWords(text: String?): String? =
+    text?.split(' ')?.takeUnless { w -> w.all { it == "?" } }?.joinToString(" ") { if (it == "?") "…" else it }
+
+/** How a signed answer reads on screen and in the export: its words, or how many signs wait to be read. */
+fun signedDisplay(res: Resources, text: String?): String =
+    signedWords(text) ?: (text?.split(' ')?.size ?: 0).let { res.getQuantityString(R.plurals.signed_unread, it, it) }
+
 @Composable
 fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? = null) {
     ListItem(
@@ -344,7 +355,14 @@ fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? =
             Text("${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(e.ts))}  ·  ${stringResource(e.type.label())}$mark")
         },
         headlineContent = {
-            Text(if (e.type == EventType.SYSTEM) systemText(LocalResources.current, e.text) else app.signsetu.ui.pair.linkText(e) ?: e.text ?: "—")
+            val res = LocalResources.current
+            Text(
+                when (e.type) {
+                    EventType.SYSTEM -> systemText(res, e.text)
+                    EventType.ANSWER_SIGNED -> signedDisplay(res, e.text)
+                    else -> app.signsetu.ui.pair.linkText(e) ?: e.text ?: "—"
+                },
+            )
         },
         supportingContent = question?.takeIf { it != e.text }?.let { q -> { Text(q, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         leadingContent = e.cardId?.let { id ->
@@ -404,7 +422,11 @@ fun OfficerSheet(onDismiss: () -> Unit, expanded: Boolean = true, content: @Comp
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = expanded),
         dragHandle = { Box(Modifier.sizeIn(minWidth = 48.dp), contentAlignment = Alignment.Center) { BottomSheetDefaults.DragHandle() } },
-        content = { FilterObscuredTouches(); content() },
+        content = {
+            FilterObscuredTouches()
+            TextButton(onClick = onDismiss, modifier = Modifier.padding(horizontal = Spacing.sm)) { Text(stringResource(R.string.back)) }
+            content()
+        },
     )
 }
 
@@ -413,7 +435,7 @@ fun SheetTitle(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.padding(bottom = Spacing.md).semantics { heading() },
+        modifier = Modifier.padding(bottom = Spacing.lg).semantics { heading() },
     )
 }
 
@@ -486,11 +508,15 @@ fun SignedSheet(
     onDismiss: () -> Unit,
     onAsk: ((List<String>) -> Unit)? = null,
     canAsk: (List<String>) -> Boolean = { true },
+    draft: List<String>? = null,
+    onDraft: (List<String>) -> Unit = {},
 ) {
     val replay = rememberReplayState(segments)
-    val words = remember(segments) { segments.map { s -> s.word?.takeIf { it != "?" }.orEmpty() }.toMutableStateList() }
+    val words = rememberSaveable(segments, saver = listSaver(save = { l -> l.toList() }, restore = { l -> l.toMutableStateList() })) {
+        (draft?.takeIf { it.size == segments.size } ?: segments.map { s -> s.word?.takeIf { it != "?" }.orEmpty() }).toMutableStateList()
+    }
     val colors = MaterialTheme.colorScheme
-    OfficerSheet(onDismiss) {
+    OfficerSheet({ onDraft(words.toList()); onDismiss() }) {
         LazyColumn(
             Modifier.fillMaxHeight(0.92f).imePadding(),
             contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.xxl),
@@ -502,11 +528,16 @@ fun SignedSheet(
                 item { Text(stringResource(R.string.signed_manual), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant) }
             }
             itemsIndexed(segments) { i, s ->
-                Surface(shape = MaterialTheme.shapes.medium, color = if (replay.segment == i) colors.primaryContainer else colors.surfaceContainerLow) {
-                    Column(Modifier.padding(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                val current = replay.segment == i
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = if (current) colors.surfaceContainerHigh else colors.surfaceContainerLow,
+                    border = if (current) BorderStroke(2.dp, colors.primary) else null,
+                ) {
+                    Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val name = stringResource(R.string.signed_sign, i + 1)
-                            TextButton(onClick = { replay.play(i) }) {
+                            TextButton(onClick = { replay.play(i) }, modifier = Modifier.heightIn(min = 48.dp)) {
                                 Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(name, modifier = Modifier.padding(start = Spacing.xs))
                             }

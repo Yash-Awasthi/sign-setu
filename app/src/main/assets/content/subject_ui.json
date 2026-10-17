@@ -94,5 +94,49 @@
   "practice_morning": {
     "en": "Show me what you did this morning.",
     "hi": "मुझे दिखाइए, आज सुबह आपने क्या किया।"
+  },
+  "is_this_right": {
+    "en": "Is this right?",
+    "hi": "क्या यह सही है?"
+  },
+  "fix": {
+    "en": "Change",
+    "hi": "बदलो"
+  },
+  "brothers": {
+    "en": "Brothers",
+    "hi": "भाई"
+  },
+  "sisters": {
+    "en": "Sisters",
+    "hi": "बहनें"
+  },
+  "college": {
+    "en": "College",
+    "hi": "कॉलेज"
+  },
+  "not_in_school": {
+    "en": "Not in school",
+    "hi": "स्कूल नहीं जाते"
+  },
+  "pick_state": {
+    "en": "Which state?",
+    "hi": "कौन-सा राज्य?"
+  },
+  "pick_district": {
+    "en": "Which district?",
+    "hi": "कौन-सा ज़िला?"
+  },
+  "write_place": {
+    "en": "Village or town",
+    "hi": "गाँव या शहर"
+  },
+  "say": {
+    "en": "Say",
+    "hi": "कहो"
+  },
+  "class_n": {
+    "en": "Class %s",
+    "hi": "कक्षा %s"
   }
 }

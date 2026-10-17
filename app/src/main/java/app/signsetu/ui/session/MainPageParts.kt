@@ -163,7 +163,7 @@ fun AnswerMeta(grade: Grade?, trail: Trail?, position: Pair<Int, Int>?, onSayBac
             val (bg, fg) = when (g) {
                 Grade.CONFIRMED -> answer.yesContainer to answer.onYesContainer
                 Grade.SAID_NO -> answer.noContainer to answer.onNoContainer
-                Grade.OFFICER_READ, Grade.MACHINE_READ -> colors.surfaceContainerHighest to colors.onSurfaceVariant
+                Grade.OFFICER_READ, Grade.MACHINE_READ -> colors.surfaceContainerHigh to colors.onSurface
                 Grade.UNCLEAR -> colors.tertiaryContainer to colors.onTertiaryContainer
                 Grade.SAID -> colors.secondaryContainer to colors.onSecondaryContainer
             }
@@ -186,8 +186,8 @@ fun trailBorder(trail: Trail?): BorderStroke? = if (trail?.unsteady == true) Bor
 
 /** The officer edits their reading of an answer line; the subject's own words are pre-filled as written. */
 @Composable
-fun SayBackDialog(e: SessionEvent, onSend: (String) -> Unit, onDismiss: () -> Unit) {
-    var words by rememberSaveable(e.id) { mutableStateOf(e.text.orEmpty()) }
+fun SayBackDialog(e: SessionEvent, draft: String, onDraft: (String) -> Unit, onSend: (String) -> Unit, onDismiss: () -> Unit) {
+    var words by rememberSaveable(e.id) { mutableStateOf(draft) }
     GuardedAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.say_back_title)) },
@@ -196,7 +196,7 @@ fun SayBackDialog(e: SessionEvent, onSend: (String) -> Unit, onDismiss: () -> Un
                 Text(stringResource(R.string.say_back_body), style = MaterialTheme.typography.bodyMedium)
                 OutlinedTextField(
                     value = words,
-                    onValueChange = { words = it },
+                    onValueChange = { words = it; onDraft(it) },
                     singleLine = true,
                     // SEC-05: the keyboard should not learn from what is typed about a subject.
                     keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),

@@ -49,6 +49,19 @@ export const SHAPES: Record<string, HandShape> = {
   HOOK: shape(0.55, 0.5, 1, 1, 1, 1),
 };
 
+/** MeasuredShape.kt: a named shape, or a measured "c:" shape (five curls, thumbAcross, spread, in percent). */
+export function handShape(name: string): HandShape | undefined {
+  if (SHAPES[name]) return SHAPES[name];
+  if (!name.startsWith("c:")) return undefined;
+  const v = name
+    .slice(2)
+    .split(",")
+    .map((s) => (/^\s*-?\d+\s*$/.test(s) ? parseInt(s, 10) : NaN));
+  if (v.length !== 7 || v.some(Number.isNaN)) return undefined;
+  const c = (i: number) => Math.min(1, Math.max(0, v[i] / 100));
+  return shape(c(0), c(1), c(2), c(3), c(4), c(5), Math.min(1, Math.max(-1, v[6] / 100)));
+}
+
 export interface HandKey {
   at?: string;
   dx?: number;
@@ -57,6 +70,8 @@ export interface HandKey {
   roll?: number;
   angle?: number | null;
   elbow?: string;
+  ex?: number | null;
+  ey?: number | null;
   touch?: string;
   prop?: string | null;
 }
@@ -130,6 +145,9 @@ export interface HandPose {
   angle: number;
   elbowOut: number;
   prop: string | null;
+  /** Recorded elbow minus shoulder on screen, NaN to solve it from elbowOut. */
+  elbowX: number;
+  elbowY: number;
 }
 
 export interface Pose {
@@ -144,6 +162,8 @@ export interface Pose {
   hunch: number;
   shiver: number;
   gaze: number;
+  /** The right hand is placed on the left one, so it draws in front. */
+  rFront: boolean;
 }
 
 export const lerp = (a: number, b: number, f: number) => a + (b - a) * f;
@@ -216,7 +236,7 @@ export const ChildBuild: Build = {
   upperArm: 38,
   foreArm: 35,
   armWidth: 12,
-  handScale: 1.6,
+  handScale: 1.85,
   anchors: {
     hairline: [100, 40],
     forehead: [100, 56],
@@ -253,7 +273,7 @@ export const AdultBuild: Build = {
   upperArm: 41,
   foreArm: 38,
   armWidth: 13,
-  handScale: 1.4,
+  handScale: 2.0,
   anchors: {
     hairline: [100, 38],
     forehead: [100, 52],
@@ -286,6 +306,8 @@ const REST_KEY: FullHandKey = {
   roll: -1,
   angle: null,
   elbow: "out",
+  ex: null,
+  ey: null,
   touch: "wrist",
   prop: null,
 };
@@ -293,6 +315,7 @@ const full = (k: HandKey): FullHandKey => ({ ...REST_KEY, ...k });
 const OTHER_HAND = new Set(["wrist_opp", "palm_opp", "thumb_opp", "index_opp", "middle_opp", "ring_opp", "pinky_opp"]);
 export const LEAD_IN = 0.35;
 export const LEAD_OUT = 0.45;
+const FLOW = 0.35;
 
 interface Frame {
   t: number;
@@ -307,6 +330,14 @@ const body = (b: BodyKey = {}) => ({ lean: 0, shrug: 0, hunch: 0, shiver: 0, ...
 const restFrame = (t = 0): Frame => ({ t, r: REST_KEY, l: REST_KEY, face: FACES.neutral, head: head(), body: body() });
 
 const ease = (f: number) => (f < 0.5 ? 4 * f * f * f : 1 - (-2 * f + 2) ** 3 / 2);
+const hermite = (p1: number, p2: number, m1: number, m2: number, u: number) =>
+  (2 * u ** 3 - 3 * u ** 2 + 1) * p1 + (u ** 3 - 2 * u ** 2 + u) * m1 + (-2 * u ** 3 + 3 * u ** 2) * p2 + (u ** 3 - u ** 2) * m2;
+const measured = (f: Frame) => f.r.shape.startsWith("c:") || f.l.shape.startsWith("c:");
+/** Recorded keys close together sample one movement, as in Rig.kt. */
+const flows = (frames: Frame[], i: number) =>
+  i >= 0 && i < frames.length - 1 && frames[i + 1].t - frames[i].t < FLOW && measured(frames[i]) && measured(frames[i + 1]);
+const easeOutBack = (f: number, c1 = 1.1) => 1 + (c1 + 1) * (f - 1) ** 3 + c1 * (f - 1) ** 2;
+const recordedElbow = (k: FullHandKey, side: Side): [number, number] | null => (k.ex != null && k.ey != null ? [k.ex * side, k.ey] : null);
 const elbow = (name: string) => (name === "in" ? -1 : name === "down" ? 0 : 1);
 const blendShape = (a: HandShape, b: HandShape, f: number): HandShape =>
   shape(
@@ -322,9 +353,22 @@ const blendShape = (a: HandShape, b: HandShape, f: number): HandShape =>
 export function restPose(b: Build): Pose {
   const hand = (side: Side): HandPose => {
     const [x, y] = rest(b, side);
-    return { x, y, shape: SHAPES.RELAX, roll: -1, angle: NaN, elbowOut: 1, prop: null };
+    return { x, y, shape: SHAPES.RELAX, roll: -1, angle: NaN, elbowOut: 1, prop: null, elbowX: NaN, elbowY: NaN };
   };
-  return { r: hand(R), l: hand(L), face: FACES.neutral, tilt: 0, nod: 0, turn: 0, lean: 0, shrug: 0, hunch: 0, shiver: 0, gaze: 0 };
+  return {
+    r: hand(R),
+    l: hand(L),
+    face: FACES.neutral,
+    tilt: 0,
+    nod: 0,
+    turn: 0,
+    lean: 0,
+    shrug: 0,
+    hunch: 0,
+    shiver: 0,
+    gaze: 0,
+    rFront: false,
+  };
 }
 
 /** Plays a gesture: eases in from rest, through the keys, and back to rest. */
@@ -349,8 +393,11 @@ export class Timeline {
     for (let j = 0; j < frames.length; j++) if (frames[j].t <= t) i = j;
     const a = frames[i];
     const b = frames[i + 1] ?? a;
-    const f = b.t > a.t ? ease(clamp((t - a.t) / (b.t - a.t), 0, 1)) : 0;
-    return this.blend(a, b, f);
+    if (flows(frames, i)) return this.flow(frames, i, clamp((t - a.t) / (b.t - a.t), 0, 1));
+    // Each move lands a little early and holds, as in Rig.kt.
+    const hold = Math.min(0.08, 0.25 * (b.t - a.t));
+    const raw = b.t > a.t ? clamp((t - a.t) / (b.t - a.t - hold), 0, 1) : 0;
+    return this.blend(a, b, raw);
   }
 
   private filled(): Frame[] {
@@ -368,17 +415,57 @@ export class Timeline {
     });
   }
 
-  private blend(a: Frame, b: Frame, f: number): Pose {
+  /** Catmull-Rom through the recorded keys, as in Rig.kt. */
+  private flow(frames: Frame[], i: number, u: number): Pose {
+    const base = this.blend(frames[i], frames[i + 1], u);
+    const key = (k: number, side: Side) => (side === R ? frames[k].r : frames[k].l);
+    const track = (k: number, side: Side): number[] => {
+      const hk = key(k, side);
+      const [x, y] = this.resolve(hk, side);
+      const s = handShape(hk.shape) ?? SHAPES.RELAX;
+      const e = recordedElbow(hk, side) ?? this.solvedElbow([x, y], side, elbow(hk.elbow));
+      return [x, y, hk.roll, (hk.angle ?? 0) * side, s.thumb, s.index, s.middle, s.ring, s.pinky, s.thumbAcross, s.spread, e[0], e[1]];
+    };
+    const at = (side: Side, h: HandPose): HandPose => {
+      const p1 = track(i, side);
+      const p2 = track(i + 1, side);
+      const p0 = flows(frames, i - 1) ? track(i - 1, side) : null;
+      const p3 = flows(frames, i + 1) ? track(i + 2, side) : null;
+      const t1 = frames[i].t;
+      const t2 = frames[i + 1].t;
+      const v = p1.map((_, j) => {
+        const m1 = p0 ? (p2[j] - p0[j]) / (t2 - frames[i - 1].t) : 0;
+        const m2 = p3 ? (p3[j] - p1[j]) / (frames[i + 2].t - t1) : 0;
+        return hermite(p1[j], p2[j], m1 * (t2 - t1), m2 * (t2 - t1), u);
+      });
+      const curl = (j: number) => clamp(v[j], 0, 1);
+      const rec = recordedElbow(key(i, side), side) != null || recordedElbow(key(i + 1, side), side) != null;
+      return {
+        ...h,
+        elbowX: rec ? v[11] : h.elbowX,
+        elbowY: rec ? v[12] : h.elbowY,
+        x: v[0],
+        y: v[1],
+        roll: v[2],
+        angle: key(i, side).angle != null && key(i + 1, side).angle != null ? v[3] : h.angle,
+        shape: shape(curl(4), curl(5), curl(6), curl(7), curl(8), curl(9), clamp(v[10], -1, 1)),
+      };
+    };
+    return { ...base, r: at(R, base.r), l: at(L, base.l) };
+  }
+
+  private blend(a: Frame, b: Frame, raw: number): Pose {
+    const f = ease(raw);
     // The hand placed on the other one is solved second; fingerspelling places the right hand on the left.
     const rFollows = OTHER_HAND.has(a.r.at) || OTHER_HAND.has(b.r.at);
     let r: HandPose;
     let l: HandPose;
     if (rFollows) {
-      l = this.hand(a.l, b.l, f, L);
-      r = this.hand(a.r, b.r, f, R, l);
+      l = this.hand(a.l, b.l, raw, L);
+      r = this.hand(a.r, b.r, raw, R, l);
     } else {
-      r = this.hand(a.r, b.r, f, R);
-      l = this.hand(a.l, b.l, f, L, r);
+      r = this.hand(a.r, b.r, raw, R);
+      l = this.hand(a.l, b.l, raw, L, r);
     }
     const fc = {} as Face;
     for (const k of FACE_KEYS) fc[k] = lerp(a.face[k], b.face[k], f);
@@ -394,30 +481,49 @@ export class Timeline {
       hunch: lerp(a.body.hunch, b.body.hunch, f),
       shiver: lerp(a.body.shiver, b.body.shiver, f),
       gaze: 0,
+      rFront: rFollows,
     };
   }
 
-  private hand(a: FullHandKey, b: FullHandKey, f: number, side: Side, other?: HandPose): HandPose {
+  private hand(a: FullHandKey, b: FullHandKey, raw: number, side: Side, other?: HandPose): HandPose {
+    const f = ease(raw);
+    // A free move overshoots slightly and settles; contacts and moves to or from rest never pass their target.
+    const free = b.touch === "wrist" && !OTHER_HAND.has(b.at) && b.at !== "rest" && a.at !== "rest";
+    const m = free ? easeOutBack(raw) : f;
     const pa = this.resolve(a, side, other);
     const pb = this.resolve(b, side, other);
-    const sa = SHAPES[a.shape] ?? SHAPES.RELAX;
-    const sb = SHAPES[b.shape] ?? SHAPES.RELAX;
+    const sa = handShape(a.shape) ?? SHAPES.RELAX;
+    const sb = handShape(b.shape) ?? SHAPES.RELAX;
     const angleA = a.angle != null ? a.angle * side : NaN;
     const angleB = b.angle != null ? b.angle * side : NaN;
     let angle: number;
     if (Number.isNaN(angleA) && Number.isNaN(angleB)) angle = NaN;
     else if (Number.isNaN(angleA)) angle = f < 0.5 ? NaN : angleB;
     else if (Number.isNaN(angleB)) angle = f < 0.5 ? angleA : NaN;
-    else angle = lerp(angleA, angleB, f);
+    else angle = lerp(angleA, angleB, m);
+    const ea = recordedElbow(a, side);
+    const eb = recordedElbow(b, side);
+    // A recorded elbow next to a solved one starts or ends at the solve, as in Rig.kt.
+    const oa = eb ? (ea ?? this.solvedElbow(pa, side, elbow(a.elbow))) : ea;
+    const ob = ea ? (eb ?? this.solvedElbow(pb, side, elbow(b.elbow))) : eb;
     return {
-      x: lerp(pa[0], pb[0], f),
-      y: lerp(pa[1], pb[1], f),
+      x: lerp(pa[0], pb[0], m),
+      y: lerp(pa[1], pb[1], m),
       shape: blendShape(sa, sb, f),
       roll: lerp(a.roll, b.roll, f),
       angle,
       elbowOut: lerp(elbow(a.elbow), elbow(b.elbow), f),
       prop: f < 0.5 ? a.prop : b.prop,
+      elbowX: oa && ob ? lerp(oa[0], ob[0], m) : NaN,
+      elbowY: oa && ob ? lerp(oa[1], ob[1], m) : NaN,
     };
+  }
+
+  /** The two-bone elbow for wrist p as an offset from the unshifted shoulder, like a recorded one. */
+  private solvedElbow(p: [number, number], side: Side, out: number): [number, number] {
+    const [sx, sy] = shoulder(this.build, side);
+    const [ex, ey] = solveElbow(sx, sy, p[0], p[1], this.build.upperArm, this.build.foreArm, side, out);
+    return [ex - sx, ey - sy];
   }
 
   private resolve(k: FullHandKey, side: Side, other?: HandPose): [number, number] {
@@ -434,13 +540,17 @@ export class Timeline {
     let reach: number;
     if (k.touch === "palm") reach = 6.5;
     else if (k.touch === "thumb") reach = 9;
-    else if (k.touch === "tip") reach = 12 + 9.5 * (1 - 0.75 * (SHAPES[k.shape]?.index ?? 0));
+    else if (k.touch === "tip") reach = 12 + 9.5 * (1 - 0.75 * (handShape(k.shape)?.index ?? 0));
     else return p;
     reach *= this.build.handScale;
     const a = rad((k.angle ?? 0) * side);
     return [p[0] - Math.sin(a) * reach, p[1] + Math.cos(a) * reach];
   }
 }
+
+/** The elbow for the (possibly shifted) shoulder: recorded if the keys carry it, else the two-bone solve. */
+export const elbowAt = (h: HandPose, sx: number, sy: number, b: Build, side: Side): [number, number] =>
+  Number.isNaN(h.elbowX) ? solveElbow(sx, sy, h.x, h.y, b.upperArm, b.foreArm, side, h.elbowOut) : [sx + h.elbowX, sy + h.elbowY];
 
 /** Two-bone arm: returns the elbow for a shoulder, wrist target and segment lengths. */
 export function solveElbow(

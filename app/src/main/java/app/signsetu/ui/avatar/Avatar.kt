@@ -3,7 +3,7 @@ package app.signsetu.ui.avatar
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -31,31 +32,46 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.sin
 
 enum class Character { CHILD, ADULT }
 
+/** The part of the 200-unit character space a view shows, in character units. */
+enum class AvatarView(val left: Float, val top: Float, val width: Float, val height: Float) {
+    /** To the hips: both hands stay inside at rest, at waist level and flat on the head. */
+    Body(-10f, 0f, 220f, 258f),
+    /** The old square framing, for [MiniFace]. */
+    Head(0f, 0f, 200f, 200f),
+}
+
+/** Width over height of [AvatarView.Body]; callers size the avatar with it. */
+const val AVATAR_ASPECT = 220f / 258f
+
+/** The face that marks a question in ISL: raised brows for yes-no, furrowed brows for a question word. */
+enum class QuestionKind { YES_NO, WH }
+
 /** Colours of one character. Clothes are plain and regionally neutral (05-avatar-and-gestures §4). */
 private class Look(
-    val skin: Color, val skinShade: Color, val line: Color,
+    val skin: Color, val skinShade: Color, val line: Color, val outline: Color,
     val hair: Color, val hairShine: Color,
-    val top: Color, val topShade: Color, val trim: Color,
+    val top: Color, val topShade: Color, val trim: Color, val trousers: Color,
     val iris: Color, val lip: Color, val blush: Color,
     val longSleeves: Boolean,
 )
 
 private val ChildLook = Look(
-    skin = Color(0xFFC98D5E), skinShade = Color(0xFFAE7345), line = Color(0xFF7C4A27),
+    skin = Color(0xFFC98D5E), skinShade = Color(0xFFAE7345), line = Color(0xFF7C4A27), outline = Color(0xFF4A2A14),
     hair = Color(0xFF2A1F1B), hairShine = Color(0xFF4A3A33),
-    top = Color(0xFF2E9C93), topShade = Color(0xFF227E77), trim = Color(0xFFF6BE4B),
-    iris = Color(0xFF3A2416), lip = Color(0xFF8C3A32), blush = Color(0x55F07C64),
+    top = Color(0xFF2E9C93), topShade = Color(0xFF227E77), trim = Color(0xFFF6BE4B), trousers = Color(0xFF3D4A6B),
+    iris = Color(0xFF3A2416), lip = Color(0xFF8C3A32), blush = Color(0x44F07C64),
     longSleeves = false,
 )
 
 private val AdultLook = Look(
-    skin = Color(0xFFBC7E52), skinShade = Color(0xFF9F6842), line = Color(0xFF6E4123),
+    skin = Color(0xFFBC7E52), skinShade = Color(0xFF9F6842), line = Color(0xFF6E4123), outline = Color(0xFF3E2412),
     hair = Color(0xFF1E1816), hairShine = Color(0xFF3A302C),
-    top = Color(0xFF33405F), topShade = Color(0xFF232D47), trim = Color(0xFF6577A3),
+    top = Color(0xFF3B4A6E), topShade = Color(0xFF2A3654), trim = Color(0xFF8394C2), trousers = Color(0xFF2B3448),
     iris = Color(0xFF2E1D12), lip = Color(0xFF7E3A33), blush = Color(0x22F07C64),
     longSleeves = true,
 )
@@ -63,7 +79,8 @@ private val AdultLook = Look(
 /**
  * Draws a character and plays [gesture] once each time [playKey] changes. Speed below 1 plays slowly (FR-18).
  * With [idle] the character breathes and blinks; the system "remove animations" setting turns that off.
- * With [glance] the character looks down at the answers once the gesture is over.
+ * With [glance] the character looks down at the answers once the gesture is over. [question] adds the
+ * question face while the gesture plays.
  */
 @Composable
 fun Avatar(
@@ -76,10 +93,13 @@ fun Avatar(
     /** Draws one still frame of the gesture instead of playing it. */
     atSeconds: Float? = null,
     glance: Boolean = false,
+    view: AvatarView = AvatarView.Body,
+    question: QuestionKind? = null,
     onFinished: () -> Unit = {},
 ) {
-    val build = if (character == Character.CHILD) ChildBuild else AdultBuild
-    val look = if (character == Character.CHILD) ChildLook else AdultLook
+    val child = character == Character.CHILD
+    val build = if (child) ChildBuild else AdultBuild
+    val look = if (child) ChildLook else AdultLook
     val timeline = remember(gesture, build) { Timeline(gesture, build) }
     val clock = remember { mutableFloatStateOf(0f) }
     val idleClock = remember { mutableFloatStateOf(0f) }
@@ -103,7 +123,8 @@ fun Avatar(
         }
         if (glance) gaze.animateTo(1f, tween(durationMillis = 500, delayMillis = 300))
     }
-    if (idle && !still && atSeconds == null) {
+    val idleOn = idle && !still && atSeconds == null
+    if (idleOn) {
         LaunchedEffect(Unit) {
             val start = withFrameNanos { it }
             // Breathing and blinking read fine at 20 fps; a redraw every vsync only costs the camera and battery.
@@ -117,46 +138,167 @@ fun Avatar(
         }
     }
 
-    Canvas(modifier) {
-        // State is read here, in the draw phase, so animation frames redraw without recomposing.
-        val g = gaze.value
-        val pose = timeline.pose(clock.floatValue).let { if (g > 0f) it.copy(nod = it.nod + g * 0.5f, gaze = g) else it }
-        drawCharacter(build, look, pose, idleClock.floatValue, character == Character.CHILD)
-    }
+    Spacer(
+        modifier.drawWithCache {
+            val kit = Kit(build, look, child)
+            onDrawBehind {
+                // State is read here, in the draw phase, so animation frames redraw without recomposing.
+                val g = gaze.value
+                val t = clock.floatValue
+                val d = timeline.duration
+                val playing = d > 0f && t < d
+                val e = if (d > 0f) envelope(t, d) else 0f
+                var pose = timeline.pose(t)
+                if (g > 0f) pose = pose.copy(nod = pose.nod + g * 0.5f, gaze = g)
+                if (question != null && e > 0f) pose = questionFace(pose, question, e)
+                if (playing && !still) {
+                    val f = pose.face
+                    if (f.mouthOpen < 0.2f && f.mouthRound < 0.5f) {
+                        val talk = 0.06f * (0.5f + 0.5f * sin(t * 2f * PI.toFloat() * 2.2f)) * e
+                        pose = pose.copy(face = f.copy(mouthOpen = f.mouthOpen + talk))
+                    }
+                }
+                val blink = when {
+                    still -> 1f
+                    playing && atSeconds == null -> blinkAt(t)
+                    idleOn -> blinkAt(idleClock.floatValue)
+                    else -> 1f
+                }
+                drawCharacter(kit, view, pose, if (idleOn) idleClock.floatValue else 0f, t, blink, !still)
+            }
+        },
+    )
 }
 
 private const val IDLE_FRAME_NS = 50_000_000L
 
-private fun DrawScope.drawCharacter(b: Build, look: Look, still: Pose, time: Float, child: Boolean) {
+/** 0 to 1 over the lead-in, 1 while the gesture plays, back to 0 over the lead-out. */
+private fun envelope(t: Float, duration: Float) =
+    (t / Timeline.LEAD_IN).coerceIn(0f, 1f) * ((duration - t) / Timeline.LEAD_OUT).coerceIn(0f, 1f)
+
+private fun questionFace(p: Pose, kind: QuestionKind, e: Float): Pose {
+    val f = p.face
+    return when (kind) {
+        QuestionKind.YES_NO -> p.copy(
+            face = f.copy(browRaise = maxOf(f.browRaise, 0.85f * e), eyeOpen = f.eyeOpen * (1f + 0.1f * e)),
+            nod = p.nod - 0.15f * e,
+        )
+        QuestionKind.WH -> p.copy(
+            face = f.copy(browFrown = maxOf(f.browFrown, 0.75f * e), browRaise = f.browRaise * (1f - e), eyeOpen = f.eyeOpen * (1f - 0.12f * e)),
+            nod = p.nod + 0.12f * e,
+            tilt = p.tilt + 2f * e,
+        )
+    }
+}
+
+/**
+ * Everything the draw reuses from frame to frame. Brushes are in character or hand units, so they stay valid under
+ * the draw's translate, rotate and scale; paths are rewound and rebuilt each frame.
+ */
+private class Kit(val build: Build, val look: Look, val child: Boolean) {
+    val torsoBrush = Brush.verticalGradient(
+        listOf(lerp(look.top, Color.White, 0.14f), look.top, look.topShade), startY = build.shoulderY - 20f, endY = 240f,
+    )
+    val headBrush = Brush.radialGradient(
+        listOf(lerp(look.skin, Color.White, 0.13f), look.skin, lerp(look.skin, look.skinShade, 0.7f)),
+        center = Offset(build.headX - build.headRx * 0.28f, build.headY - build.headRy * 0.32f),
+        radius = build.headRy * 1.35f,
+    )
+    val hairBrush = (build.headY - build.headRy - if (child) 20f else 19f).let { top ->
+        Brush.verticalGradient(listOf(look.hairShine, look.hair, look.hair), startY = top, endY = build.headY)
+    }
+    /** Child iris, drawn translated to the eye centre. */
+    val irisBrush = Brush.radialGradient(listOf(lerp(look.iris, Color(0xFF9A6A45), 0.55f), look.iris), center = Offset(0f, 2.6f), radius = 6.2f * 1.3f)
+    /** Back of the hand, darker towards the wrist; in hand units. */
+    val backBrush = Brush.verticalGradient(listOf(look.skin, look.skin, lerp(look.skin, look.skinShade, 0.45f)), startY = -12f, endY = 0f)
+    val palmTone = lerp(look.skin, Color(0xFFF3CFAE), 0.45f)
+    val sleeve = lerp(look.top, Color.White, 0.1f)
+    val chest = lerp(look.skin, look.skinShade, 0.45f)
+    val knuckle = lerp(look.skin, Color.White, 0.18f)
+    val nail = lerp(look.skin, Color(0xFFFFE9DA), 0.55f)
+    val pad = lerp(palmTone, Color.White, 0.15f)
+    val halo = Color.White.copy(alpha = 0.35f)
+    val rim = look.outline.copy(alpha = 0.9f)
+
+    val torso = Path()
+    val neck = Path()
+    val hair = Path()
+    val tuft = Path()
+    val curve = Path()
+    val mouth = Path()
+    val quad = Path()
+
+    /** Hand segments, finger (index to pinky, then thumb) by segment: ax, ay, bx, by, width, bend, shade. */
+    val seg = FloatArray(5 * 3 * SEG)
+    var frontal = false
+    var palmFacing = false
+    var thumbSide = 1f
+    var pw = 13f
+    var nearThumb = false
+    var palmSide = 1f
+}
+
+private const val SEG = 7
+private const val PH = 12f
+private val LENGTHS = floatArrayOf(9.2f, 10.2f, 9.6f, 7.7f)
+private val WIDTHS = floatArrayOf(3.1f, 3.2f, 3.0f, 2.6f)
+private val TAPER = floatArrayOf(1f, 0.92f, 0.84f)
+private val FINGER_FRACTIONS = floatArrayOf(0.46f, 0.30f, 0.24f)
+private val THUMB_FRACTIONS = floatArrayOf(0.55f, 0.45f)
+private val FRONT_BENDS = floatArrayOf(85f, 100f, 72f)
+private val THUMB_BENDS = floatArrayOf(40f, 80f)
+private val SIDE_BENDS = floatArrayOf(80f, 95f, 70f)
+
+private fun DrawScope.drawCharacter(k: Kit, view: AvatarView, still: Pose, time: Float, gestureT: Float, blink: Float, secondary: Boolean) {
+    val b = k.build
     // A resting body is never quite still: a slow sway, a drifting head and now and then a glance aside.
     val pose = still.copy(
         lean = still.lean + sin(time * 2f * PI.toFloat() / 6.5f) * 0.06f,
         tilt = still.tilt + sin(time * 2f * PI.toFloat() / 8.3f) * 1.4f,
         turn = still.turn + glanceAt(time),
     )
-    val unit = size.height / 200f
-    val ox = (size.width - 200f * unit) / 2f
+    val unit = size.height / view.height
+    val ox = (size.width - view.width * unit) / 2f - view.left * unit
+    val oy = -view.top * unit
     val breath = sin(time * 2f * PI.toFloat() / 3.8f) * 0.7f
-    val shiver = if (pose.shiver > 0f) sin(time * 55f) * pose.shiver * 1.2f else 0f
-    val blink = blinkAt(time)
+    val shiver = if (pose.shiver > 0f) sin(gestureT * 55f) * pose.shiver * 1.2f else 0f
+    var liftR = pose.shrug * 7f - breath * 0.5f
+    var liftL = liftR
+    var lean = pose.lean
+    var tilt = pose.tilt
+    if (secondary) {
+        // A raised hand lifts its own shoulder, and the body leans a little towards where the hands are.
+        liftR += 3f * ((b.shoulderY - pose.r.y) / 90f).coerceIn(0f, 1f)
+        liftL += 3f * ((b.shoulderY - pose.l.y) / 90f).coerceIn(0f, 1f)
+        val dl = 0.04f * (pose.r.x + pose.l.x - 200f) / 100f
+        lean += dl
+        tilt -= 1.5f * dl
+    }
 
     clipRect {
-    translate(ox + shiver, 0f) {
+    translate(ox + shiver, oy) {
         scale(unit, unit, pivot = Offset.Zero) {
             val bodyDy = breath * 0.4f + pose.hunch * 6f
-            val shoulderLift = pose.shrug * 7f - breath * 0.5f
             // The neck goes under the collar so its base is hidden.
-            drawNeck(b, look, pose.lean * 7f, bodyDy)
-            translate(pose.lean * 6f, bodyDy) { drawTorso(b, look, shoulderLift, child) }
-            val headDx = pose.lean * 8f + pose.turn * 2f
+            drawNeck(k, lean * 7f, bodyDy)
+            translate(lean * 6f, bodyDy) { drawTorso(k, liftR, liftL) }
+            val headDx = lean * 8f + pose.turn * 2f
             val headDy = bodyDy + pose.nod * 6f + pose.hunch * 10f
             translate(headDx, headDy) {
-                rotate(pose.tilt + pose.hunch * 8f, pivot = Offset(b.headX, b.neckTop + 4f)) {
-                    drawHead(b, look, pose, blink, child)
+                rotate(tilt + pose.hunch * 8f, pivot = Offset(b.headX, b.neckTop + 4f)) {
+                    drawHead(k, pose, blink)
                 }
             }
-            drawArm(b, look, pose.r, Side.R, Offset(pose.lean * 6f, bodyDy - shoulderLift), child)
-            drawArm(b, look, pose.l, Side.L, Offset(pose.lean * 6f, bodyDy - shoulderLift), child)
+            // The hand placed on the other one draws last, in front.
+            val shiftR = Offset(lean * 6f, bodyDy - liftR)
+            val shiftL = Offset(lean * 6f, bodyDy - liftL)
+            if (pose.rFront) {
+                drawArm(k, pose.l, Side.L, shiftL)
+                drawArm(k, pose.r, Side.R, shiftR)
+            } else {
+                drawArm(k, pose.r, Side.R, shiftR)
+                drawArm(k, pose.l, Side.L, shiftL)
+            }
         }
     }
     }
@@ -169,62 +311,83 @@ private fun glanceAt(time: Float): Float {
     return side * 0.28f * sin((phase - 5f) / 1.4f * PI.toFloat())
 }
 
+/** 1 open, 0 shut. One blink per 4 s slot at a hashed offset, so gaps vary from 2.6 to 5.4 s; slot 0 blinks at once. */
 private fun blinkAt(time: Float): Float {
-    if (time == 0f) return 1f
-    val phase = time % 4.3f
-    return if (phase < 0.14f) abs(phase - 0.07f) / 0.07f else 1f
+    val n = (time / 4f).toInt()
+    val offset = if (n == 0) 0f else (((n * 1103515245 + 12345) ushr 16) % 1000) / 1000f * 1.4f
+    val p = time - n * 4f - offset
+    return when {
+        p < 0f || p >= 0.13f -> 1f
+        p < 0.05f -> 1f - p / 0.05f
+        else -> (p - 0.05f) / 0.08f
+    }
 }
 
-private fun DrawScope.drawTorso(b: Build, look: Look, lift: Float, child: Boolean) {
+private fun DrawScope.drawTorso(k: Kit, liftR: Float, liftL: Float) {
+    val b = k.build
+    val look = k.look
     val c = Build.CENTER
     val sh = b.shoulderHalf
-    val top = b.shoulderY - 9f - lift
-    val torso = Path().apply {
-        moveTo(c - sh - 12f, 214f)
-        cubicTo(c - sh - 10f, b.shoulderY + 30f, c - sh - 12f, top + 4f, c - sh + 12f, top)
-        lineTo(c + sh - 12f, top)
-        cubicTo(c + sh + 12f, top + 4f, c + sh + 10f, b.shoulderY + 30f, c + sh + 12f, 214f)
+    val sy = b.shoulderY
+    val nb = b.neckWidth / 2f + 2f
+    // The character's right side is on the viewer's left.
+    k.torso.apply {
+        rewind()
+        moveTo(c - sh - 3f, 262f)
+        lineTo(c - sh - 3f, 228f)
+        cubicTo(c - sh - 3f, 205f, c - sh - 12f, sy + 60f, c - sh - 12f, sy + 30f)
+        lineTo(c - sh - 12f, sy + 6f - liftR)
+        quadraticTo(c - sh - 12f, sy - 6f - liftR, c - sh, sy - 6f - liftR)
+        quadraticTo(c - sh * 0.55f, sy - 15f - liftR, c - nb, sy - 17f - liftR)
+        lineTo(c + nb, sy - 17f - liftL)
+        quadraticTo(c + sh * 0.55f, sy - 15f - liftL, c + sh, sy - 6f - liftL)
+        quadraticTo(c + sh + 12f, sy - 6f - liftL, c + sh + 12f, sy + 6f - liftL)
+        lineTo(c + sh + 12f, sy + 30f)
+        cubicTo(c + sh + 12f, sy + 60f, c + sh + 3f, 205f, c + sh + 3f, 228f)
+        lineTo(c + sh + 3f, 262f)
         close()
     }
-    drawPath(torso, Brush.verticalGradient(listOf(lerp(look.top, Color.White, 0.14f), look.top, look.topShade), startY = top, endY = 214f))
-    drawPath(torso, look.line, style = Stroke(1.1f), alpha = 0.22f)
+    drawPath(k.torso, k.torsoBrush)
+    drawPath(k.torso, look.line, style = Stroke(1.1f), alpha = 0.22f)
     // Soft fold shadows give the top some volume without lines.
-    drawOval(look.topShade, Offset(c - sh - 6f, b.shoulderY + 26f), Size(14f, 60f), alpha = 0.55f)
-    drawOval(look.topShade, Offset(c + sh - 8f, b.shoulderY + 26f), Size(14f, 60f), alpha = 0.55f)
-    val chest = lerp(look.skin, look.skinShade, 0.45f)
-    if (child) {
-        drawArc(chest, 0f, 180f, true, Offset(c - 15f, top - 11f), Size(30f, 22f))
-        drawArc(look.trim, 10f, 160f, false, Offset(c - 16f, top - 13f), Size(32f, 26f), style = Stroke(4.2f, cap = StrokeCap.Round))
+    drawOval(look.topShade, Offset(c - sh - 6f, sy + 26f), Size(14f, 60f), alpha = 0.55f)
+    drawOval(look.topShade, Offset(c + sh - 8f, sy + 26f), Size(14f, 60f), alpha = 0.55f)
+    // Hem or belt, then trousers to the bottom edge.
+    val w = sh + 3f
+    if (k.child) {
+        drawRect(look.topShade, Offset(c - w, 236f), Size(w * 2f, 3f))
+        drawRect(look.trousers, Offset(c - w, 239f), Size(w * 2f, 23f))
     } else {
-        val neck = Path().apply {
-            moveTo(c - 13f, top + 0.5f); lineTo(c, top + 15f); lineTo(c + 13f, top + 0.5f)
-        }
-        drawPath(neck, chest)
-        drawPath(neck, look.trim, style = Stroke(3.2f, cap = StrokeCap.Round))
+        drawRect(look.trousers, Offset(c - w, 241f), Size(w * 2f, 21f))
+        drawRect(Color(0xFF2B2F3A), Offset(c - w, 236f), Size(w * 2f, 5f))
+        drawRoundRect(look.trim, Offset(c - 3f, 236f), Size(6f, 5f), CornerRadius(1f))
+    }
+    val collar = sy - 17f - (liftR + liftL) / 2f
+    if (k.child) {
+        drawArc(k.chest, 0f, 180f, true, Offset(c - 12f, collar - 9f), Size(24f, 18f))
+        drawArc(look.trim, 10f, 160f, false, Offset(c - 13f, collar - 10f), Size(26f, 21f), style = Stroke(3.6f, cap = StrokeCap.Round))
+    } else {
+        k.curve.apply { rewind(); moveTo(c - 10f, collar + 0.5f); lineTo(c, collar + 14f); lineTo(c + 10f, collar + 0.5f) }
+        drawPath(k.curve, k.chest)
+        drawPath(k.curve, look.trim, style = Stroke(3f, cap = StrokeCap.Round))
     }
 }
 
-private fun DrawScope.drawNeck(b: Build, look: Look, dx: Float, dy: Float) {
+private fun DrawScope.drawNeck(k: Kit, dx: Float, dy: Float) {
+    val b = k.build
     val c = Build.CENTER + dx
     val w = b.neckWidth
     val top = b.neckTop + dy
-    val base = b.shoulderY + dy + 2f
-    // The neck flares into the shoulders so it reads as part of the body, not a post.
-    val neck = Path().apply {
-        moveTo(c - w / 2, top)
-        lineTo(c - w / 2, base - 14f)
-        quadraticTo(c - w / 2, base - 4f, c - w / 2 - 9f, base)
-        lineTo(c + w / 2 + 9f, base)
-        quadraticTo(c + w / 2, base - 4f, c + w / 2, base - 14f)
-        lineTo(c + w / 2, top)
-        close()
-    }
-    drawPath(neck, look.skinShade)
-    drawRoundRect(look.skin, Offset(c - w / 2 + 1.5f, top), Size(w * 0.62f, base - top), CornerRadius(4f))
-    drawOval(look.skinShade, Offset(c - w / 2, b.neckTop + dy - 2f), Size(w, 11f), alpha = 0.9f)
+    val base = b.shoulderY - 10f + dy
+    drawRoundRect(k.look.skinShade, Offset(c - w / 2, top), Size(w, base - top), CornerRadius(4f))
+    drawRoundRect(k.look.skin, Offset(c - w / 2 + 1.5f, top), Size(w * 0.62f, base - top), CornerRadius(4f))
+    drawOval(k.look.skinShade, Offset(c - w / 2, top - 2f), Size(w, 11f), alpha = 0.9f)
 }
 
-private fun DrawScope.drawHead(b: Build, look: Look, pose: Pose, blink: Float, child: Boolean) {
+private fun DrawScope.drawHead(k: Kit, pose: Pose, blink: Float) {
+    val b = k.build
+    val look = k.look
+    val child = k.child
     val f = pose.face
     val hx = b.headX
     val hy = b.headY
@@ -233,55 +396,48 @@ private fun DrawScope.drawHead(b: Build, look: Look, pose: Pose, blink: Float, c
 
     // Ears, then the head shape over them.
     val earY = hy + if (child) 5f else 3f
-    for (s in floatArrayOf(-1f, 1f)) {
+    for (s in SIDES) {
         val ex = hx + s * (b.headRx - 1f) - pose.turn * 3f
         drawOval(look.skin, Offset(ex - 6.5f, earY - 8.5f), Size(13f, 17f))
         drawOval(look.skinShade, Offset(ex - 3f + s * 0.5f, earY - 5f), Size(6f, 10f), alpha = 0.7f)
     }
-    val headLight = Brush.radialGradient(
-        listOf(lerp(look.skin, Color.White, 0.13f), look.skin, lerp(look.skin, look.skinShade, 0.7f)),
-        center = Offset(hx - b.headRx * 0.28f, hy - b.headRy * 0.32f),
-        radius = b.headRy * 1.35f,
-    )
-    drawOval(headLight, Offset(hx - b.headRx, hy - b.headRy), Size(b.headRx * 2, b.headRy * 2))
+    drawOval(k.headBrush, Offset(hx - b.headRx, hy - b.headRy), Size(b.headRx * 2, b.headRy * 2))
     drawOval(look.line, Offset(hx - b.headRx, hy - b.headRy), Size(b.headRx * 2, b.headRy * 2), style = Stroke(1.1f), alpha = 0.28f)
 
-    drawHair(b, look, child, pose.turn)
+    drawHair(k, pose.turn)
 
     // Brows carry the question and worry (ISL facial grammar, 05 §4).
     val browY = fy - (if (child) 15f else 13f) - f.browRaise * 5f + f.browFrown * 2f
     val browGap = if (child) 7f else 6f
     val browLen = if (child) 13f else 12f
-    for (s in floatArrayOf(-1f, 1f)) {
-        val inner = Offset(fx + s * browGap, browY - f.browWorry * 4f + f.browFrown * 3.5f)
-        val outer = Offset(fx + s * (browGap + browLen), browY + f.browWorry * 1.5f - f.browFrown * 1f + 1f)
+    for (s in SIDES) {
+        val ix = fx + s * browGap
+        val iy = browY - f.browWorry * 4f + f.browFrown * 3.5f
+        val ox = fx + s * (browGap + browLen)
+        val oy = browY + f.browWorry * 1.5f - f.browFrown * 1f + 1f
         // A soft arch reads as friendly; it flattens as the brows furrow.
         val arch = (if (child) 3.2f else 2.4f) * (1f - f.browFrown)
-        val brow = Path().apply {
-            moveTo(inner.x, inner.y)
-            quadraticTo((inner.x + outer.x) / 2f, minOf(inner.y, outer.y) - arch, outer.x, outer.y)
-        }
-        drawPath(brow, look.hair, style = Stroke(if (child) 3.4f else 3.2f, cap = StrokeCap.Round))
+        k.curve.apply { rewind(); moveTo(ix, iy); quadraticTo((ix + ox) / 2f, minOf(iy, oy) - arch, ox, oy) }
+        drawPath(k.curve, look.hair, style = Stroke(if (child) 3.4f else 3.2f, cap = StrokeCap.Round))
     }
 
     // Eyes: large and warm for the child, simple for the adult.
     val open = (f.eyeOpen * blink * (1f - pose.gaze * 0.18f)).coerceIn(0.05f, 1.2f)
     val eyeY = fy - 1f + pose.gaze * (if (child) 2.2f else 0.6f)
-    for (s in floatArrayOf(-1f, 1f)) {
+    for (s in SIDES) {
         val ex = fx + s * (if (child) 15f else 13f)
         if (f.eyeSmile > 0.55f || open < 0.18f) {
-            val p = Path().apply {
-                moveTo(ex - 6f, eyeY + 1f)
+            k.curve.apply {
+                rewind(); moveTo(ex - 6f, eyeY + 1f)
                 quadraticTo(ex, eyeY - 6f * (if (open < 0.18f) -0.3f else 1f), ex + 6f, eyeY + 1f)
             }
-            drawPath(p, look.iris, style = Stroke(2.6f, cap = StrokeCap.Round))
+            drawPath(k.curve, look.iris, style = Stroke(2.6f, cap = StrokeCap.Round))
             continue
         }
         if (child) {
             val rx = 6.2f
             val ry = 7.6f * open
-            val iris = Brush.radialGradient(listOf(lerp(look.iris, Color(0xFF9A6A45), 0.55f), look.iris), center = Offset(ex, eyeY + ry * 0.35f), radius = rx * 1.3f)
-            drawOval(iris, Offset(ex - rx, eyeY - ry), Size(rx * 2, ry * 2))
+            translate(ex, eyeY) { drawOval(k.irisBrush, Offset(-rx, -ry), Size(rx * 2, ry * 2)) }
             if (open > 0.5f) drawArc(look.hair, 215f, 110f, false, Offset(ex - rx - 0.6f, eyeY - ry - 0.8f), Size(rx * 2 + 1.2f, ry * 2 + 1.2f), style = Stroke(1.2f, cap = StrokeCap.Round))
             drawCircle(Color.White, 2.1f * open.coerceAtMost(1f), Offset(ex + 2.2f, eyeY - 2.6f * open))
             drawCircle(Color.White, 1f * open.coerceAtMost(1f), Offset(ex - 2.2f, eyeY + 2.8f * open))
@@ -290,12 +446,12 @@ private fun DrawScope.drawHead(b: Build, look: Look, pose: Pose, blink: Float, c
             val ry = 3.7f * open
             drawOval(Color(0xFFF6EFE6), Offset(ex - rx, eyeY - ry), Size(rx * 2, ry * 2))
             val irisY = eyeY + 0.3f + pose.gaze * 1.2f
-            val ir = minOf(3.2f, ry + 0.2f)
+            val ir = minOf(3.4f, ry + 0.2f)
             drawCircle(lerp(look.iris, Color(0xFF8A5A36), 0.35f), ir, Offset(ex, irisY))
             drawCircle(look.iris, ir * 0.55f, Offset(ex, irisY))
             drawCircle(Color.White, 1f, Offset(ex + 1.1f, irisY - 1.2f))
             // An upper lid arc instead of a flat line keeps the adult calm rather than sleepy.
-            drawArc(look.hair, 195f, 150f, false, Offset(ex - rx - 0.4f, eyeY - ry - 0.6f), Size(rx * 2 + 0.8f, ry * 2 + 1.2f), style = Stroke(1.5f, cap = StrokeCap.Round))
+            drawArc(look.hair, 195f, 150f, false, Offset(ex - rx - 0.4f, eyeY - ry - 0.6f), Size(rx * 2 + 0.8f, ry * 2 + 1.2f), style = Stroke(1.7f, cap = StrokeCap.Round))
         }
         if (f.eyeSmile > 0.1f) {
             drawOval(look.skin, Offset(ex - 7f, eyeY + 7.5f - f.eyeSmile * 6f), Size(14f, 8f))
@@ -308,21 +464,24 @@ private fun DrawScope.drawHead(b: Build, look: Look, pose: Pose, blink: Float, c
     }
     // Nose.
     val noseY = fy + if (child) 8f else 9f
-    val nose = Path().apply {
-        moveTo(fx - 2.5f, noseY + 2f); quadraticTo(fx, noseY + 4.5f, fx + 2.5f, noseY + 2f)
-    }
-    drawPath(nose, look.line, style = Stroke(1.6f, cap = StrokeCap.Round), alpha = 0.7f)
+    k.curve.apply { rewind(); moveTo(fx - 2.5f, noseY + 2f); quadraticTo(fx, noseY + 4.5f, fx + 2.5f, noseY + 2f) }
+    drawPath(k.curve, look.line, style = Stroke(1.6f, cap = StrokeCap.Round), alpha = 0.7f)
     if (!child) drawLine(look.skinShade, Offset(fx + 1f, noseY - 9f), Offset(fx + 2f, noseY + 1f), 1.6f, StrokeCap.Round)
 
-    drawMouth(fx, fy + if (child) 19f else 20f, f, look, child)
+    drawMouth(k, fx, fy + if (child) 19f else 20f, f)
 }
 
-private fun DrawScope.drawHair(b: Build, look: Look, child: Boolean, turn: Float) {
+private val SIDES = floatArrayOf(-1f, 1f)
+
+private fun DrawScope.drawHair(k: Kit, turn: Float) {
+    val b = k.build
+    val look = k.look
     val hx = b.headX + turn * 2f
     val top = b.headY - b.headRy
     val rx = b.headRx
-    val hair = Path()
-    if (child) {
+    val hair = k.hair
+    hair.rewind()
+    if (k.child) {
         hair.apply {
             moveTo(hx - rx - 1f, b.headY + 4f)
             // Control points sit high enough that the curve's crest covers the crown.
@@ -335,13 +494,14 @@ private fun DrawScope.drawHair(b: Build, look: Look, child: Boolean, turn: Float
             quadraticTo(hx - rx + 10f, b.headY - 10f, hx - rx + 3f, b.headY - 12f)
             close()
         }
-        drawPath(hair, Brush.verticalGradient(listOf(look.hairShine, look.hair, look.hair), startY = top - 20f, endY = b.headY))
+        drawPath(hair, k.hairBrush)
         // A small tuft on top makes the silhouette friendly and unmistakably a child.
-        val tuft = Path().apply {
+        k.tuft.apply {
+            rewind()
             moveTo(hx - 2f, top + 2f); quadraticTo(hx + 4f, top - 11f, hx + 12f, top - 6f)
             quadraticTo(hx + 5f, top - 4f, hx + 4f, top + 3f); close()
         }
-        drawPath(tuft, look.hair)
+        drawPath(k.tuft, look.hair)
         drawArc(look.hairShine, 215f, 50f, false, Offset(hx - rx * 0.55f, top + 5f), Size(rx * 0.9f, 22f), style = Stroke(2.6f, cap = StrokeCap.Round))
     } else {
         hair.apply {
@@ -353,207 +513,370 @@ private fun DrawScope.drawHair(b: Build, look: Look, child: Boolean, turn: Float
             quadraticTo(hx - rx + 6f, b.headY - 21f, hx - rx + 2f, b.headY - 10f)
             close()
         }
-        drawPath(hair, Brush.verticalGradient(listOf(look.hairShine, look.hair, look.hair), startY = top - 19f, endY = b.headY))
+        drawPath(hair, k.hairBrush)
         drawArc(look.hairShine, 200f, 55f, false, Offset(hx - rx * 0.7f, top - 4f), Size(rx * 1.1f, 26f), style = Stroke(2f, cap = StrokeCap.Round))
     }
 }
 
-private fun DrawScope.drawMouth(x: Float, y: Float, f: Face, look: Look, child: Boolean) {
-    val w = if (child) 8.5f else 7.5f
+private fun DrawScope.drawMouth(k: Kit, x: Float, y: Float, f: Face) {
+    val look = k.look
+    val w = if (k.child) 8.5f else 7.5f
     if (f.mouthRound > 0.5f) {
         drawOval(look.lip, Offset(x - 3.6f, y - 4f), Size(7.2f, 8.5f))
         return
     }
     val s = f.smile
     val corner = y - s * 2.2f
-    val upper = Path().apply { moveTo(x - w, corner); quadraticTo(x, y + s * 6.5f, x + w, corner) }
-    if (f.mouthOpen > 0.08f) {
+    val p = k.mouth
+    p.rewind()
+    // The low threshold lets the small mouth movement while signing show.
+    if (f.mouthOpen > 0.04f) {
         val open = f.mouthOpen * 9f
-        val shape = Path().apply {
-            moveTo(x - w, corner)
-            quadraticTo(x, y + s * 3f - 1f, x + w, corner)
-            quadraticTo(x, y + s * 6.5f + open, x - w, corner)
-            close()
-        }
-        drawPath(shape, look.lip)
+        p.moveTo(x - w, corner)
+        p.quadraticTo(x, y + s * 3f - 1f, x + w, corner)
+        p.quadraticTo(x, y + s * 6.5f + open, x - w, corner)
+        p.close()
+        drawPath(p, look.lip)
         drawOval(Color(0xFFE58A86), Offset(x - w * 0.45f, y + s * 2f + open * 0.45f), Size(w * 0.9f, open * 0.45f + 1f))
     } else {
-        drawPath(upper, look.lip, style = Stroke(2.4f, cap = StrokeCap.Round))
+        p.moveTo(x - w, corner)
+        p.quadraticTo(x, y + s * 6.5f, x + w, corner)
+        drawPath(p, look.lip, style = Stroke(2.4f, cap = StrokeCap.Round))
     }
 }
 
-/** Shoulder to wrist with a two-bone solve, then the hand at the wrist. */
-private fun DrawScope.drawArm(b: Build, look: Look, h: HandPose, side: Side, shift: Offset, child: Boolean) {
+/** A bone as a quad tapering from width [wa] at [a] to [wb] at [b]. */
+private fun DrawScope.quad(k: Kit, a: Offset, b: Offset, wa: Float, wb: Float, color: Color) {
+    val dx = b.x - a.x
+    val dy = b.y - a.y
+    val len = hypot(dx, dy).coerceAtLeast(1e-3f)
+    val nx = -dy / len
+    val ny = dx / len
+    k.quad.apply {
+        rewind()
+        moveTo(a.x + nx * wa / 2f, a.y + ny * wa / 2f)
+        lineTo(b.x + nx * wb / 2f, b.y + ny * wb / 2f)
+        lineTo(b.x - nx * wb / 2f, b.y - ny * wb / 2f)
+        lineTo(a.x - nx * wa / 2f, a.y - ny * wa / 2f)
+        close()
+    }
+    drawPath(k.quad, color)
+}
+
+/** Shoulder to wrist with a recorded or two-bone solved elbow, then the hand at the wrist. */
+private fun DrawScope.drawArm(k: Kit, h: HandPose, side: Side, shift: Offset) {
+    val b = k.build
+    val look = k.look
     val (sx0, sy0) = b.shoulder(side)
-    val sx = sx0 + shift.x
-    val sy = sy0 + shift.y
-    val (ex, ey) = solveElbow(sx, sy, h.x, h.y, b.upperArm, b.foreArm, side, h.elbowOut)
-    val s = Offset(sx, sy)
+    val s = Offset(sx0 + shift.x, sy0 + shift.y)
+    val (ex, ey) = h.elbowAt(s.x, s.y, b, side)
     val e = Offset(ex, ey)
     val w = Offset(h.x, h.y)
     val aw = b.armWidth
+    val wrist = 0.62f * 13f * b.handScale
+    val angle = if (h.angle.isNaN()) Math.toDegrees(atan2((w.x - e.x).toDouble(), (-(w.y - e.y)).toDouble())).toFloat() else h.angle
+    layoutHand(k, h, side)
 
-    // Both bones get a dark rim so an arm crossing the body or face never melts into it.
+    // The adult's sleeve is rolled just past the elbow, so most of the forearm shows.
+    val fore = if (look.longSleeves) lerpOffset(e, w, 0.15f) else e
+    val foreW = aw * 0.95f
+    val elbowW = aw
+    // Halo first, under everything, so the forearm and hand separate from a dark shirt or backdrop.
+    quad(k, fore, w, foreW + 3f, wrist + 3f, k.halo)
+    drawCircle(k.halo, wrist / 2f + 1.5f, w)
+    handFrame(w, angle, b.handScale) { drawHandHalo(k) }
+
     if (look.longSleeves) {
-        val sleeve = lerp(look.top, Color.White, 0.1f)
-        val cuff = lerpOffset(e, w, 0.78f)
-        drawLine(look.line, cuff, w, aw * 0.72f + 1.4f, StrokeCap.Round, alpha = 0.5f)
-        drawLine(look.skin, cuff, w, aw * 0.72f, StrokeCap.Round)
-        drawLine(look.topShade, s, e, aw + 2.6f, StrokeCap.Round)
-        drawLine(look.topShade, e, cuff, aw * 0.92f + 2.6f, StrokeCap.Round)
-        drawLine(sleeve, s, e, aw + 0.4f, StrokeCap.Round)
-        drawLine(sleeve, e, cuff, aw * 0.92f - 0.6f, StrokeCap.Round)
-        drawLine(look.trim, lerpOffset(e, w, 0.72f), cuff, aw * 0.95f, StrokeCap.Butt)
+        quad(k, fore, w, foreW + 1.6f, wrist + 1.6f, k.rim)
+        drawCircle(k.rim, wrist / 2f + 0.8f, w)
+        quad(k, fore, w, foreW, wrist, look.skin)
+        drawCircle(look.skin, wrist / 2f, w)
+        val cuff = lerpOffset(e, w, 0.22f)
+        quad(k, s, e, aw * 1.2f + 4.4f, elbowW + 4.4f, look.topShade)
+        drawCircle(look.topShade, elbowW / 2f + 2.2f, e)
+        quad(k, e, cuff, elbowW + 4.4f, foreW + 4.4f, look.topShade)
+        quad(k, s, e, aw * 1.2f + 2f, elbowW + 2f, k.sleeve)
+        drawCircle(k.sleeve, elbowW / 2f + 1f, e)
+        quad(k, e, cuff, elbowW + 2f, foreW + 2f, k.sleeve)
+        // A 4 unit rolled band at the sleeve's end.
+        val len = hypot(w.x - e.x, w.y - e.y).coerceAtLeast(1e-3f)
+        val band = lerpOffset(e, w, (0.22f - 4f / len).coerceAtLeast(0.05f))
+        quad(k, band, cuff, foreW + 4.4f, foreW + 4.4f, look.topShade)
+        quad(k, band, cuff, foreW + 3f, foreW + 3f, look.trim)
     } else {
-        drawLine(look.line, s, e, aw * 0.86f + 1.4f, StrokeCap.Round, alpha = 0.4f)
-        drawLine(look.line, e, w, aw * 0.78f + 1.4f, StrokeCap.Round, alpha = 0.4f)
-        drawLine(look.skin, s, e, aw * 0.86f, StrokeCap.Round)
-        drawLine(look.skin, e, w, aw * 0.78f, StrokeCap.Round)
+        quad(k, s, e, aw * 1.2f + 2.4f, elbowW + 2.4f, k.rim)
+        drawCircle(k.rim, elbowW / 2f + 1.2f, e)
+        quad(k, e, w, foreW + 1.6f, wrist + 1.6f, k.rim)
+        drawCircle(k.rim, wrist / 2f + 0.8f, w)
+        quad(k, s, e, aw * 1.2f, elbowW, look.skin)
+        drawCircle(look.skin, elbowW / 2f, e)
+        quad(k, e, w, foreW, wrist, look.skin)
+        drawCircle(look.skin, wrist / 2f, w)
         // Short sleeve over the top of the upper arm.
-        val sleeveEnd = lerpOffset(s, e, 0.55f)
-        drawLine(look.topShade, s, sleeveEnd, aw + 4f, StrokeCap.Round)
-        drawLine(look.top, s, sleeveEnd, aw + 2.5f, StrokeCap.Round)
-        drawLine(look.topShade, lerpOffset(s, e, 0.5f), sleeveEnd, aw + 2.5f, StrokeCap.Butt, alpha = 0.5f)
+        val sleeveEnd = lerpOffset(s, e, 0.5f)
+        drawLine(look.topShade, s, sleeveEnd, aw * 1.2f + 4f, StrokeCap.Round)
+        drawLine(look.top, s, sleeveEnd, aw * 1.2f + 2.5f, StrokeCap.Round)
+        drawLine(look.topShade, lerpOffset(s, e, 0.45f), sleeveEnd, aw * 1.2f + 2.5f, StrokeCap.Butt, alpha = 0.5f)
     }
 
     if (h.prop == "stick") {
         // A walking stick from the fist to the floor, behind the fingers.
-        drawLine(Color(0xFF6B4423), Offset(w.x + 1f, w.y - 6f), Offset(w.x + 4f, 230f), 5f, StrokeCap.Round)
-        drawLine(Color(0xFF8A5A33), Offset(w.x + 1f, w.y - 6f), Offset(w.x + 4f, 230f), 2f, StrokeCap.Round)
+        drawLine(Color(0xFF6B4423), Offset(w.x + 1f, w.y - 6f), Offset(w.x + 4f, 262f), 5f, StrokeCap.Round)
+        drawLine(Color(0xFF8A5A33), Offset(w.x + 1f, w.y - 6f), Offset(w.x + 4f, 262f), 2f, StrokeCap.Round)
     }
-    val angle = if (h.angle.isNaN()) Math.toDegrees(atan2((w.x - e.x).toDouble(), (-(w.y - e.y)).toDouble())).toFloat() else h.angle
+    handFrame(w, angle, b.handScale) { drawHand(k, h) }
+}
+
+private inline fun DrawScope.handFrame(w: Offset, angle: Float, handScale: Float, crossinline block: DrawScope.() -> Unit) {
     translate(w.x, w.y) {
         rotate(angle, pivot = Offset.Zero) {
-            scale(b.handScale, pivot = Offset.Zero) {
-                drawHand(look, h, side)
-            }
+            scale(handScale, pivot = Offset.Zero) { block() }
         }
     }
 }
 
-private class Seg(val a: Offset, val b: Offset, val width: Float, val behind: Boolean, val shade: Float)
+private fun curl(shape: HandShape, finger: Int) = when (finger) {
+    0 -> shape.index
+    1 -> shape.middle
+    2 -> shape.ring
+    3 -> shape.pinky
+    else -> shape.thumb
+}
 
 /**
- * Draws a hand in its own frame: wrist at the origin, fingers towards -y. Seen from the front (palm or back) curled
- * fingers are foreshortened; seen from the side they bend in the plane, which reads better for bunched or cupped hands.
+ * Lays the hand out in its own frame: wrist at the origin, fingers towards -y. Seen from the front (palm or back)
+ * curled fingers are foreshortened; seen from the side they bend in the plane, which reads better for bunched or
+ * cupped hands. The layout mirrors [HandPose.point], so contacts land where they are drawn.
  */
-private fun DrawScope.drawHand(look: Look, h: HandPose, side: Side) {
+private fun layoutHand(k: Kit, h: HandPose, side: Side) {
     val roll = h.roll.coerceIn(-1f, 1f)
     val shape = h.shape
-    val curls = shape.curls
-    if (abs(roll) >= 0.35f) {
+    k.frontal = abs(roll) >= 0.35f
+    if (k.frontal) {
         val palmFacing = roll > 0f
         val thumbSide = if (palmFacing) -side.sign else side.sign
         val wf = lerp(0.6f, 1f, ((abs(roll) - 0.35f) / 0.65f).coerceIn(0f, 1f))
         val pw = 13f * wf
-        val ph = 12f
-        val fingers = mutableListOf<List<Seg>>()
-        val lengths = floatArrayOf(9.2f, 10.2f, 9.6f, 7.7f)
-        val widths = floatArrayOf(3.3f, 3.4f, 3.2f, 2.8f)
-        for (k in 0..3) {
-            val bx = thumbSide * (pw / 2f - 1.8f - k * (pw - 3.6f) / 3f)
-            val dir = Math.toRadians((shape.spread * (k - 1.5f) * -9f * thumbSide).toDouble()).toFloat()
-            val c = curls[k + 1]
-            fingers += frontalChain(Offset(bx, -ph + 1.5f), dir, lengths[k], widths[k] * (0.82f + 0.18f * wf), c, palmFacing)
+        k.palmFacing = palmFacing
+        k.thumbSide = thumbSide
+        k.pw = pw
+        for (f in 0..3) {
+            val bx = thumbSide * (pw / 2f - 1.8f - f * (pw - 3.6f) / 3f)
+            val dir = rad(shape.spread * (f - 1.5f) * -9f * thumbSide)
+            frontalChain(k.seg, f, bx, -PH + 1.5f, dir, LENGTHS[f], WIDTHS[f] * (0.82f + 0.18f * wf), curl(shape, f), palmFacing)
         }
-        val thumbDir = Math.toRadians((thumbSide * (52f - shape.thumbAcross * 112f)).toDouble()).toFloat()
-        val thumb = frontalChain(Offset(thumbSide * (pw / 2f - 0.5f), -3f), thumbDir, 8.8f, 3.7f, curls[0] * 0.6f, palmFacing, thumb = true)
-        val thumbInFront = palmFacing && shape.thumbAcross > 0.5f
-
-        // Palms are lighter than the back of the hand, so palm-out and palm-in read apart at a glance.
-        val tone = if (palmFacing) lerp(look.skin, Color(0xFFF1C7A2), 0.38f) else look.skin
-        if (!thumbInFront) drawChain(look, thumb, tone)
-        fingers.forEach { segs -> drawChain(look, segs.filter { it.behind }, tone) }
-        drawRoundRect(look.line, Offset(-pw / 2f - 0.7f, -ph - 0.7f), Size(pw + 1.4f, ph + 1.4f), CornerRadius(4.5f), alpha = 0.55f)
-        drawRoundRect(tone, Offset(-pw / 2f, -ph), Size(pw, ph), CornerRadius(4f))
-        if (palmFacing) {
-            drawArc(look.skinShade, 200f, 110f, false, Offset(-pw * 0.35f, -ph * 0.75f), Size(pw * 0.7f, ph * 0.9f), style = Stroke(0.9f), alpha = 0.8f)
-        }
-        fingers.reversed().forEach { segs -> drawChain(look, segs.filter { !it.behind }, tone) }
-        if (!palmFacing) {
-            // Nails mark the back of the hand on straight fingers.
-            for (k in 0..3) {
-                if (curls[k + 1] < 0.35f) {
-                    val tip = fingers[k].last()
-                    drawLine(lerp(look.skin, Color.White, 0.32f), lerpOffset(tip.a, tip.b, 0.3f), lerpOffset(tip.a, tip.b, 0.78f), tip.width * 0.5f, StrokeCap.Round)
-                }
-            }
-            // Knuckles of bent fingers.
-            for (k in 0..3) {
-                if (curls[k + 1] > 0.45f) {
-                    val bx = thumbSide * (pw / 2f - 1.8f - k * (pw - 3.6f) / 3f)
-                    drawCircle(look.skin, 1.9f, Offset(bx, -ph + 1f))
-                    drawCircle(look.line, 1.9f, Offset(bx, -ph + 1f), style = Stroke(0.5f), alpha = 0.5f)
-                }
-            }
-        }
-        if (thumbInFront) drawChain(look, thumb, tone)
+        // A thumb beside the hand starts low and stays well clear of the index finger, so it reads as a thumb.
+        val beside = shape.thumbAcross < 0.5f
+        var deg = 52f - shape.thumbAcross * 112f
+        if (beside) deg = maxOf(deg, shape.spread * 13.5f + 28f)
+        frontalChain(k.seg, 4, thumbSide * (pw / 2f - 0.5f), if (beside) -2f else -3f, rad(thumbSide * deg), 8.8f, 3.7f, shape.thumb * 0.6f, palmFacing)
     } else {
         // Side view: the palm faces the body's midline unless rotated.
         val palmSide = -side.sign
         val nearThumb = roll >= 0f
-        val ph = 12f
-        drawRoundRect(look.line, Offset(-3.9f, -ph - 0.7f), Size(7.8f, ph + 1.4f), CornerRadius(3.5f), alpha = 0.55f)
-        drawRoundRect(look.skin, Offset(-3.2f, -ph), Size(6.4f, ph), CornerRadius(3f))
-        val lengths = floatArrayOf(9.2f, 10.2f, 9.6f, 7.7f)
-        val order = if (nearThumb) intArrayOf(3, 2, 1, 0) else intArrayOf(0, 1, 2, 3)
-        val thumbSegs = sideChain(
-            Offset(palmSide * 2.4f, -3.5f),
-            Math.toRadians((palmSide * (28f + shape.thumbAcross * 30f)).toDouble()).toFloat(),
-            8.6f, 3.5f, curls[0], palmSide, 0.5f, 0f,
-        )
-        if (!nearThumb) drawChain(look, thumbSegs)
-        for ((depth, k) in order.withIndex()) {
-            val dir = Math.toRadians((shape.spread * (k - 1.5f) * 4f).toDouble()).toFloat()
-            val base = Offset(palmSide * (0.6f - k * 0.35f) * (if (nearThumb) 1f else -1f), -ph + 1.2f + k * 0.8f)
-            drawChain(look, sideChain(base, dir, lengths[k], 3.2f, curls[k + 1], palmSide, 1f, (3 - depth) * 0.12f))
+        k.palmSide = palmSide
+        k.nearThumb = nearThumb
+        sideChain(k.seg, 4, palmSide * 2.4f, -3.5f, rad(palmSide * (28f + shape.thumbAcross * 30f)), 8.6f, 3.5f, shape.thumb, palmSide, 0.5f, 0f)
+        for (f in 0..3) {
+            val depth = if (nearThumb) 3 - f else f
+            val dir = rad(shape.spread * (f - 1.5f) * 4f)
+            val bx = palmSide * (0.6f - f * 0.35f) * (if (nearThumb) 1f else -1f)
+            sideChain(k.seg, f, bx, -PH + 1.2f + f * 0.8f, dir, LENGTHS[f], 3.2f, curl(shape, f), palmSide, 1f, (3 - depth) * 0.12f)
         }
-        if (nearThumb) drawChain(look, thumbSegs)
     }
 }
 
-private fun frontalChain(
-    base: Offset, dir: Float, length: Float, width: Float, curl: Float, palmFacing: Boolean, thumb: Boolean = false,
-): List<Seg> {
-    val fractions = if (thumb) floatArrayOf(0.55f, 0.45f) else floatArrayOf(0.46f, 0.30f, 0.24f)
-    val bends = if (thumb) floatArrayOf(40f, 80f) else floatArrayOf(85f, 100f, 72f)
+private fun rad(deg: Float) = Math.toRadians(deg.toDouble()).toFloat()
+
+/** The thumb has two segments seen from the front and three, short, from the side. */
+private fun Kit.segs(finger: Int) = if (finger == 4 && frontal) 2 else 3
+private fun at(finger: Int, j: Int) = (finger * 3 + j) * SEG
+
+private fun frontalChain(buf: FloatArray, finger: Int, x: Float, y: Float, dir: Float, length: Float, width: Float, curl: Float, palmFacing: Boolean) {
+    val thumb = finger == 4
+    val fractions = if (thumb) THUMB_FRACTIONS else FINGER_FRACTIONS
+    val bends = if (thumb) THUMB_BENDS else FRONT_BENDS
     val ux = sin(dir)
     val uy = -cos(dir)
-    var p = base
+    var px = x
+    var py = y
     var phi = 0f
-    return fractions.indices.map { j ->
+    for (j in fractions.indices) {
         phi += bends[j] * curl
-        val len = length * fractions[j] * cos(Math.toRadians(phi.toDouble())).toFloat()
-        val next = Offset(p.x + ux * len, p.y + uy * len)
+        val len = length * fractions[j] * cos(rad(phi))
+        val i = at(finger, j)
+        buf[i] = px; buf[i + 1] = py
+        px += ux * len; py += uy * len
+        buf[i + 2] = px; buf[i + 3] = py
+        buf[i + 4] = width * TAPER[j]
         // Folded segments face away from a back-of-hand view, so they go behind the palm.
-        val behind = !palmFacing && phi > 95f && !thumb
-        Seg(p, next, width * (1f - j * 0.07f), behind, if (phi > 95f) 0.18f else 0f).also { p = next }
+        buf[i + 5] = if (!palmFacing && phi > 95f && !thumb) 1f else 0f
+        buf[i + 6] = if (phi > 95f) 0.18f else 0f
     }
 }
 
 private fun sideChain(
-    base: Offset, dir: Float, length: Float, width: Float, curl: Float, palmSide: Float, scale: Float, shade: Float,
-): List<Seg> {
-    val fractions = floatArrayOf(0.46f, 0.30f, 0.24f)
-    val bends = floatArrayOf(80f, 95f, 70f)
-    var p = base
+    buf: FloatArray, finger: Int, x: Float, y: Float, dir: Float, length: Float, width: Float, curl: Float,
+    palmSide: Float, scale: Float, shade: Float,
+) {
+    var px = x
+    var py = y
     var a = dir
-    return fractions.indices.map { j ->
-        a += Math.toRadians((palmSide * bends[j] * curl).toDouble()).toFloat()
-        val len = length * fractions[j] * scale
-        val next = Offset(p.x + sin(a) * len, p.y - cos(a) * len)
-        Seg(p, next, width * (1f - j * 0.07f), false, shade).also { p = next }
+    for (j in 0..2) {
+        a += rad(palmSide * SIDE_BENDS[j] * curl)
+        val len = length * FINGER_FRACTIONS[j] * scale
+        val i = at(finger, j)
+        buf[i] = px; buf[i + 1] = py
+        px += sin(a) * len; py -= cos(a) * len
+        buf[i + 2] = px; buf[i + 3] = py
+        buf[i + 4] = width * TAPER[j]
+        buf[i + 5] = 0f
+        buf[i + 6] = shade
     }
 }
 
+private fun DrawScope.segLine(buf: FloatArray, i: Int, color: Color, extra: Float) =
+    drawLine(color, Offset(buf[i], buf[i + 1]), Offset(buf[i + 2], buf[i + 3]), buf[i + 4] + extra, StrokeCap.Round)
+
+/** Which segments of a finger to draw: all, only those folded behind the palm, or the rest. */
+private const val ALL = 0
+private const val BEHIND = 1
+private const val FRONT = 2
+
+private fun picked(buf: FloatArray, i: Int, which: Int) = when (which) {
+    BEHIND -> buf[i + 5] > 0f
+    FRONT -> buf[i + 5] == 0f
+    else -> true
+}
+
 /** Each finger gets its own outline so neighbouring fingers stay readable. */
-private fun DrawScope.drawChain(look: Look, segs: List<Seg>, tone: Color = look.skin) {
-    if (segs.isEmpty()) return
-    for (s in segs) drawLine(look.line, s.a, s.b, s.width + 1.4f, StrokeCap.Round, alpha = 0.7f)
-    for (s in segs) {
-        val color = if (s.shade > 0f) lerp(tone, look.skinShade, s.shade.coerceAtMost(1f) * 2.5f) else tone
-        drawLine(color, s.a, s.b, s.width, StrokeCap.Round)
+private fun DrawScope.drawFinger(k: Kit, finger: Int, which: Int, tone: Color) {
+    val buf = k.seg
+    for (j in 0 until k.segs(finger)) at(finger, j).let { if (picked(buf, it, which)) segLine(buf, it, k.rim, 1.6f) }
+    for (j in 0 until k.segs(finger)) at(finger, j).let { i ->
+        if (picked(buf, i, which)) {
+            val shade = buf[i + 6]
+            segLine(buf, i, if (shade > 0f) lerp(tone, k.look.skinShade, (shade * 2.5f).coerceAtMost(1f)) else tone, 0f)
+        }
     }
+}
+
+private fun DrawScope.drawHandHalo(k: Kit) {
+    val buf = k.seg
+    if (k.frontal) {
+        drawRoundRect(k.halo, Offset(-k.pw / 2f - 1.5f, -PH - 1.5f), Size(k.pw + 3f, PH + 3f), CornerRadius(5.5f))
+        thenar(k, k.halo, 1.5f)
+    } else {
+        drawRoundRect(k.halo, Offset(-4.7f, -PH - 1.5f), Size(9.4f, PH + 3f), CornerRadius(4.5f))
+    }
+    for (f in 0..4) for (j in 0 until k.segs(f)) segLine(buf, at(f, j), k.halo, 3f)
+}
+
+/** The ball of the thumb, so the thumb reads as a separate digit growing from the palm. */
+private fun DrawScope.thenar(k: Kit, color: Color, grow: Float) {
+    val cx = k.thumbSide * k.pw * 0.32f
+    val w = k.pw * 0.45f
+    drawOval(color, Offset(cx - w / 2f - grow, -4f - 3.5f - grow), Size(w + grow * 2f, 7f + grow * 2f))
+}
+
+private fun DrawScope.drawHand(k: Kit, h: HandPose) {
+    val look = k.look
+    val buf = k.seg
+    val shape = h.shape
+    if (!k.frontal) {
+        drawRoundRect(k.rim, Offset(-4f, -PH - 0.8f), Size(8f, PH + 1.6f), CornerRadius(3.8f))
+        drawRoundRect(look.skin, Offset(-3.2f, -PH), Size(6.4f, PH), CornerRadius(3f))
+        // The palm's edge shows its lighter tone on the side it faces.
+        drawRoundRect(k.palmTone, Offset(if (k.palmSide > 0f) 2f else -3.2f, -PH + 1f), Size(1.2f, PH - 2f), CornerRadius(0.6f))
+        if (!k.nearThumb) drawFinger(k, 4, ALL, look.skin)
+        for (d in 0..3) drawFinger(k, if (k.nearThumb) 3 - d else d, ALL, look.skin)
+        if (k.nearThumb) drawFinger(k, 4, ALL, look.skin)
+        return
+    }
+    val across = shape.thumbAcross > 0.5f
+    val pw = k.pw
+    if (!k.palmFacing) {
+        if (!across) {
+            drawFinger(k, 4, ALL, look.skin)
+            if (shape.thumb < 0.5f) nail(k, 4, 1)
+        }
+        for (f in 0..3) drawFinger(k, f, BEHIND, look.skin)
+        thenar(k, k.rim, 0.8f)
+        thenar(k, look.skin, 0f)
+        drawRoundRect(k.rim, Offset(-pw / 2f - 0.8f, -PH - 0.8f), Size(pw + 1.6f, PH + 1.6f), CornerRadius(4.8f))
+        drawRoundRect(k.backBrush, Offset(-pw / 2f, -PH), Size(pw, PH), CornerRadius(4f))
+        // Seen from the back, a thumb across the palm is hidden behind the fingers.
+        if (across) drawFinger(k, 4, ALL, look.skin)
+        for (f in 3 downTo 0) drawFinger(k, f, FRONT, look.skin)
+        for (f in 0..3) {
+            val i = at(f, 0)
+            val c = curl(shape, f)
+            val base = Offset(buf[i], buf[i + 1])
+            if (c > 0.45f) {
+                drawCircle(look.skin, 1.9f, Offset(base.x, -PH + 1f))
+                drawCircle(look.line, 1.9f, Offset(base.x, -PH + 1f), style = Stroke(0.5f), alpha = 0.5f)
+            }
+            drawCircle(k.knuckle, 0.45f * buf[i + 4], Offset(base.x, if (c > 0.45f) -PH + 1f else base.y))
+            if (c < 0.35f) {
+                crease(k, f, 1, 0.55f)
+                crease(k, f, 2, 0.55f)
+                nail(k, f, 2)
+            }
+        }
+    } else {
+        if (!across) drawFinger(k, 4, ALL, k.palmTone)
+        thenar(k, k.rim, 0.8f)
+        thenar(k, k.palmTone, 0f)
+        drawRoundRect(k.rim, Offset(-pw / 2f - 0.8f, -PH - 0.8f), Size(pw + 1.6f, PH + 1.6f), CornerRadius(4.8f))
+        drawRoundRect(k.palmTone, Offset(-pw / 2f, -PH), Size(pw, PH), CornerRadius(4f))
+        drawArc(look.skinShade, 200f, 110f, false, Offset(-pw * 0.35f, -PH * 0.75f), Size(pw * 0.7f, PH * 0.9f), style = Stroke(0.9f), alpha = 0.8f)
+        for (f in 3 downTo 0) {
+            drawFinger(k, f, ALL, k.palmTone)
+            if (curl(shape, f) < 0.6f) {
+                crease(k, f, 1, 0.4f)
+                crease(k, f, 2, 0.4f)
+                val i = at(f, 2)
+                val w = buf[i + 4]
+                val c = lerpOffset(Offset(buf[i], buf[i + 1]), Offset(buf[i + 2], buf[i + 3]), 0.6f)
+                drawOval(k.pad, Offset(c.x - 0.3f * w, c.y - 0.4f * w), Size(0.6f * w, 0.8f * w))
+            }
+        }
+        if (across) drawFinger(k, 4, ALL, k.palmTone)
+    }
+}
+
+/** A short crease across a finger at the start of segment [j]. */
+private fun DrawScope.crease(k: Kit, finger: Int, j: Int, alpha: Float) {
+    val buf = k.seg
+    val i = at(finger, j)
+    val dx = buf[i + 2] - buf[i]
+    val dy = buf[i + 3] - buf[i + 1]
+    val len = hypot(dx, dy)
+    if (len < 0.3f) return
+    val half = 0.55f * buf[i + 4] / 2f
+    val nx = -dy / len * half
+    val ny = dx / len * half
+    drawLine(k.look.skinShade, Offset(buf[i] - nx, buf[i + 1] - ny), Offset(buf[i] + nx, buf[i + 1] + ny), 0.35f, StrokeCap.Round, alpha = alpha)
+}
+
+/** A nail on segment [j] from 35% to 92% of its length, with a small highlight near the tip. */
+private fun DrawScope.nail(k: Kit, finger: Int, j: Int) {
+    val buf = k.seg
+    val i = at(finger, j)
+    val a = Offset(buf[i], buf[i + 1])
+    val b = Offset(buf[i + 2], buf[i + 3])
+    val len = hypot(b.x - a.x, b.y - a.y)
+    if (len < 0.5f) return
+    val nw = 0.6f * buf[i + 4]
+    // Round caps add half the width at each end, so the line is inset by that much.
+    var t0 = 0.35f + nw / 2f / len
+    var t1 = 0.92f - nw / 2f / len
+    if (t1 < t0) { t0 = (t0 + t1) / 2f; t1 = t0 }
+    val p0 = lerpOffset(a, b, t0)
+    val p1 = lerpOffset(a, b, t1)
+    drawLine(k.look.skinShade, p0, p1, nw + 0.5f, StrokeCap.Round, alpha = 0.6f)
+    drawLine(k.nail, p0, p1, nw, StrokeCap.Round)
+    drawCircle(Color.White, 0.18f * buf[i + 4], lerpOffset(a, b, 0.8f), alpha = 0.5f)
 }
 
 private fun lerpOffset(a: Offset, b: Offset, f: Float) = Offset(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f)

@@ -6,18 +6,20 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | File | Contents |
 | --- | --- |
-| [system-design.html](system-design.html) | Data flow diagrams (levels 0 to 2), data dictionary, trust boundaries, delivery phases |
-| [01-requirements.md](01-requirements.md) | Purpose, users, subject profiles, constraints, functional and non-functional requirements |
-| [02-architecture.md](02-architecture.md) | Technology, packages (including `sign`, `pair` and the flavor source sets), content bundle, data model, storage, export, performance, second-screen protocol, reviewer portal |
-| [03-ux.md](03-ux.md) | Officer and Show states, profiles, flows, accessibility, content style |
-| [04-security.md](04-security.md) | Security controls (MASVS L2, CERT-In), keys, threats in scope |
-| [05-avatar-and-gestures.md](05-avatar-and-gestures.md) | Gesture and ISL lexicons, the two characters, clip pipeline, validation |
-| [06-test-plan.md](06-test-plan.md) | Functional, performance, security, accessibility tests; testing with children |
-| [07-decisions.md](07-decisions.md) | Decision log D-01 to D-34 |
+| [system-design.html](system-design.html) | Features, data flow diagrams (levels 0 to 2), data dictionary, trust boundaries, technology, readiness |
+| [sign-setu-docs.html](sign-setu-docs.html) | Every document in this folder except `teammate/`, in one offline page |
+| [teammate-handoff.html](teammate-handoff.html) | The engineering handoff: `teammate/`, the repository README, requirements, decision log and open-source register |
+| [01-requirements.md](01-requirements.md) | Purpose, users, subject profiles, constraints, functional (FR-) and non-functional (NFR-) requirements, traceability |
+| [02-architecture.md](02-architecture.md) | Technology, packages and flavor source sets, content bundle, data model, storage, export, build, performance, second-screen protocol, reviewer portal |
+| [03-ux.md](03-ux.md) | Officer and stage states, profiles, flows, accessibility, visual and content style |
+| [04-security.md](04-security.md) | Security controls (SEC-), keys, threats in scope |
+| [05-avatar-and-gestures.md](05-avatar-and-gestures.md) | Gesture and ISL lexicons, the two characters, motion pipelines, the code-drawn rig, validation |
+| [06-test-plan.md](06-test-plan.md) | Functional (TC-), performance (PT-), resilience (RD-), security (ST-) and accessibility (AT-) tests; testing with children |
+| [07-decisions.md](07-decisions.md) | Decision log D-01 to D-38 |
 | [08-plan.md](08-plan.md) | Release path: the four gates to production, and pilot success criteria |
-| [09-open-source.md](09-open-source.md) | Reusable open-source components per module, with licences |
-| [10-test-report.md](10-test-report.md) | Test results against the test plan, for the first build and the integrated build, with open items |
-| [11-hand-model-integration.md](11-hand-model-integration.md) | The built vision engine and sign reader, sign windows, and the path for the partner team's model to replace them |
+| [09-open-source.md](09-open-source.md) | Reusable open-source components per module, with licences and attribution |
+| [10-test-report.md](10-test-report.md) | Results against the test plan: the automated suite on the current build and the device evidence |
+| [11-hand-model-integration.md](11-hand-model-integration.md) | The vision engine and sign reader, sign windows, and the contract for a replacement model |
 | [12-on-device-assistant.md](12-on-device-assistant.md) | The optional on-device translation assistant: model, installation, budgets |
 | [13-product-overview.md](13-product-overview.md) | One reference for explaining the product: features, mechanisms, character, sign reading, export, stack, frontend, readiness |
 | [14-presentation-script.md](14-presentation-script.md) | Spoken walk-through with demonstration steps and likely questions |
@@ -26,15 +28,17 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Folder | Contents |
 | --- | --- |
+| [teammate/](teammate/README.md) | Engineering reference for developers: build and test commands, SRS, DFDs, architecture, data model, sequences, state machines, rig, ML, security, tests, interfaces, operations |
 | [governance/](governance/README.md) | Compliance pack for the department, legal adviser and CERT-In auditor: threat model, DPIA, compliance matrix, risk register, release process, incident response, UAT, user guide, training, audit scope, policies, agreements, forms |
-| [tools/](tools/) | Generator for `system-design.html` |
+| [tools/](tools/) | Generators: `python docs/tools/build_system_design.py docs/system-design.html`; `python docs/tools/build_docs_html.py --mermaid mermaid.min.js` (needs markdown-it-py and mdit-py-plugins) |
 | [../portal/](../portal/README.md) | Reviewer portal for content sign-off (static web page; not shipped in the app) |
 
 ## Conventions
 
-- Requirement, control, threat, risk and decision IDs (FR-, NFR-, SEC-, T-, R-, D-) are stable. Withdrawn IDs are not reused.
+- Requirement, control, threat, risk and decision IDs (FR-, NFR-, SEC-, T-, P-, R-, D-) are stable. New items take new numbers; withdrawn IDs are not reused.
 - **[confirm]** marks anything that depends on a person or body outside the team.
 - Legal summaries come from public sources and are not legal advice.
+- Sizes in MiB are binary (1 MiB = 1,048,576 bytes); sizes in MB are decimal.
 
 ## Glossary
 
@@ -42,9 +46,12 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | --- | --- |
 | Subject | The person the officer is helping |
 | Session | One conversation, from start to end or purge |
-| Officer state, Show state | The phone held by the officer, or facing the subject with the subject panel full screen |
+| Officer state, Show state | The phone held by the officer, or facing the subject with the stage full screen |
+| Stage | The subject's screen: character on top, camera window and answer rails below |
 | Subject profile | Young child, ISL user, hearing with another language, or not sure; decides what the subject sees and hears |
 | Gesture lexicon | Reviewed iconic, culturally common gestures for people who do not sign |
+| Recorded sign | An ISL sign retargeted onto the characters from a Deaf signer's recorded landmarks (INCLUDE) |
+| Lesson-sheet question | A personal-details question whose answer is entered on its own input on the stage |
 | Show-back | Showing a candidate meaning to the subject, who picks it among alternatives or answers Yes or No, before it is logged as theirs |
 | Sign window | The only time camera frames are analysed: a 20-second answer or a 3-minute account |
 | Evidence grade | Said, Confirmed, Officer's reading, App's reading, Said no or Unclear, on every answer line |

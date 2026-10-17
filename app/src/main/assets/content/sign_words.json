@@ -44,6 +44,12 @@
     "yesterday": "yesterday",
     "tomorrow": "tomorrow",
     "morning": "morning",
-    "night": "night"
+    "night": "night",
+    "i": "i",
+    "you": "you",
+    "family": "family",
+    "teacher": "teacher",
+    "student": "student",
+    "city": "city"
   }
 }

@@ -10,7 +10,7 @@ import {
   curls,
   point,
   shoulder,
-  solveElbow,
+  elbowAt,
   type Build,
   type HandPose,
   type Pose,
@@ -19,7 +19,7 @@ import {
 
 function hand(h: HandPose, side: Side, b: Build): (number | null)[] {
   const [sx, sy] = shoulder(b, side);
-  const [ex, ey] = solveElbow(sx, sy, h.x, h.y, b.upperArm, b.foreArm, side, h.elbowOut);
+  const [ex, ey] = elbowAt(h, sx, sy, b, side);
   const [tx, ty] = point(h, "index", side, b.handScale);
   return [
     h.x,
@@ -43,7 +43,10 @@ describe("TypeScript rig", () => {
   const byId = new Map(gestures.map((g) => [g.id, g]));
 
   it("covers every gesture in the fixtures", () => {
-    expect(new Set(fixtures.samples.map((s) => s.gesture))).toEqual(new Set(byId.keys()));
+    // Recorded ISL signs share one code path, so RigFixtureTest samples only the first three.
+    const isl = [...byId.keys()].filter((id) => id.startsWith("isl."));
+    const sampled = [...byId.keys()].filter((id) => !id.startsWith("isl.")).concat(isl.slice(0, 3));
+    expect(new Set(fixtures.samples.map((s) => s.gesture))).toEqual(new Set(sampled));
   });
 
   it.each(fixtures.samples)("$gesture on $character at $seconds s matches Rig.kt", (s) => {

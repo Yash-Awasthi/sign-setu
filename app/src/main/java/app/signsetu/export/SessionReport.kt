@@ -43,15 +43,18 @@ class ReportText(
 
 class ReportRow(val event: SessionEvent, val question: String?, val detail: String, val reading: Boolean = false)
 
+/** A titled table printed before the conversation, such as the personal details the subject gave. */
+class ReportSection(val title: String, val header: List<String>, val rows: List<List<String>>)
+
 /**
  * Builds the session report as an A4 PDF and encrypts it with AES-256 under a one-time passphrase (FR-32, SEC-12).
  * The report opens in any PDF reader; nothing else is needed by the case file or CWC.
  */
 class SessionReport(private val context: Context) {
 
-    suspend fun export(rows: List<ReportRow>, text: ReportText, drawing: suspend (Long) -> ByteArray?): Pair<File, String> =
+    suspend fun export(rows: List<ReportRow>, text: ReportText, drawing: suspend (Long) -> ByteArray?, section: ReportSection? = null): Pair<File, String> =
         withContext(Dispatchers.IO) {
-            val plain = render(rows, text, drawing)
+            val plain = render(rows, text, drawing, section)
             val passphrase = newPassphrase()
             PDFBoxResourceLoader.init(context)
             val dir = File(context.cacheDir, "exports").apply { mkdirs() }
@@ -66,7 +69,7 @@ class SessionReport(private val context: Context) {
             file to passphrase
         }
 
-    private suspend fun render(rows: List<ReportRow>, text: ReportText, drawing: suspend (Long) -> ByteArray?): ByteArray {
+    private suspend fun render(rows: List<ReportRow>, text: ReportText, drawing: suspend (Long) -> ByteArray?, section: ReportSection?): ByteArray {
         val pdf = PdfDocument()
         val pages = mutableListOf<PdfDocument.Page>()
         val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 17f; typeface = Typeface.DEFAULT_BOLD }
@@ -115,6 +118,26 @@ class SessionReport(private val context: Context) {
             draw(l, MARGIN, y); y += l.height + 2
         }
         y += 10
+
+        section?.let { s ->
+            val widths = listOf(110, full - 110 - 120 - 60, 120, 60)
+            fun tableRow(cells: List<String>, paint: TextPaint) {
+                val layouts = cells.mapIndexed { i, c -> block(c, paint, widths[i] - 6) }
+                val height = layouts.maxOf { it.height }.toFloat() + 6
+                ensure(height)
+                var x = MARGIN
+                layouts.forEachIndexed { i, l -> draw(l, x, y); x += widths[i] }
+                y += height
+            }
+            val title = block(s.title, headPaint, full)
+            ensure(title.height + 40f)
+            draw(title, MARGIN, y)
+            y += title.height + 6
+            tableRow(s.header, headPaint)
+            canvas!!.drawLine(MARGIN, y - 2, PAGE_W - MARGIN, y - 2, rule)
+            s.rows.forEach { tableRow(it, bodyPaint) }
+            y += 12
+        }
 
         val colTime = MARGIN
         val colEvent = MARGIN + 52

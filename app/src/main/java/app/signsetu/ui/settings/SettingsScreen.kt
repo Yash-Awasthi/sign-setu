@@ -6,9 +6,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import app.signsetu.assistant.ModelStore
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.ui.graphics.Color
-import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.material3.ListItemDefaults
+import app.signsetu.ui.components.OfficerCard
+import app.signsetu.ui.session.SectionLabel
 import androidx.compose.foundation.layout.ColumnScope
 import android.app.Activity
 import app.signsetu.data.settings.OfficerLocale
@@ -32,7 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -84,7 +86,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var dialog by rememberSaveable { mutableStateOf<Dialog?>(null) }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scroll = TopAppBarDefaults.pinnedScrollBehavior()
     val notSet = stringResource(R.string.settings_not_set)
     var modelState by remember { mutableStateOf(models.state()) }
     var importing by remember { mutableStateOf(false) }
@@ -106,9 +108,12 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            LargeTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(stringResource(R.string.settings_title)) },
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                ),
+                title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
@@ -152,6 +157,13 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                     colors = ItemColors,
                     trailingContent = { Switch(checked = s.slowGestures, onCheckedChange = null) },
                     modifier = Modifier.toggleable(s.slowGestures, role = Role.Switch) { on -> scope.launch { store.setSlowGestures(on) } },
+                )
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_isl_reorder)) },
+                    supportingContent = { Text(stringResource(R.string.settings_isl_reorder_summary)) },
+                    colors = ItemColors,
+                    trailingContent = { Switch(checked = s.islReorder, onCheckedChange = null) },
+                    modifier = Modifier.toggleable(s.islReorder, role = Role.Switch) { on -> scope.launch { store.setIslReorder(on) } },
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_pin_to_leave)) },
@@ -316,25 +328,19 @@ private fun appName(app: InterpreterApp) = when (app) {
 /** One titled card of settings on the page background. */
 @Composable
 private fun Group(@StringRes title: Int, content: @Composable ColumnScope.() -> Unit) {
-    Text(
-        stringResource(title),
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier
-            .padding(start = Spacing.xl, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.sm)
-            .semantics { heading() },
-    )
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shadowElevation = 2.dp,
-        modifier = Modifier.padding(horizontal = Spacing.lg).fillMaxWidth(),
-    ) {
-        Column(content = content)
+    SectionLabel(stringResource(title), Modifier.padding(start = Spacing.xxl, end = Spacing.lg, top = Spacing.xl, bottom = Spacing.sm))
+    OfficerCard(Modifier.padding(horizontal = Spacing.lg), padding = 0.dp) {
+        val divider = MaterialTheme.colorScheme.outlineVariant
+        // Opaque items 1 dp apart over a line drawn from 16 dp: inset dividers without one per call site.
+        Column(
+            Modifier.drawBehind { drawRect(divider, topLeft = Offset(Spacing.lg.toPx(), 0f)) },
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+            content = content,
+        )
     }
 }
 
-private val ItemColors @Composable get() = ListItemDefaults.colors(containerColor = Color.Transparent)
+private val ItemColors @Composable get() = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
 
 @Composable
 private fun Item(title: String, summary: String, note: String? = null, destructive: Boolean = false, onClick: () -> Unit) {
@@ -425,12 +431,23 @@ private val LICENCES = listOf(
         "Changed: a sign classifier was trained on its landmarks.",
     "OpenHands pose release" to "CC BY 4.0. AI4Bharat, \"OpenHands v1: Labelled ISLR datasets, Poses\", zenodo.org/records/6674324. " +
         "Changed: poses resampled and normalised.",
+    "PopSign ASL v1.0 (ASL reader training data, ASL signs)" to "CC BY 4.0. Starner, Forbes, So, Martin, Sridhar, Deshpande et al. (Georgia Tech, NTID), " +
+        "NeurIPS 2023 Datasets and Benchmarks, signdata.cc.gatech.edu; frames from huggingface.co/datasets/sign/popsign-images. " +
+        "Changed: landmarks extracted, a sign classifier trained, signers retargeted as keyframes on the app's characters, mirrored to right-hand dominant where the left hand led.",
+    "ASLNow! fingerspelling landmarks" to "MIT. sid220, huggingface.co/datasets/sid220/asl-now-fingerspelling. " +
+        "Changed: letters chained into synthetic spelling to train a reader, and posed as the ASL alphabet.",
     "MediaPipe and the Holistic landmarker model" to "Apache 2.0. Google LLC",
     "Sign Setu symbols (original drawings)" to "CC BY-SA 4.0. Drawn in OpenMoji style for this app",
     "SQLCipher for Android" to "BSD 3-Clause. Zetetic LLC",
     "PdfBox-Android" to "Apache 2.0. Tom Roush; Apache PDFBox",
     "AndroidX, Jetpack Compose, Media3" to "Apache 2.0. The Android Open Source Project",
     "Kotlin, kotlinx.coroutines, kotlinx.serialization" to "Apache 2.0. JetBrains",
+    "CameraX" to "Apache 2.0. The Android Open Source Project",
+    "Protocol Buffers for Java (protobuf-java)" to "BSD 3-Clause. Google LLC",
+    "BouncyCastle" to "MIT-style Bouncy Castle licence. The Legion of the Bouncy Castle Inc.",
+    "llama.cpp" to "MIT. Georgi Gerganov and contributors, ggml-org/llama.cpp",
+    "Baloo 2 font" to "SIL Open Font Licence 1.1. Ek Type",
+    "INCLUDE sign retargeting" to "CC BY 4.0. Motions retargeted from the INCLUDE landmark samples; see INCLUDE above.",
 )
 
 @Composable

@@ -28,3 +28,5 @@ keystore.properties
 # Local tooling
 .DS_Store
 Thumbs.db
+__pycache__/
+.kotlin/

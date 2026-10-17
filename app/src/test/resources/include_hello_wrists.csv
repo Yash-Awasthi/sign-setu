@@ -1,0 +1,26 @@
+# INCLUDE (Sridhar et al. 2020, CC BY 4.0), Greetings/48. Hello/MVI_0029.MOV, 1920x1080 landscape, 25 fps, pixels.
+# label: wrist centre at the palm base, picked by eye on the decoded frame (every 6th frame; 43 for 42, where the
+# hand model lost the right hand). hand: MediaPipe hand wrist from the OpenHands pose release of the same clip.
+frame,side,label_x,label_y,hand_x,hand_y
+0,L,1132,808,1137.3,802.5
+0,R,781,808,779.9,794.8
+6,L,1132,810,1139.3,806.5
+6,R,782,810,782.9,799.3
+12,L,1133,812,1140.8,813.8
+12,R,767,795,762.8,789.9
+18,L,1135,815,1142.8,819.8
+18,R,736,312,734.2,327.1
+24,L,1131,812,1135.5,816.9
+24,R,790,207,787.2,212.4
+30,L,1130,815,1137.0,820.2
+30,R,673,236,680.7,234.5
+36,L,1140,815,1146.0,818.0
+36,R,688,266,699.4,266.1
+43,L,1135,815,1144.8,820.0
+43,R,716,468,722.0,462.7
+48,L,1126,812,1130.7,822.8
+48,R,768,705,769.7,700.4
+54,L,1127,812,1134.2,819.5
+54,R,772,806,770.4,806.5
+60,L,1130,807,1138.5,813.3
+60,R,772,802,766.2,804.8

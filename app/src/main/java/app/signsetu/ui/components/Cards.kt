@@ -4,6 +4,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -102,6 +108,41 @@ fun PictureCard(
                     modifier = Modifier.align(Alignment.TopEnd).padding(Spacing.sm).size(28.dp),
                 ) {
                     Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.padding(4.dp))
+                }
+            }
+        }
+    }
+}
+
+/** The officer-side white card: border instead of shadow, so it holds in dark theme and in sunlight. */
+@Composable
+fun OfficerCard(modifier: Modifier = Modifier, padding: Dp = Spacing.lg, content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(if (padding > 0.dp) Spacing.md else 0.dp), content = content)
+    }
+}
+
+/** One option of a single choice: tinted fill, 2 dp border and a check when selected, never colour alone. */
+@Composable
+fun ChoiceTile(selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier.heightIn(min = 56.dp).clip(MaterialTheme.shapes.medium).selectable(selected, onClick = onClick, role = Role.RadioButton),
+        shape = MaterialTheme.shapes.medium,
+        color = if (selected) colors.primaryContainer else colors.surfaceContainerHigh,
+        contentColor = if (selected) colors.onPrimaryContainer else colors.onSurface,
+        border = if (selected) BorderStroke(2.dp, colors.primary) else null,
+    ) {
+        Box(Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.sm), contentAlignment = Alignment.Center) {
+            content()
+            if (selected) {
+                Surface(shape = CircleShape, color = colors.primary, modifier = Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp).size(18.dp)) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.padding(2.dp))
                 }
             }
         }

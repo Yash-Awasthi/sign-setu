@@ -20,7 +20,17 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.ui.text.font.FontWeight
+import app.signsetu.ui.theme.Baloo
+import app.signsetu.ui.theme.LocalStageColors
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,6 +73,8 @@ import app.signsetu.AppContainer
 import app.signsetu.DeviceGuard
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
+import app.signsetu.data.content.forSignLanguage
+import app.signsetu.data.content.SignLanguage
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Session
 import app.signsetu.pair.AnswerBody
@@ -126,7 +138,10 @@ fun UseAsStageButton(container: AppContainer) {
                 }) { Text(stringResource(R.string.stage_continue)) }
             },
             dismissButton = {
-                TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) }) { Text(stringResource(R.string.stage_checklist_open)) }
+                Row {
+                    TextButton(onClick = { checklist = false }) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) }) { Text(stringResource(R.string.stage_checklist_open)) }
+                }
             },
         )
     }
@@ -158,6 +173,7 @@ fun StageDeviceScreen(link: StageLink, content: ContentBundle, container: AppCon
         if (state is LinkState.Ended) guard.pin()
     }
     ImmersiveWhile(activity, everLive)
+    // Back is swallowed once pinned: the stage has no local exit (D-26); Stop stays on the item and the officer ends it.
     BackHandler(enabled = everLive) { }
     val awake = everLive && state !is LinkState.Ended
     DisposableEffect(activity, awake) {
@@ -199,32 +215,42 @@ fun StageDeviceScreen(link: StageLink, content: ContentBundle, container: AppCon
 
     SubjectTheme {
         when (val s = state) {
-            LinkState.Idle, LinkState.Connecting, is LinkState.Failed -> Centered {
-                Text(stringResource(R.string.stage_waiting, container.pairTransport?.localName() ?: Build.MODEL), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-                CircularProgressIndicator()
-                OutlinedButton(onClick = { container.endLink(ByeReason.CANCEL) }) { Text(stringResource(R.string.cancel)) }
-            }
-            is LinkState.Code -> Centered {
-                Text(
-                    s.code.orEmpty().chunked(3).joinToString(" "),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 56.sp,
-                    modifier = Modifier.semantics { contentDescription = s.code.orEmpty().toCharArray().joinToString(" ") },
-                )
-                Text(stringResource(R.string.stage_code), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-                s.check?.let { CheckValue(it) }
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    OutlinedButton(onClick = { link.cancelCode() }) { Text(stringResource(R.string.cancel)) }
-                    Button(onClick = { link.match() }, enabled = s.check != null) { Text(stringResource(R.string.stage_match)) }
-                }
-            }
-            is LinkState.Ended -> Centered {
-                Text(stringResource(R.string.stage_handback), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-                TextButton(onClick = exit) { Text(stringResource(R.string.stage_officer_unlock)) }
-            }
+            LinkState.Idle, LinkState.Connecting, is LinkState.Failed ->
+                Waiting(container.pairTransport?.localName() ?: Build.MODEL) { container.endLink(ByeReason.CANCEL) }
+            is LinkState.Code -> CodeScreen(s.code.orEmpty(), s.check, link::cancelCode, link::match)
+            is LinkState.Ended -> Ended(exit)
             else -> LiveStage(link, content, s, exit, scope)
         }
     }
+}
+
+@Composable
+internal fun Waiting(name: String, onCancel: () -> Unit) = Centered {
+    Text(stringResource(R.string.stage_waiting, name), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+    CircularProgressIndicator(color = LocalContentColor.current)
+    StageOutlinedButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
+}
+
+@Composable
+internal fun CodeScreen(code: String, check: String?, onCancel: () -> Unit, onMatch: () -> Unit) = Centered {
+    CodeBoxes(code)
+    Text(stringResource(R.string.stage_code), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+    check?.let { CheckValue(it) }
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        StageOutlinedButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
+        Button(onClick = onMatch, enabled = check != null, shape = MaterialTheme.shapes.medium, modifier = Modifier.height(48.dp)) { Text(stringResource(R.string.stage_match)) }
+    }
+}
+
+@Composable
+internal fun Ended(onExit: () -> Unit) = Centered {
+    Text(stringResource(R.string.stage_handback), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+    TextButton(onClick = onExit, colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current)) { Text(stringResource(R.string.stage_officer_unlock)) }
+}
+
+@Composable
+internal fun Break(text: String) = Centered {
+    Text(text, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
 }
 
 /** The value both screens show after the officer's phone accepts the code; Match only when they are the same. */
@@ -240,11 +266,13 @@ fun CheckValue(check: String) {
 }
 
 @Composable
-private fun LiveStage(link: StageLink, content: ContentBundle, state: LinkState, exit: () -> Unit, scope: kotlinx.coroutines.CoroutineScope) {
+private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkState, exit: () -> Unit, scope: kotlinx.coroutines.CoroutineScope) {
     val show by link.view.collectAsStateWithLifecycle()
     val unacked by link.unacked.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val view = show?.view
+    val lang = view?.signLanguage?.let { n -> SignLanguage.entries.firstOrNull { it.name == n } } ?: SignLanguage.ISL
+    val content = remember(baseContent, lang) { baseContent.forSignLanguage(lang) }
     val itemId = show?.itemId
     // The item answered last; Stop on an idle screen still belongs somewhere in the record.
     val lastItem = remember { LongArray(1) }
@@ -274,7 +302,7 @@ private fun LiveStage(link: StageLink, content: ContentBundle, state: LinkState,
         return
     }
     if (breakFor != null) {
-        Centered { Text(content.subjectText("break", view.lang) ?: stringResource(R.string.stage_break), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center) }
+        Break(content.subjectText("break", view.lang) ?: stringResource(R.string.stage_break))
         return
     }
     val covered = state != LinkState.Live
@@ -314,6 +342,7 @@ private fun LiveStage(link: StageLink, content: ContentBundle, state: LinkState,
                     onDoneSigning = {},
                     onOfficer = null,
                     onNextRule = { send(AnswerBody.Next) },
+                    onGiven = { g -> send(if (g != null) AnswerBody.Given(g.question, g.method.name, g.confirmed, g.value, g.picks) else AnswerBody.Change) },
                 )
             }
         }
@@ -322,6 +351,7 @@ private fun LiveStage(link: StageLink, content: ContentBundle, state: LinkState,
             Text(
                 stringResource(if (unacked.any { it.itemId == id }) R.string.stage_sending else R.string.stage_sent),
                 style = MaterialTheme.typography.labelMedium,
+                color = LocalStageColors.current.title,
                 modifier = Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(Spacing.md),
             )
         }
@@ -331,8 +361,9 @@ private fun LiveStage(link: StageLink, content: ContentBundle, state: LinkState,
 
 /** Lost or Hold: the item is hidden; Stop and "I don't know" still work and are sent once the link is back. */
 @Composable
-private fun Cover(state: LinkState, content: ContentBundle, lang: String, onStop: () -> Unit, onUnsure: () -> Unit, onExit: () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+internal fun Cover(state: LinkState, content: ContentBundle, lang: String, onStop: () -> Unit, onUnsure: () -> Unit, onExit: () -> Unit) {
+    val stage = LocalStageColors.current
+    Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize()) {
         Column(
             Modifier.safeDrawingPadding().padding(Spacing.xl),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
@@ -343,14 +374,14 @@ private fun Cover(state: LinkState, content: ContentBundle, lang: String, onStop
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
-            if (state == LinkState.Lost) CircularProgressIndicator()
+            if (state == LinkState.Lost) CircularProgressIndicator(color = stage.title)
             // The same pictures the subject has used on the stage, not bare words or symbols.
             val answer = LocalAnswerColors.current
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), modifier = Modifier.fillMaxWidth()) {
                 StripAnswer("dont_know", content.subjectText("dont_know", lang), stringResource(R.string.stage_dont_know), false, onUnsure, Modifier.weight(1f))
                 SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, false, onStop, Modifier.weight(1f), height = 76.dp)
             }
-            TextButton(onClick = onExit) { Text(stringResource(R.string.stage_officer_unlock), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            TextButton(onClick = onExit) { Text(stringResource(R.string.stage_officer_unlock), color = stage.title.copy(alpha = 0.8f)) }
         }
     }
 }
@@ -377,11 +408,42 @@ private fun BatteryStatus(link: StageLink, cameraOn: Boolean) {
     }
 }
 
+/** The pairing code, one digit per box in two groups of three, read out digit by digit. */
+@Composable
+private fun CodeBoxes(code: String) {
+    val stage = LocalStageColors.current
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        modifier = Modifier.clearAndSetSemantics { contentDescription = code.toCharArray().joinToString(" ") },
+    ) {
+        code.forEachIndexed { i, c ->
+            if (i > 0 && i % 3 == 0) Spacer(Modifier.width(Spacing.sm))
+            Surface(shape = MaterialTheme.shapes.medium, color = stage.bubble, contentColor = stage.onBubble, border = BorderStroke(1.dp, stage.onBubble.copy(alpha = 0.2f)), modifier = Modifier.size(48.dp, 56.dp)) {
+                Box(contentAlignment = Alignment.Center) { Text(c.toString(), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 28.sp) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StageOutlinedButton(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
+    val ink = LocalContentColor.current
+    OutlinedButton(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = ink),
+        border = BorderStroke(1.dp, ink.copy(alpha = 0.5f)),
+        modifier = Modifier.height(48.dp),
+        content = content,
+    )
+}
+
 @Composable
 private fun Centered(body: @Composable () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+    val stage = LocalStageColors.current
+    Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize()) {
         Column(
-            Modifier.safeDrawingPadding().padding(Spacing.xl).fillMaxWidth(),
+            Modifier.safeDrawingPadding().padding(horizontal = Spacing.lg, vertical = Spacing.xl).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) { body() }
