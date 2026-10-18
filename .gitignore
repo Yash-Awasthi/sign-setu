@@ -31,3 +31,4 @@ keystore.properties
 Thumbs.db
 __pycache__/
 .kotlin/
+.freebuff/
