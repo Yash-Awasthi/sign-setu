@@ -6,8 +6,6 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasContentDescription
@@ -17,7 +15,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assert
 import androidx.room.Room
@@ -25,7 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.camera.LandmarkTracker
-import app.signsetu.camera.SkeletonOnly
+import app.signsetu.camera.SkeletonOverlay
 import app.signsetu.data.content.pick
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
@@ -33,12 +30,14 @@ import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.data.settings.AppSettings
 import app.signsetu.ui.SessionRoute
+import app.signsetu.ui.components.LocalCloudAi
 import app.signsetu.ui.components.LocalContentRepository
 import app.signsetu.ui.theme.SignSetuTheme
 import kotlinx.coroutines.runBlocking
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -73,15 +72,6 @@ class StageEndToEndTest {
         }
     }
 
-    /** No screen pinning or prompt in a test activity; the department setting that would prompt is off here. */
-    private object TestGuard : DeviceGuard {
-        override fun unlock(title: String, subtitle: String, onSuccess: () -> Unit, onFailure: () -> Unit) = onSuccess()
-        override fun confirmOfficer(title: String, subtitle: String, cancel: String, onSuccess: () -> Unit) = onSuccess()
-        override fun confirmPinned(title: String, subtitle: String, cancel: String, onSuccess: () -> Unit) = onSuccess()
-        override fun pin() = Unit
-        override fun unpin() = Unit
-    }
-
     @Before
     fun setUp() {
         shell("settings put global animator_duration_scale 0")
@@ -94,7 +84,7 @@ class StageEndToEndTest {
 
     @After
     fun tearDown() {
-        SkeletonOnly.on.value = false
+        SkeletonOverlay.on.value = true
         app.container.stageGuard.onStage(false)
         db.close()
         shell("settings put global animator_duration_scale 1")
@@ -118,9 +108,9 @@ class StageEndToEndTest {
         val tracker = NoddingTracker()
         val settings = AppSettings(firstRunDone = true, tiltToShow = false, volumeKeys = false)
         rule.setContent {
-            CompositionLocalProvider(LocalContentRepository provides container.content) {
+            CompositionLocalProvider(LocalContentRepository provides container.content, LocalCloudAi provides container.cloudAi) {
                 SignSetuTheme {
-                    SessionRoute(id, repo, content, settings, TestGuard, container.report, tracker, null, null, {}, {}, container, null)
+                    SessionRoute(id, repo, content, settings, container.report, tracker, null, null, {}, {}, container, null)
                 }
             }
         }
@@ -169,10 +159,10 @@ class StageEndToEndTest {
         assertEquals(1, rule.onAllNodesWithText(cue, substring = true).fetchSemanticsNodes().size)
         assertEquals(3, rule.onAllNodesWithText(str(R.string.grade_said)).fetchSemanticsNodes().size)
 
-        // 5. Skeleton only from the officer menu: the stage's camera window still draws, without the picture.
+        // 5. Skeleton off from the officer menu: the stage's camera keeps running, the picture stays and only the overlay goes.
         rule.onNodeWithContentDescription(str(R.string.officer_more)).performClick()
-        rule.onNodeWithText(str(R.string.officer_skeleton_only)).performClick()
-        assertTrue(SkeletonOnly.on.value)
+        rule.onNodeWithText(str(R.string.officer_skeleton_show)).performClick()
+        assertFalse(SkeletonOverlay.on.value)
         instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         val water = content.question("n1")!!.text.getValue("en")
         rule.onNodeWithText(water).performClick()
@@ -180,12 +170,5 @@ class StageEndToEndTest {
         waitFor(handle)
         val seen = tracker.frames
         rule.waitUntil(15_000) { tracker.frames > seen + 5 }
-        val skeletonPane = 0xFF1E2A33.toInt()
-        rule.waitUntil(15_000) {
-            val pixels = rule.onRoot().captureToImage().toPixelMap()
-            var n = 0
-            for (x in 0 until pixels.width step 4) for (y in 0 until pixels.height step 4) if (pixels[x, y].toArgb() == skeletonPane) n++
-            n > 500
-        }
     }
 }

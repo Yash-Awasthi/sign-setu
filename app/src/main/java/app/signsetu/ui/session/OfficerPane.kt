@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.foundation.Image
 import android.graphics.BitmapFactory
 import androidx.compose.material.icons.filled.Star
-import app.signsetu.camera.SkeletonOnly
+import app.signsetu.camera.SkeletonOverlay
 import app.signsetu.assistant.Suggestion
 import app.signsetu.assistant.Assistant
 import android.app.Activity
@@ -232,6 +232,7 @@ fun OfficerPane(
     // Sheets and dialogs take Back first; on the page itself it steps to the first tab, then asks before ending.
     BackHandler { if (page != 0) page = 0 else askEnd = true }
     var export by remember { mutableStateOf<ExportState?>(null) }
+    val cloud = app.signsetu.ui.components.LocalCloudAi.current
     var aiReport by remember { mutableStateOf<String?>(null) }
     var aiExtracting by remember { mutableStateOf(false) }
     var stopSeen by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -283,8 +284,8 @@ fun OfficerPane(
     var sayingBackId by rememberSaveable { mutableStateOf<Long?>(null) }
     val sayingBack = ui.events.firstOrNull { it.id == sayingBackId }
     val context = LocalContext.current
-    val runQuestions = run.mapNotNull { id -> content.questions.firstOrNull { it.id == id } }
-    val sensitiveGroups = content.groups.filter { it.sensitive }.map { it.id }
+    val runQuestions = remember(run, content) { run.mapNotNull { id -> content.questions.firstOrNull { it.id == id } } }
+    val sensitiveGroups = remember(content) { content.groups.filter { it.sensitive }.map { it.id } }
     val addToRun = { q: Question ->
         when {
             q.group in sensitiveGroups -> Toast.makeText(context, R.string.run_no_sensitive, Toast.LENGTH_SHORT).show()
@@ -360,43 +361,6 @@ fun OfficerPane(
                 onCallInterpreter?.let { call ->
                     IconButton(onClick = call) { Icon(Icons.Filled.Call, contentDescription = stringResource(R.string.officer_call)) }
                 }
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0x33FFFFFF),
-                    border = BorderStroke(1.dp, Color(0x66FFFFFF)),
-                    modifier = Modifier
-                        .clickable {
-                            aiExtracting = true
-                            scope.launch {
-                                val sessionLog = ui.events.joinToString("\n") { ev ->
-                                    "[${ev.type.name}] [${ev.source.name}] text=${ev.text ?: ""} card=${ev.cardId ?: ""} lang=${ev.lang ?: ""}"
-                                }
-                                val rep = app.signsetu.assistant.TokenRouterAiService.extractInvestigationReport(
-                                    sessionLogText = sessionLog,
-                                    role = ui.session.role.name,
-                                    regionalDialect = subjectLang,
-                                )
-                                aiReport = rep ?: "No extracted report generated. Verify network connectivity."
-                                aiExtracting = false
-                            }
-                        }
-                        .padding(horizontal = 4.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(16.dp))
-                        Text(
-                            text = "AI Report",
-                            fontFamily = Baloo,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = Color.White,
-                        )
-                    }
-                }
                 IconButton(onClick = { sheet = Sheet.LOG }) {
                     BadgedBox(badge = { if (answers > 0) Badge { Text("$answers") } }) {
                         Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.officer_log))
@@ -461,14 +425,14 @@ fun OfficerPane(
                             modifier = Modifier.toggleState(!StagePace.glanceHidden.value, Role.Switch),
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.officer_skeleton_only)) },
+                            text = { Text(stringResource(R.string.officer_skeleton_show)) },
                             leadingIcon = { Icon(painterResource(R.drawable.ic_videocam), contentDescription = null) },
-                            trailingIcon = { Switch(checked = SkeletonOnly.on.value, onCheckedChange = null) },
-                            onClick = { SkeletonOnly.on.value = !SkeletonOnly.on.value },
-                            modifier = Modifier.toggleState(SkeletonOnly.on.value, Role.Switch),
+                            trailingIcon = { Switch(checked = SkeletonOverlay.on.value, onCheckedChange = null) },
+                            onClick = { SkeletonOverlay.on.value = !SkeletonOverlay.on.value },
+                            modifier = Modifier.toggleState(SkeletonOverlay.on.value, Role.Switch),
                         )
                         DropdownMenuItem(
-                            text = { Text("Extract AI Police Report") },
+                            text = { Text(stringResource(R.string.menu_ai_report)) },
                             leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             onClick = {
                                 menu = false
@@ -477,12 +441,8 @@ fun OfficerPane(
                                     val sessionLog = ui.events.joinToString("\n") { ev ->
                                         "[${ev.type.name}] [${ev.source.name}] text=${ev.text ?: ""} card=${ev.cardId ?: ""} lang=${ev.lang ?: ""}"
                                     }
-                                    val rep = app.signsetu.assistant.TokenRouterAiService.extractInvestigationReport(
-                                        sessionLogText = sessionLog,
-                                        role = ui.session.role.name,
-                                        regionalDialect = subjectLang,
-                                    )
-                                    aiReport = rep ?: "No extracted report generated. Verify network connectivity."
+                                    val rep = cloud.report(sessionLog, ui.session.role.name, subjectLang, subjectNames(ui.events, content, officerLang))
+                                    aiReport = rep
                                     aiExtracting = false
                                 }
                             },
@@ -500,110 +460,6 @@ fun OfficerPane(
 
         paired?.let { PairedBar(it, ui, content, officerLang) }
         if (signLanguage == SignLanguage.ASL) AslExperimentalBanner()
-
-        // Officer Quick Access & Navigation Bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.md, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // 1. Second Device Quick Pairing / Status
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = if (paired != null) Color(0xFF065F46) else MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, if (paired != null) Color(0xFF34D399) else MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.clickable { onSecondScreen?.invoke() },
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.Phone,
-                        contentDescription = null,
-                        tint = if (paired != null) Color(0xFF34D399) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        text = if (paired != null) "2nd Screen: Live" else "Pair 2nd Phone",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (paired != null) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            // 2. Evidence Mode Toggle (Skeleton vs Picture)
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = if (app.signsetu.camera.EvidenceMode.skeletonOnly.value) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.tertiaryContainer,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.clickable {
-                    app.signsetu.camera.EvidenceMode.skeletonOnly.value = !app.signsetu.camera.EvidenceMode.skeletonOnly.value
-                },
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = if (app.signsetu.camera.EvidenceMode.skeletonOnly.value) "🦴 Evidence: Skeleton Only" else "📷 Evidence: Camera Photos",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (app.signsetu.camera.EvidenceMode.skeletonOnly.value) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onTertiaryContainer,
-                    )
-                }
-            }
-
-            // 3. Dictionary / Signs lookup
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.clickable { sheet = Sheet.DICTIONARY },
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(painterResource(R.drawable.ic_videocam), contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                    Text(
-                        text = "${signLanguage.name} Dictionary",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            // 4. Quick Log Sheet
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.clickable { sheet = Sheet.LOG },
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(
-                        text = "Session Log ($answers)",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
 
         PrimaryTabRow(selectedTabIndex = page, containerColor = MaterialTheme.colorScheme.background) {
             Tab(selected = page == 0, onClick = { page = 0 }, text = { Text(stringResource(R.string.officer_tab_transcribe), style = MaterialTheme.typography.titleSmall) })
@@ -775,7 +631,7 @@ fun OfficerPane(
                                 val sessionLog = ui.events.joinToString("\n") { ev ->
                                     "[${ev.type.name}] [${ev.source.name}] text=${ev.text ?: ""} card=${ev.cardId ?: ""} lang=${ev.lang ?: ""}"
                                 }
-                                app.signsetu.assistant.TokenRouterAiService.synthesizeOfflineForensicReport(sessionLog, ui.session.role.name, subjectLang)
+                                cloud.report(sessionLog, ui.session.role.name, subjectLang, subjectNames(ui.events, content, officerLang))
                             }.getOrNull()
                             export = runCatching { vm.exportReport(reportText(res, ui, content), recordDetail(res, content, officerLang, ui.events) { eventDetail(res, it, by, idle) }, section, reportSummary) }
                                 .fold({ (file, pass) -> ExportState.Ready(file, pass) }, { ExportState.Failed })
@@ -826,7 +682,7 @@ fun OfficerPane(
     if (aiExtracting) {
         GuardedAlertDialog(
             onDismissRequest = {},
-            title = { Text("Extracting Report via TokenRouter AI…") },
+            title = { Text(stringResource(R.string.ai_preparing)) },
             text = {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -1059,8 +915,10 @@ private fun Dock(
     val pending = ui.pending
     val subjectLang = ui.session.subjectLang
     val asked = remember(ui.events) { ui.events.filter { it.type == EventType.QUESTION_SHOWN }.mapNotNull { it.text }.toSet() }
-    val quick = QuickQuestions.mapNotNull { id -> content.questions.firstOrNull { it.id == id } }
-        .filter { q -> q.text.pick(officerLang) !in asked || (pending as? Pending.Ask)?.question?.id == q.id }
+    val quick = remember(content, officerLang, asked, pending) {
+        QuickQuestions.mapNotNull { id -> content.questions.firstOrNull { it.id == id } }
+            .filter { q -> q.text.pick(officerLang) !in asked || (pending as? Pending.Ask)?.question?.id == q.id }
+    }
     Surface(color = colors.surfaceContainerLowest, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), shadowElevation = 8.dp) {
         Column(Modifier.navigationBarsPadding().padding(top = Spacing.md)) {
             AnimatedVisibility(!typing && quick.isNotEmpty(), enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
@@ -1072,7 +930,8 @@ private fun Dock(
                 }
             }
 
-            // AI Autonomous Conversation Follow-up Prompts (Generated by Nemotron-3 Omni)
+            // Follow-up prompts: on-device rules, or the optional cloud AI when the officer has switched it on.
+            val cloud = app.signsetu.ui.components.LocalCloudAi.current
             var aiFollowUps by remember(ui.events.size) { mutableStateOf<List<String>>(emptyList()) }
             var aiLoadingFollowUps by remember { mutableStateOf(false) }
             val lastAnswerEvent = remember(ui.events.size) { ui.events.lastOrNull { it.type in AnswerEvents } }
@@ -1080,11 +939,10 @@ private fun Dock(
             LaunchedEffect(lastAnswerEvent?.id) {
                 if (lastAnswerEvent != null && !typing) {
                     aiLoadingFollowUps = true
-                    val transcript = ui.events.takeLast(10).joinToString("\n") { "[${it.type.name}] ${it.text ?: it.cardId ?: ""}" }
-                    val suggestions = app.signsetu.assistant.TokenRouterAiService.suggestFollowUpQuestions(
-                        sessionTranscript = transcript,
-                        lastAnswer = lastAnswerEvent.text ?: lastAnswerEvent.cardId ?: "answered",
-                        isChild = ui.session.profile == Profile.YOUNG_CHILD,
+                    val suggestions = cloud.followUps(
+                        lastAnswerEvent.text ?: lastAnswerEvent.cardId ?: "answered",
+                        ui.session.profile == Profile.YOUNG_CHILD,
+                        subjectNames(ui.events, content, officerLang),
                     )
                     aiFollowUps = suggestions
                     aiLoadingFollowUps = false
