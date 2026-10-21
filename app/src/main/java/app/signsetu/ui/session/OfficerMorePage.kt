@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
@@ -77,6 +75,18 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.ui.graphics.Color
+import app.signsetu.ui.avatar.Character
+import app.signsetu.ui.avatar.MiniFace
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import app.signsetu.data.content.Localized
 
 internal enum class Tool { GESTURE, BOARD, DRAW, LANGUAGE, ATTACH, RULES, DICTIONARY }
 
@@ -88,7 +98,6 @@ internal fun MorePage(
     officerLang: String,
     answers: Int,
     onGroup: (Group) -> Unit,
-    onPhrases: () -> Unit,
     onQuestion: (Question) -> Unit,
     onPhrase: (Phrase) -> Unit,
     onAddToRun: (Question) -> Unit,
@@ -97,48 +106,56 @@ internal fun MorePage(
     onChange: () -> Unit,
     onSecondScreen: (() -> Unit)?,
     onFinish: () -> Unit,
+    onCounsel: (() -> Unit)?,
     modifier: Modifier,
     onTell: (() -> Unit)? = null,
+    onChildAvatar: (Boolean) -> Unit = {},
 ) {
     val pending = ui.pending
     val subjectLang = ui.session.subjectLang
     val wide = LocalDensity.current.fontScale > 1.3f
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(vertical = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         SectionLabel(stringResource(R.string.more_questions), Modifier.padding(horizontal = Spacing.lg))
+        var query by rememberSaveable { mutableStateOf("") }
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = { Text(stringResource(R.string.more_search)) },
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            trailingIcon = if (query.isEmpty()) null else { { IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.more_search_clear)) } } },
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg),
+        )
+        val groups = content.groupsFor(ui.session.role, ui.juvenile)
+        val words = query.trim().lowercase().split(' ').filter { it.isNotEmpty() }
+        // A word matches a question's text in any language, or the name of its category.
+        fun hit(vararg texts: Localized?) = words.all { w -> texts.any { t -> t?.values?.any { it.lowercase().contains(w) } == true } }
         Column {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(horizontal = Spacing.lg)) {
-                items(content.groupsFor(ui.session.role, ui.juvenile).filterNot { it.sensitive }, key = { it.id }) { g ->
-                    CategoryChip(g.label.pick(officerLang) ?: g.id, ui.selectedGroup == g.id, locked = false) { onGroup(g) }
-                }
-                if (content.phrases.isNotEmpty()) {
-                    item(key = PHRASES) { CategoryChip(stringResource(R.string.officer_phrases), ui.selectedGroup == PHRASES, locked = false, onClick = onPhrases) }
-                }
-                // Sensitive groups stay last and locked until confirmed (FR-12).
-                items(content.groupsFor(ui.session.role, ui.juvenile).filter { it.sensitive }, key = { it.id }) { g ->
-                    CategoryChip(g.label.pick(officerLang) ?: g.id, ui.selectedGroup == g.id, locked = !ui.sensitiveUnlocked) { onGroup(g) }
-                }
-            }
-            // One question per row: a group reads top to bottom, and what was asked or answered shows at a glance.
             val asked = remember(ui.events) { ui.events.filter { it.type == EventType.QUESTION_SHOWN }.associateBy({ it.id }, { it.itemId }) }
             val askedIds = remember(asked) { asked.values.filterNotNull().toSet() }
             val answeredIds = remember(ui.events, asked) { ui.events.filter { it.type in AnswerEvents }.mapNotNull { e -> e.shownId?.let(asked::get) }.toSet() }
+            val phrases = if (words.isEmpty()) emptyList() else content.phrases.filter { p -> hit(p.label, *p.slots.map { it.text }.toTypedArray()) }
+            // Lesson-sheet hook: role and profile filter (Lesson.kt askable). A locked sensitive item asks to unlock first.
+            val questions = if (words.isEmpty()) emptyList()
+                else groups.flatMap { g -> content.questionsIn(g.id, ui.session.role, ui.session.profile).filter { hit(it.text, g.label) }.map { g to it } }
             Column(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                if (ui.selectedGroup == PHRASES) {
-                    content.phrases.forEach { p -> key(p.id) {
-                        QuestionRow(
-                            cardId = p.slots.firstOrNull()?.card,
-                            title = p.label.pick(officerLang) ?: p.id,
-                            caption = p.label.pick(subjectLang)?.takeIf { subjectLang != officerLang },
-                            hasGesture = true,
-                            hasAudio = ui.session.profile != Profile.ISL_USER && p.slots.any { content.phraseAudio(p, it, subjectLang) != null },
-                            selected = (pending as? Pending.PhraseAsk)?.phrase?.id == p.id,
-                            status = null,
-                            onClick = { onPhrase(p) },
-                        )
-                    } }
+                if (words.isNotEmpty() && phrases.isEmpty() && questions.isEmpty()) {
+                    Text(stringResource(R.string.more_search_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                // Lesson-sheet hook: role and profile filter (Lesson.kt askable).
-                content.questionsIn(ui.selectedGroup, ui.session.role, ui.session.profile).forEach { q -> key(q.id) {
+                phrases.forEach { p -> key(p.id) {
+                    QuestionRow(
+                        cardId = p.slots.firstOrNull()?.card,
+                        title = p.label.pick(officerLang) ?: p.id,
+                        caption = p.label.pick(subjectLang)?.takeIf { subjectLang != officerLang },
+                        hasGesture = true,
+                        hasAudio = ui.session.profile != Profile.ISL_USER && p.slots.any { content.phraseAudio(p, it, subjectLang) != null },
+                        selected = (pending as? Pending.PhraseAsk)?.phrase?.id == p.id,
+                        status = null,
+                        onClick = { onPhrase(p) },
+                    )
+                } }
+                questions.forEach { (g, q) -> key(q.id) {
                     QuestionRow(
                         cardId = q.cards.firstOrNull(),
                         title = q.text.pick(officerLang) ?: q.text.values.first(),
@@ -148,7 +165,7 @@ internal fun MorePage(
                         hasAudio = content.questionAudio(q.id, subjectLang) != null && ui.session.profile != Profile.ISL_USER,
                         selected = (pending as? Pending.Ask)?.question?.id == q.id,
                         status = when (q.id) { in answeredIds -> Asked.ANSWERED; in askedIds -> Asked.ASKED; else -> null },
-                        onClick = { onQuestion(q) },
+                        onClick = { if (g.sensitive && !ui.sensitiveUnlocked) onGroup(g) else onQuestion(q) },
                         onLongClick = { onAddToRun(q) },
                     )
                 } }
@@ -164,10 +181,20 @@ internal fun MorePage(
         SectionLabel(stringResource(R.string.more_session), Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.md))
         OfficerCard(Modifier.padding(horizontal = Spacing.lg), padding = 0.dp) {
             // Up to three minutes of signing with nothing on screen to interrupt; replayed later with an interpreter.
-            onTell?.let { MoreRow(painterResource(R.drawable.ic_hand), stringResource(R.string.tell_me_long), null, first = true, onClick = it) }
-            MoreRow(rememberVectorPainter(Icons.Filled.Search), stringResource(if (ui.signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary), null, first = onTell == null) { onTool(Tool.DICTIONARY) } // ISL hook
+            onCounsel?.let { MoreRow(rememberVectorPainter(Icons.Filled.Face), stringResource(R.string.ai_counsellor_start), null, first = true, onClick = it) }
+            onTell?.let { MoreRow(painterResource(R.drawable.ic_hand), stringResource(R.string.tell_me_long), null, first = onCounsel == null, onClick = it) }
+            MoreRow(rememberVectorPainter(Icons.Filled.Search), stringResource(if (ui.signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary), null, first = onTell == null && onCounsel == null) { onTool(Tool.DICTIONARY) } // ISL hook
             MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.List), stringResource(R.string.officer_log), answers.takeIf { it > 0 }?.toString(), onClick = onLog)
             MoreRow(rememberVectorPainter(Icons.Filled.Person), stringResource(R.string.officer_change), null, onClick = onChange)
+            HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 56.dp).toggleable(ui.child, role = Role.Switch, onValueChange = onChildAvatar).padding(horizontal = Spacing.lg),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MiniFace(Character.CHILD, 24.dp, Color(0xFFFFDDBE))
+                Text(stringResource(R.string.more_child_avatar), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f).padding(start = Spacing.lg))
+                Switch(checked = ui.child, onCheckedChange = null)
+            }
             onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, onClick = it) }
             MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
         }
@@ -244,7 +271,7 @@ private fun QuestionRow(
     }
 }
 
-/** A prepared question or phrase: its picture, its words, and what the subject will get (FR-17). */
+/** A prepared question or phrase: its picture, its words, and what the subject will get. */
 @Composable
 internal fun Suggestion(
     cardId: String?,

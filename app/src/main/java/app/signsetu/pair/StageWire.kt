@@ -1,6 +1,7 @@
 package app.signsetu.pair
 
 import app.signsetu.ui.session.signLanguage
+import app.signsetu.ui.session.child
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.SignMode
 import app.signsetu.ui.session.Mode
@@ -18,7 +19,7 @@ const val DRAWING_CAP = 600_000
 
 internal val WireJson = Json { classDiscriminator = "t"; ignoreUnknownKeys = false; encodeDefaults = true }
 
-/** Only IDs travel; each side resolves them against its own verified content (SEC-54). */
+/** Only IDs travel; each side resolves them against its own verified content. */
 @Serializable
 sealed interface WirePending {
     @Serializable @SerialName("ask") data class Ask(val questionId: String) : WirePending
@@ -43,6 +44,7 @@ data class StageView(
     val gestureSpeed: Float,
     val cameraOn: Boolean,
     val signLanguage: String = "ISL",
+    val child: Boolean? = null,
 )
 
 @Serializable
@@ -123,7 +125,7 @@ fun WirePending.resolve(content: ContentBundle): Pending? = when (this) {
     is WirePending.Rules -> Pending.GroundRules(step).takeIf { ruleStep(it) != null }
 }
 
-/** Reads only what is on stage, never the officer's draft (D-26). */
+/** Reads only what is on stage, never the officer's draft. */
 fun SessionUi.toStageView(largeCaptions: Boolean, gestureSpeed: Float, cameraOn: Boolean): StageView {
     val live = mode == Mode.SHOW && onStage != null
     return StageView(
@@ -136,6 +138,7 @@ fun SessionUi.toStageView(largeCaptions: Boolean, gestureSpeed: Float, cameraOn:
         gestureSpeed = gestureSpeed,
         cameraOn = cameraOn,
         signLanguage = signLanguage.name,
+        child = child,
     )
 }
 

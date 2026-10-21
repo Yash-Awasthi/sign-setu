@@ -90,7 +90,7 @@ import androidx.compose.runtime.movableContentOf
 import app.signsetu.data.content.WordBeat
 import app.signsetu.data.content.Given
 
-/** FR-86: the reader's top labels a signed answer's confirm or say-back signs back before asking. */
+/** the reader's top labels a signed answer's confirm or say-back signs back before asking. */
 fun readBackLabels(ui: SessionUi): List<String> {
     val confirm = ui.confirm?.takeIf { it.queue.isNotEmpty() }
     val sayBack = ui.pending as? Pending.FreeText
@@ -111,7 +111,8 @@ internal fun reopensInput(pending: Pending?, yes: Boolean) =
 /** A reopened input holds the item until the subject submits it; the next run step would close it. */
 internal fun advancesRun(pending: Pending?, yes: Boolean) = !reopensInput(pending, yes)
 
-fun characterFor(profile: Profile) = if (profile == Profile.ISL_USER) Character.ADULT else Character.CHILD
+fun characterFor(profile: Profile) = if (profile == Profile.YOUNG_CHILD) Character.CHILD else Character.ADULT
+fun characterFor(ui: SessionUi) = if (ui.child) Character.CHILD else Character.ADULT
 
 /**
  * The stage: what the subject sees while the phone faces them. The character on top, a live mirror of their hands
@@ -142,7 +143,7 @@ fun Stage(
     onPauseEnd: () -> Unit = {},
     /** Lesson-sheet answers and phrases (LessonInputs.kt); null hides them. */
     onGiven: ((Given?) -> Unit)? = null,
-    /** Called just before a tap that matches a gesture proposal (D-40): nod, shake, point or palm. */
+    /** Called just before a tap that matches a gesture proposal: nod, shake, point or palm. */
     onCue: (String) -> Unit = {},
 ) {
     val stage = LocalStageColors.current
@@ -191,7 +192,7 @@ fun Stage(
 
     val speech = rememberSpeechPlayer()
     val audio = speechFor(pending, content, lang)
-    // Speech plays by itself only for subjects who hear and may not read; ISL users never get sound (NFR-24).
+    // Speech plays by itself only for subjects who hear and may not read; ISL users never get sound.
     LaunchedEffect(pending, lang) { if (audio != null && profile in AutoSpeech) speech.play(audio) }
     LaunchedEffect(pending) { withFrameNanos { }; ShowTiming.firstFrame() }
 
@@ -341,7 +342,7 @@ fun Stage(
                     val roomy = maxHeight >= 240.dp
                     val avatarHeight = minOf(maxHeight - if (roomy) 64.dp else 48.dp, (maxWidth - SideBand * 2) / AVATAR_ASPECT).coerceAtLeast(0.dp)
                     Avatar(
-                        character = characterFor(profile),
+                        character = characterFor(ui),
                         gesture = gesture,
                         playKey = when {
                             reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
