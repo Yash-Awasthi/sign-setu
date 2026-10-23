@@ -5,11 +5,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
 import kotlin.math.abs
 
-/**
- * The seam for on-device landmark tracking. The app calls [track] on one background thread with one
- * upright RGBA frame at a time, newest frame only. Frames never leave the device and are never stored: the bitmap is
- * reused after the call returns, so an implementation must not keep it.
- */
+/** The seam for on-device landmark tracking. The app calls [track] on one background thread with one upright
+ * RGBA frame at a time, newest frame only. */
 interface LandmarkTracker : AutoCloseable {
     fun track(frame: Bitmap, timestampMs: Long): LandmarkFrame?
     /** Loads the model ahead of the first frame, off the main thread; it analyses nothing. */
@@ -17,12 +14,8 @@ interface LandmarkTracker : AutoCloseable {
     override fun close() {}
 }
 
-/**
- * Landmarks of one frame in MediaPipe Holistic topology, normalised to the frame (origin top-left, no mirroring).
- * Hands are the subject's own left and right: 21 points each. Face: 468 points. Pose: 33 points. Null when not seen.
- * [aspect] is the upright frame's width / height, needed to measure distances in one unit.
- * Kept in memory only, for the current answer.
- */
+/** Landmarks of one frame in MediaPipe Holistic topology, normalised to the frame (origin top-left, no
+ * mirroring). Hands are the subject's own left and right: 21 points each. Face: 468 points. Pose: 33 points. */
 @Immutable
 data class LandmarkFrame(
     val timestampMs: Long,
@@ -40,13 +33,14 @@ data class LandmarkFrame(
     val pointsAt: String? = null,
     val stopPalm: Boolean = false,
     val shrug: Boolean = false,
+    /** A courtesy held on this frame (hands joined, a wave, a hand on the chest, a bow): a proposed word, never an answer. */
+    val everyday: Everyday? = null,
     /** The camera picture behind this frame was smeared; the landmarks are kept, the picture is not. */
     val blurry: Boolean = false,
 ) {
     val hands: List<List<Offset>> get() = listOfNotNull(leftHand, rightHand)
 }
 
-/** Bones of the MediaPipe hand topology, for drawing. */
 val HandBones = listOf(
     0 to 1, 1 to 2, 2 to 3, 3 to 4,
     0 to 5, 5 to 6, 6 to 7, 7 to 8,
@@ -106,10 +100,7 @@ class FaceCueTracker {
 
 enum class Head { Nod, Shake }
 
-/**
- * Nods and shakes from the nose tip against the midpoint of the eyes over the last 1.5 s, in eye spans. Measured from
- * the eyes, a sway of the body or the Indian head wobble (a roll that keeps the nose centred) is not a shake.
- */
+/** Nods and shakes from the nose tip against the midpoint of the eyes over the last 1.5 s, in eye spans. */
 class HeadGestures(private val windowMs: Long = WINDOW_MS, private val swing: Float = SWING) {
     private class Sample(val ms: Long, val along: Float, val across: Float)
 
@@ -211,10 +202,8 @@ internal fun thumb(h: List<Offset>, aspect: Float): Head? {
     }
 }
 
-/**
- * A body part the subject points at with one finger and holds for 0.6 s, as a picture card id (head, mouth, stomach,
- * arm, leg): how a child shows where it hurts. Regions come from the pose, in shoulder widths.
- */
+/** A body part the subject points at with one finger and holds for 0.6 s, as a picture card id (head, mouth,
+ * stomach, arm, leg): how a child shows where it hurts. Regions come from the pose, in shoulder widths. */
 class BodyPointing(holdMs: Long = 600L) {
     private val hold = Held<String>(holdMs)
 
@@ -303,6 +292,155 @@ internal fun shrug(frame: LandmarkFrame): Boolean {
     fun flat(h: List<Offset>) = abs(u(h[12]).y - u(h[0]).y) < 0.6f * (u(h[12]) - u(h[0])).getDistance()
     return open(l) && open(r) && flat(l) && flat(r) && l[0].y > shoulders && r[0].y > shoulders &&
         (u(l[0]) - u(r[0])).getDistance() > 1.2f * sw
+}
+
+/** Courteous gestures that are neither signs nor one of the stage's answer cards. */
+enum class Everyday { NAMASTE, WAVE, THANKS, BOW }
+
+/** The everyday courtesies people offer with or without a sign language, each held long enough to be deliberate:
+ * hands joined at the chest for [Everyday.NAMASTE], an open hand swinging for [Everyday.WAVE], a hand laid on the
+ * chest for [Everyday.THANKS] and a shallow [Everyday.BOW]. Every one is a proposal; only the subject's tap logs it. */
+class EverydayGestures(private val holdMs: Long = 480L) {
+    private val hold = Held<Everyday>(holdMs)
+    private val wave = WaveDetector()
+    private val bow = BowDetector()
+
+    fun mark(frame: LandmarkFrame): LandmarkFrame {
+        if (frame.everyday != null) return frame
+        // One at a time, most specific first: joined hands are never read as a wave or a hand on the chest.
+        val seen = when {
+            namaste(frame) -> Everyday.NAMASTE
+            handOnChest(frame) -> Everyday.THANKS
+            wave.mark(frame) != null -> Everyday.WAVE
+            bow.mark(frame) != null -> Everyday.BOW
+            else -> null
+        }
+        return hold.update(seen, frame.timestampMs)?.let { frame.copy(everyday = it) } ?: frame
+    }
+}
+
+private fun unit(frame: LandmarkFrame, o: Offset) = Offset(o.x * frame.aspect, o.y)
+
+/** Shoulder width in aspect-corrected units; null without shoulders to measure against. */
+private fun shoulderWidth(frame: LandmarkFrame): Float? {
+    val p = frame.pose?.takeIf { it.size >= 13 } ?: return null
+    return (unit(frame, p[11]) - unit(frame, p[12])).getDistance().takeIf { it > 1e-4f }
+}
+
+/** Both hands joined palm to palm at the chest, fingers up: the namaste greeting. */
+internal fun namaste(frame: LandmarkFrame): Boolean {
+    val p = frame.pose?.takeIf { it.size >= 13 } ?: return false
+    val l = frame.leftHand?.takeIf { it.size >= 21 } ?: return false
+    val r = frame.rightHand?.takeIf { it.size >= 21 } ?: return false
+    val sw = shoulderWidth(frame) ?: return false
+    val lh = l.map { unit(frame, it) }
+    val rh = r.map { unit(frame, it) }
+    val midX = (unit(frame, p[11]).x + unit(frame, p[12]).x) / 2f
+    val shoulders = (p[11].y + p[12].y) / 2f
+    // The wrists meet at the body's midline, between the chin and the belly.
+    val joined = (lh[0] - rh[0]).getDistance() < 0.45f * sw && abs((lh[0].x + rh[0].x) / 2f - midX) < 0.5f * sw
+    val chest = lh[0].y > shoulders - 0.25f * sw && lh[0].y < shoulders + 1.1f * sw
+    // Fingers point up out of each wrist, so two hands hanging by the sides are not a greeting.
+    fun upright(h: List<Offset>) = h[0].y - h[12].y > 0.35f * (h[12] - h[0]).getDistance().coerceAtLeast(1e-4f)
+    return joined && chest && upright(lh) && upright(rh)
+}
+
+/** An open hand laid flat on the chest: thanks, and the hand-on-heart many people use for the same thing. */
+internal fun handOnChest(frame: LandmarkFrame): Boolean {
+    val p = frame.pose?.takeIf { it.size >= 13 } ?: return false
+    val sw = shoulderWidth(frame) ?: return false
+    val midX = (unit(frame, p[11]).x + unit(frame, p[12]).x) / 2f
+    val shoulders = (p[11].y + p[12].y) / 2f
+    return frame.hands.any { h ->
+        if (h.size < 21) return@any false
+        val hh = h.map { unit(frame, it) }
+        fun d(a: Int, b: Int) = (hh[a] - hh[b]).getDistance()
+        val flat = FINGERS.all { (tip, pip) -> d(tip, 0) > d(pip, 0) * 1.05f }
+        flat && hh[12].y < hh[0].y && abs(hh[0].x - midX) < 0.4f * sw &&
+            hh[0].y > shoulders + 0.15f * sw && hh[0].y < shoulders + 1.0f * sw
+    }
+}
+
+/** An open hand above the shoulder line swinging side to side, twice in [windowMs]: a wave. Once the swings are
+ * seen the hand stays waving for [latchMs], so the caller can judge how long the greeting lasted. */
+private class WaveDetector(
+    private val windowMs: Long = 1500L,
+    private val swing: Float = 0.22f,
+    private val latchMs: Long = 700L,
+) {
+    private val track = ArrayDeque<Pair<Long, Float>>()
+    private var wavingUntil = 0L
+
+    fun mark(frame: LandmarkFrame): Everyday? {
+        val x = raisedHandX(frame)
+        if (x == null) {
+            track.clear()
+            wavingUntil = 0L
+            return null
+        }
+        track.addLast(frame.timestampMs to x)
+        while (frame.timestampMs - track.first().first > windowMs) track.removeFirst()
+        if (track.size >= 5 && track.maxOf { it.second } - track.minOf { it.second } >= swing) {
+            var dir = 0
+            var turns = 0
+            var anchor = track.first().second
+            for ((_, v) in track) {
+                val d = v - anchor
+                if (abs(d) < swing / 4) continue
+                val sign = if (d > 0) 1 else -1
+                if (dir != 0 && sign != dir) turns++
+                dir = sign
+                anchor = v
+            }
+            if (turns >= 2) wavingUntil = frame.timestampMs + latchMs
+        }
+        return Everyday.WAVE.takeIf { frame.timestampMs < wavingUntil }
+    }
+}
+
+/** The wrist x of an open hand held above the shoulder line, in shoulder widths; null otherwise. */
+private fun raisedHandX(frame: LandmarkFrame): Float? {
+    val p = frame.pose?.takeIf { it.size >= 13 } ?: return null
+    val sw = shoulderWidth(frame) ?: return null
+    val shoulders = (p[11].y + p[12].y) / 2f
+    for (h in frame.hands) {
+        if (h.size < 21) continue
+        val hh = h.map { unit(frame, it) }
+        fun d(a: Int, b: Int) = (hh[a] - hh[b]).getDistance()
+        val open = FINGERS.all { (tip, pip) -> d(tip, 0) > d(pip, 0) * 1.1f }
+        val upright = hh[12].y < hh[0].y - 0.3f * d(0, 9)
+        if (open && upright && hh[0].y < shoulders) return hh[0].x / sw
+    }
+    return null
+}
+
+/** The head dropping toward the shoulders and staying there: a shallow bow. The baseline drifts slowly, so sitting
+ * closer to or further from the camera is not read as one, and a nod is too quick to count. */
+private class BowDetector(
+    private val low: Float = 0.78f,
+    private val high: Float = 0.9f,
+) {
+    private var base = 0f
+    private var down = false
+
+    fun mark(frame: LandmarkFrame): Everyday? {
+        val p = frame.pose?.takeIf { it.size >= 13 } ?: return null
+        val sw = shoulderWidth(frame) ?: return null
+        val nose = frame.face?.takeIf { it.size > 1 }?.let { unit(frame, it[1]) } ?: unit(frame, p[0])
+        val shoulders = (p[11].y + p[12].y) / 2f
+        val lift = (shoulders - nose.y) / sw
+        if (base == 0f) { base = lift; return null }
+        // Two thresholds: the head has to drop well below its usual height and rise well above it again, so a slow
+        // shift of the phone or a person settling into a chair is not read as repeated bows.
+        if (down) {
+            if (lift > base * high) down = false
+        } else if (lift < base * low) {
+            down = true
+        }
+        // The reference drifts slowly, and only while the head is up, so a held bow cannot become the new normal.
+        if (!down) base = 0.995f * base + 0.005f * lift
+        return Everyday.BOW.takeIf { down }
+    }
 }
 
 /** Open fingers across both hands, thumbs included, as a count shown for an age or a number; null outside 1..10. */

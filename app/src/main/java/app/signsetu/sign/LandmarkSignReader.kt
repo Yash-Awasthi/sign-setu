@@ -9,17 +9,15 @@ import kotlin.math.exp
 import kotlin.math.hypot
 import kotlin.math.max
 
-/**
- * The bundled isolated-sign classifier, trained by tools/ml on INCLUDE. Features and forward pass must match
- * tools/ml/features.py and export.py exactly.
- */
+/** The bundled isolated-sign classifier, trained by tools/ml on INCLUDE. Features and forward pass must match
+ * tools/ml/features.py and export.py exactly. */
 class LandmarkSignReader(spec: String, weights: ByteArray, override val words: Map<String, String> = emptyMap(),
     override val cards: Map<String, List<String>> = emptyMap(),
 ) : SignReader {
     @Serializable
     private class Spec(val frames: Int, val features: Int, val hidden: Int, val kernel: Int, val labels: List<String>, val norm: String = "shoulders", val dtype: String = "float32")
 
-    private val s = Json { ignoreUnknownKeys = true }.decodeFromString<Spec>(spec)
+    private val s = SPEC_JSON.decodeFromString<Spec>(spec)
     override val labels: List<String> = s.labels
     private val t = s.frames
     private val h = s.hidden
@@ -80,6 +78,9 @@ class LandmarkSignReader(spec: String, weights: ByteArray, override val words: M
     fun features(frames: List<LandmarkFrame>): FloatArray? = if (s.norm == "hands") handFeatures(frames, t) else signFeatures(frames, t)
 }
 
+// Parsed once per process: a Json instance is expensive to build and the spec never changes shape.
+private val SPEC_JSON = Json { ignoreUnknownKeys = true }
+
 private const val FEATURES = 98
 
 /** relu(embedding) of [t] frames of [FEATURES] values into [out] (channel-major). Zero inputs, absent hands, are skipped: adding 0 changes nothing. */
@@ -92,10 +93,8 @@ internal fun embed(x: FloatArray, w: FloatArray, bias: FloatArray, out: FloatArr
     }
 }
 
-/**
- * relu of a 1-D convolution over [t] steps, channel-major, same padding, step spacing [d]. The inner loop runs over time
- * with the valid range worked out once, and adds in the same order as a per-output sum, so results are identical.
- */
+/** relu of a 1-D convolution over [t] steps, channel-major, same padding, step spacing [d]. The inner loop runs
+ * over time with the valid range worked out once, and adds in the same order as a per-output sum. */
 internal fun convRelu(input: FloatArray, w: FloatArray, b: FloatArray, h: Int, t: Int, k: Int, d: Int): FloatArray {
     val out = FloatArray(h * t)
     for (o in 0 until h) {

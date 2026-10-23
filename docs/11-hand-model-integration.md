@@ -4,7 +4,7 @@ The built vision engine and sign reader, and the contract by which the partner t
 
 ## 1. What is built
 
-| Layer | Interface | Built implementation | Replaceable by the partner team |
+| Layer | Interface | Implementation | Replaceable by the partner team |
 | --- | --- | --- | --- |
 | Landmark tracking | `camera/LandmarkTracker` | `HolisticTracker`: MediaPipe Holistic, `tasks-vision` 1.0.0, video mode, GPU delegate with CPU fallback | Yes, a tracker with the same output |
 | Segmentation | `sign/SignCapture`, `segmentSigns` | Pause segmenter, thresholds per `SignWindow` | No; tune the constants |
@@ -89,12 +89,12 @@ Core answer words that INCLUDE does not cover (yes, no, water, pain, help, stop,
 
 ## 7. Budgets
 
-| Resource | Budget | Built |
+| Resource | Budget | Current |
 | --- | --- | --- |
 | Time per tracked frame | 33 ms on the oldest supported 64-bit phone | About 110 ms on the CPU of a mid-range phone (9 frames per second); the GPU rate is to be measured |
 | Time per read | Under 100 ms | About 18 ms on a desktop JVM |
 | Memory | Session under 300 MB | Narrative landmarks about 20 MB for 3 minutes; model mapped, not copied |
-| APK | Release under 100 MB | 0.5.0: 78.9 MiB arm64-v8a phone APK; 104.2 MiB universal |
+| APK | Release under 100 MB | 0.6.0: 78.9 MiB arm64-v8a phone APK; 104.1 MiB universal |
 
 ## 8. Privacy and safety
 

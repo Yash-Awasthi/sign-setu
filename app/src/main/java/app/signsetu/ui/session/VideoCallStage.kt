@@ -1,5 +1,6 @@
 package app.signsetu.ui.session
 
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -48,6 +49,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.signsetu.R
 import app.signsetu.camera.CameraMirror
+import app.signsetu.camera.Everyday
 import app.signsetu.camera.Head
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.camera.LandmarkTracker
@@ -75,10 +78,13 @@ import app.signsetu.ui.theme.Baloo
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
-/**
- * The stage as a one-to-one video call: the character is the caller, the subject's camera a small window. Head
- * gestures, a palm, a shrug, pointing and held-up fingers only propose an answer; the subject's tap answers.
- */
+/** The transient reaction chip: plain text, or a counted noun that needs a plural form. */
+private sealed interface Reaction {
+    data class Text(@StringRes val id: Int, val arg: Any? = null) : Reaction
+    data class Count(@PluralsRes val id: Int, val n: Int) : Reaction
+}
+
+/** The stage as a one-to-one video call: the character is the caller, the subject's camera a small window. */
 @Composable
 fun VideoCallStage(
     ui: SessionUi,
@@ -102,7 +108,7 @@ fun VideoCallStage(
     var pipExpanded by remember { mutableStateOf(false) }
 
     // A string resource and its optional argument, resolved where it is drawn so a language change is followed.
-    var recentReaction by remember { mutableStateOf<Pair<Int, Any?>?>(null) }
+    var recentReaction by remember { mutableStateOf<Reaction?>(null) }
     var showBreathingGuide by remember { mutableStateOf(false) }
     LaunchedEffect(recentReaction) {
         if (recentReaction != null) {
@@ -112,10 +118,15 @@ fun VideoCallStage(
     }
     fun react(@StringRes reaction: Int, arg: Any? = null, feel: HapticFeedbackType = HapticFeedbackType.LongPress) {
         haptic.performHapticFeedback(feel)
-        recentReaction = reaction to arg
+        recentReaction = Reaction.Text(reaction, arg)
+    }
+    fun reactCount(@PluralsRes reaction: Int, n: Int) {
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        recentReaction = Reaction.Count(reaction, n)
     }
 
-    var showVictimSkeleton by rememberSaveable { mutableStateOf(false) }
+    // Stays as the officer left it for every item: turning it on once is enough for the whole session.
+    var showVictimSkeleton by StageSkeleton.on
 
     // Left alone, the stage signs its own buttons one by one; a touch pauses it and the next quiet spell resumes there.
     var guideStep by rememberSaveable { mutableIntStateOf(0) }
@@ -138,6 +149,10 @@ fun VideoCallStage(
     // The card a gesture proposed and the cue it came from; the cue is logged only if the subject taps it.
     var proposal by remember { mutableStateOf<Pair<String, String?>?>(null) }
     LaunchedEffect(pending) { proposal = null }
+    // A courtesy the camera read — hands joined, a wave, a hand on the chest, a bow — waits here as a word the
+    // subject can accept. It is never logged until they tap it, and it is forgotten if they ignore it.
+    var courtesy by remember { mutableStateOf<Pair<String, String?>?>(null) }
+    LaunchedEffect(courtesy) { if (courtesy != null) { delay(COURTESY_MS); courtesy = null } }
     fun propose(card: String, cue: String?) {
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         proposal = card to cue
@@ -155,7 +170,7 @@ fun VideoCallStage(
             card == "dont_know" -> react(R.string.call_r_unsure, feel = HapticFeedbackType.TextHandleMove)
             card == "water" -> react(R.string.call_r_water)
             card == "food" -> react(R.string.call_r_food)
-            card.matches(FINGERS) -> react(R.string.call_r_fingers, card.drop(1).toInt())
+            card.matches(FINGERS) -> reactCount(R.plurals.call_r_fingers, card.drop(1).toInt())
             else -> react(R.string.call_r_point, cardLabel(content, card, lang), HapticFeedbackType.TextHandleMove)
         }
         proposal = null
@@ -307,12 +322,18 @@ fun VideoCallStage(
                     when (head) {
                         Head.Nod -> propose("yes", "nod")
                         Head.Shake -> propose("no", "shake")
-                        else -> Unit
                     }
                 },
                 onPoint = { pointId -> propose(pointId, "point") },
                 onStopPalm = { propose("stop", "palm") },
                 onShrug = { propose("dont_know", "shrug") },
+                onEveryday = { seen ->
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    courtesy = when (seen) {
+                        Everyday.THANKS -> "thank_you" to "thanks"
+                        else -> "namaste" to seen.name.lowercase()
+                    }
+                },
             ) {
                 Box(
                     modifier = Modifier
@@ -392,6 +413,33 @@ fun VideoCallStage(
                 }
             }
 
+            courtesy?.let { (card, cue) ->
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF1E3A8A),
+                    border = BorderStroke(1.5.dp, Color(0xFF93C5FD)),
+                    modifier = Modifier.padding(horizontal = 8.dp).clickable {
+                        answer(card, cue)
+                        courtesy = null
+                    },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text("🙏", fontSize = 16.sp)
+                        Text(
+                            text = stringResource(R.string.call_courtesy, cardLabel(content, card, lang)),
+                            fontFamily = Baloo,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = Color(0xFFDBEAFE),
+                        )
+                    }
+                }
+            }
+
             AnimatedVisibility(visible = recentReaction != null) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
@@ -399,7 +447,11 @@ fun VideoCallStage(
                     border = BorderStroke(1.dp, Color(0xFF38BDF8)),
                 ) {
                     Text(
-                        text = recentReaction?.let { (id, arg) -> if (arg == null) stringResource(id) else stringResource(id, arg) }.orEmpty(),
+                        text = when (val reaction = recentReaction) {
+                            null -> ""
+                            is Reaction.Text -> if (reaction.arg == null) stringResource(reaction.id) else stringResource(reaction.id, reaction.arg)
+                            is Reaction.Count -> pluralStringResource(reaction.id, reaction.n, reaction.n)
+                        },
                         fontFamily = Baloo,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
@@ -515,9 +567,17 @@ fun VideoCallStage(
     }
 }
 
+/** Whether the subject's own camera picture shows the traced skeleton; kept outside the screen so it survives the
+ * handover between items, where the stage is built again. */
+internal object StageSkeleton {
+    val on = mutableStateOf(false)
+}
+
 /** Each stage button with the sign the character makes while it is pointed out. */
 private val GuideSteps = listOf("yes" to "yes.nod", "no" to "no.shake", "water" to "water.cup", "food" to "eat.fingers", "express" to "show_me", "stop" to "show_me")
 private const val GUIDE_IDLE_MS = 20_000L
+/** How long a read courtesy waits for the subject's tap before it is dropped. */
+private const val COURTESY_MS = 6_000L
 private const val GUIDE_STEP_MS = 3_000L
 
 private val FINGERS = Regex("n\\d+")
