@@ -32,3 +32,6 @@ Thumbs.db
 __pycache__/
 .kotlin/
 .freebuff/
+
+# Local install bundles (contain the assistant key; never commit)
+/dist/
