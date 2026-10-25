@@ -66,13 +66,13 @@ class SignSetuApp : Application() {
     }
 }
 
-/** Manual wiring; the app is small enough not to need a DI framework (02-architecture §3). */
+/** Manual wiring; the app is small enough not to need a DI framework. */
 class AppContainer(private val app: Application) : DefaultLifecycleObserver, ComponentCallbacks2 {
     val content = ContentRepository(app.assets)
     val settings = SettingsStore(app)
     val report = SessionReport(app)
     val models = ModelStore(app)
-    val cloudAi = CloudAi({ settings.current().cloudAi }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, BuildConfig.ASSIST_KEY)) { isOnline(app) }
+    val cloudAi = CloudAi({ settings.current().cloudAi }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, BuildConfig.ASSIST_KEY), KeystoreVault(app, "assist.bin", "signsetu.assist.key")) { isOnline(app) }
     val assistant = Assistant(models, cloudAi)
     val hardKeys = HardKeys()
 

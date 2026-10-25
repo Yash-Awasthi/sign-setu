@@ -1,13 +1,5 @@
-"""The ASL fingerspelling reader: a small CTC model over one hand's landmarks (format 2, CtcSpellReader.kt).
-
-Google's Kaggle "ASL Fingerspelling" set is CC BY 4.0 but needs Kaggle credentials (none here), and FSboard is video.
-Instead, sequences are synthesised from real static letters: ASLNow! (huggingface.co/datasets/sid220/
-asl-now-fingerspelling, MIT), 21 MediaPipe hand points per sample, A-Z with J and Z as their end shape. Letters are
-chained with holds, transitions, J's twist and Z's trace, a slide for double letters, camera jitter and dropped frames.
-    python tools/ml/spell_ctc.py prepare [data_dir] [per_letter]   # download and cache asl_now.pkl
-    python tools/ml/spell_ctc.py train [data_dir] [epochs]          # asl_spell.pt, prints test CER
-    python tools/ml/spell_ctc.py export [data_dir]                  # assets models/asl_spell.{bin,json} + fixture
-"""
+"""The ASL fingerspelling reader: a CTC model over one hand (format 2, CtcSpellReader.kt), trained on synthetic
+sequences of real ASLNow! letters. See tools/README.md."""
 import hashlib
 import json
 import math
@@ -23,6 +15,7 @@ import torch
 from torch import nn
 
 import runtime
+from export import folded
 from features import SPELL_FEATURES, SPELL_FPS, SPELL_MAX, spell_features
 
 # Training and evaluation data stay outside the repository.
@@ -234,11 +227,6 @@ def train(data: pathlib.Path, epochs: int = 60, per_epoch: int = 4000) -> None:
             score = cer(lambda f: greedy(model(torch.tensor(f[None]).to(dev))[0].cpu().numpy()), letters, aspect, 200)
         print(f"epoch {epoch + 1}: loss {loss.item():.3f} test CER {score:.4f}", flush=True)
     torch.save({"state": model.cpu().state_dict(), "cer": score, "epochs": epochs}, data / "asl_spell.pt")  # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
-
-
-def folded(conv, bn):
-    k = bn.weight / torch.sqrt(bn.running_var + bn.eps)
-    return conv.weight * k[:, None, None], (conv.bias - bn.running_mean) * k + bn.bias
 
 
 def export(data: pathlib.Path) -> None:

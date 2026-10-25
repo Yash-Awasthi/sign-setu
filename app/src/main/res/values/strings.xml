@@ -216,6 +216,8 @@
     <string name="settings_cloud_ai_summary">When online, sends masked text to the department gateway for reports and suggestions. Off by default; the phone works the same without a connection.</string>
     <string name="settings_cloud_ai_key">Enrolment code</string>
     <string name="settings_cloud_ai_enrolled">Enrolled</string>
+    <string name="settings_direct_key">AI key</string>
+    <string name="settings_direct_key_set">Set</string>
     <string name="settings_cloud_ai_direct">Online assistant (third party)</string>
     <string name="settings_cloud_ai_summary_direct">When online, sends masked text to an outside AI service for reports and suggestions. Off by default; the phone works the same without a connection.</string>
     <string name="cloud_notice_title_direct">Send text to a third party?</string>
@@ -530,9 +532,9 @@
     <string name="call_breathe">Breathe</string>
     <string name="call_signing">Signing…</string>
     <string name="call_you">You</string>
-    <string name="call_live">Signing: %1$s</string>
     <string name="call_courtesy">Tap to say: %1$s</string>
     <string name="call_sign_hint">Answer by signing, nodding or shaking your head</string>
+    <string name="call_with_you">We are here with you.</string>
     <string name="call_breath_title">Calm breathing</string>
     <string name="call_inhale">Breathe in</string>
     <string name="call_exhale">Breathe out</string>

@@ -1,5 +1,7 @@
 package app.signsetu.ui.start
 
+import app.signsetu.ui.session.clockDate
+import app.signsetu.ui.session.clockTime
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -63,7 +65,6 @@ import app.signsetu.ui.session.SYSTEM_JUVENILE
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -107,8 +108,6 @@ import app.signsetu.ui.theme.LocalInk
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
-import java.text.DateFormat
-import java.util.Date
 
 /** Home: the character greets on top; below, one quick choice of who is being helped and in which language. The
  * session itself opens on the stage, with the camera mirror. */
@@ -126,6 +125,7 @@ fun StartScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val res = LocalResources.current
     val ink = LocalInk.current
     var refresh by remember { mutableIntStateOf(0) }
     val open by produceState<Session?>(null, refresh) { value = repo.openSession() }
@@ -141,6 +141,8 @@ fun StartScreen(
         if (starting) return@begin
         starting = true
         scope.launch {
+            // An unfinished session joins the saved ones first; left open it would be hidden behind the new one.
+            repo.openSession()?.let { repo.end(it.id, defaultTitle(res, it.startedAt)) }
             val id = repo.start(p, lang, role)
             if (p == Profile.ISL_USER && signLang != SignLanguage.ISL) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_SIGN_LANGUAGE + signLang.name)
             // The record shows the officer saw the Juvenile Justice notice, and whether they marked the person a child.
@@ -203,7 +205,6 @@ fun StartScreen(
                     if (content.aslDisabled) Notice(null, stringResource(R.string.start_asl_off), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                     if (rooted) Notice(null, stringResource(R.string.start_rooted), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                     open?.let { session ->
-                        val res = LocalResources.current
                         ResumeCard(
                             session = session,
                             languageName = content.language(session.subjectLang)?.name ?: session.subjectLang,
@@ -337,7 +338,7 @@ private fun ResumeCard(session: Session, languageName: String, onResume: () -> U
                         R.string.start_resume_body,
                         stringResource(profileTitle(session.profile)),
                         languageName,
-                        DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(session.startedAt)),
+                        clockTime(session.startedAt),
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -372,7 +373,7 @@ private fun SavedSessions(repo: SessionRepository, onOpen: (String) -> Unit) {
                     Column(Modifier.weight(1f)) {
                         Text(s.title.orEmpty(), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Text(
-                            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(s.endedAt ?: s.startedAt)),
+                            clockDate(s.endedAt ?: s.startedAt),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -34,3 +34,10 @@ fun decideRead(
     val guesses = (listOfNotNull(home) + inContext(pool, cards, signWords, words, extra)).distinctBy { it.word }.take(3)
     return SignSegment(frames, guesses, needsSlower(frames, all), cards)
 }
+
+/** The signs of one window as words, one per sign: each sign's best guess for the item on screen, "?" where none was read. */
+fun readSigns(signs: List<List<LandmarkFrame>>, reader: SignReader?, cards: Set<String>, words: Map<String, WordEntry>): List<String> =
+    signs.map { sign ->
+        val all = reader?.let { r -> runCatching { r.read(sign) }.getOrNull() }.orEmpty().sortedByDescending { it.score }
+        decideRead(sign, all, null, cards, reader?.words.orEmpty(), words, reader?.cards.orEmpty()).word ?: "?"
+    }
