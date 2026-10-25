@@ -4,11 +4,16 @@ import java.util.Properties
 
 // Local settings, untracked: -P properties win, then local.properties. Empty is fine and means offline only.
 val local = Properties().apply { rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load) }
-// Direct online assistant key: env OPENROUTER_API_KEY, else openrouterKey.
-val openrouterKey: String = System.getenv("OPENROUTER_API_KEY") ?: local.getProperty("openrouterKey", "")
 val gatewayUrl: String = providers.gradleProperty("gatewayUrl").orNull ?: local.getProperty("gatewayUrl", "")
 // The client name sent to the assistant service; local.properties may set the one a service requires.
 val assistUserAgent: String = local.getProperty("assistUserAgent", "SignSetu")
+// The one switch for screenshots and screen recording: false while testing, true for the final release APK.
+val secureScreen: Boolean = (providers.gradleProperty("secureScreen").orNull ?: local.getProperty("secureScreen", "false")).toBoolean()
+
+// Read on every build, so a configuration cached on an earlier day does not carry that day's build date.
+abstract class EpochDay : ValueSource<Long, ValueSourceParameters.None> {
+    override fun obtain(): Long = LocalDate.now().toEpochDay()
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -26,12 +31,12 @@ android {
         applicationId = "in.signsetu"
         minSdk = 29
         targetSdk = 37
-        versionCode = 11
-        versionName = "0.7.1"
-        buildConfigField("long", "BUILD_EPOCH_DAY", "${LocalDate.now().toEpochDay()}L")
+        versionCode = 13
+        versionName = "0.7.3"
+        buildConfigField("long", "BUILD_EPOCH_DAY", "${providers.of(EpochDay::class.java) {}.get()}L")
+        buildConfigField("boolean", "SECURE_SCREEN", "$secureScreen")
         // The department's gateway: -PgatewayUrl=https://... or gatewayUrl in local.properties.
         buildConfigField("String", "GATEWAY_URL", "\"$gatewayUrl\"")
-        buildConfigField("String", "ASSIST_KEY", "\"$openrouterKey\"")
         buildConfigField("String", "ASSIST_URL", "\"https://api.groq.com/openai/v1/chat/completions\"")
         buildConfigField("String", "ASSIST_MODEL", "\"openai/gpt-oss-20b\"")
         buildConfigField("String", "ASSIST_UA", "\"$assistUserAgent\"")
@@ -132,16 +137,9 @@ androidComponents {
                 if (found.isNotEmpty()) throw GradleException("Forbidden permissions in the merged manifest: $found")
             }
         }
-        // A release APK is public: a key compiled into it can be read by anyone who has the file.
-        val keyCheck = tasks.register("check${name}NoEmbeddedKey") {
-            val embedded = openrouterKey.isNotBlank() && variant.buildType == "release" && !providers.gradleProperty("allowEmbeddedKey").isPresent
-            doLast {
-                if (embedded) throw GradleException("A release build must not embed an assistant key. Use -PgatewayUrl, or pass -PallowEmbeddedKey for a private build.")
-            }
-        }
         // Every task that packages the merged manifest, so neither an APK nor an AAB nor an install can skip the check.
         val packaging = setOf("assemble$name", "bundle$name", "install$name", "package$name", "package${name}Bundle")
-        tasks.matching { it.name in packaging }.configureEach { dependsOn(check, keyCheck) }
+        tasks.matching { it.name in packaging }.configureEach { dependsOn(check) }
     }
 }
 
@@ -178,7 +176,6 @@ dependencies {
     implementation(libs.androidx.sqlite.ktx)
 
     implementation(libs.datastore.preferences)
-    implementation(libs.work.runtime.ktx)
     implementation(libs.media3.exoplayer)
     implementation(libs.pdfbox.android)
     constraints {

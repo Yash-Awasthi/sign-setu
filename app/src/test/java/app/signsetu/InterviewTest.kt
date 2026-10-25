@@ -15,7 +15,6 @@ import app.signsetu.ui.session.Reason
 import app.signsetu.ui.session.SHOWN_OPENING
 import app.signsetu.ui.session.SHOWN_RIGHTS
 import app.signsetu.ui.session.ShownBy
-import app.signsetu.ui.session.autoAdvanceAllowed
 import app.signsetu.ui.session.candidates
 import app.signsetu.ui.session.next
 import app.signsetu.ui.session.notActedOn
@@ -167,22 +166,6 @@ class InterviewTest {
         assertEquals(listOf("c1", "c2"), candidates(bank, Role.VICTIM, log.events).map { it.q.id })
         log.ask("c1", null); log.ask("c2", "no")
         assertNull(next(bank, Role.VICTIM, log.events))
-    }
-
-    @Test
-    fun onlyStatementsAdvanceByThemselves() {
-        val q = triage.questions.associateBy { it.id }
-        val yes = SessionEvent(1, 1, EventType.ANSWER_CARD, EventSource.SUBJECT, "en", null, "yes", null, null)
-        assertTrue(autoAdvanceAllowed(q.getValue("g1"), yes, q.getValue("g2"), "hi", 0))
-        assertTrue(autoAdvanceAllowed(q.getValue("g1"), null, q.getValue("g2"), "hi", 2))
-        for (to in listOf("k1", "s4", "c2")) assertFalse(to, autoAdvanceAllowed(q.getValue("g1"), yes, q.getValue(to), "hi", 0))
-        for (card in listOf("stop", "dont_know", "dont_understand")) {
-            assertFalse(card, autoAdvanceAllowed(q.getValue("g1"), yes.copy(cardId = card), q.getValue("g2"), "hi", 0))
-        }
-        assertFalse(autoAdvanceAllowed(q.getValue("g1"), yes.copy(type = EventType.ANSWER_SIGNED, cardId = null), q.getValue("g2"), "hi", 0))
-        assertFalse("no caption in Santali", autoAdvanceAllowed(q.getValue("g1"), yes, q.getValue("g2"), "sat", 0))
-        assertFalse(autoAdvanceAllowed(q.getValue("g1"), yes, q.getValue("g2"), "hi", 3))
-        assertFalse("a safety answer always reaches the officer", autoAdvanceAllowed(q.getValue("s3"), yes, q.getValue("g2"), "hi", 0))
     }
 
     @Test

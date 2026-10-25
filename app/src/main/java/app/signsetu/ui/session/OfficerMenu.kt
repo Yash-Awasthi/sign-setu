@@ -47,7 +47,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import app.signsetu.data.content.SignLanguage
 import app.signsetu.ui.components.FilterObscuredTouches
-import app.signsetu.ui.theme.SunMode
 
 /** A menu row that toggles: TalkBack hears its state, as a Checkbox or Switch with its own handler would give. */
 private fun Modifier.toggleState(on: Boolean, kind: Role) = semantics {
@@ -61,7 +60,6 @@ internal fun OfficerMenu(
     ui: SessionUi,
     vm: SessionViewModel,
     canChangeSignLanguage: Boolean,
-    onAiReport: () -> Unit,
     onEnd: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
@@ -115,19 +113,10 @@ internal fun OfficerMenu(
                 onClick = { vm.toggleRotation() },
                 modifier = Modifier.toggleState(ui.rotated, Role.Checkbox),
             )
-            SwitchMenuItem(R.string.officer_sun, rememberVectorPainter(Icons.Filled.Star), SunMode.forced.value) { SunMode.forced.value = !SunMode.forced.value }
-            SwitchMenuItem(R.string.officer_glance, rememberVectorPainter(Icons.Filled.Refresh), !StagePace.glanceHidden.value) {
-                StagePace.glanceHidden.value = !StagePace.glanceHidden.value
-            }
             SwitchMenuItem(R.string.officer_skeleton_show, painterResource(R.drawable.ic_videocam), SkeletonOverlay.on.value) { SkeletonOverlay.on.value = !SkeletonOverlay.on.value }
             SwitchMenuItem(R.string.officer_skeleton_keep, painterResource(R.drawable.ic_videocam), EvidenceMode.autoCapture.value) {
                 EvidenceMode.autoCapture.value = !EvidenceMode.autoCapture.value
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.menu_ai_report)) },
-                leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                onClick = { menu = false; onAiReport() },
-            )
             HorizontalDivider()
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.officer_end)) },

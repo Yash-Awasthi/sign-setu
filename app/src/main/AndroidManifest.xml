@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- The officer's screen lock or fingerprint before records are opened, left, exported or deleted. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Keeps the hourly retention sweep scheduled across a restart, so expired records still go from a phone nobody opens. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Only the department gateway client uses it: off by default, HTTPS only, nothing else in the app opens a connection. -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -55,12 +57,15 @@
 
         <!-- library receivers the app does not need stay out of the merged manifest. -->
         <receiver
-            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
-            tools:node="remove" />
-        <receiver
             android:name="androidx.profileinstaller.ProfileInstallReceiver"
             tools:ignore="MissingClass"
             tools:node="remove" />
+
+        <!-- Bound only by the platform scheduler, which alone holds BIND_JOB_SERVICE. -->
+        <service
+            android:name=".data.session.RetentionJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

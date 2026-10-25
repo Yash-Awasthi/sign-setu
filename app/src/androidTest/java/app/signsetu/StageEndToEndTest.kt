@@ -103,11 +103,11 @@ class StageEndToEndTest {
         val id = runBlocking { repo.start(Profile.NOT_SURE, "en") }
         fun answers() = runBlocking { repo.eventsNow(id) }.filter { it.type == EventType.ANSWER_CARD }
         val tracker = NoddingTracker()
-        val settings = AppSettings(firstRunDone = true, tiltToShow = false, volumeKeys = false)
+        val settings = AppSettings(firstRunDone = true)
         rule.setContent {
             CompositionLocalProvider(LocalContentRepository provides container.content, LocalCloudAi provides container.cloudAi) {
                 SignSetuTheme {
-                    SessionRoute(id, repo, content, settings, container.report, tracker, null, null, {}, {}, container, null)
+                    SessionRoute(id, repo, content, settings, container.report, tracker, null, null, {}, {}, container, null, null)
                 }
             }
         }

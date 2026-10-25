@@ -32,7 +32,6 @@ import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.Stage
 import app.signsetu.ui.theme.SignSetuTheme
 import app.signsetu.ui.theme.SubjectTheme
-import app.signsetu.ui.theme.SunMode
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -96,7 +95,7 @@ class StageAccessibilityTest(private val dark: Boolean) {
         show(atf) {
             SubjectTheme {
                 Box(if (size != null) Modifier.size(size) else Modifier) {
-                    Stage(ui, content, tracker = null, cameraOn = false, largeCaptions = false, gestureSpeed = 1f, {}, {}, {}, {}, {}, {}, {}, {}, {}, onGiven = if (lesson) { _ -> } else null)
+                    Stage(ui, content, tracker = null, cameraOn = false, gestureSpeed = 1f, {}, {}, {}, {}, {}, {}, {}, {}, {}, onGiven = if (lesson) { _ -> } else null)
                 }
             }
         }
@@ -137,12 +136,6 @@ class StageAccessibilityTest(private val dark: Boolean) {
         val layouts = mutableListOf<TextLayoutResult>()
         rule.onNodeWithText(q.text.getValue("hi"), useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
         assertFalse(layouts.first().hasVisualOverflow)
-    }
-
-    @Test
-    fun sunMode() {
-        SunMode.forced.value = true
-        try { stage(ask("h1")) } finally { SunMode.forced.value = false }
     }
 
     @Test

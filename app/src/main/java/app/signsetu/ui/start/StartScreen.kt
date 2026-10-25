@@ -1,5 +1,6 @@
 package app.signsetu.ui.start
 
+import androidx.compose.material.icons.filled.Call
 import app.signsetu.ui.session.clockDate
 import app.signsetu.ui.session.clockTime
 import androidx.compose.ui.semantics.stateDescription
@@ -41,6 +42,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -105,6 +107,10 @@ import app.signsetu.ui.avatar.MiniFace
 import app.signsetu.ui.session.characterFor
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalInk
+import androidx.compose.runtime.DisposableEffect
+import androidx.core.view.WindowCompat
+import androidx.compose.ui.platform.LocalView
+import android.app.Activity
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
@@ -120,13 +126,22 @@ fun StartScreen(
     cameraWanted: Boolean,
     onOpenSession: (String) -> Unit,
     onSettings: () -> Unit,
-    onPractice: () -> Unit = {},
     onSecondScreen: (() -> Unit)? = null,
+    onCallInterpreter: (() -> Unit)? = null,
+    interpreterSummary: String = "",
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val res = LocalResources.current
     val ink = LocalInk.current
+    // The ink header needs light status-bar icons in both themes.
+    val barView = LocalView.current
+    DisposableEffect(barView) {
+        val controller = (barView.context as? Activity)?.window?.let { WindowCompat.getInsetsController(it, barView) }
+        val before = controller?.isAppearanceLightStatusBars
+        controller?.isAppearanceLightStatusBars = false
+        onDispose { before?.let { controller.isAppearanceLightStatusBars = it } }
+    }
     var refresh by remember { mutableIntStateOf(0) }
     val open by produceState<Session?>(null, refresh) { value = repo.openSession() }
     var profile by rememberSaveable { mutableStateOf<Profile?>(null) }
@@ -166,29 +181,20 @@ fun StartScreen(
     val header = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding()) {
         Surface(color = Color.Transparent, contentColor = ink.onBand, shape = header, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
-            Box(Modifier.background(ink.brush).statusBarsPadding().height(128.dp).fillMaxWidth().clip(RectangleShape)) {
+            Box(Modifier.background(ink.brush).statusBarsPadding().height(230.dp).fillMaxWidth().clip(RectangleShape)) {
                 // Shown head and shoulders only: the officer's screen, where the character just says hello.
                 Avatar(
                     character = characterFor(profile ?: Profile.YOUNG_CHILD),
                     gesture = content.gestures["namaste"],
                     playKey = profile,
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = Spacing.lg).size(96.dp, 110.dp).offset(y = 34.dp),
+                    modifier = Modifier.align(Alignment.BottomCenter).requiredSize(304.dp, 346.dp).offset(y = 34.dp),
                 )
                 Column {
-                    Row(Modifier.fillMaxWidth().height(56.dp).padding(start = Spacing.lg, end = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().offset(y = (-10).dp).height(56.dp).padding(start = Spacing.lg, end = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.weight(1f).semantics { heading() })
                         onSecondScreen?.let { IconButton(onClick = it) { Icon(Icons.Filled.Phone, contentDescription = stringResource(R.string.second_screen)) } }
-                        IconButton(onClick = onPractice) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.practice_title)) }
                         IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title)) }
                     }
-                    Text(
-                        listOfNotNull(content.language(lang)?.hello, stringResource(R.string.home_tagline)).joinToString(" · "),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = ink.onBandMuted,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = Spacing.lg, end = 128.dp),
-                    )
                 }
             }
         }
@@ -204,6 +210,17 @@ fun StartScreen(
                     }
                     if (content.aslDisabled) Notice(null, stringResource(R.string.start_asl_off), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                     if (rooted) Notice(null, stringResource(R.string.start_rooted), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                    onCallInterpreter?.let { call ->
+                        OfficerCard {
+                            Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = call), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                                Icon(Icons.Filled.Call, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Column(Modifier.weight(1f)) {
+                                    Text(stringResource(R.string.officer_call), style = MaterialTheme.typography.titleMedium)
+                                    Text(interpreterSummary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
                     open?.let { session ->
                         ResumeCard(
                             session = session,

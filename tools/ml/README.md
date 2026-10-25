@@ -113,4 +113,4 @@ either a new recorded source in the same landmark format (see `prepare_isl_real.
 either change is the same `prepare.py` → `train.py` → `export.py` sequence, with `SIGN_CLASSES` narrowed or widened to
 the words actually shipped.
 
-How the readers fit into the app is in [docs/11-hand-model-integration.md](../../docs/11-hand-model-integration.md).
+How the readers fit into the app is in [docs/09-hand-model-integration.md](../../docs/09-hand-model-integration.md).

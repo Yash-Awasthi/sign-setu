@@ -1,4 +1,4 @@
-# 11. Hand Model Integration
+# 09. Hand Model Integration
 
 The built vision engine and sign reader, and the contract by which the partner team's model can replace either of them. Landmarks stay on the phone and in memory only; any meaning a model suggests is a proposal until the subject picks it.
 
@@ -68,7 +68,7 @@ interface SignReader : AutoCloseable {
 data class SignGuess(val word: String, val score: Float, val spelled: Boolean = false)
 ```
 
-The built reader takes the frames of one chunk, resampled to 32, with per frame both hands (21 points each), shoulders, elbows and wrists, normalised to the mean shoulder midpoint and width, and presence flags (98 features). It runs a per-frame linear layer, two 1-D convolutions and pooling to 262 logits. Weights: `models/sign_reader.bin` (4.9 MB, float32) with its spec in `sign_reader.json`; both are checked against the manifest by `SignReaders` before use. On the INCLUDE test split it scores top-1 97.8% and top-3 99.4%; with children on phone cameras it is unmeasured. One read takes about 18 ms on a desktop JVM. Reads run one at a time on a background dispatcher.
+The built reader takes the frames of one chunk, resampled to 32, with per frame both hands (21 points each), shoulders, elbows and wrists, normalised to the mean shoulder midpoint and width, and presence flags (98 features). It runs a per-frame linear layer, two 1-D convolutions and pooling to 262 logits. Weights: `models/sign_reader.bin` (4.9 MB, float32) with its spec in `sign_reader.json`; both are checked against the manifest by `SignReaders` before use. On the INCLUDE test split it scores top-1 97.9% and top-3 99.5%, and a new ISLRTC signer 28.6% and 44.2% (`tools/ml/EVAL.md`); with children on phone cameras it is unmeasured. One read takes about 18 ms on a desktop JVM. Reads run one at a time on a background dispatcher.
 
 Retraining: `tools/ml` (prepare, train, export), then `python tools/content/build_content.py --manifest-only`.
 
@@ -76,9 +76,9 @@ Retraining: `tools/ml` (prepare, train, export), then `python tools/content/buil
 
 1. While a question is on screen, guesses whose mapped concept is one of that question's answer cards rank first and the others follow, each group by score. The top three are kept.
 2. A best guess below 0.4 with lost tracking (over 30% of the chunk untracked, or gaps over 150 ms) or fast hands (wrist over 2.5 frame widths per second) shows the subject "A little slower, please".
-3. On Done the words are logged as the app's reading (source MACHINE, "read by the app, not checked"). The officer may log their own reading beside it.
-4. On this phone's stage the subject is asked straight away to pick what each sign meant: two or three picture cards per sign and "None of these", at most three sets. With a second screen the officer taps Ask them to choose. Only the subject's tap records a meaning.
-5. The reader's words are never shown to the subject (the stage shows one dot per sign) and never shown on the officer glance strip. A stage device reads signs itself and sends only the words, one per sign, logged on the officer phone as the app's reading.
+3. On Done the words are logged as the app's reading (source MACHINE, "read by the app, not checked"). The officer may pick one guess per sign, logged once as their own reading (source OFFICER) when every sign has a pick, or type a word per sign in the replay.
+4. The subject is asked only when the officer taps Ask them to choose: two or three picture cards per sign and "None of these". Only the subject's tap records a meaning; until then the line stays a reading.
+5. The reader's words are never shown to the subject (the stage shows one dot per sign). A stage device reads signs itself and sends only the words, one per sign, logged on the officer phone as the app's reading.
 
 Core answer words that INCLUDE does not cover (yes, no, water, pain, help, stop, don't know) cannot be read; mother, father, police, home (house) and toilet (bathroom) are covered.
 
@@ -88,7 +88,7 @@ Core answer words that INCLUDE does not cover (yes, no, water, pain, help, stop,
 2. Ship the model under `app/src/main/assets/content/models/`, list it with `python tools/content/build_content.py --manifest-only`, and load it only when its hash matches.
 3. Return it from `SignReaders.create` (or `LandmarkTrackers.create` in the release source set). The app creates it once, off the main thread.
 4. Provide the label list and an updated `sign_words.json` so context limiting and picture choices keep working.
-5. Native libraries are aligned to 16 KB pages; no new permission (the build gate refuses RECORD_AUDIO, background location, and in `standard` every discovery and location permission); every new artifact is added to `gradle/verification-metadata.xml` and `app/gradle.lockfile`, scans clean with OSV for anything that ships, and is listed in [open source](09-open-source.md) with its licence and attribution.
+5. Native libraries are aligned to 16 KB pages; no new permission (the build gate refuses RECORD_AUDIO, background location, and in `standard` every discovery and location permission); every new artifact is added to `gradle/verification-metadata.xml` and `app/gradle.lockfile`, scans clean with OSV for anything that ships, and is listed in [open source](08-open-source.md) with its licence and attribution.
 
 ## 7. Budgets
 

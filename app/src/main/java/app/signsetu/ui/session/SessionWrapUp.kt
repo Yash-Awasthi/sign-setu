@@ -16,6 +16,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -64,6 +67,9 @@ internal fun WrapUpDialog(
     title: String,
     onTitle: (String) -> Unit,
     onThank: (() -> Unit)?,
+    aiOffer: Boolean,
+    includeSummary: Boolean,
+    onIncludeSummary: (Boolean) -> Unit,
     onExport: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
@@ -92,6 +98,13 @@ internal fun WrapUpDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (aiOffer) Row(
+                    Modifier.fillMaxWidth().toggleable(includeSummary, role = Role.Checkbox, onValueChange = onIncludeSummary),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = includeSummary, onCheckedChange = null)
+                    Text(stringResource(R.string.wrap_include_summary), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = Spacing.sm))
+                }
                 Text(stringResource(if (historyOff) R.string.wrap_rooted_note else R.string.wrap_saved_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },

@@ -55,6 +55,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -215,12 +216,8 @@ class ConversationE2ETest {
         assertEquals("${draft.en} / ${draft.hi}", note.text)
         assertTrue("no raised brows, a statement", draft.en.endsWith("."))
         assertEquals(Grade.MACHINE_READ, grades(vm.events())[machine.id])
-        // The subject checks the reading at once on the stage, and the question is still there afterwards.
-        waitFor("the reading is put to the subject") { vm.now().confirm?.eventId == machine.id }
-        assertEquals("the choices are logged as shown", EventSource.SHOW_BACK, vm.events().last { it.type == EventType.QUESTION_SHOWN }.source)
-        assertTrue("only pictures, never an English word", vm.now().confirm!!.queue.flatten().all { it.card != null })
-        assertTrue("at most three checks, one per meaning", vm.now().confirm!!.queue.size <= 3 && vm.now().confirm!!.read.distinct().size == vm.now().confirm!!.read.size)
-        while (vm.now().confirm != null) vm.chooseSign(null)
+        // The subject is not asked to confirm; the question stays on the stage and the officer settles the reading.
+        assertNull(vm.now().confirm)
         assertEquals("l3", (vm.now().pending as Pending.Ask).question.id)
 
         // 4. The officer reads the second sign as "police": the record keeps both readings, and the sign is taught.

@@ -60,7 +60,6 @@ import app.signsetu.camera.renderSkeletonPng
 import kotlinx.coroutines.withContext
 
 private const val RUN_STEP_MS = 1_400L
-private const val STAGE_CHECKS = 3
 
 private data class Local(
     val selectedGroup: String = "safety",
@@ -106,7 +105,8 @@ class SessionViewModel(
 
     val auto = AutoPilot(
         sessionId, repo, content, officerLang, viewModelScope,
-        showing = { local.value.mode == Mode.SHOW },
+        signing = { local.value.reading != null },
+        handsOff = true,
         present = { q, lang -> present(Pending.Ask(q), lang) },
     )
 
@@ -168,7 +168,7 @@ class SessionViewModel(
     fun show() {
         val state = ui.value ?: return
         val pending = local.value.pending ?: return
-        // A second tap (or Send with Volume-Up) before the first show is written would log the item twice.
+        // A second tap before the first show is written would log the item twice.
         if (showing) return
         showing = true
         ShowTiming.start()
@@ -265,8 +265,7 @@ class SessionViewModel(
             if (segments.isEmpty()) return@launch
             val words = segments.map { it.word ?: "?" }
             val id = logSigned(segments, words, EventSource.MACHINE, "en")
-            // The subject checks the reading straight away by picking what each sign meant; only their tap counts.
-            if (!narrative && !paired) confirmOnStage(id)
+            // The subject is not asked to confirm: the officer settles any doubt from the reader's guesses.
             val signWords = reader?.words.orEmpty()
             val gloss = segments.flatMap { s -> glossOf(s.guesses?.firstOrNull(), signWords) }
             val draft = glossToText(gloss, content.words, ui.value?.signLanguage ?: SignLanguage.ISL, segments.count { it.browsUp } * 2 >= segments.size).takeIf { gloss.any { it != "?" } }?.let { "${it.en} / ${it.hi}" }
@@ -297,16 +296,6 @@ class SessionViewModel(
             }
         }
         return id
-    }
-
-    /** Like [askSubject], but from the stage itself: the question stays, so the subject returns to it after
-     * choosing. */
-    private suspend fun confirmOnStage(eventId: Long) {
-        // A held or repeated sign reads the same several times; the person is asked once per meaning, three at most.
-        val asked = choiceQueue(eventId, emptyList()).distinctBy { (choices, read) -> read ?: choices.mapNotNull { it.card }.sorted().joinToString() }.take(STAGE_CHECKS)
-        if (asked.isEmpty() || local.value.mode != Mode.SHOW) return
-        logChoices(asked.first().first)
-        local.update { it.copy(answeredCard = null, answeredYes = null, confirm = SignConfirm(eventId, asked.map { it.first }, asked.map { it.second })) }
     }
 
     /** The subject chooses what each sign meant, from the officer's reading and the reader's guesses. Each set of
@@ -454,6 +443,9 @@ class SessionViewModel(
         val q = itemId.takeIf { it in shown }
         val lang = officerLang
         when (body) {
+            // The stage's water and food buttons are requests unless the item itself offered that picture.
+            is AnswerBody.Card if body.id in NeedCards && !shown[itemId].offers(body.id) ->
+                repo.log(sessionId, EventType.REQUEST, EventSource.SUBJECT, lang, text = content.cards[body.id]?.label?.get(lang), cardId = body.id, via = via)
             is AnswerBody.Card -> {
                 if (!logChecked(shown[itemId], body.id, null, q, via)) {
                     repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, lang, text = content.cards[body.id]?.label?.get(lang), cardId = body.id, shownId = q, via = via, reason = body.cue?.let { "cue:$it" })
@@ -565,6 +557,14 @@ class SessionViewModel(
         }
     }
 
+    /** Water, food and the like, asked for by the subject at any moment: logged as a request, so it neither answers
+     * the item on screen nor moves a question run on. */
+    fun askNeed(cardId: String) {
+        viewModelScope.launch {
+            repo.log(sessionId, EventType.REQUEST, EventSource.SUBJECT, officerLang, text = content.cards[cardId]?.label?.get(officerLang), cardId = cardId)
+        }
+    }
+
     fun answerYesNo(yes: Boolean) {
         val pending = local.value.pending
         val cue = cue.also { cue = null }
@@ -673,7 +673,7 @@ class SessionViewModel(
         }
     }
 
-    /** The officer took the phone back: the lock handle held, or both volume keys. */
+    /** The officer took the phone back by holding the handle. */
     fun returnToOfficer() {
         finishReading()
         local.update { it.copy(confirm = null) }
@@ -758,11 +758,11 @@ class SessionViewModel(
 
     /** Builds the encrypted report from everything logged so far; returns the file and its one-time passphrase. */
     suspend fun exportReport(text: ReportText, detail: (SessionEvent) -> String, section: ReportSection? = null, aiSummary: String? = null): Pair<File, String> {
-        val rows = reportRows(detail)
         val currentUi = ui.value
         val sessionObj = currentUi?.session ?: Session(sessionId, System.currentTimeMillis(), Profile.NOT_SURE, "en")
-        // Re-checked from the database as it is now, not from what this screen last saw.
+        // Rows, digest and chain all come from the database as it is now, so the printed rows are the ones certified.
         val events = repo.eventsNow(sessionId)
+        val rows = reportRows(detail, events)
         val chain = EvidenceIntegrity.verifyChain(sessionObj, events) { repo.drawing(it) }
         val certificate = EvidenceIntegrity.generateSection63Certificate(
             session = sessionObj,
@@ -774,8 +774,7 @@ class SessionViewModel(
         return report.export(rows, text, { repo.drawing(it) }, section, aiSummary, certificate, chain.short)
     }
 
-    internal fun reportRows(detail: (SessionEvent) -> String): List<ReportRow> {
-        val events = ui.value?.events ?: emptyList()
+    internal fun reportRows(detail: (SessionEvent) -> String, events: List<SessionEvent> = ui.value?.events.orEmpty()): List<ReportRow> {
         val grades = grades(events)
         return events.withQuestions().map { (e, q) -> ReportRow(e, q, detail(e), reading = grades[e.id]?.isReading == true) }
     }

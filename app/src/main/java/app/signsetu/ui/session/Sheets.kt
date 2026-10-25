@@ -494,6 +494,7 @@ fun EventType.label() = when (this) {
     EventType.SKIPPED -> R.string.log_skipped
     EventType.AUTO_ADVANCED -> R.string.log_auto_advanced
     EventType.PROMPT -> R.string.log_prompt
+    EventType.REQUEST -> R.string.log_request
 }
 
 /** Replays a signed answer slowly, sign by sign, so the officer can accept a guess or type the word for each

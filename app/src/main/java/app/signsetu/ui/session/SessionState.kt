@@ -44,6 +44,19 @@ sealed interface Pending {
 
 enum class Mode { OFFICER, SHOW }
 
+/** Needs the stage offers at any moment; a tap on one is a request, not an answer. */
+val NeedCards = setOf("water", "food")
+
+/** Whether [card] is one of the pictures this item put in front of the subject. */
+fun Pending?.offers(card: String): Boolean = when (this) {
+    is Pending.Ask -> card in question.cards
+    is Pending.Cards -> card in cardIds
+    is Pending.FreeText -> card in cardIds
+    is Pending.ShowBack -> card in choices || card == entry.card
+    is Pending.PhraseAsk -> card == slot.card
+    else -> false
+}
+
 /** A show-back or say-back that asks the subject to pick the meaning among pictures, not to say Yes to one. */
 val Pending?.asksChoice: Boolean get() = when (this) {
     is Pending.ShowBack -> choices.size >= 2

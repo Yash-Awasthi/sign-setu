@@ -2,7 +2,7 @@
 
 ## 1. Executive Context
 
-The thresholds below apply to physical ARM64 phones. MediaPipe Holistic, CameraX ImageAnalysis (640x360), the Canvas avatar and SQLCipher run on the phone's SoC and GPU delegate, so an emulator is not a valid benchmark target.
+The thresholds below apply to physical ARM64 phones. MediaPipe Holistic, CameraX ImageAnalysis (848 by 480), the Canvas avatar and SQLCipher run on the phone's SoC and GPU delegate, so an emulator is not a valid benchmark target.
 
 This protocol specifies the standard operating procedure, acceptance thresholds, device matrix, and `adb` instrumentation commands for QA and security test engineers.
 

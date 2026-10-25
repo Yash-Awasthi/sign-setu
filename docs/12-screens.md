@@ -1,6 +1,6 @@
-# 14. Screen Catalogue
+# 12. Screen Catalogue
 
-Every screen of the application, captured from the `standard` debug build on an Android 14 emulator (1080 by 2400 pixels) in a session for a victim who signs, with Hindi as the subject language unless stated. Release builds block screenshots (SEC controls), so the catalogue is taken from the debug build of the same source. The emulator's camera shows a synthetic scene in place of a person; for the sign-reading screens the debug build's stand-in tracker supplies a moving hand.
+Every screen of the application, captured from the `standard` debug build on an Android 14 emulator (1080 by 2400 pixels) in a session for a victim who signs, with Hindi as the subject language unless stated. The final release build blocks screenshots (`secureScreen`, [security](04-security.md) §2.5), so the catalogue is taken from a debug build. The pictures were captured on version 0.7.2; where the app has changed since, the note says what is different now. The emulator's camera shows a synthetic scene in place of a person; for the sign-reading screens the debug build's stand-in tracker supplies a moving hand.
 
 ## 1. Notation
 
@@ -15,12 +15,12 @@ Every screen of the application, captured from the `standard` debug build on an 
 
 | Screen | File | Notes |
 | --- | --- | --- |
-| First run, step 1 | [01-first-run-1.png](screens/01-first-run-1.png) | Purpose and limits; app language |
-| First run, step 2 | [02-first-run-2.png](screens/02-first-run-2.png) | Offline and encrypted record |
-| First run, step 3 | [03-first-run-3.png](screens/03-first-run-3.png) | App pinning |
+| First run, step 1 | [01-first-run-1.png](screens/01-first-run-1.png) | Aid, not an interpreter; app language |
+| First run, step 2 | [02-first-run-2.png](screens/02-first-run-2.png) | Now: sessions are deleted after the retention time |
+| First run, step 3 | [03-first-run-3.png](screens/03-first-run-3.png) | Now: records stay on this phone, what goes online |
 | Home | [04-home.png](screens/04-home.png) | Profile, subject language, role |
 | Home, Signs profile | [05-home-signs.png](screens/05-home-signs.png) | Indian (ISL) or American (ASL) chosen before start |
-| Practice, type and sign | [39-practice-type-and-sign.png](screens/39-practice-type-and-sign.png) | Reached from the pencil on Home, outside a session: the same planner and character, with nothing recorded |
+| Practice, type and sign | [39-practice-type-and-sign.png](screens/39-practice-type-and-sign.png) | Reached from Settings, Practice, outside a session: the same planner and character, with nothing recorded |
 
 ## 3. The stage
 
@@ -37,7 +37,7 @@ Every screen of the application, captured from the `standard` debug build on an 
 | Phrase board | [14-stage-phrase-board.png](screens/14-stage-phrase-board.png) | Eight everyday phrases the subject can say |
 | Number pad | [15-stage-number-pad.png](screens/15-stage-number-pad.png) | Lesson-sheet answer input; the Sign button carries a word and a tool colour |
 | Sign window | [16-stage-signing.png](screens/16-stage-signing.png) | Time bar, body guide, live hand skeleton, one dot per sign seen; quiet hands also end the window |
-| After signing | [17-stage-after-signing.png](screens/17-stage-after-signing.png) | "Is this it?": two or three pictures per sign read and "None of these"; only the person's tap records a meaning |
+| After signing | [17-stage-after-signing.png](screens/17-stage-after-signing.png) | "Is this it?": two or three pictures per sign read and "None of these"; now shown only when the officer taps Ask them to choose; only the person's tap records a meaning |
 | Pause | [18-stage-pause.png](screens/18-stage-pause.png) | Breathing circle and bubbles; only "I'm ready" ends it |
 | Language finder | [19-stage-language-finder.png](screens/19-stage-language-finder.png) | Seventeen languages in their own scripts; the tapped one greets back |
 
@@ -55,19 +55,19 @@ Every screen of the application, captured from the `standard` debug build on an 
 | ISL dictionary | [27-officer-isl-dictionary.png](screens/27-officer-isl-dictionary.png) | Recorded and drawn signs, searchable in English and Hindi |
 | ASL dictionary | [28-officer-asl-dictionary.png](screens/28-officer-asl-dictionary.png) | Shown when the session signs in ASL |
 | Session log | [29-officer-session-log.png](screens/29-officer-session-log.png) | Every row with time and kind; notes |
-| Session menu | [30-officer-menu.png](screens/30-officer-menu.png) | Sign language, sitting opposite, sun mode, the glance strip, skeleton only, camera |
+| Session menu | [30-officer-menu.png](screens/30-officer-menu.png) | Sign language, sitting opposite, skeleton only, camera |
 | Change profile | [31-officer-change-profile.png](screens/31-officer-change-profile.png) | Role, profile, language |
 | Second screen | [32-officer-second-screen.png](screens/32-officer-second-screen.png) | Pairing a department device |
 | End session | [33-officer-end-session.png](screens/33-officer-end-session.png) | Export, end without export, cancel |
 | Report ready | [34-officer-export.png](screens/34-officer-export.png) | One-time password, share, done; the session stays saved |
-| A signed answer | [38-officer-signed-answer.png](screens/38-officer-signed-answer.png) | The app's reading with replay, the choices shown, and the person's confirmed pick as separate rows |
+| A signed answer | [38-officer-signed-answer.png](screens/38-officer-signed-answer.png) | The app's reading with replay, the choices shown, and the person's confirmed pick as separate rows; the reader's guesses now also appear as chips above the composer |
 
 ## 5. Settings
 
 | Screen | File | Notes |
 | --- | --- | --- |
 | Settings, interpreter and stage | [35-settings-1.png](screens/35-settings-1.png) | |
-| Settings, shortcuts and assistant | [36-settings-2.png](screens/36-settings-2.png) | |
+| Settings, shortcuts and assistant | [36-settings-2.png](screens/36-settings-2.png) | Tilt to show, volume keys, large captions and the Auto switch shown here have since been removed; signing speed, reduce motion and colour theme were added |
 | Settings, records and about | [37-settings-3.png](screens/37-settings-3.png) | Retention, delete all data, version |
 
 ## 6. Not captured

@@ -1,4 +1,4 @@
-# 12. On-Device Assistant
+# 10. On-Device Assistant
 
 The assistant translates what the officer types into the subject's language and back into English, so the officer can see a wrong translation before showing it. It runs on the phone when a model is installed, and otherwise through the online path (§6) when the officer has switched that on. It never answers, judges or signs, plays no part in Auto mode, and never sees camera frames or landmarks.
 
@@ -54,9 +54,9 @@ The Gemma licence is free for government use but is not an OSI open-source licen
 
 | Item | Behaviour |
 | --- | --- |
-| Where it goes | The department gateway (`POST /v1/assist`) when the build has one; otherwise the OpenAI compatible service the officer saves in Settings, Developer (address, key, model; Groq pre-filled), using chat completions. A gateway build has no Developer setting and talks only to its gateway; a build without a gateway talks only to that service. The key is kept in the Keystore |
+| Where it goes | The department gateway (`POST /v1/assist`) when the build has one; otherwise the OpenAI compatible service the officer saves in Settings, Developer (address, key, model; Groq pre-filled), over chat completions or, for an address ending in `/responses`, the Responses API. A gateway build has no Developer setting and talks only to its gateway; a build without a gateway talks only to that service. The key is kept in the Keystore |
 | When | Only with the online switch on (Settings, after a notice), the phone on a validated network, and, for the gateway, the device enrolled with a one-time department code |
 | Masking | `Pseudonymizer` replaces the subject's names and written details from the session, and email addresses, links, PAN-like ids and long numbers, with stand-ins before sending, and restores them in the reply |
 | Consent | Session text (counsellor history, draft report) goes only after the officer allows it once for the session |
-| Failure | One retry when the service is unreachable, rate-limited (429) or failing (5xx); a 401 clears the token; the officer is told once per change (offline, error, revoked, back online) |
+| Failure | One retry when the service is unreachable, rate-limited (429) or failing (5xx), except a typed-text caption, which waits at most 3 s once so the officer can send their own words; a session start pings a gateway's `/healthz` to wake it; a 401 clears the token; the officer is told once per change (offline, error, revoked, back online) |
 | Prompts | The gateway accepts only the app's own system prompts, listed in `backend/signsetu_gateway/app_prompts.json` and written by `GatewayPromptContractTest` |

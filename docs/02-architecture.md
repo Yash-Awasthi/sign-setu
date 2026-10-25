@@ -6,8 +6,8 @@ How Sign Setu is built: the parts, how they talk, where data lives and which key
 
 Sign Setu is one Android application. The officer's phone holds everything a session needs: the content bundle, the vision and sign-reader models, and the encrypted session store. Two optional paths leave the phone:
 
-- **Second screen.** A bonded Bluetooth phone or tablet shows the subject's stage over an encrypted link and stores nothing (§9).
-- **Online assistant.** When the build has a department gateway (`-PgatewayUrl=https://...`), or else a direct service key, and the officer has switched it on, masked text goes over HTTPS for translation, the AI counsellor and the draft report (§10). Without either, nothing in the app opens a connection.
+- **Second screen.** A bonded Bluetooth phone or tablet (Nearby Connections in the `nearby` flavor) shows the subject's stage over an encrypted link and stores nothing (§9).
+- **Online assistant.** When the build has a department gateway (`-PgatewayUrl=https://...`), or else the officer has saved their own OpenAI-compatible service in Settings, Developer, and has switched the assistant on, masked text goes over HTTPS for translation, the AI counsellor and the draft report (§10). Without either, nothing in the app opens a connection.
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "step"}}}%%
@@ -21,7 +21,7 @@ flowchart LR
     end
     STAGE["Stage device<br/>bonded phone or tablet"]:::ext
     GW["Department gateway<br/>FastAPI, optional"]:::ext
-    DIRECT["Direct assistant service<br/>key-holding build, optional"]:::ext
+    DIRECT["Officer's own assistant service<br/>no-gateway build, optional"]:::ext
     UP["Upstream model service"]:::ext
     MSG["WhatsApp or Sandes"]:::ext
     CUST["Records custodian"]:::ext
@@ -62,7 +62,7 @@ Versions are pinned in `gradle/libs.versions.toml`, locked in `app/gradle.lockfi
 | Language, UI | Kotlin 2.4.21, Jetpack Compose (BOM 2026.09.00), Material 3, Navigation 3 1.2.0 |
 | SDK levels | minSdk 29, compileSdk and targetSdk 37; AGP 9.4.1; Gradle 9.8.2; JDK 21 |
 | Session store | Room 2.8.5 over SQLCipher for Android 4.19.1 (database version 5) |
-| Settings, work | DataStore Preferences 1.2.1; WorkManager 2.12.0 |
+| Settings | DataStore Preferences 1.2.1 |
 | Camera, vision | CameraX 1.6.2 (Preview and ImageAnalysis only); MediaPipe Tasks Vision 1.1.1, Holistic landmarker; protobuf-javalite 4.36.2 |
 | Sign readers | Plain Kotlin forward passes (`LandmarkSignReader`, `CtcSpellReader`); float32 weights in the APK |
 | Speech | Media3 ExoPlayer 1.11.1 for recorded Opus; platform TextToSpeech for the express board |
@@ -95,10 +95,9 @@ flowchart TB
     C --> RD["SignReader per SignLanguage<br/>lazy"]:::comp
     C --> PT["StageTransport<br/>per flavor"]:::sec
     C --> LK["link: StateFlow&lt;StageLink?&gt;"]:::sec
-    C --> HK["HardKeys<br/>volume keys"]:::comp
     C --> REP["SessionReport<br/>PDF export"]:::comp
-    APPL --> RW["RetentionWorker<br/>hourly"]:::comp
-    CA --> TV["KeystoreVault<br/>gateway token"]:::sec
+    APPL --> RW["Retention sweep<br/>on start and hourly job"]:::comp
+    CA --> TV["KeystoreVault<br/>gateway token, officer's service key"]:::sec
     AS --> MS
     AS --> CA
     classDef comp fill:#e8eef7,stroke:#1f3a5f,stroke-width:1.5px,color:#16202e
@@ -108,7 +107,7 @@ flowchart TB
 
 *Figure 2. What `AppContainer` owns.*
 
-`MainActivity` sets `FLAG_SECURE` in release builds, filters touches that pass through another app's overlay, applies the officer's interface language (`OfficerLocale`) and routes the volume keys to `HardKeys` unless TalkBack is on.
+`MainActivity` filters touches that pass through another app's overlay and applies the officer's interface language (`OfficerLocale`). `FLAG_SECURE` is set only when the build switch `secureScreen` is true (the final release APK); testing builds allow screenshots.
 
 ### 4.2 Screen routing
 
@@ -145,8 +144,8 @@ flowchart TB
     R["SessionRoute"]:::comp --> VM["SessionViewModel<br/>ui: StateFlow&lt;SessionUi&gt;"]:::comp
     R -- "mode OFFICER, or paired" --> OP["OfficerPane<br/>Transcribe and More pages, Dock"]:::comp
     R -- "mode SHOW, not paired" --> ST["Stage"]:::comp
-    ST -- "plain item" --> VC["VideoCallStage<br/>character, camera window, answer bar"]:::comp
-    ST -- "pictures, drawing, writing,<br/>lesson input, finder, choices" --> PN["Panel stage<br/>character above, rails and panel below"]:::comp
+    ST -- "plain item" --> VC["VideoCallStage<br/>character, camera window, answer bar, Stop row"]:::comp
+    ST -- "opening, rights, pictures, drawing,<br/>writing, lesson input, finder, choices" --> PN["Panel stage<br/>character above, rails and panel below"]:::comp
     VM --> AP["AutoPilot<br/>Manual or Auto"]:::comp
     VM --> CO["Counsellor<br/>AI counsellor"]:::comp
     VM --> REPO["SessionRepository"]:::data
@@ -156,7 +155,7 @@ flowchart TB
 
 *Figure 4. The two faces of one session screen.*
 
-While the phone's own stage shows, `SessionRoute` hides the system bars, starts screen pinning (`startLockTask`), frees the assistant model, and turns the volume keys and the tilt sensor into handover controls (`HandoverEffects`). The officer takes the phone back by the lock handle or by holding both volume keys for 1.5 s.
+`SessionRoute` pins the app (`startLockTask`) for the whole session when no second screen is linked; pinning is lifted for the interpreter call or the share sheet and set again on return. While the phone's own stage shows it also hides the system bars and frees the assistant model. The officer takes the phone back by holding the chat handle for 1.5 s.
 
 ## 5. Packages
 
@@ -166,7 +165,7 @@ One module, `app.signsetu`, organised by feature.
 | --- | --- |
 | (root) | `MainActivity`, `SignSetuApp` and `AppContainer` (wiring, unlock and relock, link ownership), `Policy` (build expiry, locked-time wipe rule) |
 | `data.content` | `Content.kt` loads and verifies the bundle; `IslLexicon.kt` sign lookup, dictionary and sign languages; `TextSigning.kt` plans typed text and turns read glosses back into text; `Translate.kt` the rule-based English to Hindi caption; `Lesson.kt` answer types and validation; `Completion.kt` word completions; `Motion.kt` the keyframe types every motion file uses |
-| `data.session` | Room entities and DAO, `SessionRepository` (sealed event log), `EventSeal` (hash chain), `DatabaseKey`, `RetentionWorker` |
+| `data.session` | Room entities and DAO, `SessionRepository` (sealed event log), `EventSeal` (hash chain), `DatabaseKey`, `RetentionJob` |
 | `data.settings` | `SettingsStore` (DataStore) and `OfficerLocale` |
 | `camera` | `CameraMirror` (Preview plus ImageAnalysis), `LandmarkTracker` and `LandmarkFrame`, `HolisticTracker`, the per-frame cue detectors, `Stabilizer` |
 | `sign` | `SignCapture` and `SignWindow` (segmentation), readers (`LandmarkSignReader`, `CtcSpellReader`, `SignReaders`), `ReadPolicy` and `SignChoices` (ranking and choices), `HomeSigns`, `SkeletonPlayer` |
@@ -227,7 +226,7 @@ flowchart TB
     classDef sec fill:#e9f1e8,stroke:#35603a,stroke-width:1.5px,color:#16202e
 ```
 
-*Figure 5. Package dependencies, caller to callee. Interface packages sit on top; `pair`, `sign`, `camera`, `assistant` and the data packages never import an interface package.*
+*Figure 5. Package dependencies, caller to callee. Interface packages sit on top; `pair`, `camera`, `assistant` and the data packages never import an interface package. `sign` has one exception: `SkeletonPlayer.kt`, the replay composable, uses `ui.theme` colours.*
 
 ## 6. Content bundle
 
@@ -345,7 +344,7 @@ erDiagram
 
 | Column | Values |
 | --- | --- |
-| `type` | QUESTION_SHOWN, ANSWER_CARD, ANSWER_DRAWING, ANSWER_GESTURE, ANSWER_UNCLEAR, ANSWER_TEXT, ANSWER_SIGNED, LANGUAGE_CHOSEN, NOTE, SYSTEM, SUGGESTED, APPROVED, SKIPPED, AUTO_ADVANCED, LINK, PROMPT |
+| `type` | QUESTION_SHOWN, ANSWER_CARD, ANSWER_DRAWING, ANSWER_GESTURE, ANSWER_UNCLEAR, ANSWER_TEXT, ANSWER_SIGNED, LANGUAGE_CHOSEN, NOTE, SYSTEM, SUGGESTED, APPROVED, SKIPPED, AUTO_ADVANCED, LINK, PROMPT, REQUEST (water or food the subject asked for; never an answer) |
 | `source` | PRESET, TEXT, BOARD, SHOW_BACK, SUBJECT, OFFICER, PHRASE, RULE, MACHINE |
 | `reason` | Auto-mode reasons; `rights_shown`, `caption_missing`, `opening`, `ai_counsellor` on shown rows; `given:<METHOD>:<0/1>` on lesson answers; `cue:<nod/shake/point/palm/shrug>` on taps that followed a proposed gesture; `evidence:skeleton` on a skeleton snapshot |
 
@@ -386,7 +385,7 @@ stateDiagram-v2
 
 *Figure 10. Session lifecycle in the store. A rooted phone keeps no history: finishing deletes the session.*
 
-Retention is 24 hours by default, 4 to 72 hours by choice, or 0 to keep sessions until deleted. A session is idle from its end, or while open from its last row. `RetentionWorker` runs hourly: while the app is unlocked it deletes idle sessions row by row (`purgeExpired`, also run at every unlock); while the app is locked the key cannot be used, so once even the newest session activity is past retention it destroys the keys and the database (`clearAllData`). `PRAGMA secure_delete` is on and the journal is truncated, so freed pages are zeroed and no write-ahead log keeps them.
+Retention is 24 hours by default, 4 to 72 hours by choice, or 0 to keep sessions until deleted. A session is idle from its end, or while open from its last row. A retention sweep runs each time the app comes to the foreground and hourly from `RetentionJob`, a platform JobScheduler job that runs even when the app is never opened: while the app is unlocked it deletes idle sessions row by row (`purgeExpired`, also run at every unlock); while the app is locked the key cannot be used, so once even the newest session activity is past retention it destroys the keys and the database (`clearAllData`). `PRAGMA secure_delete` is on and the journal is truncated, so freed pages are zeroed and no write-ahead log keeps them.
 
 ## 8. Keys, unlock and relock
 
@@ -398,8 +397,8 @@ flowchart TB
     OPEN["KEK signsetu.kek.open<br/>only while the phone has no secure lock"]:::sec
     DEK["DEK, 32 random bytes<br/>noBackupFilesDir/dek.bin, wrapped"]:::sec
     DB["SQLCipher session store"]:::data
-    TOK["signsetu.gateway.token<br/>Keystore AES-256-GCM"]:::sec
-    GWT["gateway token<br/>noBackupFilesDir/gw.bin, wrapped"]:::data
+    TOK["signsetu.gateway.token, signsetu.assist.key<br/>Keystore AES-256-GCM"]:::sec
+    GWT["gateway token gw.bin, or officer's service key assist.bin<br/>noBackupFilesDir, wrapped"]:::data
     PASS["Export passphrase<br/>80 bits, shown once"]:::sec
     PDF["Encrypted PDF, AES-256"]:::data
     ECDH["Link keys<br/>P-256 ECDH + HKDF-SHA256, memory only"]:::sec
@@ -430,7 +429,7 @@ stateDiagram-v2
     Background --> Unlocked: back within 5 min, or 30 min inside a session
     Background --> Locked: later than that, lock()
     Unlocked --> Locked: Clear all data
-    Locked --> Wiped: RetentionWorker, everything past retention
+    Locked --> Wiped: retention sweep, everything past retention
     Wiped --> Locked
 ```
 
@@ -513,7 +512,7 @@ flowchart TB
 *Figure 15. Translation path (`Assistant.suggest`, `CloudAi.ask`).*
 
 - **Local.** `ModelStore` imports a GGUF file and keeps it only if its SHA-256 is on `KNOWN_MODELS` (Gemma 3 1B Q4_K_M). It is offered on phones reporting at least 2.4 GB and loads only with 1.2 GB free; it is freed on lock, on memory pressure, and whenever the stage shows or a sign window opens. Each request starts from an empty 1,024-token context with greedy decoding.
-- **Online.** `CloudAi` uses the gateway when the build has one: a one-time department code is traded at `/v1/enroll` for a token stored by `KeystoreVault`; a 401 clears it. Without a gateway it may use a direct service whose key is compiled in; a release build refuses that key unless `-PallowEmbeddedKey` is passed. Session data (the AI counsellor, the draft report) goes out only after the officer allows it once for the session. The gateway accepts only system prompts that match the app's own (`app_prompts.json`, written by `GatewayPromptContractTest`).
+- **Online.** `CloudAi` uses the gateway when the build has one: a one-time department code is traded at `/v1/enroll` for a token stored by `KeystoreVault`; a 401 clears it. Without a gateway it uses the OpenAI-compatible service the officer saves in Settings, Developer (address, model and key, the key held by its own `KeystoreVault`, `assist.bin` under `signsetu.assist.key`); no key is ever compiled into an APK. Session data (the AI counsellor, the draft report) goes out only after the officer allows it once for the session. The gateway accepts only system prompts that match the app's own (`app_prompts.json`, written by `GatewayPromptContractTest`).
 - **Without a network** the report falls back to `OfflineReport`, a rule-based draft marked "not part of the record", and follow-up questions to a fixed list.
 
 ## 11. Camera and sign reading
@@ -542,13 +541,16 @@ sequenceDiagram
     end
     Note over SC: hands quiet for 2 s, nothing for 3 s, or 20 s reached
     VM->>DB: ANSWER_SIGNED, source MACHINE (the app's reading)
-    VM->>DB: QUESTION_SHOWN + PROMPT for the choices
-    VM-->>S: two or three pictures per sign, and None of these
-    S->>VM: picks one
-    VM->>DB: ANSWER_GESTURE, source SUBJECT
+    Note over VM: the officer may pick a guess per sign (ANSWER_SIGNED, source OFFICER)
+    opt officer taps Ask them to choose
+        VM->>DB: QUESTION_SHOWN + PROMPT for the choices
+        VM-->>S: two or three pictures per sign, and None of these
+        S->>VM: picks one
+        VM->>DB: ANSWER_GESTURE, source SUBJECT
+    end
 ```
 
-*Figure 16. A signed answer on this phone's stage. Only the subject's pick records a meaning.*
+*Figure 16. A signed answer on this phone's stage. Readings stay readings; only the subject's pick records a meaning.*
 
 | Window | Opened by | Limit | Pause that ends a sign | Face points |
 | --- | --- | --- | --- | --- |
@@ -563,7 +565,7 @@ sequenceDiagram
 
 ## 13. Build and delivery
 
-- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.7.1, code 11. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
+- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.7.3, code 13. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
 - Release builds: R8 with resource shrinking, `android.util.Log` calls stripped, native libraries and models stored uncompressed. Default ABIs arm64-v8a and x86_64 (universal); `-Pabi=arm64-v8a` builds the phone APK. APKs are unsigned; signing is a manual offline step.
-- Build gates on every variant before packaging: `check<Variant>Permissions` fails on RECORD_AUDIO or background location in any build and on discovery and location permissions in `standard`; `check<Variant>NoEmbeddedKey` fails a release that would compile in an assistant key.
-- The gateway (`backend/`, FastAPI and SQLAlchemy, SQLite or PostgreSQL) enrols devices, serves the model manifest, and proxies assistant calls. Voluntary officer feedback and correction proposals undergo forensic team triage before any ML fine-tuning. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) draws every motion with a TypeScript port of the rig checked against `Rig.kt` through `src/rig-fixtures.json`.
+- Build gates on every variant before packaging: `check<Variant>Permissions` fails on RECORD_AUDIO or background location in any build and on discovery and location permissions in `standard`.
+- The gateway (`backend/`, FastAPI and SQLAlchemy, SQLite or PostgreSQL) enrols devices, serves the model manifest, proxies assistant calls, and has a `/v1/feedback` endpoint for consented reader labels that the app does not call yet. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) draws every motion with a TypeScript port of the rig checked against `Rig.kt` through `src/rig-fixtures.json`.

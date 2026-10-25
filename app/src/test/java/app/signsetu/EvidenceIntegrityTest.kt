@@ -85,8 +85,9 @@ class EvidenceIntegrityTest {
         val metrics = EvidenceIntegrity.computeSessionMetrics(session, events, now = 1700000060000L)
         assertEquals(9, metrics.totalEvents)
         assertEquals(3, metrics.questionCount)
-        // Two cards, one drawing, one signed and one unclear; the note is not an answer.
-        assertEquals(5, metrics.answerCount)
+        // Two cards, one drawing and one unclear; the note is not an answer, and the app's reading of a sign is not the subject's.
+        assertEquals(4, metrics.answerCount)
+        assertEquals(1, metrics.readingCount)
         assertEquals(1, metrics.affirmativeCount)
         assertEquals(1, metrics.negativeCount)
         assertEquals(1, metrics.drawingCount)
@@ -110,6 +111,15 @@ class EvidenceIntegrityTest {
         assertTrue(cert.contains("PDF Record Digest        : $record"))
         assertTrue(cert.contains("Total Recorded Events    : 9"))
         assertTrue(cert.contains("Items Shown              : 3"))
-        assertTrue(cert.contains("Subject Direct Answers   : 5 (Affirmative: 1, Negative: 1)"))
+        assertTrue(cert.contains("Subject Direct Answers   : 4 (Affirmative: 1, Negative: 1)"))
+        assertTrue(cert.contains("Readings by App/Officer  : 1"))
+        assertTrue(cert.contains("Inquiry Role             : Victim or witness"))
+    }
+
+    @Test
+    fun aRoleNeverSetIsLeftOffTheCertificate() {
+        val cert = EvidenceIntegrity.generateSection63Certificate(session.copy(role = Role.NOT_KNOWN), events, check(sealed()), "abcd")
+        assertTrue(cert.contains("Inquiry Role             : Not recorded"))
+        assertTrue(!cert.contains("NOT_KNOWN"))
     }
 }

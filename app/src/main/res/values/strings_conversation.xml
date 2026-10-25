@@ -35,6 +35,6 @@
     <string name="prompt_detail">Caption: %1$s. Motions: %2$s. Pictures in order: %3$s. Content %4$s.</string>
     <string name="prompt_none">none</string>
     <string name="report_not_statement">Communication note, not a statement. A statement needs a qualified interpreter and the statutory video recording.</string>
-    <string name="report_grade_legend">Said: the person tapped, wrote or drew it. Confirmed: the person picked this meaning from two or three choices shown back. Said no: the person turned down the reading shown back. Officer\'s reading and App\'s reading: an interpretation, not confirmed by the person.</string>
+    <string name="report_grade_legend">Said: the person tapped, wrote or drew it. Confirmed: the person picked this meaning from two or three choices shown back. Said no: the person turned down the reading shown back. Officer\'s reading and App\'s reading: an interpretation, not confirmed by the person. Time taken and changed answers are common in a frightened or traumatised person and are not a sign of untruth.</string>
     <string name="report_readings">Readings by the app or the officer. These are not the person\'s own answers.</string>
 </resources>

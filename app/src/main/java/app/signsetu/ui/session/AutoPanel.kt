@@ -1,5 +1,8 @@
 package app.signsetu.ui.session
 
+import app.signsetu.ui.theme.motion
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.animateContentSize
 import android.content.res.Resources
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -90,8 +93,6 @@ fun autoKeyLabel(key: String?): Int? = when (key) {
     AutoKey.RESUMED -> R.string.sys_auto_resumed
     AutoKey.WRAP_UP -> R.string.sys_auto_wrap_up
     AutoKey.ENDED_STOP -> R.string.sys_auto_ended_stop
-    AutoKey.ADVANCE_ON -> R.string.sys_auto_advance_on
-    AutoKey.ADVANCE_OFF -> R.string.sys_auto_advance_off
     AutoKey.BREAK -> R.string.sys_auto_break
     else -> null
 }
@@ -128,11 +129,10 @@ fun autoSuffix(res: Resources, e: SessionEvent, by: Map<Long, ShownBy>, idle: Se
 
 /** The officer's Manual or Auto switch and, in Auto, the next proposed item with its reason. */
 @Composable
-fun AutoPanel(auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLang: String, modifier: Modifier = Modifier) {
+fun AutoPanel(auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLang: String, modifier: Modifier = Modifier, showSwitch: Boolean = false) {
     val conv by auto.conv.collectAsStateWithLifecycle()
-    val advance by auto.autoAdvance.collectAsStateWithLifecycle()
-    Column(modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+    Column(modifier.animateContentSize(motion(spring())).padding(horizontal = Spacing.lg, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        if (showSwitch) SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             SegmentedButton(
                 selected = conv == Conv.Off,
                 onClick = { auto.setAuto(false) },
@@ -147,7 +147,7 @@ fun AutoPanel(auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLan
             )
         }
         when (val c = conv) {
-            is Conv.Proposed -> if (ui.pending == null) NextCard(c.p, advance, auto, ui, content, officerLang)
+            is Conv.Proposed -> if (ui.pending == null && !showSwitch) NextCard(c.p, c.held, auto, ui, content, officerLang)
             is Conv.Paused -> Notice(
                 stringResource(
                     when (c.cause) {
@@ -171,7 +171,7 @@ fun AutoPanel(auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLan
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun NextCard(p: Proposal, advance: Boolean, auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLang: String) {
+private fun NextCard(p: Proposal, held: Boolean, auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLang: String) {
     val q = p.q
     val colors = MaterialTheme.colorScheme
     val subjectLang = ui.session.subjectLang
@@ -204,19 +204,10 @@ private fun NextCard(p: Proposal, advance: Boolean, auto: AutoPilot, ui: Session
             Text(reasonText(p, content, officerLang), style = MaterialTheme.typography.bodySmall)
             if (first || p.reason == Reason.CLOSING) Text(stringResource(R.string.conv_statement_reminder), style = MaterialTheme.typography.bodySmall)
             if (ui.session.role == SessionRole.ACCUSED) Text(stringResource(R.string.conv_rights_reminder), style = MaterialTheme.typography.bodySmall)
-            if (q.kind == Kind.STATEMENT) {
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(advance, role = Role.Switch, onValueChange = auto::setAutoAdvance),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(stringResource(R.string.conv_auto_greetings), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    Switch(checked = advance, onCheckedChange = null)
-                }
-            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Button(onClick = auto::approve, enabled = ready) { Text(stringResource(R.string.conv_show)) }
                 OutlinedButton(onClick = auto::skip) { Text(stringResource(R.string.conv_skip)) }
-                TextButton(onClick = auto::pause) { Text(stringResource(R.string.conv_pause)) }
+                if (held) TextButton(onClick = auto::resume) { Text(stringResource(R.string.conv_resume)) }
                 TextButton(onClick = auto::wrapUp) { Text(stringResource(R.string.conv_wrap_up)) }
             }
         }

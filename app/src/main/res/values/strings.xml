@@ -116,6 +116,7 @@
     <string name="show_replay">Play again</string>
 
     <!-- Export -->
+    <string name="wrap_include_summary">Add an AI summary draft to the report (masked text is sent online)</string>
     <string name="end_export">Export report</string>
     <string name="export_working">Preparing the encrypted report…</string>
     <string name="export_title">Report ready</string>
@@ -159,6 +160,18 @@
         <item quantity="other">%1$d hours</item>
     </plurals>
     <string name="settings_retention_note">Sessions older than this are deleted even if nobody ended them.</string>
+    <string name="settings_theme">Appearance</string>
+    <string name="settings_color_theme">Colour theme</string>
+    <string name="theme_emerald">Emerald</string>
+    <string name="theme_mocha">Mocha</string>
+    <string name="theme_sage">Sage</string>
+    <string name="theme_cerulean">Cerulean</string>
+    <string name="theme_amethyst">Amethyst</string>
+    <string name="theme_amoled">AMOLED black</string>
+    <string name="theme_contrast">High contrast</string>
+    <string name="settings_theme_system">Device default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
     <string name="settings_app_language">App language</string>
     <string name="settings_clear">Delete all data</string>
     <string name="settings_clear_summary">Destroys the encryption key. Every session on this phone becomes unreadable.</string>
@@ -181,10 +194,16 @@
     <string name="intro_done">Get started</string>
     <string name="intro_aid_title">A communication aid</string>
     <string name="intro_aid_body">Sign Setu helps you talk with young children, deaf people and people who speak another language, using pictures, captions, recorded speech and gestures.\n\nIt is not an interpreter. For anything that will become a statement, call a qualified interpreter.</string>
-    <string name="intro_delete_title">Chats are deleted after 24 hours</string>
-    <string name="intro_delete_body">Every session is deleted from this phone 24 hours after it starts, even if nobody ended it. That includes the chat, the answers and any signs that were read.\n\nIf you need to keep something, export the report before then. You can change this time, or keep sessions until deleted, in Settings under Session records.</string>
+    <string name="intro_delete_title">Sessions are deleted after 24 hours</string>
+    <string name="intro_delete_body">A session is deleted from this phone 24 hours after its last activity, whether it was finished or left open. That includes the chat, the answers and any signs that were read.
+
+If you need to keep something, export the report before then. You can choose 4 to 72 hours, or keep sessions until you delete them, in Settings under Session records.</string>
     <string name="intro_private_title">Your records stay on this phone</string>
-    <string name="intro_private_body">Session records are encrypted on this phone and deleted when the session ends, or after 24 hours at most.\n\nNothing is sent anywhere unless you switch on Online AI in Settings. Then only masked text goes to a third-party service, with names replaced first.\n\nA report leaves the phone only when you export and share it, protected by a password you give separately.</string>
+    <string name="intro_private_body">Session records are encrypted on this phone and deleted once they pass the retention time you set, 24 hours unless you change it.
+
+Nothing is sent anywhere unless you switch on the online assistant in Settings. Then only masked text, with known names and details replaced, goes to the department gateway or to the service you set up.
+
+A report leaves the phone only when you export and share it, protected by a password you give separately.</string>
     <string name="key_reset_title">Earlier sessions were deleted</string>
     <string name="key_reset_body">The phone screen lock was removed or changed, so Android deleted the key that protected earlier session records. They could not be opened and have been deleted. New sessions work as normal.</string>
     <string name="action_gesture">They gestured</string>
@@ -196,7 +215,6 @@
     <string name="officer_has_gesture">Character shows a gesture</string>
     <string name="officer_has_audio">Recorded speech in their language</string>
     <string name="officer_media_missing">Picture and caption only</string>
-    <string name="officer_glance">My upside-down strip on the stage</string>
     <string name="officer_skeleton_show">Show skeleton on camera</string>
     <string name="officer_skeleton_keep">Keep skeleton snapshot in record</string>
     <string name="officer_sign_language">Sign language</string>
@@ -204,16 +222,18 @@
     <string name="sign_asl">American (ASL)</string>
     <string name="log_sign_language">Sign language set to %1$s</string>
     <string name="settings_stage">Stage</string>
-    <string name="settings_camera">Camera mirror</string>
-    <string name="settings_camera_summary">Shows the person their own hands on the stage. Nothing is recorded or saved.</string>
-    <string name="home_tagline">Signs, pictures and captions, all on this phone.</string>
+    <string name="settings_camera">Camera on the stage</string>
+    <string name="settings_camera_summary">Turns the camera on during a session: the person sees their own hands, and signs can be read. Nothing is recorded or saved.</string>
     <string name="home_greeting_hint">Choose who you are helping, then start.</string>
     <string name="profile_isl_short">Signs</string>
     <string name="profile_other_short">Other language</string>
-    <string name="settings_large_captions">Large captions</string>
-    <string name="settings_large_captions_summary">Bigger words on the stage for people who read slowly</string>
-    <string name="settings_slow_gestures">Slower gestures</string>
-    <string name="settings_slow_gestures_summary">The character signs at three-quarter speed</string>
+    <string name="settings_reduce_motion">Reduce animations</string>
+    <string name="settings_reduce_motion_summary">Screens change at once and nothing fades or slides. The phone\'s own animation setting is followed too.</string>
+    <string name="auto_next_in">Next in %1$ds</string>
+    <string name="settings_interpreter_test">Call interpreter now</string>
+    <string name="settings_interpreter_test_summary">Opens the messaging app with the saved contact. The same button is on the home screen and in a session.</string>
+    <string name="settings_gesture_speed">Gesture speed: %1$.2f×</string>
+    <string name="practice_settings_summary">Type a sentence and watch it signed, word by word</string>
     <string name="settings_cloud_ai">Online assistant (department gateway)</string>
     <string name="settings_cloud_ai_summary">When online, sends masked text to the department gateway for reports and suggestions. Off by default; the phone works the same without a connection.</string>
     <string name="settings_cloud_ai_key">Enrolment code</string>
@@ -232,10 +252,8 @@
     <string name="cloud_notice_title">Send text to the department gateway?</string>
     <string name="cloud_notice_body">While this is on and the phone is online, session text goes to the department gateway, which passes it to an AI service. The subject\'s names are replaced with \"Ravi\" and phone numbers are masked before sending; the real names are put back on this phone. Words the officer types as notes are not checked, so avoid names there. If the service cannot be reached, the on-device version is used.</string>
     <string name="cloud_notice_accept">I understand, turn on</string>
-    <string name="menu_ai_report">Extract police report</string>
-    <string name="ai_preparing">Preparing report…</string>
-    <string name="settings_isl_reorder">ISL word order</string>
-    <string name="settings_isl_reorder_summary">Signs puts time first and the question word last; off signs words as typed</string>
+    <string name="settings_isl_reorder">Sign in ISL order</string>
+    <string name="settings_isl_reorder_summary">Typed sentences are reordered into ISL grammar, time first and the question word last, before the character signs them. Off: words are signed exactly as typed.</string>
     <string name="settings_lang_system">Same as the phone</string>
     <string name="lang_english">English</string>
     <string name="lang_hindi">हिन्दी</string>
@@ -255,10 +273,6 @@
     <string name="mode_spell">Spell</string>
     <string name="mode_pictures">Pictures</string>
     <!-- Handover -->
-    <string name="settings_tilt">Tilt to show</string>
-    <string name="settings_tilt_summary">Tip the top of the phone away from you, over toward the person, to show what is ready. The screen turns to face them.</string>
-    <string name="settings_volume_keys">Volume keys</string>
-    <string name="settings_volume_keys_summary">Volume up shows what is ready. On the stage, hold both volume keys to come back; single presses do nothing.</string>
     <string name="chat_empty_title">Start the conversation</string>
     <string name="chat_empty_body">Pick a question below or type anything. What you show and their answers appear here.</string>
     <string name="chat_ready">Ready to show</string>
@@ -378,6 +392,7 @@
     <string name="stage_break">Take a break. The officer knows.</string>
     <string name="write_count">%1$d / %2$d</string>
     <string name="log_link">Second screen</string>
+    <string name="log_request">Asked for</string>
     <string name="link_connected">Second screen connected</string>
     <string name="link_code_verified">Code checked</string>
     <string name="link_lost">Second screen lost</string>
@@ -399,13 +414,11 @@
     <string name="conv_auto">Auto</string>
     <string name="conv_show">Show</string>
     <string name="conv_skip">Skip</string>
-    <string name="conv_pause">Pause</string>
     <string name="conv_resume">Resume</string>
     <string name="conv_wrap_up">Wrap up</string>
     <string name="conv_switch_manual">Switch to Manual</string>
     <string name="conv_source_rule">Rule order</string>
     <string name="conv_phase_step">%1$s · step %2$d of %3$d</string>
-    <string name="conv_auto_greetings">Show greetings and rules automatically</string>
     <string name="conv_tag_approved">App-suggested · you approved</string>
     <string name="conv_tag_auto">Shown automatically</string>
     <string name="conv_paused_stop">Auto paused: the person tapped Stop</string>
@@ -436,8 +449,6 @@
     <string name="sys_auto_resumed">Auto resumed</string>
     <string name="sys_auto_wrap_up">Wrapping up</string>
     <string name="sys_auto_ended_stop">Auto ended after a second Stop</string>
-    <string name="sys_auto_advance_on">Greetings and rules shown automatically</string>
-    <string name="sys_auto_advance_off">Greetings and rules need the officer\'s tap</string>
     <string name="sys_auto_break">The person asked for a break</string>
     <string name="report_mode">Conversation mode</string>
     <string name="report_mode_manual">Manual</string>
@@ -448,21 +459,17 @@
     <string name="report_by_auto">Shown automatically (greeting or rule)</string>
     <string name="report_by_officer">Officer\'s own item</string>
     <string name="report_not_acted">not acted on</string>
-    <string name="settings_allow_auto">Allow automatic conversation on this phone</string>
-    <string name="settings_allow_auto_summary">Suggests welfare questions in rule order from the reviewed question bank. You approve each one.</string>
     <!-- Input ingestion: narrative window and subject choice -->
     <string name="tell_me">Tell me</string>
     <string name="tell_me_long">Tell me: up to 3 minutes of signing</string>
     <string name="signed_ask">Ask them to choose</string>
     <string name="signed_ask_none">No sign has two meanings to choose from. Show a question with answer pictures, then read the signs.</string>
     <string name="signed_ask_hint">They see two or three pictures and \"none of these\". Only their tap records the meaning.</string>
-    <!-- Stage: answer strip, opening, pause, glance strip, sun mode -->
+    <!-- Stage: answer strip, opening, pause -->
     <string name="show_pace">Change signing speed (now %1$s)</string>
     <string name="word_replay">Replay this word</string>
     <string name="pause_ready">I\'m ready</string>
     <string name="pause_ended">Pause ended after %1$d s</string>
-    <string name="glance_label">For the officer</string>
-    <string name="glance_hide">Hide officer strip</string>
     <string name="officer_rules">Ground rules and practice</string>
     <string name="isl_dictionary">ISL dictionary</string>
     <string name="asl_dictionary">ASL dictionary</string>
@@ -481,7 +488,6 @@
     <string name="isl_dictionary_draft_tag">Draft</string>
     <string name="isl_dictionary_attribution">Recorded signs are adapted from the INCLUDE dataset by AI4Bharat (Sridhar et al., 2020), licensed CC BY 4.0, and from the ISLRTC Indian Sign Language Dictionary (Government of India), Government Open Data License - India.</string>
     <string name="rules_skipped">Officer skipped the rest of the ground rules</string>
-    <string name="officer_sun">Sun mode (high contrast)</string>
     <string name="stage_dont_know">I don\'t know</string>
     <string name="stage_dont_understand">I don\'t understand</string>
     <string name="stage_wrong">That\'s wrong</string>
@@ -564,8 +570,6 @@
     <string name="call_r_unsure">Not sure</string>
     <string name="call_r_water">Water</string>
     <string name="call_r_food">Food</string>
-    <string name="ai_report_title">Draft report</string>
-    <string name="ai_report_note">A draft from the session record. Check every line against the record before use.</string>
     <string name="ai_followups_title">Suggested follow-up questions (non-leading)</string>
     <string name="call_skeleton_on">Skeleton</string>
     <string name="call_skeleton_off">Camera</string>
@@ -620,7 +624,6 @@
     <string name="cloud_consent_body_direct">The session log, with the names this phone knows masked, goes to an outside AI service to write a draft. Allow this for the rest of the session?</string>
     <string name="cloud_consent_body">The session log, with the names this phone knows masked, goes to the department gateway to write a draft. Allow this for the rest of the session?</string>
     <string name="cloud_consent_allow">Allow</string>
-    <string name="ai_report_attach">Attach to export as a draft</string>
     <string name="wrap_name">Save as</string>
     <string name="wrap_rooted_note">This phone looks rooted, so no history is kept. Finishing deletes the session. Export a report first if you need one.</string>
     <string name="leave_title">Leave this session?</string>

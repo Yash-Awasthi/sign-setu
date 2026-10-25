@@ -27,8 +27,6 @@ object AutoKey {
     const val RESUMED = "auto_resumed"
     const val WRAP_UP = "auto_wrap_up"
     const val ENDED_STOP = "auto_ended_stop"
-    const val ADVANCE_ON = "auto_advance_on"
-    const val ADVANCE_OFF = "auto_advance_off"
     const val BREAK = "auto_break"
 }
 
@@ -101,19 +99,6 @@ fun phaseStep(content: ContentBundle, role: Role, events: List<SessionEvent>, q:
     return (shown + 1).coerceAtMost(inPhase.size) to inPhase.size
 }
 
-/** A statement may follow a statement on the subject's own Next tap, three at most in a row; any question hands back. */
-fun autoAdvanceAllowed(from: Question, answer: SessionEvent?, to: Question, subjectLang: String, chained: Int): Boolean =
-    from.kind == Kind.STATEMENT && to.kind == Kind.STATEMENT &&
-        (answer == null || !(answer.isStop() || answer.isUnsure() || answer.type == EventType.ANSWER_SIGNED)) &&
-        to.text[subjectLang] != null && chained < 3
-
-/** The last answer to the last bank item shown, and that item: what auto mode reacts to. */
-fun lastShownAnswer(content: ContentBundle, events: List<SessionEvent>): Pair<Question, SessionEvent?>? {
-    val log = SessionLog(content, events)
-    val row = log.rows.lastOrNull() ?: return null
-    val q = content.question(row.itemId ?: return null) ?: return null
-    return q to log.answers(row).lastOrNull()
-}
 
 private class SessionLog(val content: ContentBundle, val events: List<SessionEvent>) {
     val rows = events.filter { it.type == EventType.QUESTION_SHOWN && it.itemId != null }

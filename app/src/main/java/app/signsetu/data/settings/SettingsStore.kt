@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -18,6 +19,12 @@ import kotlinx.coroutines.flow.map
 
 enum class InterpreterApp { NONE, WHATSAPP, SANDES }
 
+/** SYSTEM follows the phone and is the default; the officer can pin Light or Dark. */
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+/** The officer-side colour theme; each has a light and a dark form. */
+enum class ColorTheme { EMERALD, MOCHA, SAGE, CERULEAN, AMETHYST, AMOLED, CONTRAST }
+
 /** Settings hold no personal data about any subject. */
 @Immutable
 data class AppSettings(
@@ -26,24 +33,18 @@ data class AppSettings(
     val interpreterApp: InterpreterApp = InterpreterApp.NONE,
     /** A phone number or contact name given by the department; never a subject's details. */
     val interpreterContact: String = "",
-    /** Start time of the newest session; lets the purge worker shred everything without the officer's key. */
+    /** Latest session activity; lets the retention sweep shred everything without the officer's key. */
     val newestSessionAt: Long = 0L,
     /** The live mirror on the stage; a department can turn it off. */
     val cameraEnabled: Boolean = true,
-    /** Larger captions on the stage, for people who read slowly. */
-    val largeCaptions: Boolean = false,
-    /** Gestures play at three-quarter speed by default. */
-    val slowGestures: Boolean = false,
-    /** Tipping the phone over its top edge shows what is prepared. */
-    val tiltToShow: Boolean = true,
-    /** Volume up shows what is prepared; both keys held leave the stage. */
-    val volumeKeys: Boolean = true,
+    /** The character's signing speed, 0.25 to 1.5; the subject can change it on the stage. */
+    val gestureSpeed: Float = 1f,
+    /** Officer-side screens skip non-sign animation; the character's signs always play. */
+    val reduceMotion: Boolean = false,
     /** Picture-board cards the officer starred; card IDs only. */
     val favourites: Set<String> = emptySet(),
     /** This device has served as a second screen; it never offers to unlock by itself, so a subject cannot open it. */
     val stageDevice: Boolean = false,
-    /** Auto mode proposes welfare items in rule order; off unless a department allows it. */
-    val allowAuto: Boolean = false,
     /** Signs reorders typed words into ISL order; off keeps them as typed, until Deaf reviewers confirm the rules. */
     val islReorder: Boolean = true,
     /** Sends masked session text to the department gateway while online; off until the officer accepts the notice. */
@@ -51,6 +52,8 @@ data class AppSettings(
     /** Developer settings: an OpenAI-style service the officer's phone talks to instead of the build's own; its key is kept apart, in the Keystore. */
     val devAiUrl: String = "",
     val devAiModel: String = "",
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val colorTheme: ColorTheme = ColorTheme.EMERALD,
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -78,17 +81,16 @@ class SettingsStore(private val context: Context) {
         val interpreterContact = stringPreferencesKey("interpreter_contact")
         val newestSession = longPreferencesKey("newest_session_at")
         val camera = booleanPreferencesKey("camera_enabled")
-        val largeCaptions = booleanPreferencesKey("large_captions")
-        val slowGestures = booleanPreferencesKey("slow_gestures")
-        val tiltToShow = booleanPreferencesKey("tilt_to_show")
-        val volumeKeys = booleanPreferencesKey("volume_keys")
+        val gestureSpeed = floatPreferencesKey("gesture_speed")
+        val reduceMotion = booleanPreferencesKey("reduce_motion")
         val favourites = stringSetPreferencesKey("favourites")
         val stageDevice = booleanPreferencesKey("stage_device")
-        val allowAuto = booleanPreferencesKey("allow_auto")
         val islReorder = booleanPreferencesKey("isl_reorder")
         val cloudAi = booleanPreferencesKey("cloud_ai")
         val devAiUrl = stringPreferencesKey("dev_ai_url")
         val devAiModel = stringPreferencesKey("dev_ai_model")
+        val themeMode = stringPreferencesKey("theme_mode")
+        val colorTheme = stringPreferencesKey("color_theme")
     }
 
     val settings: Flow<AppSettings> = context.store.data.map { it.toSettings() }
@@ -103,18 +105,17 @@ class SettingsStore(private val context: Context) {
     }
     suspend fun setNewestSessionAt(time: Long) = context.store.edit { it[Keys.newestSession] = time }
     suspend fun setCameraEnabled(on: Boolean) = context.store.edit { it[Keys.camera] = on }
-    suspend fun setLargeCaptions(on: Boolean) = context.store.edit { it[Keys.largeCaptions] = on }
-    suspend fun setSlowGestures(on: Boolean) = context.store.edit { it[Keys.slowGestures] = on }
+    suspend fun setGestureSpeed(speed: Float) = context.store.edit { it[Keys.gestureSpeed] = speed }
+    suspend fun setReduceMotion(on: Boolean) = context.store.edit { it[Keys.reduceMotion] = on }
     suspend fun setStageDevice() = context.store.edit { it[Keys.stageDevice] = true }
-    suspend fun setAllowAuto(on: Boolean) = context.store.edit { it[Keys.allowAuto] = on }
     suspend fun setIslReorder(on: Boolean) = context.store.edit { it[Keys.islReorder] = on }
     suspend fun setCloudAi(on: Boolean) = context.store.edit { it[Keys.cloudAi] = on }
     suspend fun setDevAi(url: String, model: String) = context.store.edit {
         it[Keys.devAiUrl] = url.trim()
         it[Keys.devAiModel] = model.trim()
     }
-    suspend fun setTiltToShow(on: Boolean) = context.store.edit { it[Keys.tiltToShow] = on }
-    suspend fun setVolumeKeys(on: Boolean) = context.store.edit { it[Keys.volumeKeys] = on }
+    suspend fun setThemeMode(mode: ThemeMode) = context.store.edit { it[Keys.themeMode] = mode.name }
+    suspend fun setColorTheme(theme: ColorTheme) = context.store.edit { it[Keys.colorTheme] = theme.name }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -127,17 +128,16 @@ class SettingsStore(private val context: Context) {
         interpreterContact = this[Keys.interpreterContact] ?: "",
         newestSessionAt = this[Keys.newestSession] ?: 0L,
         cameraEnabled = this[Keys.camera] ?: true,
-        largeCaptions = this[Keys.largeCaptions] ?: false,
-        slowGestures = this[Keys.slowGestures] ?: false,
-        tiltToShow = this[Keys.tiltToShow] ?: true,
-        volumeKeys = this[Keys.volumeKeys] ?: true,
+        gestureSpeed = this[Keys.gestureSpeed] ?: 1f,
+        reduceMotion = this[Keys.reduceMotion] ?: false,
         favourites = this[Keys.favourites].orEmpty(),
         stageDevice = this[Keys.stageDevice] ?: false,
-        allowAuto = this[Keys.allowAuto] ?: false,
         islReorder = this[Keys.islReorder] ?: true,
         cloudAi = this[Keys.cloudAi] ?: false,
         devAiUrl = this[Keys.devAiUrl] ?: "",
         devAiModel = this[Keys.devAiModel] ?: "",
+        themeMode = this[Keys.themeMode]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,
+        colorTheme = this[Keys.colorTheme]?.let { runCatching { ColorTheme.valueOf(it) }.getOrNull() } ?: ColorTheme.EMERALD,
     )
 }
 

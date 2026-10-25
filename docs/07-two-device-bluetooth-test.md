@@ -1,4 +1,4 @@
-# 08. Bluetooth Two-Device Acceptance Testing Protocol
+# 07. Bluetooth Two-Device Acceptance Testing Protocol
 
 ## 1. Scope & Objective
 
@@ -14,7 +14,7 @@ This document establishes the official test cases, acceptance criteria, and phys
 
 ## 2. Test Case Specifications
 
-### 1: Bonded RFCOMM Pairing without Scan/Location Permissions
+### 2.1 Bonded RFCOMM Pairing without Scan/Location Permissions
 - **Principle:** Android 12+ requires runtime `BLUETOOTH_SCAN` and `ACCESS_FINE_LOCATION` only when discovering unbonded devices. Sign Setu uses pre-bonded devices via Android OS settings (`BluetoothAdapter.bondedDevices`), completely eliminating location tracking or discovery permissions from the release manifest.
 - **Preconditions:** Officer phone and Stage phone are paired and bonded in Android OS Bluetooth Settings.
 - **Procedure:**
@@ -25,19 +25,19 @@ This document establishes the official test cases, acceptance criteria, and phys
 
 ---
 
-### 2: Commit-Then-Reveal Cryptographic Handshake & PIN Verification
+### 2.2 Commit-Then-Reveal Cryptographic Handshake & PIN Verification
 - **Principle:** Neither side should be able to force a predictable confirmation PIN. The Officer device commits to its public key hash first before receiving the Stage's public key.
 - **Procedure:**
   1. Trigger pairing from Officer device.
-  2. Both devices compute and display a 6-digit confirmation code (`%06d`) and a 4-digit verification check code (`%04d`).
-  3. Officer visually compares both screens and taps "Confirm Match".
+  2. The Stage device shows a 6-digit code (`%06d`); the officer types it on the Officer phone. Three wrong codes close the link.
+  3. Both screens then show the same 4-digit check number (`%04d`); the officer compares them and taps Match on the Stage device.
 - **Acceptance Gate:**
-  - 6-digit PIN and 4-digit check code match identically on both screens.
+  - The typed 6-digit code is accepted and the 4-digit check number matches on both screens.
   - If rejected or cancelled, both devices immediately discard temporary keys and return to their prior state.
 
 ---
 
-### 3: Real-Time Event Transmission & Stage Responsiveness
+### 2.3 Real-Time Event Transmission & Stage Responsiveness
 - **Procedure:**
   1. Establish active link between Officer and Stage devices.
   2. Officer selects a question card (e.g., "WATER", "FOOD", "FAMILY").
@@ -49,7 +49,7 @@ This document establishes the official test cases, acceptance criteria, and phys
 
 ---
 
-### 4: Ephemeral Zero-Data Security Audit on Stage Device
+### 2.4 Ephemeral Zero-Data Security Audit on Stage Device
 - **Principle:** If the Stage device is stolen, dropped, or examined forensically, **zero case data or subject answers must exist on its flash memory**.
 - **Audit Procedure:**
   1. Complete a 15-minute mock interview with 20 questions, cards, and drawings on the two-device setup.
@@ -67,12 +67,12 @@ This document establishes the official test cases, acceptance criteria, and phys
 
 ---
 
-### 5: Connection Interruption, Recovery & Graceful Fallback
+### 2.5 Connection Interruption, Recovery & Graceful Fallback
 - **Procedure:**
   1. While a question is active on Stage device, walk Officer phone out of Bluetooth range (> 15 meters) or toggle Bluetooth OFF on Stage device.
   2. Observe state on Officer phone.
   3. Walk back into range or toggle Bluetooth back ON.
 - **Acceptance Gate:**
-  - Officer phone detects link drop within 3 seconds, displays non-blocking "Stage Link Lost" banner, and provides "Resume" or "Fallback to Single Phone" option.
-  - Tapping "Fallback" seamlessly migrates the session back to the Officer phone's screen without losing any previously recorded events.
-  - Tapping "Resume" automatically resynchronizes the link using the established `resumeKey` without requiring a fresh 6-digit PIN handshake.
+  - A broken connection is detected at once; a silent one after 30 s with no frame (pings every 10 s). The officer phone then offers **Reconnect** and **Use this phone**.
+  - **Use this phone** moves what was on the stage to the officer phone's own stage without losing any recorded event.
+  - **Reconnect** within 120 s resumes with the resume key and needs no new 6-digit code; after that the devices pair again.

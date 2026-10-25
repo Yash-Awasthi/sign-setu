@@ -120,7 +120,6 @@ fun Stage(
     content: ContentBundle,
     tracker: LandmarkTracker?,
     cameraOn: Boolean,
-    largeCaptions: Boolean,
     gestureSpeed: Float,
     onCard: (String) -> Unit,
     onYesNo: (Boolean) -> Unit,
@@ -133,14 +132,16 @@ fun Stage(
     /** Null on a second screen, whose only exit is its own cover and end screens. */
     onOfficer: (() -> Unit)?,
     /** Auto mode's next statement, offered only on the subject's own tap. */
-    onNext: (() -> Unit)? = null,
     onSignChoice: (SignChoice?) -> Unit = {},
     onNextRule: () -> Unit = {},
+    nextIn: Int? = null,
     onPauseEnd: () -> Unit = {},
     /** Lesson-sheet answers and phrases (LessonInputs.kt); null hides them. */
     onGiven: ((Given?) -> Unit)? = null,
     /** Called just before a tap that matches a gesture proposal: nod, shake, point or palm. */
     onCue: (String) -> Unit = {},
+    /** Water or food the subject asks for by themselves; a second screen sends it as a card. */
+    onNeed: (String) -> Unit = onCard,
 ) {
     val stage = LocalStageColors.current
     val lang = ui.session.subjectLang
@@ -288,7 +289,9 @@ fun Stage(
     }
 
     // The call view is the stage; pictures, drawing, writing, lessons and the language finder keep their own panels.
-    if (!drawing && !writing && pending != Pending.LanguageFinder && choices == null && lesson == null && item.choices.isEmpty() && !item.canDraw) {
+    // The opening needs its Next, and a right must never sit over a Yes that would read as a waiver, so both keep the full stage.
+    val rights = (pending as? Pending.Ask)?.question?.let(content::isRights) == true
+    if (rule == null && !rights && !drawing && !writing && pending != Pending.LanguageFinder && choices == null && lesson == null && item.choices.isEmpty() && !item.canDraw) {
         Box(Modifier.fillMaxSize()) {
             VideoCallStage(
                 ui = ui,
@@ -300,7 +303,10 @@ fun Stage(
                 onStartSigning = onStartSigning,
                 onOpenExpressBoard = { showExpressBoard = true },
                 onCue = onCue,
-                modifier = Modifier.fillMaxSize().then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),
+                onNeed = onNeed,
+                cameraOn = cameraOn,
+                modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
+                    .then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),
             )
             if (showExpressBoard && !paused) {
                 FullChildMuteCommunicationBoard(
@@ -312,7 +318,8 @@ fun Stage(
                 )
             }
             if (paused) pauseLayer()
-            onOfficer?.let { OfficerHandle(it, Modifier.align(if (ui.rotated) Alignment.BottomStart else Alignment.TopEnd).safeDrawingPadding()) }
+            onOfficer?.let { OfficerHandleLayer(it, Modifier.align(if (ui.rotated) Alignment.BottomEnd else Alignment.TopStart).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) }
+            nextIn?.let { AutoNextChip(it, Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) }
         }
         return
     }
@@ -363,8 +370,6 @@ fun Stage(
                     )
                     val sensitiveGroups = remember(content) { content.groups.filter { it.sensitive }.map { it.id } }
                     val sensitive = (pending as? Pending.Ask)?.question?.group in sensitiveGroups
-                    val glance = remember(ui.events, content) { glanceText(ui.events) { content.question(it)?.answer != null } }
-                        ?.takeIf { !StagePace.glanceHidden.value && !sensitive && !drawing && !writing }
                     val onWordTap: ((Int) -> Unit)? = when {
                         pending is Pending.FreeText && highlightable && plan != null -> { offset ->
                             beatAt(plan.beats, offset)?.let { b ->
@@ -374,7 +379,7 @@ fun Stage(
                         pending is Pending.Ask || pending is Pending.PhraseAsk || rule != null -> { _ -> replays++; audio?.let { speech.play(it, audioRate(pace)) } }
                         else -> null
                     }
-                    val captionTop = if (glance != null) 44.dp else 12.dp
+                    val captionTop = 12.dp
                     AnimatedContent(
                         targetState = caption,
                         transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.92f)) togetherWith fadeOut() },
@@ -386,7 +391,7 @@ fun Stage(
                         if (text != null) {
                             val own = text == item.caption
                             Bubble(
-                                text, large = largeCaptions, compact = !roomy,
+                                text, compact = !roomy,
                                 highlight = (focus?.range ?: beat?.range)?.takeIf { highlightable && own },
                                 onWordTap = onWordTap?.takeIf { own },
                             )
@@ -432,8 +437,7 @@ fun Stage(
                             modifier = Modifier.align(Alignment.CenterStart).padding(start = Spacing.lg),
                         )
                     }
-                    if (onGiven != null && !signing && !saying) SayButton(content, lang, { saying = true }, Modifier.align(Alignment.TopStart).padding(start = 4.dp, top = if (glance != null) 44.dp else 4.dp))
-                    glance?.let { GlanceStrip(it, onHide = { StagePace.glanceHidden.value = true }, Modifier.align(Alignment.TopCenter)) }
+                    if (onGiven != null && !signing && !saying) SayButton(content, lang, { saying = true }, Modifier.align(Alignment.TopStart).padding(start = 4.dp, top = 4.dp))
                 }
             }
             }
@@ -534,8 +538,7 @@ fun Stage(
                                 if (signing) {
                                     RailIcon(Icons.Filled.Check, content.subjectText("done", lang), stringResource(R.string.stage_done), answer.yes, answer.onYes) { onDoneSigning(); reacting = true }
                                 } else {
-                                    val next = if (rule != null) onNextRule else onNext
-                                    next?.let { RailIcon(Icons.AutoMirrored.Filled.ArrowForward, content.subjectText("next", lang), stringResource(R.string.stage_next), answer.yes, answer.onYes, onClick = it) }
+                                    if (rule != null) onNextRule.let { RailIcon(Icons.AutoMirrored.Filled.ArrowForward, content.subjectText("next", lang), stringResource(R.string.stage_next), answer.yes, answer.onYes, onClick = it) }
                                     if (asks && !openEnded) {
                                         RailIcon(Icons.Filled.Close, content.subjectText("no", lang), stringResource(R.string.show_no), answer.no, answer.onNo, ui.answeredYes == false, proposed = nodded == false) {
                                             if (nodded == false) onCue("shake")
@@ -576,7 +579,8 @@ fun Stage(
                 onDismiss = { showExpressBoard = false },
             )
         }
-        onOfficer?.let { OfficerHandle(it, Modifier.align(if (ui.rotated) Alignment.BottomStart else Alignment.TopEnd).safeDrawingPadding()) }
+        onOfficer?.let { OfficerHandleLayer(it, Modifier.align(if (ui.rotated) Alignment.BottomEnd else Alignment.TopStart).safeDrawingPadding()) }
+        nextIn?.let { AutoNextChip(it, Modifier.align(Alignment.TopCenter).safeDrawingPadding()) }
         }
     }
 }

@@ -33,7 +33,6 @@ data class StageView(
     val live: Boolean,
     val item: WirePending?,
     val rotated: Boolean,
-    val largeCaptions: Boolean,
     val gestureSpeed: Float,
     val cameraOn: Boolean,
     val signLanguage: String = "ISL",

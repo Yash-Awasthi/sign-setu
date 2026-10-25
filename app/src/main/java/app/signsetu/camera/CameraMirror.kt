@@ -86,6 +86,8 @@ fun CameraMirror(
     handColor: Color = Color(0xFFFFC56B),
     showFace: Boolean = false,
     showSkeleton: Boolean = true,
+    /** Crop to fill the view instead of letterboxing, for the full-screen self view. */
+    fill: Boolean = false,
     /** A nod or shake, on the analysis thread; the stage treats it as a proposal, never an answer. */
     onHead: ((Head) -> Unit)? = null,
     /** A body part pointed at, as a card id; also only a proposal. */
@@ -224,7 +226,7 @@ fun CameraMirror(
     val labels = rememberTextMeasurer()
     Box(modifier) {
         // TextureView-backed, so the rounded window around it clips the picture. Fit: the subject sees all the camera sees.
-        CameraXViewfinder(surface, Modifier.fillMaxSize(), implementationMode = ImplementationMode.EMBEDDED, contentScale = ContentScale.Fit)
+        CameraXViewfinder(surface, Modifier.fillMaxSize(), implementationMode = ImplementationMode.EMBEDDED, contentScale = if (fill) ContentScale.Crop else ContentScale.Fit)
         // Landmarks are read in the draw phase only, so each analysed frame redraws this canvas without recomposing.
         Canvas(Modifier.fillMaxSize()) {
             if (!showSkeleton || !SkeletonOverlay.on.value) return@Canvas
@@ -242,14 +244,14 @@ fun CameraMirror(
                 }, guide, style = line)
             }
             val seen = shown ?: return@Canvas
-            drawLandmarks(seen, front, analysing, showFace, handColor, labels)
+            drawLandmarks(seen, front, analysing, showFace, handColor, labels, fill)
         }
     }
 }
 
 /** The traced skeleton, brows and lips of [seen] over a frame drawn Fit and centred; the camera overlay and its device test both draw this. */
-internal fun DrawScope.drawLandmarks(seen: LandmarkFrame, front: Boolean, analysing: Boolean, showFace: Boolean, handColor: Color, labels: TextMeasurer) {
-    fun map(p: Offset) = overlayPoint(p, seen.aspect, size.width, size.height, front)
+internal fun DrawScope.drawLandmarks(seen: LandmarkFrame, front: Boolean, analysing: Boolean, showFace: Boolean, handColor: Color, labels: TextMeasurer, fill: Boolean = false) {
+    fun map(p: Offset) = overlayPoint(p, seen.aspect, size.width, size.height, front, crop = fill)
     val a = map(Offset.Zero)
     val b = map(Offset(1f, 1f))
     val stroke = max(4f, size.minDimension / 90f)
@@ -329,7 +331,7 @@ internal fun labelledHands(frame: LandmarkFrame): List<Pair<String, List<Offset>
 
 /** Where a normalised landmark lands in a [viewW] x [viewH] view showing the frame letterboxed (Fit) and
  * centred. */
-internal fun overlayPoint(p: Offset, frameAspect: Float, viewW: Float, viewH: Float, mirrored: Boolean, rotation: Int = 0): Offset {
+internal fun overlayPoint(p: Offset, frameAspect: Float, viewW: Float, viewH: Float, mirrored: Boolean, rotation: Int = 0, crop: Boolean = false): Offset {
     val (x, y) = when (rotation.mod(360)) {
         90 -> 1f - p.y to p.x
         180 -> 1f - p.x to 1f - p.y
@@ -337,7 +339,7 @@ internal fun overlayPoint(p: Offset, frameAspect: Float, viewW: Float, viewH: Fl
         else -> p.x to p.y
     }
     val aspect = if (rotation.mod(180) == 0) frameAspect else 1f / frameAspect
-    val w = minOf(viewW, viewH * aspect)
+    val w = if (crop) maxOf(viewW, viewH * aspect) else minOf(viewW, viewH * aspect)
     val h = w / aspect
     return Offset((viewW - w) / 2f + (if (mirrored) 1f - x else x) * w, (viewH - h) / 2f + y * h)
 }

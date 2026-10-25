@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import app.signsetu.BuildConfig
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -28,6 +30,8 @@ class UrlHttp : Http {
         val bytes = body?.toByteArray()
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = method
+            // The bearer token is for this host alone; an API has no reason to redirect.
+            instanceFollowRedirects = false
             connectTimeout = minOf(10_000, timeoutMs)
             // A full report from the free gateway model takes 30 to 45 s; the officer waits behind a progress dialog.
             readTimeout = timeoutMs
@@ -44,13 +48,28 @@ class UrlHttp : Http {
         return try {
             bytes?.let { conn.outputStream.use { o -> o.write(it) } }
             val stream = if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream
-            Reply(conn.responseCode, stream?.use { it.readBytes().decodeToString() }.orEmpty())
+            // Replies are a line of text or a short JSON object; a larger body is cut rather than filling memory.
+            Reply(conn.responseCode, stream?.use { it.readCapped(MAX_REPLY_BYTES).decodeToString() }.orEmpty())
         } catch (e: java.io.IOException) {
             null
         } finally {
             conn.disconnect()
         }
     }
+}
+
+private const val MAX_REPLY_BYTES = 1 shl 20
+
+// InputStream.readNBytes needs API 33; minSdk is 29.
+private fun InputStream.readCapped(max: Int): ByteArray {
+    val out = ByteArrayOutputStream()
+    val buffer = ByteArray(8 * 1024)
+    while (out.size() < max) {
+        val n = read(buffer, 0, minOf(buffer.size, max - out.size()))
+        if (n < 0) break
+        out.write(buffer, 0, n)
+    }
+    return out.toByteArray()
 }
 
 /** A network with working internet, not just a connected one: captive portals fail this. */

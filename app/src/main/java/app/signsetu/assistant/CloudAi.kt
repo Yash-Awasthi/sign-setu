@@ -133,7 +133,13 @@ class CloudAi(
         return true
     }
 
-    suspend fun ask(system: String, user: String, names: Collection<String>, maxTokens: Int = 800, details: Collection<String> = emptyList()): String? {
+    /** A sleeping free-tier gateway takes tens of seconds to wake; a ping at session start does it before the officer needs a caption. */
+    suspend fun warmUp() {
+        if (!viaGateway || !available || !enabled()) return
+        withContext(Dispatchers.IO) { runCatching { http.call("GET", "$base/healthz", null, null, WARM_TIMEOUT_MS) } }
+    }
+
+    suspend fun ask(system: String, user: String, names: Collection<String>, maxTokens: Int = 800, details: Collection<String> = emptyList(), timeoutMs: Int = 60_000, retry: Boolean = true): String? {
         if (!available || !enabled()) return null
         // Keystore decryption and the token file are disk work; never do them on the caller's UI thread.
         val d = direct
@@ -142,7 +148,7 @@ class CloudAi(
         val mask = Pseudonymizer(names, details)
         suspend fun once(): Reply? = withContext(Dispatchers.IO) {
             runCatching {
-                if (viaGateway) http.call("POST", "$base/v1/assist", json.encodeToString(AssistReq.serializer(), AssistReq(system, mask.mask(user), maxTokens)), token)
+                if (viaGateway) http.call("POST", "$base/v1/assist", json.encodeToString(AssistReq.serializer(), AssistReq(system, mask.mask(user), maxTokens)), token, timeoutMs)
                 // A reasoning model spends the first tokens on thinking, so a short reply budget is all thinking
                 // and no answer; the floor leaves room for the answer itself. Output stays as short as it likes.
                 else if (d!!.responses) http.call(
@@ -150,15 +156,16 @@ class CloudAi(
                     d.url,
                     json.encodeToString(ResponsesReq.serializer(), ResponsesReq(d.model, system, mask.mask(user), maxOf(maxTokens, DIRECT_MIN_TOKENS))),
                     token,
+                    timeoutMs,
                 )
-                else http.call("POST", d.url, json.encodeToString(ChatReq.serializer(), ChatReq(d.model, listOf(Msg("system", system), Msg("user", mask.mask(user))), 0.2, maxOf(maxTokens, DIRECT_MIN_TOKENS), "low".takeIf { "api.groq.com" in d.url })), token)
+                else http.call("POST", d.url, json.encodeToString(ChatReq.serializer(), ChatReq(d.model, listOf(Msg("system", system), Msg("user", mask.mask(user))), 0.2, maxOf(maxTokens, DIRECT_MIN_TOKENS), "low".takeIf { "api.groq.com" in d.url })), token, timeoutMs)
             }.getOrNull()
         }
         // A busy free service sometimes answers with nothing; one retry keeps a conversation going. A refused key,
         // a bad model name or a malformed request will not change on a second try, so those are not retried.
         var reply = once()
         val worthRetrying = reply == null || reply.code == 429 || reply.code >= 500
-        if (reply?.ok != true && worthRetrying) {
+        if (reply?.ok != true && worthRetrying && retry) {
             delay(if (reply?.code == 429) 6_000 else 1_500)
             reply = once()
         }
@@ -195,6 +202,7 @@ class CloudAi(
 
     private companion object {
         const val ENROLL_TIMEOUT_MS = 15_000
+        const val WARM_TIMEOUT_MS = 60_000
 
         /** Enough for a reasoning model's thinking plus the short answer the app asks for; the thinking grows with the
          * conversation, so this leaves twice the room a short turn needs. */

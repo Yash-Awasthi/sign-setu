@@ -110,6 +110,7 @@
     <string name="stage_proposed">सुझाया गया</string>
     <string name="show_replay">फिर से दिखाएँ</string>
 
+    <string name="wrap_include_summary">रिपोर्ट में AI सारांश का मसौदा जोड़ें (छिपाया हुआ पाठ ऑनलाइन भेजा जाता है)</string>
     <string name="end_export">रिपोर्ट निर्यात करें</string>
     <string name="export_working">एन्क्रिप्टेड रिपोर्ट तैयार हो रही है…</string>
     <string name="export_title">रिपोर्ट तैयार</string>
@@ -152,6 +153,18 @@
         <item quantity="other">%1$d घंटे</item>
     </plurals>
     <string name="settings_retention_note">इससे पुराने सत्र मिट जाते हैं, भले ही किसी ने उन्हें खत्म न किया हो।</string>
+    <string name="settings_theme">रूप</string>
+    <string name="settings_color_theme">रंग थीम</string>
+    <string name="theme_emerald">पन्ना</string>
+    <string name="theme_mocha">मोचा</string>
+    <string name="theme_sage">सेज</string>
+    <string name="theme_cerulean">आसमानी</string>
+    <string name="theme_amethyst">जामुनी</string>
+    <string name="theme_amoled">AMOLED काला</string>
+    <string name="theme_contrast">उच्च कंट्रास्ट</string>
+    <string name="settings_theme_system">डिवाइस डिफ़ॉल्ट</string>
+    <string name="settings_theme_light">लाइट</string>
+    <string name="settings_theme_dark">डार्क</string>
     <string name="settings_app_language">ऐप की भाषा</string>
     <string name="settings_clear">सारा डेटा मिटाएँ</string>
     <string name="settings_clear_summary">एन्क्रिप्शन कुंजी नष्ट हो जाती है। इस फ़ोन का कोई भी सत्र पढ़ा नहीं जा सकेगा।</string>
@@ -174,10 +187,16 @@
     <string name="intro_done">शुरू करें</string>
     <string name="intro_aid_title">बातचीत में मदद करने वाला ऐप</string>
     <string name="intro_aid_body">साइन सेतु छोटे बच्चों, बधिर लोगों और दूसरी भाषा बोलने वालों से बात करने में मदद करता है: तस्वीरें, कैप्शन, रिकॉर्ड की गई आवाज़ और इशारे।\n\nयह दुभाषिया नहीं है। जो बात बयान बनेगी, उसके लिए योग्य दुभाषिया बुलाएँ।</string>
-    <string name="intro_delete_title">चैट 24 घंटे बाद हट जाती है</string>
-    <string name="intro_delete_body">हर सत्र शुरू होने के 24 घंटे बाद इस फ़ोन से हट जाता है, चाहे किसी ने उसे खत्म न किया हो। इसमें चैट, जवाब और पढ़े गए इशारे शामिल हैं।\n\nकुछ रखना हो तो उससे पहले रिपोर्ट एक्सपोर्ट कर लें। यह समय, या सत्र हटाए जाने तक रखना, सेटिंग में सत्र रिकॉर्ड के नीचे बदला जा सकता है।</string>
+    <string name="intro_delete_title">सत्र 24 घंटे बाद हट जाते हैं</string>
+    <string name="intro_delete_body">हर सत्र अपनी आखिरी गतिविधि के 24 घंटे बाद इस फ़ोन से हट जाता है, चाहे वह खत्म किया गया हो या खुला छोड़ा गया हो। इसमें चैट, जवाब और पढ़े गए इशारे शामिल हैं।
+
+कुछ रखना हो तो उससे पहले रिपोर्ट एक्सपोर्ट कर लें। सेटिंग में सत्र रिकॉर्ड के नीचे 4 से 72 घंटे चुने जा सकते हैं, या सत्र आपके हटाने तक रखे जा सकते हैं।</string>
     <string name="intro_private_title">आपके रिकॉर्ड इसी फ़ोन में रहते हैं</string>
-    <string name="intro_private_body">सत्र के रिकॉर्ड इसी फ़ोन पर एन्क्रिप्ट रहते हैं, और सत्र खत्म होने पर या ज़्यादा से ज़्यादा 24 घंटे में हट जाते हैं।\n\nसेटिंग में ऑनलाइन AI चालू किए बिना कुछ भी कहीं नहीं भेजा जाता। चालू करने पर भी केवल छिपाया हुआ पाठ तीसरे पक्ष की सेवा को जाता है, और पहले नाम बदल दिए जाते हैं।\n\nरिपोर्ट तभी फ़ोन से बाहर जाती है जब आप उसे एक्सपोर्ट करके साझा करें; वह अलग से दिए पासवर्ड से सुरक्षित रहती है।</string>
+    <string name="intro_private_body">सत्र के रिकॉर्ड इसी फ़ोन पर एन्क्रिप्ट रहते हैं और आपके चुने समय के बाद हट जाते हैं; बदला न जाए तो 24 घंटे।
+
+सेटिंग में ऑनलाइन सहायक चालू किए बिना कुछ भी कहीं नहीं भेजा जाता। चालू करने पर भी केवल छिपाया हुआ पाठ, जिसमें ज्ञात नाम और विवरण बदल दिए जाते हैं, विभाग के गेटवे या आपकी चुनी सेवा को जाता है।
+
+रिपोर्ट तभी फ़ोन से बाहर जाती है जब आप उसे एक्सपोर्ट करके साझा करें; वह अलग से दिए पासवर्ड से सुरक्षित रहती है।</string>
     <string name="key_reset_title">पिछले सत्र मिटा दिए गए</string>
     <string name="key_reset_body">फ़ोन का स्क्रीन लॉक हटाया या बदला गया, इसलिए Android ने पिछले सत्र के रिकॉर्ड की सुरक्षा वाली कुंजी मिटा दी। वे खोले नहीं जा सकते थे और मिटा दिए गए हैं। नए सत्र सामान्य रूप से चलेंगे।</string>
     <string name="action_gesture">इशारा किया</string>
@@ -189,7 +208,6 @@
     <string name="officer_has_gesture">पात्र इशारा दिखाता है</string>
     <string name="officer_has_audio">उनकी भाषा में रिकॉर्ड की गई आवाज़</string>
     <string name="officer_media_missing">केवल तस्वीर और कैप्शन</string>
-    <string name="officer_glance">स्टेज पर मेरी उलटी पट्टी</string>
     <string name="officer_skeleton_show">कैमरे पर ढाँचा दिखाएँ</string>
     <string name="officer_skeleton_keep">रिकॉर्ड में ढाँचे का चित्र रखें</string>
     <string name="officer_sign_language">सांकेतिक भाषा</string>
@@ -197,16 +215,18 @@
     <string name="sign_asl">अमेरिकी (ASL)</string>
     <string name="log_sign_language">सांकेतिक भाषा %1$s चुनी</string>
     <string name="settings_stage">स्टेज</string>
-    <string name="settings_camera">कैमरा आईना</string>
-    <string name="settings_camera_summary">स्टेज पर व्यक्ति को उनके अपने हाथ दिखते हैं। कुछ भी रिकॉर्ड या सेव नहीं होता।</string>
-    <string name="home_tagline">संकेत, चित्र और कैप्शन, सब इसी फ़ोन पर।</string>
+    <string name="settings_camera">स्टेज पर कैमरा</string>
+    <string name="settings_camera_summary">सत्र में कैमरा चालू करता है: व्यक्ति को अपने हाथ दिखते हैं और साइन पढ़े जा सकते हैं। कुछ भी रिकॉर्ड या सेव नहीं होता।</string>
     <string name="home_greeting_hint">चुनिए कि आप किसकी मदद कर रहे हैं, फिर शुरू करें।</string>
     <string name="profile_isl_short">संकेत भाषा</string>
     <string name="profile_other_short">दूसरी भाषा</string>
-    <string name="settings_large_captions">बड़े कैप्शन</string>
-    <string name="settings_large_captions_summary">धीरे पढ़ने वालों के लिए स्टेज पर बड़े शब्द</string>
-    <string name="settings_slow_gestures">धीमे इशारे</string>
-    <string name="settings_slow_gestures_summary">पात्र तीन-चौथाई गति से इशारे करता है</string>
+    <string name="settings_reduce_motion">एनिमेशन कम करें</string>
+    <string name="settings_reduce_motion_summary">स्क्रीन तुरंत बदलती हैं और कुछ भी फीका या खिसकता नहीं। फ़ोन की अपनी एनिमेशन सेटिंग भी मानी जाती है।</string>
+    <string name="auto_next_in">अगला %1$d सेकंड में</string>
+    <string name="settings_interpreter_test">अभी दुभाषिया को बुलाएँ</string>
+    <string name="settings_interpreter_test_summary">सहेजे गए संपर्क के साथ मैसेजिंग ऐप खुलता है। यही बटन होम स्क्रीन और सत्र में भी है।</string>
+    <string name="settings_gesture_speed">इशारों की गति: %1$.2f×</string>
+    <string name="practice_settings_summary">एक वाक्य लिखें और उसे शब्द-दर-शब्द साइन में देखें</string>
     <string name="settings_cloud_ai">ऑनलाइन सहायक (विभागीय गेटवे)</string>
     <string name="settings_cloud_ai_summary">ऑनलाइन होने पर रिपोर्ट और सुझावों के लिए छिपाया हुआ पाठ विभागीय गेटवे को भेजता है। डिफ़ॉल्ट रूप से बंद; कनेक्शन न होने पर भी फ़ोन वैसे ही चलता है।</string>
     <string name="settings_cloud_ai_key">नामांकन कोड</string>
@@ -225,10 +245,8 @@
     <string name="cloud_notice_title">पाठ विभागीय गेटवे को भेजें?</string>
     <string name="cloud_notice_body">इसके चालू और फ़ोन के ऑनलाइन रहने पर, सत्र का पाठ विभागीय गेटवे को जाता है, जो उसे एक AI सेवा तक पहुँचाता है। भेजने से पहले व्यक्ति के नाम \"Ravi\" से बदल दिए जाते हैं और फ़ोन नंबर छिपा दिए जाते हैं; असली नाम इसी फ़ोन पर वापस लगाए जाते हैं। अधिकारी के लिखे नोट जाँचे नहीं जाते, इसलिए उनमें नाम न लिखें। सेवा न मिले तो फ़ोन पर बना संस्करण इस्तेमाल होता है।</string>
     <string name="cloud_notice_accept">मैं समझता/समझती हूँ, चालू करें</string>
-    <string name="menu_ai_report">पुलिस रिपोर्ट निकालें</string>
-    <string name="ai_preparing">रिपोर्ट बन रही है…</string>
-    <string name="settings_isl_reorder">ISL शब्द-क्रम</string>
-    <string name="settings_isl_reorder_summary">चालू होने पर समय पहले और प्रश्न-शब्द अंत में आता है; बंद होने पर शब्द जैसे लिखे वैसे</string>
+    <string name="settings_isl_reorder">ISL क्रम में साइन करें</string>
+    <string name="settings_isl_reorder_summary">लिखे वाक्य ISL व्याकरण में बदलकर साइन होते हैं: समय पहले, प्रश्न-शब्द अंत में। बंद होने पर शब्द जैसे लिखे वैसे साइन होते हैं।</string>
     <string name="settings_lang_system">फ़ोन जैसी</string>
     <string name="lang_english">English</string>
     <string name="lang_hindi">हिन्दी</string>
@@ -248,10 +266,6 @@
     <string name="mode_spell">वर्तनी</string>
     <string name="mode_pictures">चित्र</string>
     <!-- Handover -->
-    <string name="settings_tilt">झुकाकर दिखाएँ</string>
-    <string name="settings_tilt_summary">जो तैयार है उसे दिखाने के लिए फ़ोन का ऊपरी हिस्सा अपने से दूर, सामने वाले की ओर झुकाएँ। स्क्रीन अपने आप उनकी ओर घूम जाएगी।</string>
-    <string name="settings_volume_keys">वॉल्यूम बटन</string>
-    <string name="settings_volume_keys_summary">वॉल्यूम अप तैयार चीज़ दिखाता है। स्टेज से लौटने के लिए दोनों वॉल्यूम बटन दबाकर रखें; एक बटन दबाने से कुछ नहीं होता।</string>
     <string name="chat_empty_title">बातचीत शुरू करें</string>
     <string name="chat_empty_body">नीचे से सवाल चुनें या कुछ भी लिखें। आप जो दिखाते हैं और उनके जवाब यहाँ दिखेंगे।</string>
     <string name="chat_ready">दिखाने के लिए तैयार</string>
@@ -371,6 +385,7 @@
     <string name="stage_break">आराम कर लीजिए। अधिकारी को पता है।</string>
     <string name="write_count">%1$d / %2$d</string>
     <string name="log_link">दूसरी स्क्रीन</string>
+    <string name="log_request">माँगा</string>
     <string name="link_connected">दूसरी स्क्रीन जुड़ी</string>
     <string name="link_code_verified">कोड मिलाया गया</string>
     <string name="link_lost">दूसरी स्क्रीन से संपर्क टूटा</string>
@@ -392,13 +407,11 @@
     <string name="conv_auto">ऑटो</string>
     <string name="conv_show">दिखाएँ</string>
     <string name="conv_skip">छोड़ें</string>
-    <string name="conv_pause">रोकें</string>
     <string name="conv_resume">फिर शुरू करें</string>
     <string name="conv_wrap_up">समापन करें</string>
     <string name="conv_switch_manual">मैनुअल पर जाएँ</string>
     <string name="conv_source_rule">नियम क्रम</string>
     <string name="conv_phase_step">%1$s · चरण %2$d / %3$d</string>
-    <string name="conv_auto_greetings">अभिवादन और नियम अपने-आप दिखाएँ</string>
     <string name="conv_tag_approved">ऐप का सुझाव · आपने स्वीकार किया</string>
     <string name="conv_tag_auto">अपने-आप दिखाया गया</string>
     <string name="conv_paused_stop">ऑटो रुका: व्यक्ति ने रुको दबाया</string>
@@ -429,8 +442,6 @@
     <string name="sys_auto_resumed">ऑटो फिर शुरू</string>
     <string name="sys_auto_wrap_up">समापन शुरू</string>
     <string name="sys_auto_ended_stop">दूसरी बार रुको दबाने पर ऑटो बंद</string>
-    <string name="sys_auto_advance_on">अभिवादन और नियम अपने-आप दिखेंगे</string>
-    <string name="sys_auto_advance_off">अभिवादन और नियम अधिकारी के दबाने पर दिखेंगे</string>
     <string name="sys_auto_break">व्यक्ति ने आराम माँगा</string>
     <string name="report_mode">बातचीत का तरीका</string>
     <string name="report_mode_manual">मैनुअल</string>
@@ -441,21 +452,17 @@
     <string name="report_by_auto">अपने-आप दिखाया गया (अभिवादन या नियम)</string>
     <string name="report_by_officer">अधिकारी का अपना प्रश्न</string>
     <string name="report_not_acted">कोई कार्रवाई नहीं हुई</string>
-    <string name="settings_allow_auto">इस फ़ोन पर अपने-आप चलने वाली बातचीत की अनुमति दें</string>
-    <string name="settings_allow_auto_summary">समीक्षित प्रश्न बैंक से नियम के क्रम में हाल-चाल के प्रश्न सुझाता है। हर प्रश्न आप स्वीकार करते हैं।</string>
     <!-- Input ingestion: narrative window and subject choice -->
     <string name="tell_me">मुझे बताइए</string>
     <string name="tell_me_long">मुझे बताइए: 3 मिनट तक संकेतों में</string>
     <string name="signed_ask">उनसे चुनने को कहें</string>
     <string name="signed_ask_none">किसी संकेत के लिए चुनने को दो अर्थ नहीं हैं। जवाब वाली तस्वीरों के साथ सवाल दिखाएँ, फिर संकेत पढ़ें।</string>
     <string name="signed_ask_hint">उन्हें दो-तीन चित्र और \"इनमें से कोई नहीं\" दिखेगा। अर्थ तभी दर्ज होगा जब वे खुद चुनें।</string>
-    <!-- Stage: answer strip, opening, pause, glance strip, sun mode -->
+    <!-- Stage: answer strip, opening, pause -->
     <string name="show_pace">इशारों की गति बदलें (अभी %1$s)</string>
     <string name="word_replay">यह शब्द दोबारा दिखाएँ</string>
     <string name="pause_ready">मैं तैयार हूँ</string>
     <string name="pause_ended">विराम %1$d सेकंड बाद ख़त्म हुआ</string>
-    <string name="glance_label">अधिकारी के लिए</string>
-    <string name="glance_hide">अधिकारी पट्टी छिपाएँ</string>
     <string name="officer_rules">शुरुआती नियम और अभ्यास</string>
     <string name="isl_dictionary">ISL शब्दकोश</string>
     <string name="asl_dictionary">ASL शब्दकोश</string>
@@ -474,7 +481,6 @@
     <string name="isl_dictionary_draft_tag">मसौदा</string>
     <string name="isl_dictionary_attribution">रिकॉर्ड किए गए संकेत AI4Bharat के INCLUDE डेटासेट (श्रीधर और अन्य, 2020) से लिए गए हैं, लाइसेंस CC BY 4.0। ISLRTC भारतीय सांकेतिक भाषा शब्दकोश (भारत सरकार) के संकेत Government Open Data License - India के तहत।</string>
     <string name="rules_skipped">अधिकारी ने बाकी शुरुआती नियम छोड़ दिए</string>
-    <string name="officer_sun">धूप मोड (गहरा कंट्रास्ट)</string>
     <string name="stage_dont_know">मुझे नहीं पता</string>
     <string name="stage_dont_understand">मुझे समझ नहीं आया</string>
     <string name="stage_wrong">यह ग़लत है</string>
@@ -557,15 +563,12 @@
     <string name="call_r_unsure">पता नहीं</string>
     <string name="call_r_water">पानी</string>
     <string name="call_r_food">खाना</string>
-    <string name="ai_report_title">मसौदा रिपोर्ट</string>
-    <string name="ai_report_attach">निर्यात में मसौदे के रूप में जोड़ें</string>
     <string name="ai_needs_victim">AI परामर्शदाता शुरू करने से पहले भूमिका पीड़ित या गवाह चुनें।</string>
     <string name="cloud_consent_title">यह सत्र विभाग के गेटवे को भेजें?</string>
     <string name="cloud_consent_title_direct">यह सत्र किसी AI सेवा को भेजें?</string>
     <string name="cloud_consent_body_direct">सत्र का लॉग, इस फ़ोन को ज्ञात नाम छिपाकर, मसौदा लिखने के लिए बाहरी AI सेवा पर जाता है। क्या बाकी सत्र के लिए इसकी अनुमति है?</string>
     <string name="cloud_consent_body">सत्र का लॉग, इस फ़ोन को ज्ञात नाम छिपाकर, मसौदा लिखने के लिए विभाग के गेटवे पर जाता है। क्या बाकी सत्र के लिए इसकी अनुमति है?</string>
     <string name="cloud_consent_allow">अनुमति दें</string>
-    <string name="ai_report_note">सत्र रिकॉर्ड से बना मसौदा। उपयोग से पहले हर पंक्ति रिकॉर्ड से मिलाएँ।</string>
     <string name="ai_followups_title">सुझाए गए अगले प्रश्न (बिना संकेत वाले)</string>
     <string name="call_skeleton_on">ढाँचा</string>
     <string name="call_skeleton_off">कैमरा</string>

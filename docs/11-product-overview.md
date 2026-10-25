@@ -1,6 +1,6 @@
-# 13. Product Overview
+# 11. Product Overview
 
-A single reference for explaining Sign Setu: what it does and how it behaves for the officer and the subject. How it is built is in [architecture](02-architecture.md); the camera and sign readers are in [hand model integration](11-hand-model-integration.md).
+A single reference for explaining Sign Setu: what it does and how it behaves for the officer and the subject. How it is built is in [architecture](02-architecture.md); the camera and sign readers are in [hand model integration](09-hand-model-integration.md).
 
 ## 1. Purpose
 
@@ -9,7 +9,7 @@ Sign Setu is an offline Android application that helps a police officer communic
 | Property | Value |
 | --- | --- |
 | Platform | Android 10 (API 29) and later; sign reading on 64-bit phones |
-| Network | Optional: the department gateway (or a direct service in a private build), only when the officer switches the online assistant on and the phone is online; everything works without it |
+| Network | Optional: the department gateway (or, in a build without a gateway, the OpenAI-compatible service the officer sets up in Settings), only when the officer switches the online assistant on and the phone is online; everything works without it |
 | Languages for the subject | 17 in the language finder, including Chhattisgarhi, Gondi and Halbi; every stage word, question, phrase and picture label in all 17 (drafts beyond English and Hindi); typed English captioned in Hindi on the phone; sign languages ISL and ASL |
 | Officer interface languages | English, Hindi |
 | Release APK | arm64-v8a phone APK and universal APK (arm64-v8a and x86_64); nothing compressed for size |
@@ -19,9 +19,9 @@ Sign Setu is an offline Android application that helps a police officer communic
 1. The officer opens the app and confirms with the phone's own screen lock or a strong biometric; one confirmation covers the next minute of gated steps. A relock, a crash or a restart always asks again.
 2. On Home the officer chooses who they are helping (young child, signs, other language, not sure), the person's role (left as "Not known yet" until known) and the subject's language, then starts.
 3. The stage opens with the officer's introduction, four ground rules and a practice round, or with the language finder for someone who speaks another language.
-4. The officer prepares something on the officer page (a prepared question, a phrase, typed text, pictures, a drawing request, a sign window) and shows it: Send, tilting the phone toward the subject, or Volume Up.
+4. The officer prepares something on the officer page (a prepared question, a phrase, typed text, pictures, a drawing request, a sign window) and shows it with Send.
 5. The subject sees the stage and answers by tapping, drawing, writing or signing.
-6. The officer taps the small lock (or holds both volume keys) to take the phone back and reads the answer, its grade and its trail in the conversation.
+6. The officer holds the small handle to take the phone back and reads the answer, its grade and its trail in the conversation.
 7. At the end the officer saves the session under a name, exports an encrypted PDF communication note, or deletes it. Sessions idle past the retention period (24 hours by default) are deleted.
 
 ## 3. Features
@@ -47,11 +47,11 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Evidence grades | Said (the person tapped, wrote or drew it), Confirmed (the person picked this meaning from two or three choices shown back), Officer's reading, App's reading, Said no, Unclear |
 | Say it back | Shows the officer's reading, edited if needed, to the person among the item's other pictures; only their pick makes it Confirmed; No marks the line "Said no" |
 | Read signs and Tell me | Open a sign window: a short answer of up to 20 s, or an account of up to 3 minutes (§6); on the stage, raised hands also open an answer window |
-| Signed answers | The app's reading per sign, slow replay at ¼× or ½× with sign markers, a word per sign with the reader's top three guesses as chips, and **Ask them to choose** |
-| Manual and Auto | Auto, when allowed in Settings, suggests the next welfare item from the reviewed bank and the officer approves each one. It is not an interview and records no statement. The report shows the mode, who chose each shown item, and suggestions not acted on |
+| Signed answers | The app's reading per sign; the reader's top four guesses per sign as chips, logged once as the officer's reading when every sign has a pick; slow replay at ¼× or ½× with sign markers and a typed word per sign; and **Ask them to choose** |
+| Manual and Auto | Auto puts the next welfare item from the reviewed bank on the stage by itself; the officer can pause, skip or take over at any time. It is not an interview and records no statement. The report shows the mode, who chose each shown item, and suggestions not acted on |
 | Media marks | Each question card shows whether a gesture and a recording exist and whether the caption is missing in the subject's language; "Ready to show" lists what the subject will get |
 | Instant Hindi caption | When the subject reads Hindi, English the officer types gets a Hindi caption as they type, from the reviewed bank, sentence patterns or word by word, marked as unchecked; a tap dismisses it, and nothing is shown if any word is unknown |
-| Assistant (optional) | Translates typed text into the subject's language and back into English, on the phone or through the gateway; the officer sees both before sending ([assistant](12-on-device-assistant.md)) |
+| Assistant (optional) | Translates typed text into the subject's language and back into English, on the phone or through the gateway; the officer sees both before sending ([assistant](10-on-device-assistant.md)) |
 | They gestured | The officer marks where the subject's hand went and what it did; matching entries from the 33-entry gesture lexicon are shown back to the subject, who confirms the meaning |
 | Picture board | 117 picture cards in 12 categories (including clothes and colours for describing someone), with search and favourites |
 | ISL dictionary | Every recorded and draft sign by category (415 signs in 17 categories: 262 retargeted from INCLUDE and 153 from the ISLRTC dictionary, plus the authored word signs), searched in English, Hindi or any written form; a tap plays the sign for the officer, Show prepares it for the stage |
@@ -60,7 +60,7 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Second screen | Pairs a department phone or tablet as the subject's screen (§3.3) |
 | Notes and log | Officer notes and the full session record |
 | Export | A PDF communication note encrypted with AES-256 under a one-time 16-character password shown once |
-| Settings | Interpreter app and contact, camera mirror, large captions, slower gestures, ISL word order, online assistant and its enrolment, allow automatic conversation, tilt to show, volume keys, assistant model, retention period (4 to 72 hours or keep), app language, licences, delete all data |
+| Settings | Interpreter app and contact, camera mirror, signing speed, ISL word order, online assistant and its enrolment, assistant model, retention period (4 to 72 hours or keep), appearance and colour theme, reduce motion, app language, licences, delete all data |
 | Practice | Type to sign: any English or Hindi sentence played by the character outside a session, with nothing recorded |
 
 ### 3.2 Subject side (the stage)
@@ -71,23 +71,22 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Opening | The officer's introduction (s1), then four pictured and signed ground rules ("I was not there", "you can say I don't know", "tell me if I'm wrong", "you can take a break") and a neutral practice round, "Show me what you did this morning", answered by drawing, writing or signing. The subject moves on with Next; each step is logged as shown. If the officer takes the phone back before the practice round, the log records "Officer skipped the rest of the ground rules" |
 | Caption | The question in the subject's language in large type; during typed text the current word is lit, a spelled word shows its current letter, and a word's picture is held up. Tapping a word replays it alone at half speed; tapping the question replays it |
 | Speech | Placeholder recordings until re-recorded: 1,350 recordings: the greeting in 15 languages plus 89 clips for each of those languages (Indic Parler-TTS); the rest show captions and pictures; Gondi and Halbi have no voice yet; automatic for a young child or another language, never for a signer |
-| Layouts | A call view for plain items: the character full height, the subject's own camera in a movable window, the caption, and an answer bar (Water, Food, Yes, No, Help for the full picture board, Stop); and a panel view for pictures, drawing, writing, lesson inputs and choices, with rails either side of a 9:16 camera window: Yes, "I don't know", "I don't understand", Draw and Write on the left; Next (opening or Auto), No, "That's wrong", the camera button and Stop on the right. Stop is an octagonal sign, never an open palm, and stays on every screen. Every tap is logged right after the prompt that was on screen |
+| Layouts | A call view for plain items: the character full height, the subject's own camera in a movable window, the caption, and an answer bar (Water and Food as requests, Yes, No, Help for the full picture board, Breathe) under Stop, "I don't know", "I don't understand" and "That's wrong"; the opening and rights items always use the panel view; and a panel view for pictures, drawing, writing, lesson inputs and choices, with rails either side of a 9:16 camera window: Yes, "I don't know", "I don't understand", Draw and Write on the left; Next (opening only), No, "That's wrong", the camera button and Stop on the right. Stop is an octagonal sign, never an open palm, and stays on every screen. Every tap is logged right after the prompt that was on screen |
 | Gesture proposals | A nod, head shake, thumb, raised palm, shrug or a finger held on a body part lights the matching answer; namaste, a wave, a hand on the chest or a bow offers a courtesy word. Only the subject's tap answers |
 | Picture choices | Shuffled every time and capped at four pictures, plus "Something else" (which opens the drawing pad) and "I don't understand". Yes/no, number and single-picture questions are not shuffled |
 | Answer inputs | For a lesson-sheet question the panel under the character becomes its input: a number pad with large digits (age 0 to 120, counts, brothers then sisters), a 10-digit mobile pad grouped 5 and 5 with "No phone", a written name or place, a class grid (1 to 12, college, not in school), a state list (Chhattisgarh first, all states and union territories) then its district or a written one, and several pictures with Done. A written or typed answer is read back large and becomes the subject's own only on their Yes; one left unconfirmed is logged as unconfirmed. "I don't know", "I don't understand", "That's wrong" and Stop stay under every input |
 | Phrase board | A button by the character opens the eight everyday phrases as pictures with words; a tap logs the phrase as the subject's own |
 | Draw and Write | A drawing pad with five ink colours and Undo; a drawing that answers a question returns to it, a requested drawing ends on a thank-you and hand-back screen; Write opens the keyboard for every profile except a young child; written answers are capped at 2,000 characters |
-| Sign an answer | Raised hands or the camera button open a 20-second sign window; quiet hands close it; the stage shows one dot per sign seen, then at once asks the person to pick what each sign meant among two or three pictures (§6) |
+| Sign an answer | Raised hands or the camera button open a 20-second sign window; quiet hands close it; the stage shows one dot per sign seen. The reading goes to the officer only (§6) |
 | What to do now | One plain line over the camera window: answer by tapping or signing, or tap Next; statements show only Next and Stop |
-| Choosing a meaning | Two or three picture cards per sign in the subject's language, and "None of these": at once after a sign window on this phone, or when the officer taps Ask them to choose |
+| Choosing a meaning | Two or three picture cards per sign in the subject's language, and "None of these", when the officer taps Ask them to choose |
 | Camera mirror | The subject sees the whole camera frame, uncropped at 9:16, with hands, arms, brows and lips traced, never the face oval or eyes; nothing is captured or stored |
 | Replay and speed | The subject sets the signing speed (½×, ¾×, 1×), kept for the session in memory only; a young child starts at ¾× at most |
+| Requests | Water and Food sit on the call view's answer bar at every moment; a tap is logged as the subject's request ("Asked for"), not as an answer to what is on screen, and does not move a question run on |
 | Pause | After Stop, on either layout, a calm night-sky layer with a breathing circle and bubbles to pop covers the whole stage, with no score, sound or timer. Only the subject's "I'm ready" ends it; the officer's lock stays reachable. The log records "Pause ended after N s". A separate Breathe button opens a short breathing guide the subject closes |
-| Officer glance strip | A band at the edge facing the officer shows the last question and answer upside down, for an officer sitting opposite. Off until the officer turns it on from the session menu. Hidden for sensitive questions and while the subject draws or writes; a long press hides it for the session. Machine sign readings never appear on it |
 | Vibration codes | Felt by whoever holds the phone: Yes one long buzz; No two buzzes; Stop, Break, "I don't know", "I don't understand" or "That's wrong" three short pulses; a picture a tick. Never for the young-child profile |
-| Sun mode | The stage turns black, white and yellow in glare: on after 3 s above 10,000 lux, off after 10 s below 2,000 lux. The light sensor is read only while the stage shows; the officer can force it on from the menu |
-| Rotate | The stage turns 180 degrees for a subject sitting opposite; tilting the phone to show turns it automatically |
-| Staying on the stage | The app is pinned while the stage shows; Back does nothing; single volume presses do nothing; one tap on the small lock, or both volume keys held for 1.5 s, returns to the officer |
+| Rotate | The stage turns 180 degrees for a subject sitting opposite |
+| Staying on the stage | The app is pinned for the session (lifted only for the interpreter call or a share, and set again on return); Back does nothing; the small handle held for 1.5 s returns to the officer |
 
 Subject-screen words, questions, phrases and card labels exist in English, Hindi, Chhattisgarhi, Gondi, Halbi and the other twelve languages of the language finder; everything beyond English and Hindi is marked draft.
 
@@ -105,7 +104,7 @@ With the online assistant on, a paired stage can host the **AI counsellor** for 
 | Encrypted record | SQLCipher (AES-256) under a random key wrapped by an Android Keystore key that works only after the phone's own lock |
 | Relock | After five minutes away from the app, thirty inside a session; a relock, crash or restart always asks for the credential |
 | Retention | Sessions are deleted once idle past 24 hours by default, or a set period of 4 to 72 hours, or kept until deleted if the officer chooses; while the app is locked, everything is wiped once even the newest session is past retention; "Delete all data" destroys the keys |
-| Screen | Screenshots blocked in release; taps through another app's overlay ignored; no backup or device transfer |
+| Screen | Screenshots blocked in the final release build (`secureScreen`); taps through another app's overlay ignored; no backup or device transfer |
 | Keyboard | Every text field asks the keyboard not to learn from what is typed |
 | Integrity | Every content file, the vision and sign-reader models and the assistant model are checked by SHA-256 before use |
 | Landmarks | Biometric data: kept only from sign windows, in memory for the session, never stored or exported, except a skeleton drawing when the officer turns evidence mode on |
@@ -131,7 +130,7 @@ The role is "Not known yet" until the officer sets it, and it is exported only w
 
 ### 4.4 Manual and Auto
 
-Manual is the default. When a department allows Auto, a rule-ordered sequencer over the reviewed bank picks the next welfare item (rapport, ground rules, welfare, practical, break, closing) and the officer approves each one; it never proposes sensitive, free-recall, follow-up or rights items. Only a statement may follow a statement by itself, on the subject's Next, at most three in a row. Stop pauses Auto; a second Stop ends it. A typed question, a show-back or an event question sent by hand turns Auto off. Leaving the stage stays one tap.
+Manual is the default. In Auto a rule-ordered sequencer over the reviewed bank picks the next welfare item (rapport, ground rules, welfare, practical, break, closing) and shows it after a short gap; it never proposes sensitive, free-recall, follow-up or rights items. Stop pauses Auto; a second Stop ends it. A typed question, a show-back or an event question sent by hand turns Auto off. Taking the phone back pauses Auto.
 
 ### 4.5 Instant Hindi caption
 
@@ -158,12 +157,12 @@ A 3D rig (VRoid, Blender, glTF or VRM) rendered with Filament is the upgrade pat
 
 ## 6. Camera and sign reading
 
-Windows, frame rates, segmentation and the slower cue are in [hand model integration](11-hand-model-integration.md) §2 to §5. While signing the stage shows one dot per sign seen, never the reader's words. Every signed answer and account stays in view-model memory for the session, so an interpreter can replay it at ¼× or ½× with sign markers and enter a word per sign.
+Windows, frame rates, segmentation and the slower cue are in [hand model integration](09-hand-model-integration.md) §2 to §5. While signing the stage shows one dot per sign seen, never the reader's words. Every signed answer and account stays in view-model memory for the session, so an interpreter can replay it at ¼× or ½× with sign markers and enter a word per sign.
 
 ### 6.1 The subject owns meaning
 
 - The app's reading, the officer's reading and the subject's answer are three separate layers ([architecture](02-architecture.md) §7).
-- A reading becomes the subject's answer only when the subject picks it: for each sign, two or three picture cards in the subject's language (the officer's reading first, then the reader's guesses, then the item's own answer cards, in shuffled positions) and "None of these". They appear at once after a short window on this phone, and when the officer taps "Ask them to choose".
+- A reading becomes the subject's answer only when the subject picks it: for each sign, two or three picture cards in the subject's language (the officer's reading first, then the reader's guesses, then the item's own answer cards, in shuffled positions) and "None of these". They appear only when the officer taps "Ask them to choose"; until then a signed answer stays the app's or the officer's reading.
 
 ### 6.2 Context-limited vocabulary
 

@@ -1,5 +1,15 @@
 package app.signsetu.ui
 
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import app.signsetu.ui.theme.motion
+import androidx.compose.animation.Crossfade
+import app.signsetu.ui.theme.systemAnimationsOn
+import app.signsetu.ui.theme.LocalMotion
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -63,6 +73,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.ui.platform.LocalView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -87,7 +101,6 @@ import app.signsetu.data.content.forSignLanguage
 import app.signsetu.ui.session.signLanguage
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.components.LocalContentRepository
-import app.signsetu.ui.session.HandoverEffects
 import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.Conv
 import app.signsetu.ui.session.OfficerPane
@@ -101,6 +114,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import app.signsetu.ui.start.StartScreen
 import app.signsetu.ui.theme.SignSetuTheme
+import app.signsetu.data.settings.ThemeMode
+import app.signsetu.data.settings.ColorTheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import app.signsetu.ui.theme.SubjectTheme
 import kotlinx.serialization.Serializable
 import app.signsetu.ui.components.GuardedAlertDialog
@@ -147,8 +163,25 @@ fun AppRoot(container: AppContainer) {
         onDispose { container.cloudAi.onNotice = {} }
     }
 
-    CompositionLocalProvider(LocalContentRepository provides container.content, LocalCloudAi provides container.cloudAi) { NoPersonalisedLearning {
-        SignSetuTheme {
+    val appContext = LocalContext.current
+    val motionOn = settings?.reduceMotion != true && systemAnimationsOn(appContext)
+    val blackTheme = settings?.colorTheme.let { it == ColorTheme.AMOLED || it == ColorTheme.CONTRAST }
+    val dark = blackTheme || when (settings?.themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        else -> isSystemInDarkTheme()
+    }
+    // Edge-to-edge picks bar icons from the phone's theme; a pinned app theme must set them itself.
+    val view = LocalView.current
+    DisposableEffect(view, dark) {
+        val controller = (view.context as? Activity)?.window?.let { WindowCompat.getInsetsController(it, view) }
+        controller?.isAppearanceLightStatusBars = !dark
+        controller?.isAppearanceLightNavigationBars = !dark
+        onDispose {}
+    }
+
+    CompositionLocalProvider(LocalContentRepository provides container.content, LocalCloudAi provides container.cloudAi, LocalMotion provides motionOn) { NoPersonalisedLearning {
+        SignSetuTheme(dark = dark, theme = settings?.colorTheme ?: ColorTheme.EMERALD) {
             val r = repo
             val c = content
             val s = settings
@@ -221,6 +254,14 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
     val scope = rememberCoroutineScope()
     val activity = LocalActivity.current
     var pairing by remember { mutableStateOf(false) }
+    var sandesHandoffContact by rememberSaveable { mutableStateOf<String?>(null) }
+    val interpreterCall: (() -> Unit)? = if (settings.interpreterConfigured) {
+        {
+            if (settings.interpreterApp == InterpreterApp.SANDES) sandesHandoffContact = settings.interpreterContact
+            else activity?.let { callInterpreter(it, settings) }
+        }
+    } else null
+    val interpreterName = stringResource(if (settings.interpreterApp == InterpreterApp.SANDES) R.string.settings_sandes else R.string.settings_whatsapp)
     val onSecondScreen = { pairing = true }.takeIf { container.pairTransport != null }
     // Each reads and hashes model files, so none is built on the main thread; null until ready, as with no model.
     val tracker by produceState<LandmarkTracker?>(null) { value = withContext(Dispatchers.IO) { container.landmarkTracker } }
@@ -228,11 +269,12 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
     // Loads the assistant's native library off the main thread, before Settings asks whether it runs here.
     LaunchedEffect(Unit) { withContext(Dispatchers.IO) { container.models.state() } }
     if (pairing) SecondScreenSheet(container, onDismiss = { pairing = false })
+    val motionOn = LocalMotion.current
     NavDisplay(
         backStack = backStack,
-        transitionSpec = { fadeIn(tween(220, 60)) + slideInHorizontally(tween(260)) { it / 12 } togetherWith fadeOut(tween(120)) },
-        popTransitionSpec = { fadeIn(tween(220, 60)) + slideInHorizontally(tween(260)) { -it / 12 } togetherWith fadeOut(tween(120)) },
-        predictivePopTransitionSpec = { fadeIn(tween(220, 60)) togetherWith fadeOut(tween(120)) },
+        transitionSpec = { if (motionOn) fadeIn(tween(220, 60)) + slideInHorizontally(tween(260)) { it / 12 } togetherWith fadeOut(tween(120)) else EnterTransition.None togetherWith ExitTransition.None },
+        popTransitionSpec = { if (motionOn) fadeIn(tween(220, 60)) + slideInHorizontally(tween(260)) { -it / 12 } togetherWith fadeOut(tween(120)) else EnterTransition.None togetherWith ExitTransition.None },
+        predictivePopTransitionSpec = { if (motionOn) fadeIn(tween(220, 60)) togetherWith fadeOut(tween(120)) else EnterTransition.None togetherWith ExitTransition.None },
         // Leaving a session by Back asks for the screen lock, as the Leave button does.
         onBack = { if (backStack.lastOrNull() is SessionKey) OfficerAuth.confirm(activity, { backStack.removeLastOrNull() }) else backStack.removeLastOrNull() },
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
@@ -246,15 +288,16 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                     cameraWanted = settings.cameraEnabled,
                     onOpenSession = { id -> backStack.add(SessionKey(id)) },
                     onSettings = { backStack.add(SettingsKey) },
-                    onPractice = { backStack.add(PracticeKey) },
                     onSecondScreen = onSecondScreen,
+                    onCallInterpreter = interpreterCall,
+                    interpreterSummary = "$interpreterName · ${settings.interpreterContact}",
                 )
             }
             entry<PracticeKey> {
                 PracticeScreen(content, onBack = { backStack.removeLastOrNull() })
             }
             entry<SettingsKey> {
-                SettingsScreen(container.settings, container.models, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) })
+                SettingsScreen(container.settings, container.models, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onCallInterpreter = interpreterCall)
             }
             entry<SessionKey> { key ->
                 SessionRoute(
@@ -264,10 +307,21 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                     onClosed = { backStack.removeLastOrNull() },
                     container = container,
                     onSecondScreen = onSecondScreen,
+                    onCallInterpreter = interpreterCall,
                 )
             }
         },
     )
+    sandesHandoffContact?.let { contact ->
+        SandesHandoffDialog(
+            contact = contact,
+            onLaunch = {
+                sandesHandoffContact = null
+                activity?.let(::launchSandes)
+            },
+            onDismiss = { sandesHandoffContact = null },
+        )
+    }
 }
 
 @Composable
@@ -284,6 +338,7 @@ internal fun SessionRoute(
     onClosed: () -> Unit,
     container: AppContainer,
     onSecondScreen: (() -> Unit)?,
+    onCallInterpreter: (() -> Unit)?,
 ) {
     val officerLang = if (LocalConfiguration.current.locales[0].language == "hi") "hi" else "en"
     val vm: SessionViewModel = viewModel(
@@ -301,7 +356,6 @@ internal fun SessionRoute(
     val conv by vm.auto.conv.collectAsStateWithLifecycle()
     val activity = LocalActivity.current
     val cameraOn = rememberSaveable { settings.cameraEnabled }
-    var sandesHandoffContact by rememberSaveable { mutableStateOf<String?>(null) }
     // with a second screen the subject's stage is there, and this phone stays the officer's.
     val link by container.link.collectAsStateWithLifecycle()
     val officerLink = link?.takeIf { it.role == LinkRole.OFFICER }
@@ -322,19 +376,33 @@ internal fun SessionRoute(
         })
     }
     val backToOfficer: () -> Unit = vm::returnToOfficer
+    val nextIn by vm.auto.countdown.collectAsStateWithLifecycle()
+    // Auto mode names its next item seconds ahead; decoding that item's pictures now keeps its arrival instant.
+    val proposedNext by vm.auto.conv.collectAsStateWithLifecycle()
+    LaunchedEffect((proposedNext as? Conv.Proposed)?.p?.q?.id) {
+        (proposedNext as? Conv.Proposed)?.p?.q?.cards?.forEach { runCatching { container.content.cardImage(it) } }
+    }
+    // The camera service and the sleeping gateway take longest on first use; waking them now keeps the first item quick.
+    val appContext = LocalContext.current
+    val cloud = container.cloudAi
+    LaunchedEffect(Unit) {
+        if (cameraOn && ContextCompat.checkSelfPermission(appContext, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            runCatching { ProcessCameraProvider.awaitInstance(appContext) }
+        }
+        if (cloud.sendsSessionData()) cloud.warmUp()
+    }
 
     val localStage = state.mode == Mode.SHOW && !paired
     ImmersiveWhile(activity, localStage)
-    // While the phone is in the subject's hands, screen pinning keeps Back, Home and Recents out of reach.
-    PinWhile(activity, localStage)
+    // Pinned once for the whole session, so Back, Home and Recents stay out of reach and nothing re-pins between items.
+    PinWhile(activity, !paired)
     // The assistant's buffers would sit beside the camera and the landmark graph on a small phone.
     LaunchedEffect(localStage || state.signWindow != null) { if (localStage || state.signWindow != null) container.models.release() }
-    // With a second screen the officer keeps this phone, so tilt and the volume keys do not hand it over.
-    if (!paired) HandoverEffects(state, vm, settings.tiltToShow, settings.volumeKeys, container.hardKeys, backToOfficer)
     // The app locking takes this screen away: landmarks go with it, though not on a mere configuration change.
     DisposableEffect(Unit) { onDispose { if (activity?.isChangingConfigurations != true) vm.wipeSigns() } }
 
-    when (if (paired) Mode.OFFICER else state.mode) {
+    Crossfade(targetState = if (paired) Mode.OFFICER else state.mode, animationSpec = motion(tween(220)), label = "mode") { shown ->
+    when (shown) {
         Mode.OFFICER -> OfficerPane(
             ui = state,
             vm = vm,
@@ -345,19 +413,8 @@ internal fun SessionRoute(
             canReadSigns = tracker != null && !paired,
             paired = pane,
             onSecondScreen = onSecondScreen,
-            allowAuto = settings.allowAuto,
             islReorder = settings.islReorder,
-            onCallInterpreter = if (settings.interpreterConfigured) {
-                {
-                    if (settings.interpreterApp == InterpreterApp.SANDES) {
-                        sandesHandoffContact = settings.interpreterContact
-                    } else {
-                        activity?.let { callInterpreter(it, settings) }
-                    }
-                }
-            } else {
-                null
-            },
+            onCallInterpreter = onCallInterpreter,
             onShare = { file ->
                 activity?.let { shareReport(it, file) }
             },
@@ -375,7 +432,7 @@ internal fun SessionRoute(
             },
         )
         Mode.SHOW -> {
-            // Back on the stage does nothing: the officer holds the lock handle or both volume keys to take the phone back.
+            // Back on the stage does nothing: the officer holds the handle to take the phone back.
             BackHandler { }
             SubjectTheme {
                 Stage(
@@ -383,8 +440,7 @@ internal fun SessionRoute(
                     content = signContent,
                     tracker = tracker,
                     cameraOn = cameraOn,
-                    largeCaptions = settings.largeCaptions,
-                    gestureSpeed = if (settings.slowGestures) 0.75f else 1f,
+                    gestureSpeed = settings.gestureSpeed,
                     onCard = vm::answerCard,
                     onYesNo = vm::answerYesNo,
                     onCue = vm::noteCue,
@@ -395,25 +451,16 @@ internal fun SessionRoute(
                     onStartSigning = vm::startReading,
                     onDoneSigning = vm::finishReading,
                     onOfficer = backToOfficer,
-                    onNext = (vm.auto::advance).takeIf { (conv as? Conv.Proposed)?.advance == true },
                     onSignChoice = vm::chooseSign,
                     onNextRule = vm::nextRule,
+                    nextIn = nextIn,
                     onPauseEnd = vm::endPause,
                     onGiven = vm::give,
+                    onNeed = vm::askNeed,
                 )
             }
         }
     }
-
-    sandesHandoffContact?.let { contact ->
-        SandesHandoffDialog(
-            contact = contact,
-            onLaunch = {
-                sandesHandoffContact = null
-                activity?.let(::launchSandes)
-            },
-            onDismiss = { sandesHandoffContact = null },
-        )
     }
 }
 
@@ -492,6 +539,7 @@ internal fun SandesHandoffDialog(
 
 private fun launchSandes(activity: Activity) {
     val intent = activity.packageManager.getLaunchIntentForPackage(SANDES_PACKAGE)
+    if (intent != null) unpinFor(activity)
     val opened = intent != null && runCatching { activity.startActivity(intent) }.isSuccess
     if (!opened) {
         val name = activity.getString(R.string.settings_sandes)
@@ -503,6 +551,7 @@ private fun launchSandes(activity: Activity) {
 private fun callInterpreter(activity: Activity, settings: AppSettings) {
     val name = activity.getString(R.string.settings_whatsapp)
     val intent = whatsappNumber(settings.interpreterContact)?.let { Intent(Intent.ACTION_VIEW, "https://wa.me/$it".toUri()) }
+    if (intent != null) unpinFor(activity)
     val opened = intent != null && runCatching { activity.startActivity(intent) }.isSuccess
     if (!opened) {
         Toast.makeText(activity, activity.getString(R.string.call_missing, name), Toast.LENGTH_LONG).show()
@@ -515,18 +564,37 @@ private fun shareReport(activity: Activity, file: File) {
         .setType("application/pdf")
         .putExtra(Intent.EXTRA_STREAM, uri)
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    unpinFor(activity)
     activity.startActivity(Intent.createChooser(send, null))
 }
 
 /** Pins the app while [enabled]: friction, not a lock, since unpinning keeps its system gesture. A refusal (managed
- * profile, OEM quirk) leaves the stage usable. */
+ * profile, OEM quirk) leaves the stage usable. Pinning lifted for another app ([unpinFor]) is set again on return. */
 @Composable
 internal fun PinWhile(activity: Activity?, enabled: Boolean) {
     DisposableEffect(activity, enabled) {
         if (!enabled || activity == null) return@DisposableEffect onDispose { }
-        val pinned = runCatching { activity.startLockTask() }.isSuccess
-        onDispose { if (pinned) runCatching { activity.stopLockTask() } }
+        var pinned = runCatching { activity.startLockTask() }.isSuccess
+        val lifecycle = (activity as? LifecycleOwner)?.lifecycle
+        val repin = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && PinLifted.value) {
+                PinLifted.value = false
+                pinned = runCatching { activity.startLockTask() }.isSuccess
+            }
+        }
+        lifecycle?.addObserver(repin)
+        onDispose {
+            lifecycle?.removeObserver(repin)
+            if (pinned) runCatching { activity.stopLockTask() }
+        }
     }
+}
+
+private object PinLifted { @Volatile var value = false }
+
+/** A pinned task cannot open another app, so the interpreter call and the share sheet lift pinning first. */
+private fun unpinFor(activity: Activity) {
+    if (runCatching { activity.stopLockTask() }.isSuccess) PinLifted.value = true
 }
 
 /** The officer phone must not sleep into the background mid-answer while a second screen is live. */

@@ -103,7 +103,7 @@ class ModelStore(private val context: Context) {
         private const val MIN_MEMORY_BYTES = 2_400L * 1024 * 1024
         private const val MIN_FREE_BYTES = 1_200L * 1024 * 1024
 
-        /** SHA-256 of the model files the department may install; see docs/12-on-device-assistant.md. */
+        /** SHA-256 of the model files the department may install; see docs/10-on-device-assistant.md. */
         val KNOWN_MODELS = setOf(
             // Gemma 3 1B instruction-tuned, Q4_K_M GGUF (Gemma Terms of Use), from ggml-org/gemma-3-1b-it-GGUF.
             "8ccc5cd1f1b3602548715ae25a66ed73fd5dc68a210412eea643eb20eb75a135",

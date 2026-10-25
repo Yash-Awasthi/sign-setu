@@ -7,7 +7,7 @@ The app draws both characters in code (§5.7) and plays authored and recorded mo
 | Question | Answer |
 | --- | --- |
 | Can we build an avatar? | Yes, in-house, with free tools. The rendering is the easy part; the cost is authoring and reviewing every sign and gesture. Another group is reported to be building an ISL avatar; this project does not depend on it. |
-| Is there a prebuilt one we can use? | No usable one (§2). The characters are original; open-source tools serve the pipeline ([open source](09-open-source.md)). |
+| Is there a prebuilt one we can use? | No usable one (§2). The characters are original; open-source tools serve the pipeline ([open source](08-open-source.md)). |
 | Indian signs differ from general ones. | Correct. ISL is a separate language from ASL and BSL (different vocabulary; two-handed fingerspelling against ASL's one-handed), and ISL has regional varieties (often grouped as Mumbai-Delhi, Kolkata and Bangalore-Chennai-Hyderabad). ASL is also used in some Bengaluru schools. No foreign avatar or sign asset can be reused for vocabulary. |
 | Small children do not know signs. | Correct, and this applies to most deaf children too. Children get a separate **gesture lexicon** of iconic, culturally common gestures (bindi or sindoor for mother, moustache for father, roof for home, hand on chest for me), with several variants per concept. |
 | Two avatars, a child hero and an adult? | Yes: two original characters on one shared rig, playing one motion library. Copying Shin-chan or Nobita is not possible (§4). |
@@ -39,7 +39,7 @@ The avatar never improvises. It plays entries from reviewed lexicons.
 | Grammar | Phrase bank of reviewed sentences with slots; typed text in draft ISL order | Single concepts; the question is carried by pointing, the pictures and the character's face |
 | Shown with | Caption and picture | Picture card, and audio for hearing children |
 
-### Gesture lexicon starter list
+### 3.1 Gesture lexicon starter list
 
 Every entry below is a **candidate**. None is final until the review above approves it.
 
@@ -80,7 +80,7 @@ Every entry below is a **candidate**. None is final until the review above appro
 
 | | Child character | Adult character |
 | --- | --- | --- |
-| For | Young child, Other language and Not sure profiles | ISL user profile |
+| For | Young child profile | Every other profile; the officer can switch either session to the other character |
 | Look | Original Indian child in a simple style, large head and eyes, expressive brows and mouth (which carry facial grammar), five-fingered hands drawn 1.85 times the rig's hand unit | Neutral stylised adult framed from head to hips; plain dark top so hands stand out; simplified face with calm lidded eyes; hands 2.0 times the hand unit |
 | Face | Big, readable expressions | Eyebrows, eyes, mouth and head movement; this is ISL grammar, not decoration |
 | Clothes | Plain, everyday, regionally neutral; no school or police uniform, no religious markers | Plain dark V-neck top; no uniform |
@@ -136,7 +136,7 @@ Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` t
 
 ### 5.6 Playback rules
 
-- Plays only on an officer action; never loops on its own; replay and slow-speed buttons. The subject sets the signing speed (½×, ¾×, 1×) for the session, in memory only; a young child starts at ¾× at most. Tapping a word in typed text replays that word alone at half speed; tapping a question replays it.
+- Plays on an officer action, on an Auto item, or, after 20 s untouched on the call view, as a guide that signs each answer button once and stops at the first touch; replay and slow-speed buttons. The subject sets the signing speed (½×, ¾×, 1×) for the session, in memory only; a young child starts at ¾× at most. Tapping a word in typed text replays that word alone at half speed; tapping a question replays it.
 - The caption and picture are shown first; the motion plays with them, never alone.
 - If a motion is missing, the picture and caption stand alone and the officer sees "gesture not available".
 
@@ -166,7 +166,7 @@ When the subject makes a gesture the officer does not understand:
 5. Officer picks the likely one and taps **Show**: the subject sees the gesture and picture with "Is this it?" and Yes and No, or a choice among two or three pictures where the item has others.
 6. Only a confirmed match is logged as the subject's answer; unconfirmed lookups are logged as unclear.
 
-This works offline, needs no model, and works with home signs, because the confirmation step catches mismatches. Signed answers are read separately by the on-device sign reader ([hand model integration](11-hand-model-integration.md)); its readings are proposals and become the subject's only when the subject picks the meaning. The body outline is an officer tool; the subject is never shown a body map in the default flow.
+This works offline, needs no model, and works with home signs, because the confirmation step catches mismatches. Signed answers are read separately by the on-device sign reader ([hand model integration](09-hand-model-integration.md)); its readings are proposals and become the subject's only when the subject picks the meaning. The body outline is an officer tool; the subject is never shown a body map in the default flow.
 
 ## 7. Fallback chain
 
@@ -177,7 +177,7 @@ This works offline, needs no model, and works with home signs, because the confi
 3. Picture card with caption, plus recorded audio for hearing subjects.
 4. The officer performs the gesture, copying it from the card on their panel or the printed quick card.
 
-**Subject to officer:** picture card, Yes or No, a lesson-sheet input, drawing, writing, a signed answer or account read on the phone and confirmed by the subject's pick, gesture with lookup and show-back, interpreter.
+**Subject to officer:** picture card, Yes or No, a lesson-sheet input, drawing, writing, a signed answer or account read on the phone (the subject's pick among pictures makes a meaning theirs), gesture with lookup and show-back, interpreter.
 
 ## 8. Validation
 

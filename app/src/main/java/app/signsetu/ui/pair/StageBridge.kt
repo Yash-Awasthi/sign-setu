@@ -92,7 +92,7 @@ fun rememberPairedStage(
     var wasLive by rememberSaveable { mutableStateOf(false) }
     var logged by rememberSaveable { mutableStateOf("") }
     val confirmed = remember { mutableSetOf<Long>() }
-    val look by rememberUpdatedState(Triple(settings.largeCaptions, if (settings.slowGestures) 0.75f else 1f, cameraOn))
+    val look by rememberUpdatedState(Pair(settings.gestureSpeed, cameraOn))
 
     val activity = LocalActivity.current
     DisposableEffect(vm, link) {
@@ -101,7 +101,7 @@ fun rememberPairedStage(
         onDispose { if (vm.paired && activity?.isChangingConfigurations != true) vm.leavePaired() }
     }
     LaunchedEffect(vm, link) {
-        combine(vm.ui.filterNotNull(), snapshotFlow { look }) { ui, (large, speed, camera) -> ui.itemId to ui.toStageView(large, speed, camera) }
+        combine(vm.ui.filterNotNull(), snapshotFlow { look }) { ui, (speed, camera) -> ui.itemId to ui.toStageView(speed, camera) }
             .distinctUntilChanged()
             .collect { (id, view) -> link.show(id, view) }
     }
@@ -193,7 +193,7 @@ fun WirePending.resolve(content: ContentBundle): Pending? = when (this) {
 }
 
 /** Reads only what is on stage, never the officer's draft. */
-fun SessionUi.toStageView(largeCaptions: Boolean, gestureSpeed: Float, cameraOn: Boolean): StageView {
+fun SessionUi.toStageView(gestureSpeed: Float, cameraOn: Boolean): StageView {
     val live = mode == Mode.SHOW && onStage != null
     return StageView(
         lang = session.subjectLang,
@@ -201,7 +201,6 @@ fun SessionUi.toStageView(largeCaptions: Boolean, gestureSpeed: Float, cameraOn:
         live = live,
         item = onStage?.takeIf { live }?.toWire(),
         rotated = rotated,
-        largeCaptions = largeCaptions,
         gestureSpeed = gestureSpeed,
         cameraOn = cameraOn,
         signLanguage = signLanguage.name,

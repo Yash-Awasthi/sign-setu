@@ -17,6 +17,8 @@ enum class Role { NOT_KNOWN, VICTIM, ACCUSED }
 enum class EventType {
     QUESTION_SHOWN, ANSWER_CARD, ANSWER_DRAWING, ANSWER_GESTURE, ANSWER_UNCLEAR, LANGUAGE_CHOSEN, NOTE, SYSTEM, ANSWER_TEXT, ANSWER_SIGNED,
     SUGGESTED, APPROVED, SKIPPED, AUTO_ADVANCED, LINK, PROMPT,
+    /** Something the subject asked for by themselves, such as water; never an answer to the item on screen. */
+    REQUEST,
 }
 
 enum class EventSource { PRESET, TEXT, BOARD, SHOW_BACK, SUBJECT, OFFICER, PHRASE, RULE, MACHINE }

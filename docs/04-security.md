@@ -5,7 +5,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 ## 1. Objectives
 
 1. Subject data cannot be read from a lost, stolen or shared phone without the officer's credential.
-2. Subject data does not leak through backups, screenshots, logs, notifications, the clipboard or other apps.
+2. Subject data does not leak through backups, screenshots (in the final release build), logs, notifications, the clipboard or other apps.
 3. Data leaves the phone only as an encrypted report or a contact link on the officer's action, as encrypted frames to a bonded stage device, or as masked text to the assistant service after the officer switched it on and allowed it for the session.
 4. Every release is built from reviewed code, scanned and traceable to an audited build.
 
@@ -21,15 +21,15 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | No personal data in Logcat; release builds strip `android.util.Log` calls (`proguard-rules.pro`); the four remaining log lines carry exception classes or timings only; no crash SDK. | CERT-In 6.2.5 |
 | Every text field asks the keyboard for no personalised learning (`AppRoot.NoPersonalisedLearning`); the enrolment code field is a password field. | MASVS-STORAGE-2 |
 | Only the interpreter's contact ever reaches the clipboard, on the officer's tap. | MASVS-STORAGE-2 |
-| DataStore `settings` and the plain preference files `locale` and `clock` hold settings only. The gateway token is wrapped by its own Keystore key (`KeystoreVault`) in `noBackupFilesDir`. | MASVS-STORAGE-1 |
-| Retention purge with `PRAGMA secure_delete` on and a truncated journal; while the app is locked the whole store is destroyed once even the newest session is past retention (`RetentionWorker`). | DPDP s.8(7) |
+| DataStore `settings` and the plain preference files `locale` and `clock` hold settings only. The gateway token, and on a build without a gateway the officer's own service key, are each wrapped by their own Keystore key (`KeystoreVault`) in `noBackupFilesDir`. | MASVS-STORAGE-1 |
+| Retention purge with `PRAGMA secure_delete` on and a truncated journal; while the app is locked the whole store is destroyed once even the newest session is past retention (the retention sweep, also run hourly by `RetentionJob`). | DPDP s.8(7) |
 
 ### 2.2 Cryptography
 
 | Control | Source |
 | --- | --- |
 | Platform JCA, Android Keystore and SQLCipher only; no custom algorithms. AES-256-GCM, P-256 ECDH, HKDF-SHA256, SHA-256; `SecureRandom` for every key, nonce and passphrase (`kotlin.random` is used only to shuffle pictures). | MASVS-CRYPTO-1 |
-| No key in the source or the repository; the direct assistant key lives in untracked `local.properties`, and a release build refuses to compile it in unless `-PallowEmbeddedKey` is passed for a private build. gitleaks runs on every push. | MASVS-CRYPTO-2 |
+| No key in the source, the repository or any APK: the build has no field for an assistant key. A gateway build enrols with a one-time department code; a build without a gateway takes the officer's own key in Settings, Developer, kept in the Keystore. gitleaks runs on every push. | MASVS-CRYPTO-2 |
 | Export: PDF encrypted with AES-256 under a one-time 80-bit passphrase shown once, and a random owner password. Every page carries the record digest and the hash-chain head; the certificate page carries the full chain head and its status (`EvidenceIntegrity`). | MASVS-CRYPTO-1 |
 | Event log sealed as a SHA-256 chain as rows are written (`EventSeal`); export re-walks it and reports the first broken row. | BSA s.63 |
 
@@ -46,20 +46,20 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 
 | Control | Source |
 | --- | --- |
-| INTERNET is used only by the online assistant client (`UrlHttp`): HTTPS only, cleartext refused by the network security config and by `UrlHttp`, system trust anchors only, validated networks only. Nothing connects unless the build has a gateway or a direct key and the officer has switched the assistant on. | MASVS-NETWORK-1 |
+| INTERNET is used only by the online assistant client (`UrlHttp`): HTTPS only, cleartext refused by the network security config and by `UrlHttp`, system trust anchors only, validated networks only. Nothing connects unless the build has a gateway, or the officer has saved their own service, and the officer has switched the assistant on. | MASVS-NETWORK-1 |
 | Session text goes only after the officer allows it once per session; names, details, emails, links, PAN-like ids and long numbers are masked first (`Pseudonymizer`). The gateway accepts only the app's own system prompts. | MASVS-NETWORK-1, PRIVACY-1 |
-| Certificate pinning is designed and waits on the production host and CA ([17](17-attestation-and-pinning.md)). | MASVS-NETWORK-2 (gap) |
+| Certificate pinning is designed and waits on the production host and CA ([14](14-attestation-and-pinning.md)). | MASVS-NETWORK-2 (gap) |
 
 ### 2.5 Platform interaction
 
 | Control | Source |
 | --- | --- |
-| `FLAG_SECURE` on the activity in release builds; dialogs and sheets inherit it. | MASVS-PLATFORM-3 |
-| Exported components in the merged release manifest: the launcher activity and WorkManager's `SystemJobService` (guarded by `BIND_JOB_SERVICE`). FileProvider not exported, one temporary read grant per share. Unused library receivers removed. No deep links, no PendingIntents, no WebView. | MASVS-PLATFORM-1, PLATFORM-2 |
+| `FLAG_SECURE` on the activity when the build switch `secureScreen` is true, as it must be for the final release APK; dialogs and sheets inherit it. Testing builds allow screenshots. | MASVS-PLATFORM-3 |
+| Exported components in the merged release manifest: the launcher activity. `RetentionJob` is not exported and is bound only by the platform scheduler (`BIND_JOB_SERVICE`). FileProvider not exported, one temporary read grant per share. Unused library receivers removed. No deep links, no PendingIntents, no WebView. | MASVS-PLATFORM-1, PLATFORM-2 |
 | `filterTouchesWhenObscured` on the activity and every dialog window (`GuardedAlertDialog`). | MASVS-PLATFORM-3 |
 | Runtime permissions: CAMERA asked of the officer at session start, never on the stage; BLUETOOTH_CONNECT only when a second screen is set up. Build gates fail any variant with RECORD_AUDIO or background location, and `standard` with any discovery or location permission. | CERT-In 6.2.6 |
 | Camera: Preview and ImageAnalysis only; frames tracked in memory while the stage camera shows, at most one per 30 ms and down to one per 250 ms when idle or when the phone reports severe heat; landmarks kept only inside a sign window; the officer and the department can turn the mirror off. | MASVS-PRIVACY-1, DPDP s.8 |
-| Screen pinning (`startLockTask`) while the stage shows; first run guides the officer to turn on "ask for PIN before unpinning". | |
+| Screen pinning (`startLockTask`) for the whole session on this phone, lifted only for the interpreter call or the share sheet and set again on return. The officer should turn on "ask for PIN before unpinning" in system settings; the app does not check it. | |
 
 ### 2.6 Code and supply chain
 
@@ -97,17 +97,17 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | Control | Status | Evidence | MASTG |
 | --- | --- | --- | --- |
 | STORAGE-1 Secure storage | Implemented | `DatabaseKey`, `SessionDatabase`, `KeystoreVault` | 0001, 0200 |
-| STORAGE-2 No leakage | Implemented | Backup rules, FLAG_SECURE, Log stripping, no-learning keyboard | 0003, 0011, 0201, 0202 |
+| STORAGE-2 No leakage | Implemented | Backup rules, Log stripping, no-learning keyboard | 0003, 0011, 0201, 0202 |
 | CRYPTO-1 Strong cryptography | Implemented | §2.2 inventory | 0013, 0208, 0221 |
 | CRYPTO-2 Key management | Implemented | §4 | 0015, 0212 |
 | AUTH-1 Remote authentication | Implemented on the gateway; pinning and attestation open | `backend/signsetu_gateway/security.py` | 0017 |
 | AUTH-2 Local authentication | Partial: the prompt gates actions; the DEK is not bound to the prompt by a CryptoObject (accepted: officers share no device credential, and the KEK still needs an unlocked phone) | `OfficerAuth`, `DatabaseKey` | 0018, 0326 |
 | AUTH-3 Step-up for sensitive actions | Implemented for leave, end, export, delete, clear; switching the online assistant on is gated by a notice, not the prompt | `OfficerAuth` call sites | 0327 |
 | NETWORK-1 Secure traffic | Implemented | `UrlHttp`, `network_security_config.xml` | 0019, 0217, 0233 |
-| NETWORK-2 Identity pinning | Gap until the production host is fixed | [17](17-attestation-and-pinning.md) | 0020, 0021 |
+| NETWORK-2 Identity pinning | Gap until the production host is fixed | [14](14-attestation-and-pinning.md) | 0020, 0021 |
 | PLATFORM-1 IPC | Implemented | Merged manifest (§2.5) | 0007, 0250, 0251 |
 | PLATFORM-2 WebViews | Not applicable: no WebView | | 0028 |
-| PLATFORM-3 UI | Implemented | FLAG_SECURE, overlay filter, pinning | 0035, 0289 |
+| PLATFORM-3 UI | Implemented in the final release build | FLAG_SECURE (`secureScreen`), overlay filter, pinning | 0035, 0289 |
 | CODE-1 Platform version | Implemented | minSdk 29, targetSdk 37 | 0272 |
 | CODE-2 Updates | Implemented by build expiry | `Policy.kt` | 0274 |
 | CODE-3 Vulnerable components | Implemented | OSV-Scanner, lockfile, BouncyCastle pin | 0222 |
@@ -129,6 +129,7 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | KEK `signsetu.kek.unlocked` | Android Keystore, non-exportable, unlocked-device only | On reinstall, or when Android drops it | Store deleted, new keys made, officer told once |
 | KEK `signsetu.kek.open` | Keystore, only while the phone has no secure lock | Moved under the unlocked-only key at the first unlock with a lock | Same |
 | Gateway token key `signsetu.gateway.token` | Keystore, wraps `gw.bin` | On Clear of the token (401) | Device enrols again with a new code |
+| Service key key `signsetu.assist.key` | Keystore, wraps `assist.bin` (builds without a gateway) | When the officer removes or replaces the service | Officer enters the key again |
 | Export passphrase | Shown once | Per export | Report unreadable; export again |
 | Link keys | ECDH and HKDF per link, memory only | Every link and resume | Link closes; pair again |
 | Resume secret | Memory only | Every new link; zeroed on Bye, expiry, lock, end | Reconnect needs the code |
@@ -143,9 +144,9 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | Phone at rest | Lost, stolen or seized phone read | I | SQLCipher, unlocked-only KEK, relock, retention, wipe while locked | A phone with no lock screen; officer SOP |
 | Phone at rest | Family member who knows the phone PIN | S, I | Retention, finish and delete, OfficerAuth | Shared PINs; department PIN if the pilot shows it |
 | Stage | Subject leaves the app or reads officer data | E, I | Pinning, officer handle, no drafts or notes on the stage | Unpinning gesture if the device allows it |
-| Stage | Machine reading taken as the subject's answer | R, T | Subject confirms from pictures; grades; readings in their own section | None beyond reader accuracy |
+| Stage | Machine reading taken as the subject's answer | R, T | Readings logged as the app's or officer's, never the subject's; the subject can be asked to choose from pictures; grades; readings in their own section | An officer who never asks the subject to choose |
 | Record | Row edited after the fact | T, R | Hash chain, record digest, certificate | A full rewrite of the store with the DEK |
-| OS and apps | Overlay tapjacking, screenshots, backups | T, I | Touch filter, FLAG_SECURE, backup exclusion | |
+| OS and apps | Overlay tapjacking, screenshots, backups | T, I | Touch filter, FLAG_SECURE in the final build, backup exclusion | Screenshots in testing builds |
 | OS and apps | Malicious intent or provider access | E | Nothing exported beyond the launcher and the job service | |
 | Bluetooth | Rogue, relayed or wrong stage device | S, T | Bonded only, commit-then-reveal, code and check number, AEAD, strict counters | Officer misreads the check number |
 | Network | Traffic read or altered | I, T | TLS, validated networks, masking | User-installed CA until pinning |
@@ -164,9 +165,10 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | F-2 | DEK not bound to the biometric prompt | Low | Accepted; documented in AUTH-2 |
 | F-3 | No debugger or hook detection | Medium | Waits on the department's MASVS-R decision (NOTE E-5) |
 | F-4 | Root check is a heuristic | Low | Warn-only by design, so an emergency is never blocked |
-| F-5 | A private build may compile in a direct assistant key | High if distributed | Release gate refuses it without `-PallowEmbeddedKey`; such a build must never leave the department |
+| F-5 | An assistant key compiled into an APK | Closed | The build no longer has a key field; keys live on the gateway or in the officer's Keystore |
 | F-6 | The record digest joins fields without a separator | Low | The hash chain (length-prefixed fields) is the integrity control; the digest only matches re-exports |
-| F-7 | Bundled BouncyCastle ships a trust-all `X509TrustManager` class (lint) | Info | Unused by the app; R8 keeps it only if referenced |
+| F-7 | Testing builds allow screenshots | Medium until the final build | `secureScreen=true` for the final release APK |
+| F-8 | Bundled BouncyCastle ships a trust-all `X509TrustManager` class (lint) | Info | Unused by the app; R8 keeps it only if referenced |
 
 ## 7. Testing plan
 
@@ -177,7 +179,7 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | Auth | 0018, 0326, 0327 | Relock timings; each gated action; behaviour with no lock screen |
 | Network | 0019, 0020, 0233 | mitmproxy with a user CA against a gateway build; confirm masking on the wire |
 | Platform | 0007, 0035, 0250 | Drozer for exported components; overlay test app; screenshot attempts |
-| Second screen | Pairing protocol | [08-two-device-bluetooth-test.md](08-two-device-bluetooth-test.md); a modified peer for wrong version, bad curve point, replayed and oversized frames |
+| Second screen | Pairing protocol | [07-two-device-bluetooth-test.md](07-two-device-bluetooth-test.md); a modified peer for wrong version, bad curve point, replayed and oversized frames |
 | Resilience | 0038, 0039 | Frida against root and relock behaviour |
 | Privacy | 0254, 0256 | Permission review of each variant's merged manifest; first-run and consent texts |
 

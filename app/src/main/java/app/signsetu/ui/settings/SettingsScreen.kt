@@ -40,6 +40,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import kotlin.math.roundToInt
 import androidx.compose.material3.Switch
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Text
@@ -73,6 +75,8 @@ import app.signsetu.ui.components.LocalCloudAi
 import app.signsetu.data.settings.AppSettings
 import app.signsetu.data.settings.InterpreterApp
 import app.signsetu.data.settings.SettingsStore
+import app.signsetu.data.settings.ThemeMode
+import app.signsetu.data.settings.ColorTheme
 import app.signsetu.data.settings.whatsappNumber
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
@@ -81,11 +85,11 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import app.signsetu.ui.components.GuardedAlertDialog
 
-private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, CLOUD, AIKEY, DEVELOPER }
+private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, THEME, COLOUR, CLOUD, AIKEY, DEVELOPER }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit) {
+fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onCallInterpreter: (() -> Unit)?) {
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
@@ -142,16 +146,19 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding(),
         ) {
+            Group(R.string.practice_title) {
+                Item(stringResource(R.string.practice_title), stringResource(R.string.practice_settings_summary), onClick = onPractice)
+            }
             Group(R.string.settings_interpreter) {
                 Item(stringResource(R.string.settings_interpreter_app), stringResource(appName(s.interpreterApp))) { dialog = Dialog.APP }
                 if (s.interpreterApp != InterpreterApp.NONE) {
                     Item(stringResource(R.string.settings_interpreter_contact), s.interpreterContact.ifBlank { notSet }) { dialog = Dialog.CONTACT }
+                    onCallInterpreter?.let { call -> Item(stringResource(R.string.settings_interpreter_test), stringResource(R.string.settings_interpreter_test_summary), onClick = call) }
                 }
             }
             Group(R.string.settings_stage) {
                 SwitchItem(R.string.settings_camera, R.string.settings_camera_summary, s.cameraEnabled) { on -> scope.launch { store.setCameraEnabled(on) } }
-                SwitchItem(R.string.settings_large_captions, R.string.settings_large_captions_summary, s.largeCaptions) { on -> scope.launch { store.setLargeCaptions(on) } }
-                SwitchItem(R.string.settings_slow_gestures, R.string.settings_slow_gestures_summary, s.slowGestures) { on -> scope.launch { store.setSlowGestures(on) } }
+                SpeedItem(s.gestureSpeed) { v -> scope.launch { store.setGestureSpeed(v) } }
                 SwitchItem(R.string.settings_isl_reorder, R.string.settings_isl_reorder_summary, s.islReorder) { on -> scope.launch { store.setIslReorder(on) } }
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_asl_advisory)) },
@@ -171,6 +178,8 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                         }
                     },
                 )
+            }
+            Group(R.string.settings_assistant) {
                 if (available) ListItem(
                     headlineContent = { Text(stringResource(if (viaGateway) R.string.settings_cloud_ai else R.string.settings_cloud_ai_direct)) },
                     supportingContent = { Text(stringResource(if (viaGateway) R.string.settings_cloud_ai_summary else R.string.settings_cloud_ai_summary_direct)) },
@@ -183,11 +192,6 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                 if (s.cloudAi) {
                     if (viaGateway) Item(stringResource(R.string.settings_cloud_ai_key), if (enrolled) stringResource(R.string.settings_cloud_ai_enrolled) else notSet) { dialog = Dialog.AIKEY }
                 }
-                SwitchItem(R.string.settings_allow_auto, R.string.settings_allow_auto_summary, s.allowAuto) { on -> scope.launch { store.setAllowAuto(on) } }
-                SwitchItem(R.string.settings_tilt, R.string.settings_tilt_summary, s.tiltToShow) { on -> scope.launch { store.setTiltToShow(on) } }
-                SwitchItem(R.string.settings_volume_keys, R.string.settings_volume_keys_summary, s.volumeKeys) { on -> scope.launch { store.setVolumeKeys(on) } }
-            }
-            Group(R.string.settings_assistant) {
                 ListItem(
                     headlineContent = {
                         Text(
@@ -235,6 +239,8 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                 }
             }
             Group(R.string.settings_about) {
+                Item(stringResource(R.string.settings_theme), stringResource(themeName(s.themeMode))) { dialog = Dialog.THEME }
+                Item(stringResource(R.string.settings_color_theme), stringResource(colorName(s.colorTheme))) { dialog = Dialog.COLOUR }
                 Item(stringResource(R.string.settings_app_language), stringResource(languageName(OfficerLocale.get(context)))) { dialog = Dialog.LANGUAGE }
                 Item(stringResource(R.string.settings_licences), stringResource(R.string.settings_licences_summary)) { dialog = Dialog.LICENCES }
                 ListItem(
@@ -249,6 +255,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                         }
                     },
                 )
+                SwitchItem(R.string.settings_reduce_motion, R.string.settings_reduce_motion_summary, s.reduceMotion) { on -> scope.launch { store.setReduceMotion(on) } }
             }
             Spacer(Modifier.height(Spacing.xl))
         }
@@ -349,6 +356,22 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
             },
             onDismiss = { dialog = null },
         )
+        Dialog.THEME -> ChoiceDialog(
+            title = stringResource(R.string.settings_theme),
+            options = ThemeMode.entries,
+            selected = s.themeMode,
+            label = { stringResource(themeName(it)) },
+            onPick = { scope.launch { store.setThemeMode(it) }; dialog = null },
+            onDismiss = { dialog = null },
+        )
+        Dialog.COLOUR -> ChoiceDialog(
+            title = stringResource(R.string.settings_color_theme),
+            options = ColorTheme.entries,
+            selected = s.colorTheme,
+            label = { stringResource(colorName(it)) },
+            onPick = { scope.launch { store.setColorTheme(it) }; dialog = null },
+            onDismiss = { dialog = null },
+        )
         null -> Unit
     }
 }
@@ -358,6 +381,24 @@ fun languageName(tag: String) = when (tag) {
     "en" -> R.string.lang_english
     "hi" -> R.string.lang_hindi
     else -> R.string.settings_lang_system
+}
+
+@StringRes
+private fun themeName(mode: ThemeMode) = when (mode) {
+    ThemeMode.SYSTEM -> R.string.settings_theme_system
+    ThemeMode.LIGHT -> R.string.settings_theme_light
+    ThemeMode.DARK -> R.string.settings_theme_dark
+}
+
+@StringRes
+private fun colorName(theme: ColorTheme) = when (theme) {
+    ColorTheme.EMERALD -> R.string.theme_emerald
+    ColorTheme.MOCHA -> R.string.theme_mocha
+    ColorTheme.SAGE -> R.string.theme_sage
+    ColorTheme.CERULEAN -> R.string.theme_cerulean
+    ColorTheme.AMETHYST -> R.string.theme_amethyst
+    ColorTheme.AMOLED -> R.string.theme_amoled
+    ColorTheme.CONTRAST -> R.string.theme_contrast
 }
 
 @StringRes
@@ -379,6 +420,22 @@ private fun Group(@StringRes title: Int, content: @Composable ColumnScope.() -> 
             content = content,
         )
     }
+}
+
+@Composable
+private fun SpeedItem(speed: Float, onChange: (Float) -> Unit) {
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_gesture_speed, speed)) },
+        supportingContent = {
+            Slider(
+                value = speed,
+                onValueChange = { onChange((it * 4).roundToInt() / 4f) },
+                valueRange = 0.25f..1.5f,
+                steps = 4,
+            )
+        },
+        colors = ItemColors,
+    )
 }
 
 @Composable

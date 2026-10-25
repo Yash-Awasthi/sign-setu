@@ -359,11 +359,11 @@ class PairTest {
     // 13
     @Test
     fun theStageSeesWhatIsOnStageNeverTheDraft() {
-        assertNull(ui(Pending.Drawing, null, Mode.OFFICER).toStageView(false, 1f, true).item)
-        val view = ui(Pending.Cards(listOf("no")), Pending.Ask(question), Mode.SHOW).toStageView(false, 1f, true)
+        assertNull(ui(Pending.Drawing, null, Mode.OFFICER).toStageView(1f, true).item)
+        val view = ui(Pending.Cards(listOf("no")), Pending.Ask(question), Mode.SHOW).toStageView(1f, true)
         assertTrue(view.live)
         assertEquals(WirePending.Ask("q1"), view.item)
-        assertFalse(ui(null, Pending.Ask(question), Mode.OFFICER).toStageView(false, 1f, true).live)
+        assertFalse(ui(null, Pending.Ask(question), Mode.OFFICER).toStageView(1f, true).live)
     }
 
     @Test
@@ -399,9 +399,9 @@ class PairTest {
     fun preparingWhileLiveLeavesTheStageAlone() = vmTest { vm, _ ->
         vm.prepare(Pending.Ask(question))
         vm.show()
-        val before = vm.ui.value!!.toStageView(false, 1f, true)
+        val before = vm.ui.value!!.toStageView(1f, true)
         vm.prepare(Pending.Cards(listOf("water")))
-        assertEquals(before, vm.ui.value!!.toStageView(false, 1f, true))
+        assertEquals(before, vm.ui.value!!.toStageView(1f, true))
         assertEquals(Pending.Cards(listOf("water")), vm.ui.value!!.pending)
     }
 
@@ -620,7 +620,7 @@ class PairTest {
                 officer.state.first { it == LinkState.Live }
                 stage.state.first { it == LinkState.Live }
 
-                val view = StageView("hi", "ISL_USER", true, WirePending.Ask("q1"), false, false, 1f, true)
+                val view = StageView("hi", "ISL_USER", true, WirePending.Ask("q1"), false, 1f, true)
                 officer.show(5L, view)
                 assertEquals(view, stage.view.first { it != null }!!.view)
 

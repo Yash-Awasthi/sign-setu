@@ -44,11 +44,11 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | --- | --- |
 | The officer can rotate the Show state 180 degrees for a subject sitting opposite. | MUST |
 | The app has two states: **Officer** (officer panel full screen) and **Show** (subject panel full screen, facing the subject). One tap switches between them. | MUST |
-| Opening the app resumes the unfinished session or starts a new one. | MUST |
+| Opening the app offers to resume the unfinished session; starting a new one first saves the unfinished one under its start time. | MUST |
 | Finishing a session saves it under a name the officer chooses, offers export, and allows deleting it instead. | MUST |
 | The officer sets the subject language per session (Hindi and English at minimum). | MUST |
 | The officer sets a subject profile per session and can change it at any time. | MUST |
-| While the stage shows, the app stays pinned (screen pinning) when the device allows it; first run guides the officer to turn on app pinning. Returning from the stage to the officer page needs the officer handle or both volume keys held for 1.5 s; Back does nothing on the stage. | MUST |
+| While a session is open on this phone, the app stays pinned (screen pinning) when the device allows it; pinning is lifted only to open the interpreter's app or the share sheet, and set again on return. Returning from the stage to the officer page needs the officer handle held for 1.5 s; Back does nothing on the stage. | MUST |
 
 ### 4.2 Asking
 
@@ -64,16 +64,17 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | The officer can show any card from the full picture board, with categories, search and favourites. | MUST |
 | Phrase bank: reviewed sentences with slots ("Do you want [item]?") play as a sequence of lexicon clips. | SHOULD |
 | Language finder: tiles that each play a recorded greeting in one language; the subject's choice sets the subject language. | MUST |
-| Call an interpreter opens a video call in the configured messaging app (Sandes or WhatsApp) to the state's contact. The button is hidden when no contact is configured. No session data is passed. | MUST |
+| Call an interpreter opens the configured messaging app: WhatsApp at the contact's number, or Sandes after copying the contact to the clipboard. The button is hidden when no contact is configured. No session data is passed. | MUST |
 
 ### 4.3 Answers
 
 | Requirement | Priority |
 | --- | --- |
 | Yes and No are always available as large cards during a question. | MUST |
+| Water and food are on the stage at every moment; a tap on either is logged as the subject's request, not as an answer to the item on screen, unless that item offered the picture itself. | MUST |
 | When the subject taps a card, the officer sees the card and its label in the officer language. | MUST |
 | The subject can draw on a canvas with a finger, start again, and finish; the drawing is logged as the answer. | MUST |
-| Below the character, the stage shows a live mirror of the subject's hands from the front camera. Nothing is captured, recorded or stored. The officer can turn it off for one person; the department can turn it off in settings. | MUST |
+| The stage shows a live mirror of the subject from the front camera: a movable window in the call view, below the character in the panel view. Nothing is captured, recorded or stored. The officer can turn it off for one person; the department can turn it off in settings. | MUST |
 | During any question the subject can also answer "I don't know", "I don't understand" or "That's wrong", or ask to Stop, which opens a pause. Stop is drawn as an octagonal stop sign, never an open palm. "Stop" is shown to the officer prominently, with guidance to pause. | MUST |
 | Gesture lookup: the officer records where the hand went (body location) and what it did (hand action); the app lists matching lexicon entries with picture and clip. | MUST |
 | Machine translation of the officer's typed text into the subject's language, shown with its translation back into English when one could be made and marked as not checked, before the officer chooses to show it: on the phone, or through the department gateway when the officer has switched the online assistant on. | SHOULD |
@@ -94,8 +95,8 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 
 | Requirement | Priority |
 | --- | --- |
-| First run explains the app in three screens (an aid, not an interpreter), sets the officer language, requires a secure device lock, and guides the officer to enable app pinning. | MUST |
-| Settings: officer language, large captions, slower gestures, retention period, clear all data, about and open-source licences. | MUST |
+| First run sets the officer language and explains the app in three screens: an aid, not an interpreter; sessions are deleted after the retention time; records stay on the phone. On a phone with no secure lock screen the app warns once at unlock and keeps records under a key not tied to unlocking until a lock is set. | MUST |
+| Settings: officer language, signing speed, reduce motion, retention period, clear all data, about and open-source licences. | MUST |
 | The "aid, not an interpreter" notice appears on first run and in About. | MUST |
 | A build stops starting new sessions 180 days after its build date and shows "Update required"; existing sessions can still be exported and cleared. | MUST |
 
@@ -106,16 +107,16 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | The officer can pair one stage device and use it as the subject's screen. The device must already be paired in system Settings. The stage shows a 6-digit code that the officer types on their phone; both screens then show the same 4-digit check number, and the stage taps Match. Three wrong codes close the link. | SHOULD |
 | The stage device stores nothing except one settings flag, `stageDevice`, which stops it offering to unlock by itself. It holds only the current item, stays pinned with no local exit while Live, and at the end shows a pinned hand-back screen until its own credential is given. | MUST |
 | Answers from the stage are logged on the officer phone, acknowledged only after the commit, never dropped, de-duplicated on (item, answer number) and linked to the item they answer. Answers that arrive after a resume or for an earlier item are marked `stage_late`. | MUST |
-| Link failure: both sides ping every 10 s and the link is lost after 30 s with no frame. A resume within 120 s needs no code. The officer gets Reconnect and "Use this phone". The stage shows Hold while the officer is out of the app; the 5-minute relock ends the link. | MUST |
+| Link failure: both sides ping every 10 s and the link is lost after 30 s with no frame. A resume within 120 s needs no code. The officer gets Reconnect and "Use this phone". The stage shows Hold while the officer is out of the app; the relock (5 minutes away from the app, 30 minutes while a session screen is open) ends the link. | MUST |
 | Stop and "I don't know" are always available on the stage device (Live, Lost and Hold). Stop opens a break that blocks Show until the officer taps "Break given", logged as `break_given`. | MUST |
 
 ### 4.7 Conversation modes
 
 | Requirement | Priority |
 | --- | --- |
-| The officer can switch between Manual and Auto at any time. Manual is the default each session; Auto is available only when allowed in Settings. | SHOULD |
+| The officer can switch between Manual and Auto at any time. Manual is the default each session. | SHOULD |
 | Auto proposes only reviewed items from the rapport, ground-rule, welfare, practical, break and closing phases, in protocol order, filtered by role, deterministically. It never proposes sensitive, free-recall, follow-up or rights items. | MUST |
-| Every question needs one officer tap to show. Only statements may advance by themselves, on the subject's Next tap, at most 3 in a row. | MUST |
+| Auto runs hands-off: each proposal goes to the stage by itself after a short gap, held back while the subject is still signing; an unanswered question is shown once more after 10 s and then skipped. The officer can pause, skip, choose something else or take the phone back at any time, and any of these stops the run. | MUST |
 | The Auto rules apply to every proposal. | MUST |
 | Suggested, approved, skipped and automatically advanced items are logged with item ID, source and reason; every answer is logged with the ID of the item it answers. | MUST |
 | "I don't understand" is always offered on the stage. | MUST |
@@ -153,10 +154,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | --- | --- |
 | A session opens with the officer's introduction, four pictured and signed ground rules and a practice round, moved on by the subject's Next; each step is logged, and taking the phone back before the practice round logs "Officer skipped the rest of the ground rules". | MUST |
 | After Stop a calm pause layer covers the whole stage, so no answer can be tapped; only the subject's "I'm ready" ends it, and its length is logged. The officer's lock stays reachable. | MUST |
-| An officer glance strip shows the last question and answer upside down at the edge facing the officer; it is hidden for sensitive questions, for personal-detail answers and while the subject draws or writes, can be hidden for the session, and never shows machine readings. | SHOULD |
 | Vibration codes for whoever holds the phone: Yes one long buzz, No two buzzes, Stop, Break, "I don't know", "I don't understand" or "That's wrong" three short pulses, a picture a tick; never for the young-child profile. | SHOULD |
-| Sun mode: in glare the stage turns black, white and yellow, on after 3 s above 10,000 lux and off after 10 s below 2,000 lux; the light sensor is read only while the stage shows; the officer can force it on. | SHOULD |
-| Tilt to show (tipping the phone over its top edge for about 0.6 s) and Volume Up show what is prepared; on the stage single volume presses do nothing and holding both keys for 1.5 s returns to the officer. Both can be turned off and stand aside when TalkBack is on. | SHOULD |
 | After a crash, low-memory kill or relock while the stage was showing, unlocking always asks for the full biometric or PIN. | MUST |
 
 ### 4.12 Personal details, phrases and the ISL dictionary
@@ -168,7 +166,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | The report carries a "Personal details given" table: field, value, how it was given and whether the person confirmed it. | MUST |
 | A phrase board on the stage offers the everyday phrases as pictures with words; a tap is logged as the subject's own. | SHOULD |
 | The officer can search an ISL dictionary of every recorded and authored sign in English or Hindi, play a sign, and prepare it for the stage. | SHOULD |
-| The stage shows the camera at its own 9:16 shape without cropping, between two rails of answers; Stop is the only pause control on the phone's stage. | MUST |
+| The panel view shows the camera at its own 9:16 shape without cropping, between two rails of answers; Stop is the only pause control on the phone's stage, in both views. | MUST |
 | While the stage camera shows, the subject sees their hands, arms, brows and lips traced live; a wrist leaving the frame lights that edge during a sign window. | SHOULD |
 | A nod, head shake, thumbs up or down, raised open palm, shrug, or a finger held on a body part makes the matching Yes, No, Stop, "I don't know" or picture pulse as a proposal; only the subject's tap answers. | SHOULD |
 | A sign the officer reads as a word the reader did not offer is recognised for the rest of the session and offered first. | SHOULD |
@@ -176,6 +174,23 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | A victim or witness can describe someone with pictures: clothes, colours and what was in their hands, offered only as follow-up after free recall. | SHOULD |
 | When a sign reads as a letter, the word reader's top guess is still offered among the three guesses. | SHOULD |
 | The officer sets the sign language of a session, ISL or ASL, and can change it during the session; each change is logged. The setting selects the sign reader, the dictionary, the fingerspelling alphabet and numbers, and the character's signs for typed text. ASL text keeps the order typed; the ISL reordering of time, negation and question words applies to ISL only. Every ASL sign and pairing is a draft until reviewed by Deaf ASL signers. | SHOULD |
+
+### 4.13 Online assistant and AI counsellor (optional)
+
+| Requirement | Priority |
+| --- | --- |
+| Online features exist only in a build with a department gateway, or a private build with a direct service key; they are off until the officer accepts the notice in Settings, and a gateway device must be enrolled with a one-time department code. | MUST |
+| Session text (counsellor history, draft report) leaves the phone only after the officer allows it once for the session; known names, details, numbers, emails and links are masked before sending and restored on return. | MUST |
+| The AI counsellor runs only for a victim or witness; each line is shown to the officer for 2 s before it goes to the stage, with Send now, Another line and Take over, and Stop, a break or a risk flag hands the conversation back. Every line is recorded as written by the counsellor. | MUST |
+| Without a network the draft report falls back to an on-phone rule-based draft marked "not part of the record". | SHOULD |
+
+### 4.14 Record integrity
+
+| Requirement | Priority |
+| --- | --- |
+| Every event row is sealed into a SHA-256 hash chain as it is written; export re-walks the chain and reports the first broken row. | MUST |
+| The report carries a draft certificate under BSA section 63 with the chain head and the record digest, for the officer to sign. | SHOULD |
+| A skeleton snapshot of a signed answer is kept only when the officer turns evidence mode on for the session. | MUST |
 
 ## 5. Non-functional requirements
 
@@ -192,30 +207,13 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Text contrast at least 4.5:1; meaning never carried by colour alone. | MUST |
 | Officer panel usable at 200% system font scale. | MUST |
 | Officer panel works with TalkBack. | SHOULD |
-| Subject panel: no timers, flashing or pop-ups; sound only on officer action or by profile. The only time bar is the 20-second answer window the subject opened by signing; an account (Tell me) shows none. | MUST |
+| Subject panel: no timers, flashing or pop-ups; sound only on officer action or by profile. The only time bar is the 20-second answer window the subject opened by signing; an account (Tell me) shows none. In Auto the stage shows when the next item will come. | MUST |
 | All text from resources; Devanagari and the supported regional scripts render correctly. | MUST |
 | Session data encrypted at rest under a key protected by Android Keystore. | MUST |
-| Opening the app and past sessions require device credential or strong biometric. | MUST |
-| Screenshots, screen recording and recents thumbnails blocked. | MUST |
+| Opening the app and past sessions require the device credential or a strong biometric whenever the phone has a secure lock screen. | MUST |
+| Screenshots, screen recording and recents thumbnails blocked in the final release build, behind the single build switch `secureScreen`; testing builds leave them open. | MUST |
 | No session data in backups or device transfer. | MUST |
-| No build declares RECORD_AUDIO or background location; the `standard` build declares no location or discovery permission. INTERNET is used only for the online assistant. CAMERA is declared for the stage mirror and sign windows, BLUETOOTH_CONNECT for the second screen, USE_BIOMETRIC for the officer's unlock, and VIBRATE (a normal permission) for answer codes. The optional `nearby` flavor adds the Nearby Connections discovery permissions and nothing else. | MUST |
+| No build declares RECORD_AUDIO or background location; the `standard` build declares no location or discovery permission. INTERNET is used only for the online assistant. CAMERA is declared for the stage mirror and sign windows, BLUETOOTH_CONNECT for the second screen, USE_BIOMETRIC for the officer's unlock, VIBRATE (a normal permission) for answer codes, and RECEIVE_BOOT_COMPLETED (normal) to keep the hourly retention job scheduled. The optional `nearby` flavor adds the Nearby Connections discovery permissions and nothing else. | MUST |
 | No third-party analytics, advertising or crash-reporting SDKs. | MUST |
 | No personal data in logs, crash traces or notifications. | MUST |
 | Under 1 crash per 100 sessions in the pilot. | MUST |
-
-### 4.13 Online assistant and AI counsellor (optional)
-
-| Requirement | Priority |
-| --- | --- |
-| Online features exist only in a build with a department gateway, or a private build with a direct service key; they are off until the officer accepts the notice in Settings, and a gateway device must be enrolled with a one-time department code. | MUST |
-| Session text (counsellor history, draft report) leaves the phone only after the officer allows it once for the session; known names, details, numbers, emails and links are masked before sending and restored on return. | MUST |
-| The AI counsellor runs only for a victim or witness; each line is shown to the officer before it goes to the stage, and Stop, a break or a risk flag hands the conversation back. Every line is recorded as written by the counsellor. | MUST |
-| Without a network the draft report falls back to an on-phone rule-based draft marked "not part of the record". | SHOULD |
-
-### 4.14 Record integrity
-
-| Requirement | Priority |
-| --- | --- |
-| Every event row is sealed into a SHA-256 hash chain as it is written; export re-walks the chain and reports the first broken row. | MUST |
-| The report carries a draft certificate under BSA section 63 with the chain head and the record digest, for the officer to sign. | SHOULD |
-| A skeleton snapshot of a signed answer is kept only when the officer turns evidence mode on for the session. | MUST |

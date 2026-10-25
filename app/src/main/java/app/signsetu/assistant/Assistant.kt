@@ -21,8 +21,8 @@ class Assistant(private val models: ModelStore, private val cloud: CloudAi? = nu
         }
         if (local != null) return local
         // Only the officer's own sentence goes out; it holds no subject details.
-        val caption = cloud?.ask(toLanguage(language), text, emptyList(), 200)?.firstLine() ?: return null
-        return Suggestion(caption, cloud.ask(BACK_TO_ENGLISH, caption, emptyList(), 120)?.firstLine())
+        val caption = cloud?.ask(toLanguage(language), text, emptyList(), 200, timeoutMs = CAPTION_WAIT_MS, retry = false)?.firstLine() ?: return null
+        return Suggestion(caption, cloud.ask(BACK_TO_ENGLISH, caption, emptyList(), 120, timeoutMs = CAPTION_WAIT_MS, retry = false)?.firstLine())
     }
 
     private fun toLanguage(language: Language) = translatePrompt(language)
@@ -31,6 +31,8 @@ class Assistant(private val models: ModelStore, private val cloud: CloudAi? = nu
 
     private companion object {
         const val BACK_TO_ENGLISH = BACK_TO_ENGLISH_PROMPT
+        /** A caption is worth waiting about this long for; past it the officer sends their own words. */
+        const val CAPTION_WAIT_MS = 3_000
     }
 }
 

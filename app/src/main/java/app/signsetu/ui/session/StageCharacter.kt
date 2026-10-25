@@ -1,5 +1,12 @@
 package app.signsetu.ui.session
 
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import app.signsetu.ui.theme.LocalMotion
+import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.layout.only
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
@@ -130,7 +137,7 @@ private object BubbleShape : Shape {
 }
 
 @Composable
-internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = false, highlight: IntRange? = null, onWordTap: ((Int) -> Unit)? = null) {
+internal fun Bubble(text: String, compact: Boolean = false, highlight: IntRange? = null, onWordTap: ((Int) -> Unit)? = null) {
     val stage = LocalStageColors.current
     val styled = buildAnnotatedString {
         append(text)
@@ -147,7 +154,6 @@ internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = fal
         .semantics { onClick(replayName) { onTap?.invoke(0); true } }
     // Line height in em so a caption shrunk to fit gains lines instead of clipping.
     val style = when {
-        large -> MaterialTheme.typography.headlineMedium
         compact -> MaterialTheme.typography.titleMedium
         else -> MaterialTheme.typography.titleLarge
     }.copy(lineHeight = 1.2.em)
@@ -164,7 +170,7 @@ internal fun Bubble(text: String, large: Boolean = false, compact: Boolean = fal
             styled,
             style = style,
             textAlign = TextAlign.Center,
-            maxLines = if (large) 6 else 5,
+            maxLines = 5,
             autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = style.fontSize, stepSize = 1.sp),
             overflow = TextOverflow.Ellipsis,
             onTextLayout = { layout = it },
@@ -221,12 +227,49 @@ internal fun LetterTile(letters: List<String>, current: Int, modifier: Modifier)
 
 internal const val HANDLE_HOLD_MS = 1_000L
 
+/** Tells the person at the stage that auto mode is about to show the next item, so it never arrives unannounced. */
 @Composable
-internal fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
+internal fun AutoNextChip(seconds: Int, modifier: Modifier) {
+    Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f), modifier = modifier.padding(top = 13.dp)) {
+        Text(stringResource(R.string.auto_next_in, seconds), color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
+    }
+}
+
+/** The officer's way back to the phone: hold the chat button and a ring fills over a dimmed screen; when it closes
+ * the officer's side opens. Letting go early, or sliding the finger away, starts over. */
+@Composable
+internal fun OfficerHandleLayer(onClick: () -> Unit, modifier: Modifier) {
+    val hold = remember { Animatable(0f) }
+    Box(Modifier.fillMaxSize()) {
+        if (hold.value > 0f) HoldRing(hold.value)
+        OfficerHandle(onClick, hold, modifier)
+    }
+}
+
+@Composable
+private fun HoldRing(progress: Float) {
+    val motion = LocalMotion.current
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRect(Color.Black.copy(alpha = 0.6f * if (motion) (progress * 4f).coerceAtMost(1f) else 1f))
+            val stroke = 6.dp.toPx()
+            val radius = 44.dp.toPx()
+            val topLeft = Offset(center.x - radius, center.y - radius)
+            val box = Size(radius * 2, radius * 2)
+            drawArc(Color.White.copy(alpha = 0.25f), 0f, 360f, false, topLeft, box, style = Stroke(stroke))
+            drawArc(Color.White, -90f, 360f * progress, false, topLeft, box, style = Stroke(stroke, cap = StrokeCap.Round))
+        }
+        Text("💬", fontSize = 30.sp)
+    }
+}
+
+@Composable
+private fun OfficerHandle(onClick: () -> Unit, hold: Animatable<Float, AnimationVector1D>, modifier: Modifier) {
     val stage = LocalStageColors.current
     val label = stringResource(R.string.show_officer)
     val current by androidx.compose.runtime.rememberUpdatedState(onClick)
-    // Small and quiet, and held for a second: a subject's stray tap does not hand them the officer's screen.
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
     Box(
         modifier
             .padding(6.dp)
@@ -234,16 +277,35 @@ internal fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
             .clip(CircleShape)
             .pointerInput(Unit) {
                 awaitEachGesture {
-                    awaitFirstDown()
-                    val released = withTimeoutOrNull(HANDLE_HOLD_MS) { waitForUpOrCancellation() }
-                    if (released == null) current()
+                    val down = awaitFirstDown()
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    val ring = scope.launch {
+                        // Timed on the wall clock, not by an animation spec: the phone's animation-speed setting must not shorten the hold.
+                        val started = System.nanoTime()
+                        do {
+                            withFrameNanos { }
+                            hold.snapTo(((System.nanoTime() - started) / 1_000_000f / HANDLE_HOLD_MS).coerceAtMost(1f))
+                        } while (hold.value < 1f)
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        current()
+                        hold.snapTo(0f)
+                    }
+                    do {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.first()
+                        val slid = (change.position - down.position).getDistance() > viewConfiguration.touchSlop * 2
+                        if (slid || !change.pressed) {
+                            if (hold.value < 1f) { ring.cancel(); scope.launch { hold.snapTo(0f) } }
+                            break
+                        }
+                    } while (true)
                 }
             }
             .semantics { role = Role.Button; contentDescription = label; onLongClick(label) { current(); true } },
         contentAlignment = Alignment.Center,
     ) {
         Surface(shape = CircleShape, color = stage.handle, modifier = Modifier.size(34.dp)) {
-            Icon(Icons.Filled.Lock, contentDescription = null, tint = stage.onHandle, modifier = Modifier.padding(8.dp))
+            Box(contentAlignment = Alignment.Center) { Text("💬", fontSize = 16.sp) }
         }
     }
 }

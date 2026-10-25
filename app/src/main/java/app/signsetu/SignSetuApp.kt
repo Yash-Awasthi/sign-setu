@@ -19,7 +19,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import app.signsetu.data.content.ContentRepository
 import app.signsetu.data.session.DatabaseKey
-import app.signsetu.data.session.RetentionWorker
+import app.signsetu.data.session.RetentionJob
 import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.data.settings.SettingsStore
@@ -37,7 +37,6 @@ import app.signsetu.pair.Peer
 import app.signsetu.pair.StageLink
 import app.signsetu.pair.StageTransport
 import app.signsetu.pair.StageTransports
-import app.signsetu.ui.session.HardKeys
 import app.signsetu.ui.components.OfficerAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +61,7 @@ class SignSetuApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(container)
-        RetentionWorker.schedule(this)
+        RetentionJob.schedule(this)
     }
 }
 
@@ -72,9 +71,8 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     val settings = SettingsStore(app)
     val report = SessionReport(app)
     val models = ModelStore(app)
-    val cloudAi = CloudAi({ settings.current().cloudAi }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, BuildConfig.ASSIST_KEY), KeystoreVault(app, "assist.bin", "signsetu.assist.key")) { isOnline(app) }
+    val cloudAi = CloudAi({ settings.current().cloudAi }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, ""), KeystoreVault(app, "assist.bin", "signsetu.assist.key")) { isOnline(app) }
     val assistant = Assistant(models, cloudAi)
-    val hardKeys = HardKeys()
 
     /** Landmark tracking, created per build type; without it the stage shows a plain mirror. */
     private val tracker = lazy { LandmarkTrackers.create(app) }
@@ -270,7 +268,24 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     /** Set while a session screen is open: a trip to a video call and back does not lock the conversation. */
     @Volatile var inSession = false
 
+    /** Idle sessions are purged row by row while the app is unlocked. While it is locked the database key cannot be
+     * used, so the sweep can only wipe everything, and does so once even the latest session activity is past retention.
+     * Runs at every return to the foreground and hourly from [RetentionJob]. */
+    fun sweepRetention() = scope.launch {
+        val current = settings.current()
+        sessions.value?.let { repo ->
+            repo.purgeExpired(current.retentionHours)
+            return@launch
+        }
+        if (allSessionsExpired(System.currentTimeMillis(), current.newestSessionAt, current.retentionHours)) {
+            // lock() touches the link and the UI's state, which live on the main thread.
+            withContext(Dispatchers.Main) { clearAllData() }
+            settings.setNewestSessionAt(0L)
+        }
+    }
+
     override fun onStart(owner: LifecycleOwner) {
+        sweepRetention()
         val limit = if (inSession) RELOCK_IN_SESSION_MS else RELOCK_AFTER_MS
         if (backgroundedAt != 0L && SystemClock.elapsedRealtime() - backgroundedAt > limit) lock()
         officerLink?.unhold()

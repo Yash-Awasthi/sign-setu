@@ -1,2 +1,8 @@
 HSPLapp/signsetu/**;->**(**)**
 Lapp/signsetu/**;
+HSPLandroidx/compose/runtime/**;->**(**)**
+HSPLandroidx/compose/ui/**;->**(**)**
+HSPLandroidx/compose/foundation/**;->**(**)**
+HSPLandroidx/compose/animation/**;->**(**)**
+HSPLandroidx/compose/material3/**;->**(**)**
+HSPLandroidx/navigation3/**;->**(**)**

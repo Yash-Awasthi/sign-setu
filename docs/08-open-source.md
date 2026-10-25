@@ -1,4 +1,4 @@
-# 09. Open-Source Reuse Map
+# 08. Open-Source Reuse Map
 
 What to reuse for each independent part of the app (licence as reported by the project's repository). Every entry still goes through the copyright and licensing policy and into the SBOM before use.
 
@@ -14,7 +14,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 
 | Module | Component | Licence | Use as | Notes |
 | --- | --- | --- | --- | --- |
-| Picture board (`data.content`, `ui.session`) | Open Board Format (OBF/OBZ) | Open specification | Ship (format) | Store card sets as OBF so boards can be exchanged with other AAC tools and edited without code |
+| Picture board (`data.content`, `ui.session`) | Open Board Format (OBF/OBZ) | Open specification | Reference | Not used today: cards live in `cards.json`; OBF would let boards be exchanged with other AAC tools |
 | | AAC-Board (fesave) | Apache-2.0 | Reference | Kotlin AAC app; small and inactive; read its board model |
 | | LibreAAC | GPL-3.0 | Reference | Offline Android AAC with no INTERNET permission, OBF/OBZ support; same privacy stance as ours |
 | | Cboard, Asterics-AAC | GPL-3.0, AGPL-3.0 | Reference | Mature web AAC boards; interaction patterns |
@@ -45,7 +45,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | Google "ASL Fingerspelling" (Kaggle `asl-fingerspelling`) | CC BY 4.0, plus Kaggle rules | Not used | Same rule text as above; needs Kaggle credentials and about 170 GB. FSboard (CC BY 4.0) is video on Kaggle only. ASLNow! is used instead, so `asl_spell` has no real-signer error rate yet |
 | | ASLNow! fingerspelling landmarks (`sid220/asl-now-fingerspelling`) | MIT | Data | About 2,100 static MediaPipe hands, A to Z; trains `asl_spell` through synthetic sequences and gives the one-handed ASL alphabet keyframes |
 | | ISL emergency-word video set | Per dataset (Mendeley) | Data | 8 words (accident, call, doctor, help, hot, lose, pain, thief), adult signers |
-| | sherpa-onnx, Vosk | Apache-2.0 | Ship (optional pack) | Offline speech recognition so officer audio never leaves the phone |
+| | sherpa-onnx, Vosk | Apache-2.0 | Not used | Offline speech recognition was considered; the app has no microphone permission |
 | Storage and crypto | SQLCipher for Android | BSD-style | Ship | Room 3 supported from 4.18.0 |
 | Export | PdfBox-Android 2.0.27.0 | Apache-2.0 | Ship | AES-256 password-protected PDF export; no recent release, so watch advisories. Its BouncyCastle is held at 1.86 by a build constraint because 1.72 has known critical vulnerabilities |
 | | BouncyCastle (bcprov, bcpkix, bcutil) 1.86 | MIT-style Bouncy Castle licence | Ship | Pulled in for PdfBox-Android; pinned to 1.86 for the vulnerability fix above |
@@ -66,7 +66,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | TypeScript 7.0.2 | Apache-2.0 | Tool | Native compiler; type checking of the portal and the rig port |
 | Symbols drawn for the app | Sign Setu original drawings (`content/symbols/sign-setu/`) | CC BY-SA 4.0 | Ship (assets) | Drawn in OpenMoji style for a card OpenMoji lacks ("Something else") |
 | On-device assistant | llama.cpp v0.5.0 | MIT | Ship (native library) | Built from source by CMake; the source is vendored in `app/src/main/cpp/third_party/llama.cpp` at commit `7fe450e`, recorded in `app/src/main/cpp/CMakeLists.txt` |
-| | Gemma 3 1B instruction-tuned (GGUF) | Gemma Terms of Use | Ship (optional model file, not in the APK) | Free for government use, not OSI open source; see [on-device assistant](12-on-device-assistant.md) |
+| | Gemma 3 1B instruction-tuned (GGUF) | Gemma Terms of Use | Ship (optional model file, not in the APK) | Free for government use, not OSI open source; see [on-device assistant](10-on-device-assistant.md) |
 | Department gateway | FastAPI, Uvicorn, SQLAlchemy, psycopg 3, httpx2, PyJWT with cryptography | MIT, BSD-3-Clause, LGPL-3.0 (psycopg) | Ship (gateway) | Versions pinned in `backend/pyproject.toml` |
 
 ## 2. Attribution

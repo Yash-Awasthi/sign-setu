@@ -109,11 +109,13 @@ internal fun MorePage(
     modifier: Modifier,
     onTell: (() -> Unit)? = null,
     onChildAvatar: (Boolean) -> Unit = {},
+    auto: AutoPilot? = null,
 ) {
     val pending = ui.pending
     val subjectLang = ui.session.subjectLang
     val wide = LocalDensity.current.fontScale > 1.3f
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(vertical = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        auto?.let { AutoPanel(it, ui, content, officerLang, showSwitch = true) }
         SectionLabel(stringResource(R.string.more_questions), Modifier.padding(horizontal = Spacing.lg))
         var query by rememberSaveable { mutableStateOf("") }
         OutlinedTextField(

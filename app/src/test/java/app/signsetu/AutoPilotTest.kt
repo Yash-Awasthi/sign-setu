@@ -1,6 +1,7 @@
 package app.signsetu
 
 import app.signsetu.data.content.ContentBundle
+import app.signsetu.data.content.Kind
 import app.signsetu.data.content.Question
 import app.signsetu.data.session.EventEntity
 import app.signsetu.data.session.EventSource
@@ -42,10 +43,34 @@ class AutoPilotTest {
         private var id = ""
         lateinit var pilot: AutoPilot
 
-        suspend fun start() {
+        var signing = false
+
+        suspend fun start(handsOff: Boolean = false) {
             id = repo.start(Profile.NOT_SURE, "hi", Role.VICTIM)
-            pilot = AutoPilot(id, repo, bank, "en", scope, showing = { showing }, present = { q, lang -> present(q, lang) })
+            pilot = AutoPilot(id, repo, bank, "en", scope, signing = { signing }, handsOff = handsOff, present = { q, lang -> present(q, lang) })
             settle()
+        }
+
+        /** Moves the clock without running to the end of it, which hands-off mode would never reach. */
+        fun tick(ms: Long) { test.testScheduler.advanceTimeBy(ms); test.testScheduler.runCurrent() }
+
+        fun shownCount(item: String) = rows.count { it.type == EventType.QUESTION_SHOWN.name && it.itemId == item }
+
+        /** Lets hands-off mode run until it puts a question that expects an answer on the stage. */
+        fun runToQuestion(): String {
+            repeat(400) {
+                tick(1_000)
+                val last = rows.lastOrNull { it.type == EventType.QUESTION_SHOWN.name }?.itemId
+                if (last != null && bank.question(last)?.kind != Kind.STATEMENT) return last
+            }
+            error("no question reached the stage")
+        }
+
+        fun answerSigned() {
+            val shown = rows.last { it.type == EventType.QUESTION_SHOWN.name }.id
+            test.testScheduler.runCurrent()
+            kotlinx.coroutines.runBlocking { repo.log(id, EventType.ANSWER_SIGNED, EventSource.MACHINE, "en", "pain", shownId = shown) }
+            tick(1)
         }
 
         private suspend fun present(q: Question, lang: String) {
@@ -86,14 +111,49 @@ class AutoPilotTest {
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    private fun phone(block: suspend Phone.() -> Unit) = runTest {
+    private fun phone(handsOff: Boolean = false, block: suspend Phone.() -> Unit) = runTest {
         val phone = Phone(this)
         try {
-            phone.start()
+            phone.start(handsOff)
             phone.block()
         } finally {
             phone.scope.cancel()
         }
+    }
+
+    @Test
+    fun anUnansweredQuestionIsRepeatedOnceThenSkipped() = phone(handsOff = true) {
+        pilot.setAuto(true); tick(1)
+        val q = runToQuestion()
+        assertEquals(1, shownCount(q))
+        tick(10_500)
+        assertEquals(2, shownCount(q))
+        tick(10_500)
+        assertEquals("no_answer", rows.last { it.type == EventType.SKIPPED.name }.reason)
+        assertEquals(2, shownCount(q))
+    }
+
+    @Test
+    fun handsStillSigningHoldBackTheRepeat() = phone(handsOff = true) {
+        pilot.setAuto(true); tick(1)
+        val q = runToQuestion()
+        signing = true
+        tick(60_000)
+        assertEquals(1, shownCount(q))
+        assertTrue(rows.none { it.type == EventType.SKIPPED.name && it.reason == "no_answer" })
+    }
+
+    @Test
+    fun aSignedAnswerWaitsFiveSecondsForMore() = phone(handsOff = true) {
+        pilot.setAuto(true); tick(1)
+        val q = runToQuestion()
+        val shownBefore = rows.count { it.type == EventType.QUESTION_SHOWN.name }
+        answerSigned()
+        tick(4_000)
+        assertEquals(shownBefore, rows.count { it.type == EventType.QUESTION_SHOWN.name })
+        tick(1_500)
+        assertEquals(shownBefore + 1, rows.count { it.type == EventType.QUESTION_SHOWN.name })
+        assertTrue(shownCount(q) == 1)
     }
 
     @Test
@@ -159,17 +219,6 @@ class AutoPilotTest {
     }
 
     @Test
-    fun statementsAdvanceOnlyOnTheStage() = phone {
-        act { setAuto(true) }
-        act { setAutoAdvance(true) }
-        assertFalse("nothing advances on the officer's screen", (conv as Conv.Proposed).advance)
-        act { approve() }
-        assertTrue("s1 to g1 waits for the subject's Next", (conv as Conv.Proposed).advance)
-        act { advance() }
-        assertEquals(EventType.AUTO_ADVANCED.name, rows[rows.size - 3].type)
-    }
-
-    @Test
     fun askingAboutEventsByHandTurnsAutoOff() = phone {
         act { setAuto(true) }
         manualShow("x1")
@@ -190,12 +239,10 @@ class AutoPilotTest {
     private fun event(e: EventEntity) = SessionEvent(e.id, e.ts, EventType.valueOf(e.type), EventSource.valueOf(e.source), e.lang, e.text, e.cardId, e.lexiconId, e.drawingId)
 
     @Test
-    fun changingTheRoleDropsTheProposalAndAutoAdvance() = phone {
+    fun changingTheRoleDropsTheProposal() = phone {
         act { setAuto(true) }
-        act { setAutoAdvance(true) }
         act { onRoleChanged() }
         assertEquals("role_changed", rows.last { it.type == EventType.SKIPPED.name }.reason)
-        assertFalse(pilot.autoAdvance.value)
     }
 
     @Test

@@ -2,7 +2,9 @@ package app.signsetu.export
 
 import android.os.Build
 import app.signsetu.data.content.SignLanguage
+import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
+import app.signsetu.data.session.Role
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.EventSeal
@@ -16,7 +18,9 @@ data class SessionMetrics(
     val startedAt: Long,
     val totalEvents: Int,
     val questionCount: Int,
+    /** The subject's own answers; readings of their signs by the app or the officer are counted apart. */
     val answerCount: Int,
+    val readingCount: Int,
     val drawingCount: Int,
     val signedCount: Int,
     val affirmativeCount: Int,
@@ -64,6 +68,7 @@ object EvidenceIntegrity {
 
         var questions = 0
         var answers = 0
+        var readings = 0
         var drawings = 0
         var signed = 0
         var yesCount = 0
@@ -75,6 +80,11 @@ object EvidenceIntegrity {
                 EventType.QUESTION_SHOWN -> questions++
                 EventType.ANSWER_CARD, EventType.ANSWER_DRAWING, EventType.ANSWER_GESTURE,
                 EventType.ANSWER_TEXT, EventType.ANSWER_SIGNED, EventType.ANSWER_UNCLEAR -> {
+                    if (e.source != EventSource.SUBJECT) {
+                        readings++
+                        if (e.type == EventType.ANSWER_SIGNED) signed++
+                        continue
+                    }
                     answers++
                     when (e.cardId) {
                         "yes", "c_yes" -> yesCount++
@@ -95,6 +105,7 @@ object EvidenceIntegrity {
             totalEvents = events.size,
             questionCount = questions,
             answerCount = answers,
+            readingCount = readings,
             drawingCount = drawings,
             signedCount = signed,
             affirmativeCount = yesCount,
@@ -130,7 +141,7 @@ object EvidenceIntegrity {
             • Electronic Session ID   : ${session.id}
             • Session Started At       : $sessionStartDate
             • Subject Communication    : ${session.subjectLang.uppercase()} / ${signLanguage.title}
-            • Inquiry Role             : ${session.role.name}
+            • Inquiry Role             : ${roleText(session.role)}
             • Producing Officer        : ____________________ (Rank: __________)
             • Police Station / Unit    : ____________________
             • Operating Hardware Device: $deviceModel
@@ -151,8 +162,9 @@ object EvidenceIntegrity {
             • Total Recorded Events    : ${metrics.totalEvents}
             • Items Shown              : ${metrics.questionCount}
             • Subject Direct Answers   : ${metrics.answerCount} (Affirmative: ${metrics.affirmativeCount}, Negative: ${metrics.negativeCount})
+            • Readings by App/Officer  : ${metrics.readingCount} (not the subject's own words)
             • Graphic Exhibits/Drawings: ${metrics.drawingCount}
-            • Signed Answers          : ${metrics.signedCount}
+            • Signed Answers (read)    : ${metrics.signedCount}
             • Active Session Duration  : ${metrics.durationSeconds} seconds
 
             4. CRYPTOGRAPHIC SEAL & CHAIN OF CUSTODY INTEGRITY:
@@ -174,6 +186,13 @@ object EvidenceIntegrity {
             Rank: ____________________
             ================================================================================
         """.trimIndent()
+    }
+
+    // A role the officer never set is not guessed; the enum name never reaches a court record.
+    private fun roleText(role: Role) = when (role) {
+        Role.NOT_KNOWN -> "Not recorded"
+        Role.VICTIM -> "Victim or witness"
+        Role.ACCUSED -> "Accused or in custody"
     }
 
     private fun chainStatus(chain: ChainCheck): String {
