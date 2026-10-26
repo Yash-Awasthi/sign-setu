@@ -13,9 +13,11 @@ Output of `eval_isl.py` and `eval_asl.py` on the shipped models.
     ISL real gate odds 2.0: spelled 0.4848, correctly 0.2424  (n=33); INCLUDE words lost 0.0000
     ISL real gate odds 3.0: spelled 0.3636, correctly 0.2121  (n=33); INCLUDE words lost 0.0000
     ISL real gate odds 4.0: spelled 0.2121, correctly 0.1212  (n=33); INCLUDE words lost 0.0000
-    ISL words, new signer  top-1 0.2864  top-3 0.4422  (n=199, ISLRTC dictionary clips, sign_reader; was 0.1055 / 0.1859)
-    ASL words    top-1 0.4020  top-3 0.5428  (n=5385, asl_reader)
-    ASL spelling CER 0.0257  (400 sequences, asl_spell)
+    ISL words, new signer  top-1 0.3266  top-3 0.4673  (n=199, ISLRTC dictionary clips, sign_reader; was 0.2864 / 0.4422)
+    ISL words, CISLR       top-1 0.2721  top-3 0.3770  (n=610, CISLR clips of INCLUDE words, sign_reader; was 0.2393 / 0.3459)
+    ASL words    top-1 0.4669  top-3 0.6329  (n=5385, PopSign test signers, asl_reader; was 0.4020 / 0.5428)
+    ASL spelling CER 0.0418  (400 synthetic sequences, asl_spell)
+    ASL spelling, real CER 0.3677  (413 sequences of 10 held-out Kaggle signers, asl_spell; synthetic-only was 0.6580 on all 2,892)
     ASL combined words   top-1 0.3935  word-only 0.4020  (n=5385, gate costs 0.0085)
     ASL combined spelled read as spelling 0.7325  (400 sequences)
     ASL gate peak 0.80: real PopSign words lost 0.0156, spelled sequences passed 0.7900
@@ -23,6 +25,16 @@ Output of `eval_isl.py` and `eval_asl.py` on the shipped models.
     ASL gate peak 0.95: real PopSign words lost 0.0059, spelled sequences passed 0.6925
 
 Notes:
+- `sign_reader` is trained with `SIGN_HAND_DROP=0.3` (each hand's frames dropped at a random rate up to 0.3), as the
+  phone loses a hand for a few frames at a time. Rates 0.15 to 0.7 score alike; pose face points (nose, eyes, mouth)
+  lowered both new-signer sets (0.27 and 0.21 top-1), so the features are unchanged.
+- INCLUDE landmarked from its videos with the app's own Holistic model (`prepare_include_video.py`) scores the same as
+  the pose release (0.327 / 0.462 new signer, 0.277 / 0.382 CISLR), so the extractor is not what limits new signers.
+- CISLR (`prepare_cislr.py`) is evaluation only: trained on half its words, ISLRTC on those words rose from 0.40 to
+  0.87, so CISLR copies the ISLRTC dictionary signer, and the other half fell. Its licence is also unsettled.
+- `asl_reader` trains on PopSign plus Google's Kaggle `asl-signs` (`prepare_asl_signs.py`; 21 signers, 4 held out,
+  frame aspect estimated per signer from hand bone lengths): `SIGN_TMAX=48 SIGN_HIDDEN=320 SIGN_AUG=strong`, 100
+  epochs. Kaggle held-out signers: 0.28 / 0.46 shipped before, 0.52 / 0.70 trained on Kaggle alone.
 - Combined rows apply the app's sign-or-spell gate (`SignReaders.kt`): an ISL letter or digit wins only at twice
   the word reader's top score; an ASL spelling wins only with at least 3 letters, each at least 0.9 sure. Otherwise the
   word reader answers alone, so a weak read can still ask the subject to sign slower.
@@ -49,9 +61,11 @@ Notes:
   On the device test the ISLRTC sign for "student" had read as the digit 5.
 - `SPELL_ODDS` went from 3 to 2 with the real-trained reader: correct spelled reads of real signers rise from 0.09 to
   0.24 and no INCLUDE word is lost at either value.
-- `SPELL_MIN_PEAK` stays 0.9: 0.8 doubles the real PopSign words lost (0.0156, near the 0.02 limit) for 6 points of
-  synthetic spelling. ASL spelling has no real-signer error rate: FSboard and Google's ASL Fingerspelling are CC BY
-  4.0 but reachable only with Kaggle credentials.
+- `SPELL_MIN_PEAK` is 0.8: with the real-trained speller, 0.8 loses 0.0017 of real PopSign words (0.9: 0.0009) and
+  passes 0.115 of real held-out spelled phrases of 3+ letters (0.9: 0.052).
+- `asl_spell` trains on Google's ASL Fingerspelling (`prepare_asl_spell.py`, 24,616 digit-free phrases, 94 signers,
+  every tenth held out) for 75% of each batch and synthetic ASLNow! sequences for the rest (`SPELL_REAL=<cache>
+  spell_ctc.py train`). Real held-out CER 0.368, against 0.658 for the synthetic-only reader; synthetic CER 0.042.
 - ASL words: all 250 PopSign signs, trained on the train and validation signers (43,928 clips with the game fill-in);
   test signers are not in training. 0.40 is the release-1 ceiling on these landmarks. Round 4 (`train_asl.py`, 200
   epochs each): width 320 gave 0.3957, with mixup 0.3970, width 1024 0.3987, and the three as an ensemble 0.4046, so

@@ -5,7 +5,9 @@ import json
 import os
 import pathlib
 import pickle
+import shutil
 import sys
+import time
 import urllib.request
 import zipfile
 
@@ -30,9 +32,22 @@ def fetch(f: dict, videos: pathlib.Path) -> None:
     done = videos / (f["key"] + ".done")
     if done.exists():
         return
-    if not archive.exists() or archive.stat().st_size != f["size"]:
-        urllib.request.urlretrieve(f["links"]["self"], archive.with_suffix(".part"))
-        archive.with_suffix(".part").replace(archive)
+    part = archive.with_suffix(".part")
+    for _ in range(50):
+        if archive.exists():
+            break
+        have = part.stat().st_size if part.exists() else 0
+        # Zenodo stalls long downloads, so each attempt times out and resumes where the last one stopped.
+        try:
+            req = urllib.request.Request(f["links"]["self"], headers={"Range": f"bytes={have}-"})
+            with urllib.request.urlopen(req, timeout=60) as r, open(part, "ab" if r.status == 206 else "wb") as out:
+                shutil.copyfileobj(r, out, 1 << 20)
+        except OSError as e:
+            print("retrying", f["key"], repr(e), flush=True)
+            time.sleep(10)
+            continue
+        if part.stat().st_size == f["size"]:
+            part.replace(archive)
     zipfile.ZipFile(archive).extractall(videos)
     done.touch()
     print("unzipped", f["key"], flush=True)

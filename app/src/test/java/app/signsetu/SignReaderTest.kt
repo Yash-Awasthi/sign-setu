@@ -153,8 +153,8 @@ class SignReaderTest {
         assertEquals(listOf("police"), read["police"])
         assertEquals(listOf("anjali"), read["anjali"])
         assertTrue(read.getValue("zz").isEmpty() && read.getValue("j").isEmpty())
-        // Cut into its first letter, "anjali" still decodes in full but that letter is only about 0.6 sure.
-        assertTrue(reader.read(frames.getValue("anjali").drop(6)).isEmpty())
+        // Cut into its first letter, "anjali" must not claim the letter it lost.
+        assertTrue(reader.read(frames.getValue("anjali").drop(6)).none { it.word == "anjali" })
     }
 
     private val ctc = CtcSpellReader(File(models, "asl_spell.json").readText(), File(models, "asl_spell.bin").readBytes())

@@ -1,0 +1,79 @@
+"""Builds the ASL landmark cache from Google's Isolated Sign Language Recognition set (Kaggle `asl-signs`, CC BY 4.0;
+same 250 signs as PopSign), downloaded and unzipped by hand. Signer-independent: TEST_SIGNERS never train."""
+import csv
+import json
+import os
+import pathlib
+import pickle
+import sys
+from concurrent.futures import ProcessPoolExecutor
+
+import numpy as np
+
+# Training and evaluation data stay outside the repository.
+DATA_ROOT = pathlib.Path(os.environ.get("SIGNSETU_DATA", "ml-data"))
+
+LABELS = pathlib.Path(__file__).with_name("popsign_labels.json")
+TEST_SIGNERS = 4  # the participants with the fewest clips
+
+
+def clip(path: pathlib.Path) -> dict:
+    import pyarrow.parquet as pq
+    t = pq.read_table(path, columns=["frame", "type", "landmark_index", "x", "y"])
+    frame = t.column("frame").to_numpy()
+    kind = np.array(t.column("type").to_pylist())
+    idx = t.column("landmark_index").to_numpy()
+    xy = np.stack([t.column(c).to_numpy(zero_copy_only=False) for c in ("x", "y")], 1).astype(np.float32)
+    frames = np.unique(frame)
+    row = np.searchsorted(frames, frame)
+    out = {}
+    for name, key, n in (("pose", "pose", 33), ("left_hand", "left", 21), ("right_hand", "right", 21)):
+        a = np.full((len(frames), n, 2), np.nan, np.float32)
+        m = kind == name
+        a[row[m], idx[m]] = xy[m]
+        ok = np.isfinite(a).all((1, 2))
+        out[key], out["has_" + key] = np.nan_to_num(a), ok
+    return out
+
+
+def aspect(samples) -> float:
+    """Frame width / height that keeps hand bone lengths steadiest as the hands turn; the set does not record it."""
+    bones = [h[ok][:, [5, 9, 17]] - h[ok][:, [0]] for s in samples for h, ok in
+             ((s["left"], s["has_left"]), (s["right"], s["has_right"])) if ok.any()]
+    if not bones:
+        return 1.0
+    d = np.concatenate(bones).reshape(-1, 2)
+    grid = np.linspace(0.4, 2.5, 211)
+    return float(grid[np.argmin([np.log(d[:, 0] ** 2 + (d[:, 1] / a) ** 2 + 1e-12).var() for a in grid])])
+
+
+def main(src: pathlib.Path, out: pathlib.Path, workers: int = 6) -> None:
+    names = {l.lower(): l for l in json.loads(LABELS.read_text(encoding="utf-8"))["labels"]}
+    rows = list(csv.DictReader(open(src / "train.csv", newline="")))
+    counts = {}
+    for r in rows:
+        counts[r["participant_id"]] = counts.get(r["participant_id"], 0) + 1
+    test = set(sorted(counts, key=counts.get)[:TEST_SIGNERS])
+    with ProcessPoolExecutor(workers) as ex:
+        clips = list(ex.map(clip, [src / r["path"] for r in rows], chunksize=64))
+    by_signer = {}
+    for r, c in zip(rows, clips):
+        if c["has_pose"].any() and (c["has_left"].any() or c["has_right"].any()):
+            s = {"split": "test" if r["participant_id"] in test else "train", "label": names[r["sign"].lower()],
+                 "signer": r["participant_id"], **c}
+            by_signer.setdefault(r["participant_id"], []).append(s)
+    samples = []
+    for signer, ss in by_signer.items():
+        a = aspect(ss)
+        print(f"signer {signer}: {len(ss)} clips, aspect {a:.2f}", flush=True)
+        samples += [{**s, "aspect": a} for s in ss]
+    with open(out, "wb") as f:
+        pickle.dump({"aspect": 1.0, "fps": 30, "samples": samples}, f)
+    print(f"{len(samples)} of {len(rows)} clips, test signers {sorted(test)} -> {out}")
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    main(pathlib.Path(a[0]) if a else DATA_ROOT / "asl_signs",
+         pathlib.Path(a[1]) if len(a) > 1 else DATA_ROOT / "asl_signs" / "asl_signs.pkl",
+         int(a[2]) if len(a) > 2 else 6)

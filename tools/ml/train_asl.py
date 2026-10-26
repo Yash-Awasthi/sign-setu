@@ -12,7 +12,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from features import ARMS, ARMS_FLIPPED, FRAMES
 from train import STRONG, SignNet, batch, evaluate
 
-TMAX = 80
+TMAX = int(os.environ.get("SIGN_TMAX", 80))  # frames kept per clip on the GPU
 KD_T, KD_W = 2.0, float(os.environ.get("SIGN_KD", 0.7))
 
 
@@ -23,8 +23,8 @@ def pack(samples, aspect, dev):
     po = torch.zeros(n, TMAX, 33, 2)
     has = torch.zeros(n, TMAX, 3, dtype=torch.bool)
     ln = torch.zeros(n, dtype=torch.long)
-    k = np.array([1.0, 1.0 / aspect], np.float32)
     for i, s in enumerate(samples):
+        k = np.array([1.0, 1.0 / (s.get("aspect") or aspect)], np.float32)
         t = len(s["pose"])
         idx = np.arange(t) if t <= TMAX else (np.arange(TMAX) * (t - 1) * 2 + TMAX - 1) // (2 * (TMAX - 1))
         lr[i, :len(idx), :21] = torch.from_numpy(s["left"][idx] * k)

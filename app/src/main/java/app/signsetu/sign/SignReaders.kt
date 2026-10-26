@@ -50,7 +50,7 @@ private class SpellReader(private val inner: SignReader) : SignReader by inner {
 
 /** A fingerspelled read needs this many letters, each at least this sure at its best frame (tools/ml/eval_asl.py). */
 const val SPELL_MIN_LETTERS = 3
-const val SPELL_MIN_PEAK = 0.9f
+const val SPELL_MIN_PEAK = 0.8f
 
 /** With the real-trained letter reader, 2 lets through 0.24 correct spelled reads against 0.09 at 3, losing no
  * INCLUDE words. */

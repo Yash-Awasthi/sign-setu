@@ -4,79 +4,131 @@
  "fps": 15,
  "max_frames": 300,
  "features": 45,
- "hidden": 192,
+ "hidden": 240,
  "kernel": 5,
  "dilations": [
   1,
   2,
   4,
-  1
+  8,
+  1,
+  2,
+  4,
+  8
  ],
  "alphabet": "abcdefghijklmnopqrstuvwxyz",
  "tensors": [
   {
    "shape": [
-    192,
+    240,
     45
    ]
   },
   {
    "shape": [
-    192
+    240
    ]
   },
   {
    "shape": [
-    192,
-    192,
+    240,
+    240,
     5
    ]
   },
   {
    "shape": [
-    192
+    240
    ]
   },
   {
    "shape": [
-    192,
-    192,
+    240,
+    240,
     5
    ]
   },
   {
    "shape": [
-    192
+    240
    ]
   },
   {
    "shape": [
-    192,
-    192,
+    240,
+    240,
     5
    ]
   },
   {
    "shape": [
-    192
+    240
    ]
   },
   {
    "shape": [
-    192,
-    192,
+    240,
+    240,
     5
    ]
   },
   {
    "shape": [
-    192
+    240
+   ]
+  },
+  {
+   "shape": [
+    240,
+    240,
+    5
+   ]
+  },
+  {
+   "shape": [
+    240
+   ]
+  },
+  {
+   "shape": [
+    240,
+    240,
+    5
+   ]
+  },
+  {
+   "shape": [
+    240
+   ]
+  },
+  {
+   "shape": [
+    240,
+    240,
+    5
+   ]
+  },
+  {
+   "shape": [
+    240
+   ]
+  },
+  {
+   "shape": [
+    240,
+    240,
+    5
+   ]
+  },
+  {
+   "shape": [
+    240
    ]
   },
   {
    "shape": [
     27,
-    192
+    240
    ]
   },
   {
@@ -85,10 +137,11 @@
    ]
   }
  ],
- "weights": "float32 little-endian, tensors in the order above, row-major; conv weight is [out][in][kernel]",
+ "dtype": "float16",
+ "weights": "float16 little-endian, tensors in the order above, row-major; conv weight is [out][in][kernel]",
  "feature_spec": "frames resampled to `fps` by nearest timestamp (ties to the earlier), at most `max_frames`; the hand present in more resampled frames (ties to the right), a left hand mirrored in x; y scaled by height/width; per frame: 21x(x,y) minus the wrist, divided by the wrist to middle-knuckle (point 9) length, then the wrist's step since the previous frame in that unit (zero after a frame without the hand), then a presence flag; a frame without the hand is zeros",
- "dataset": "synthetic sequences from ASLNow! static letters (huggingface.co/datasets/sid220/asl-now-fingerspelling, MIT)",
- "synthetic": true,
- "epochs": 60,
- "test_cer": 0.0228
+ "dataset": "synthetic sequences from ASLNow! static letters (huggingface.co/datasets/sid220/asl-now-fingerspelling, MIT); Google ASL Fingerspelling (kaggle.com/competitions/asl-fingerspelling, CC BY 4.0)",
+ "real_test_cer": 0.328,
+ "epochs": 150,
+ "test_cer": 0.0286
 }

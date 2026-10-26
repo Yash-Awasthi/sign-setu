@@ -27,7 +27,8 @@ RESOURCES = ROOT / "app" / "src" / "test" / "resources"
 WORDS = ROOT / "app" / "src" / "main" / "assets" / "content" / "words.json"
 REPO = "sid220/asl-now-fingerspelling"
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"
-HIDDEN, KERNEL, DILATIONS = 192, 5, (1, 2, 4, 1)
+HIDDEN, KERNEL = int(os.environ.get("SPELL_HIDDEN", 192)), 5
+DILATIONS = tuple(int(d) for d in os.environ.get("SPELL_DILATIONS", "1,2,4,1").split(","))
 NOW_ASPECT = 4 / 3  # ASLNow! records webcam frames; their size is not stored
 DATA = DATA_ROOT / "asl_spell"
 
@@ -155,8 +156,8 @@ def texts(rng: np.random.Generator, words: list[str], n: int) -> list[str]:
     return out
 
 
-def batch(items, letters, split, aspect, rng):
-    feats, targets = [], []
+def batch(items, letters, split, aspect, rng, real=()):
+    feats, targets = real_batch(real, rng) if len(real) else ([], [])
     for text in items:
         ts, left, right, hl, hr = sequence(text, letters, split, aspect, rng)
         feats.append(spell_features(ts, left, right, hl, hr, aspect))
@@ -166,6 +167,32 @@ def batch(items, letters, split, aspect, rng):
     for i, f in enumerate(feats):
         x[i, :len(f)] = f
     return torch.tensor(x), [len(f) for f in feats], targets
+
+
+REAL = os.environ.get("SPELL_REAL")  # prepare_asl_spell.py cache; trains on real signers when set
+REAL_SHARE = 0.75  # of each batch; the rest stays synthetic so app words keep their coverage
+
+
+def real_batch(samples, rng):
+    """Real sequences, rotated slightly and played 0.8 to 1.25 times as fast."""
+    feats, targets = [], []
+    for s in samples:
+        r = rot(rng.normal(0, 0.1))
+        k = np.array([1.0, 1.0 / s["aspect"]])
+        left, right = ((h * k) @ r.T / k for h in (s["left"], s["right"]))
+        ts = (s["ts"] * rng.uniform(0.8, 1.25)).astype(np.int64)
+        feats.append(spell_features(ts, left, right, s["has_left"], s["has_right"], s["aspect"]))
+        targets.append([ALPHABET.index(c) + 1 for c in s["text"]])
+    return feats, targets
+
+
+def real_cer(predict, samples) -> float:
+    errors = chars = 0
+    for s in samples:
+        f = spell_features(s["ts"], s["left"], s["right"], s["has_left"], s["has_right"], s["aspect"])
+        errors += edit_distance(predict(f), s["text"])
+        chars += len(s["text"])
+    return errors / chars
 
 
 def greedy(logits: np.ndarray) -> str:
@@ -211,10 +238,15 @@ def train(data: pathlib.Path, epochs: int = 60, per_epoch: int = 4000) -> None:
     steps = epochs * (per_epoch // 32)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=2e-3, total_steps=steps)
     ctc = nn.CTCLoss(blank=0, zero_infinity=True)
+    real = pickle.load(open(REAL, "rb"))["samples"] if REAL else []
+    real_train = [s for s in real if s["split"] == "train"]
+    real_test = [s for s in real if s["split"] == "test"][::7]
+    n_real = int(32 * REAL_SHARE) if real else 0
     for epoch in range(epochs):
         model.train()
         for _ in range(per_epoch // 32):
-            x, lens, targets = batch(texts(rng, words, 32), letters, "train", aspect, rng)
+            pick = [real_train[i] for i in rng.integers(len(real_train), size=n_real)] if n_real else ()
+            x, lens, targets = batch(texts(rng, words, 32 - n_real), letters, "train", aspect, rng, pick)
             logp = model(x.to(dev)).log_softmax(-1).transpose(0, 1)
             y = torch.tensor([c for t in targets for c in t], device=dev)
             loss = ctc(logp, y, torch.tensor(lens), torch.tensor([len(t) for t in targets]))
@@ -224,9 +256,12 @@ def train(data: pathlib.Path, epochs: int = 60, per_epoch: int = 4000) -> None:
             sched.step()
         model.eval()
         with torch.no_grad():
-            score = cer(lambda f: greedy(model(torch.tensor(f[None]).to(dev))[0].cpu().numpy()), letters, aspect, 200)
-        print(f"epoch {epoch + 1}: loss {loss.item():.3f} test CER {score:.4f}", flush=True)
-    torch.save({"state": model.cpu().state_dict(), "cer": score, "epochs": epochs}, data / "asl_spell.pt")  # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
+            predict = lambda f: greedy(model(torch.tensor(f[None]).to(dev))[0].cpu().numpy())
+            score = cer(predict, letters, aspect, 200)
+            real_score = real_cer(predict, real_test) if real_test else None
+        print(f"epoch {epoch + 1}: loss {loss.item():.3f} test CER {score:.4f} real CER {real_score}", flush=True)
+    torch.save({"state": model.cpu().state_dict(), "cer": score, "real_cer": real_score, "epochs": epochs},
+               data / "asl_spell.pt")  # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
 
 
 def export(data: pathlib.Path) -> None:
@@ -256,8 +291,9 @@ def export(data: pathlib.Path) -> None:
                         "middle-knuckle (point 9) length, then the wrist's step since the previous frame in that unit "
                         "(zero after a frame without the hand), then a presence flag; a frame without the hand is zeros",
         "dataset": "synthetic sequences from ASLNow! static letters (huggingface.co/datasets/sid220/"
-                   "asl-now-fingerspelling, MIT)",
-        "synthetic": True,
+                   "asl-now-fingerspelling, MIT)" + ("; Google ASL Fingerspelling (kaggle.com/competitions/"
+                   "asl-fingerspelling, CC BY 4.0)" if ckpt.get("real_cer") is not None else ""),
+        **({"synthetic": True} if ckpt.get("real_cer") is None else {"real_test_cer": round(ckpt["real_cer"], 4)}),
         "epochs": ckpt.get("epochs"),
         "test_cer": round(ckpt["cer"], 4),
     }

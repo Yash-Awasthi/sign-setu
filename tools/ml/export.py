@@ -22,7 +22,8 @@ DATASETS = {
     "sign_reader": "INCLUDE (AI4Bharat), OpenHands pose release, zenodo.org/records/6674324, CC BY 4.0",
     "isl_spell": "Multimodal ISL alphabet photographs (CC BY 4.0, doi:10.17632/2tj6c7pzfk.1) plus the app's ISL letter and digit keyframes posed on the rig; tested on ISLAN signers (doi:10.17632/rc349j45m5.1)",
     "asl_reader": "PopSign ASL v1.0 (Georgia Tech, NTID), signdata.cc.gatech.edu, CC BY 4.0; frames from "
-                  "huggingface.co/datasets/sign/popsign-images, landmarks by MediaPipe Holistic",
+                  "huggingface.co/datasets/sign/popsign-images, landmarks by MediaPipe Holistic; plus Google Isolated "
+                  "Sign Language Recognition (kaggle.com/competitions/asl-signs, CC BY 4.0)",
 }
 
 
