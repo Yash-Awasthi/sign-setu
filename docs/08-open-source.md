@@ -22,8 +22,12 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | OpenMoji | CC BY-SA 4.0 | Ship (assets) | Emoji-style; useful for feelings and objects |
 | | ARASAAC | CC BY-NC-SA | Ship only with legal approval | Non-commercial clause; government use needs a written legal view |
 | | Jellow | Not published | Ship only with written permission | Indian-context icons; ask the publisher |
-| Avatar authoring ([05](05-avatar-and-gestures.md)) | MediaPipe (Holistic) | Apache-2.0 | Tool | Landmarks from recorded signers, retargeted onto the drawn characters |
-| Avatar runtime | Media3 ExoPlayer | Apache-2.0 | Ship | Recorded speech |
+| Avatar authoring ([05](05-avatar-and-gestures.md)) | MediaPipe (Holistic) | Apache-2.0 | Tool | Landmarks from recorded signers, retargeted onto the character |
+| Avatar runtime | three.js 0.160 | MIT | Ship | WebGL renderer in the avatar module |
+| | three-vrm 3.0 (pixiv) | MIT | Ship | VRM 1.0 loading, expressions and spring bones |
+| | `ISL Sample 1` VRM model by Leo | VRM Public License 1.0, credit required, redistribution and avatar use reserved | Ship only with the author's written licence | The character; clip kinematics in `avatar/src/clip.ts` from the SignSetu avatar module (Lilesh Lahre) |
+| | ISL-CSLTR sentence videos | CC BY 4.0 | Data | Recorded sentence clips (`clips.json`) through `tools/text2isl` |
+| | Media3 ExoPlayer | Apache-2.0 | Ship | Recorded speech |
 | Sign recognition | MediaPipe Tasks Vision 1.1.1 with the Holistic landmarker model | Apache-2.0 | Ship | On-device hand, face and pose landmarks, GPU then CPU; 64-bit native library only; usage-statistics upload backend excluded |
 | | Protocol Buffers for Java 4.36.2 (`protobuf-javalite`) | BSD-3-Clause | Ship | Lite runtime MediaPipe 1.1.1 is built on, pinned past CVE-2024-7254 |
 | | Sign reader (`LandmarkSignReader`), trained in `tools/ml` | Project code; weights derived from INCLUDE (CC BY 4.0) | Ship | Plain Kotlin forward pass; no inference library |
@@ -51,7 +55,6 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | BouncyCastle (bcprov, bcpkix, bcutil) 1.86 | MIT-style Bouncy Castle licence | Ship | Pulled in for PdfBox-Android; pinned to 1.86 for the vulnerability fix above |
 | | zip4j | Apache-2.0 | Alternative | AES-256 zip; recipients need 7-Zip, so PDF is preferred |
 | Drawing canvas | Compose Canvas | Platform | Ship | No library needed |
-| Characters | Compose Canvas | Platform | Ship | 2D rig and keyframes drawn in code; no animation library |
 | Camera mirror | CameraX (camera-camera2, camera-lifecycle, camera-compose) | Apache-2.0 | Ship | Preview and ImageAnalysis only; no capture or recording |
 | Type | Baloo 2 (Ek Type) | SIL OFL 1.1 | Ship (font) | Latin and Devanagari; licence text kept with the font |
 | Icons | Material Icons (selected vectors) | Apache-2.0 | Ship (assets) | Hand, grid, translate, keyboard, camera, volume, pin |

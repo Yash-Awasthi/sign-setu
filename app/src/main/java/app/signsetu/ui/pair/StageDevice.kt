@@ -308,7 +308,7 @@ private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkSt
     val profile = runCatching { Profile.valueOf(view.profile) }.getOrDefault(Profile.NOT_SURE)
     val ui = SessionUi(
         Session("stage", 0L, profile, view.lang), "safety", false, pending, Mode.SHOW, view.rotated,
-        answeredCard, answeredYes, chosenLanguage, emptyList(), null, emptyMap(), childAvatar = view.child,
+        answeredCard, answeredYes, chosenLanguage, emptyList(), null, emptyMap(),
     )
     val onCard = { id: String ->
         answeredCard = id

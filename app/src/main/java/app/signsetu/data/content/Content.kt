@@ -129,11 +129,12 @@ data class Phrase(val id: String, val label: Localized, val signs: List<String>,
  * use ([ContentRepository.intact]), and models by their loaders, so a cold start does not hash 25 MB. */
 internal fun eagerlyChecked(path: String) = path.endsWith(".json")
 @Serializable private data class GesturesFile(val gestures: List<Gesture>)
+@Serializable private data class ClipsFile(val clips: List<Clip>)
 @Serializable private data class WordsFile(val words: List<WordEntry>)
 @Serializable private data class SignWordsFile(val words: Map<String, String>)
 
 /** Motion files: a failed one only loses the character's motions, never the words a subject is shown. */
-private val MOTION_FILES = setOf("gestures.json", "isl_signs.json") + SignLanguage.entries.map { it.signs }
+private val MOTION_FILES = setOf("gestures.json", "isl_signs.json", "clips.json") + SignLanguage.entries.map { it.signs }
 
 /** A failure here turns that sign language off (see [ContentBundle.aslDisabled]); the other language still starts. */
 private val LANGUAGE_FILES = setOf(SignLanguage.ASL.words, SignLanguage.ASL.signs)
@@ -173,7 +174,11 @@ data class ContentBundle(
     val language: SignLanguage = SignLanguage.ISL,
     /** ASL reader labels to a written form in [words] (asl_words.json). */
     val aslWords: Map<String, String> = emptyMap(),
+    /** Recorded sentences by [clipKey] (clips.json). */
+    val clips: Map<String, Clip> = emptyMap(),
 ) {
+    fun clipFor(text: String): Clip? = clips[clipKey(text)]
+
     /** A group with no roles listed is for everyone. */
     fun groupsFor(role: Role, child: Boolean = false): List<Group> =
         groups.filter { (it.roles.isEmpty() || role in it.roles) && (it.child == null || it.child == child) }
@@ -287,6 +292,7 @@ class ContentRepository(private val open: (String) -> InputStream) {
             signWords = verified<SignWordsFile>("sign_words.json", rejected)?.words.orEmpty(),
             version = manifestDigest.copyOf(6).toHexString(),
             states = states,
+            clips = verified<ClipsFile>("clips.json", rejected)?.clips.orEmpty().associateBy { clipKey(it.sentence) },
         ).withSignedQuestions().also {
             bundle = it
             // The answers every session offers paint on their first frame.

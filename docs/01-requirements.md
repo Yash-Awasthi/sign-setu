@@ -17,8 +17,8 @@ The officer chooses a **subject profile** for each session; it decides what the 
 
 | Profile | Subject sees and hears |
 | --- | --- |
-| Young child | Picture cards, child character performing gestures, recorded audio in the subject language |
-| ISL user | Picture cards, captions, the adult character signing (recorded-signer motions first), interpreter call |
+| Young child | Picture cards, the character performing gestures, recorded audio in the subject language |
+| ISL user | Picture cards, captions, the character signing (recorded-signer motions first), interpreter call |
 | Hearing, other language | Language finder, picture cards, recorded audio in the chosen language |
 | Not sure | Picture cards, Yes and No, drawing |
 

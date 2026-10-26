@@ -324,7 +324,7 @@ def write(made: list[dict]) -> None:
     cats = {k: {"en": en, "hi": hi} for k, (en, hi) in glossary["categories"].items()}
     cats["Alphabet"] = {"en": "Alphabet", "hi": "वर्णमाला"}
     note = ("Retargeted by tools/isl/retarget_asl.py from PopSign signers' landmarks, alphabet authored there; edit the "
-            "script, not this file. Draft: every sign needs Deaf ASL review on both characters.")
+            "script, not this file. Draft: every sign needs Deaf ASL review on the character.")
     source = "PopSign ASL v1.0 (Starner et al. 2023, Georgia Tech and NTID), CC BY 4.0"
     lines = ",\n".join("  " + json.dumps(g, ensure_ascii=False, separators=(",", ":")) for g in made)
     out = CONTENT / "asl_signs.json"

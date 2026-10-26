@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Keyframes for the two characters. Hands are R and L of the character; dx is outward, angle 0 is fingers up and positive tips outward; roll 1 palm to viewer, 0 thumb side, -1 back of hand. Every entry is a candidate until reviewed (05-avatar-and-gestures section 3).",
+  "note": "Keyframes for the character. Hands are R and L of the character; dx is outward, angle 0 is fingers up and positive tips outward; roll 1 palm to viewer, 0 thumb side, -1 back of hand. Every entry is a candidate until reviewed (05-avatar-and-gestures section 3).",
   "gestures": [
     {"id": "okay", "keys": [
       {"face":"smile","t": 0.0, "face": "smile", "head": {"nod": 0}},

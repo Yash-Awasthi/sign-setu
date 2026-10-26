@@ -5,9 +5,6 @@ import android.content.res.Resources
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.height
 import app.signsetu.ui.components.BrandButton
-import app.signsetu.ui.avatar.Avatar
-import app.signsetu.ui.avatar.Character
-import app.signsetu.ui.avatar.Timeline
 import app.signsetu.ui.theme.LocalStageColors
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -261,7 +258,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry, Li
                         ListItem(
                             headlineContent = { Text(entry.label.get(lang) ?: entry.id) },
                             supportingContent = { Text(entry.how.get(lang) ?: entry.how["en"].orEmpty()) },
-                            leadingContent = { GesturePreview(content, entry) },
+                            leadingContent = { GesturePreview(entry) },
                             trailingContent = { TextButton(onClick = { onPick(entry, results) }) { Text(stringResource(R.string.gl_show_back)) } },
                             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
                         )
@@ -577,23 +574,10 @@ fun SignedSheet(
     }
 }
 
-/** The character's pose at the gesture's key moment, with the picture it stands for. */
+/** The picture a gesture stands for; the character signs it once it is shown back. */
 @Composable
-private fun GesturePreview(content: ContentBundle, entry: LexiconEntry) {
-    val gesture = content.gestures[entry.id]
-    Box(Modifier.size(72.dp)) {
-        Surface(shape = RoundedCornerShape(16.dp), color = LocalStageColors.current.skyTop, modifier = Modifier.fillMaxSize()) {
-            if (gesture != null) {
-                val keys = gesture.keys.sortedBy { it.t }
-                Avatar(Character.CHILD, gesture, entry.id, Modifier.fillMaxSize(), idle = false, atSeconds = Timeline.LEAD_IN + keys[keys.size / 2].t)
-            } else {
-                CardImage(entry.card, Modifier.padding(10.dp))
-            }
-        }
-        if (gesture != null) {
-            Surface(shape = CircleShape, color = Color.White, shadowElevation = 2.dp, modifier = Modifier.align(Alignment.BottomEnd).size(28.dp)) {
-                CardImage(entry.card, Modifier.padding(4.dp))
-            }
-        }
+private fun GesturePreview(entry: LexiconEntry) {
+    Surface(shape = RoundedCornerShape(16.dp), color = LocalStageColors.current.skyTop, modifier = Modifier.size(72.dp)) {
+        CardImage(entry.card, Modifier.padding(10.dp))
     }
 }

@@ -36,7 +36,6 @@ data class StageView(
     val gestureSpeed: Float,
     val cameraOn: Boolean,
     val signLanguage: String = "ISL",
-    val child: Boolean? = null,
 )
 
 @Serializable

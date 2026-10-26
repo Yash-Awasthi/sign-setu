@@ -21,7 +21,7 @@ FPS = 25.0
 ASPECT_FIX = np.array([1920 / 1080, 1080 / 1920])
 Z_SCALE = 1920.0  # MediaPipe hand z is in the same normalised units as x
 
-# The adult build's anchors (Rig.kt AdultBuild); right-side values, mirrored for the left.
+# The rig's anchors (BUILD in avatar/src/rig.ts); right-side values, mirrored for the left.
 CENTER = 100.0
 SHOULDER_Y, SHOULDER_HALF = 136.0, 44.0
 UPPER_ARM = 41.0
@@ -33,7 +33,7 @@ ANCHORS = {
 }
 SIDED = {"cheek", "ear", "shoulder", "temple", "side", "eye"}
 RIG_EYES_MID, RIG_MOUTH = np.array([100.0, 67.0]), np.array([100.0, 91.0])
-SIGN = {"R": -1.0, "L": 1.0}  # Side.sign in Rig.kt: +dx is outward
+SIGN = {"R": -1.0, "L": 1.0}  # R and L in avatar/src/rig.ts: +dx is outward
 ARM = {"R": (12, 14), "L": (11, 13)}  # pose shoulder and elbow, the signer's own side
 # Words with another everyday meaning; the app offers them in the dictionary but never signs them for typed text.
 HOMONYMS = {"fall", "light", "mean", "second", "sign", "ring", "letter", "bill", "card", "cool", "flat", "fan", "it", "key",
@@ -323,7 +323,7 @@ def main(data: pathlib.Path) -> None:
         })
     cats = {k: {"en": v[0], "hi": v[1]} for k, v in glosses["categories"].items()}
     note = ("Retargeted by tools/isl/retarget.py from INCLUDE signers' landmarks; edit the script, not this file. "
-            "Draft: every sign needs Deaf ISL review on both characters.")
+            "Draft: every sign needs Deaf ISL review on the character.")
     source = "INCLUDE (AI4Bharat, Sridhar et al. 2020), OpenHands pose release, CC BY 4.0"
     # Words added by retarget_islrtc.py survive a rebuild unless INCLUDE now has them.
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}

@@ -47,7 +47,6 @@ import app.signsetu.data.content.SignMode
 import app.signsetu.data.content.planText
 import app.signsetu.ui.avatar.AVATAR_ASPECT
 import app.signsetu.ui.avatar.Avatar
-import app.signsetu.ui.avatar.Character
 import app.signsetu.data.content.questionKind
 import app.signsetu.ui.theme.Spacing
 
@@ -91,9 +90,9 @@ fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
         ) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Avatar(
-                    character = Character.ADULT,
                     gesture = gesture,
                     playKey = Triple(text, plays, gesture?.id),
+                    clip = content.clipFor(text),
                     idle = !spoken,
                     question = question,
                     // Beside the word list rather than filling the panel: the character reads better at stage size.

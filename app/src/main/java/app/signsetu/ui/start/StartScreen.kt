@@ -104,7 +104,6 @@ import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.MiniFace
-import app.signsetu.ui.session.characterFor
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalInk
 import androidx.compose.runtime.DisposableEffect
@@ -184,7 +183,6 @@ fun StartScreen(
             Box(Modifier.background(ink.brush).statusBarsPadding().height(230.dp).fillMaxWidth().clip(RectangleShape)) {
                 // Shown head and shoulders only: the officer's screen, where the character just says hello.
                 Avatar(
-                    character = characterFor(profile ?: Profile.YOUNG_CHILD),
                     gesture = content.gestures["namaste"],
                     playKey = profile,
                     modifier = Modifier.align(Alignment.BottomCenter).requiredSize(304.dp, 346.dp).offset(y = 34.dp),
@@ -293,13 +291,7 @@ private fun ProfileTile(profile: Profile, content: ContentBundle, selected: Bool
     ChoiceTile(selected, onSelect, modifier.heightIn(min = 64.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box {
-                MiniFace(
-                    characterFor(profile),
-                    36.dp,
-                    LocalStageColors.current.skyTop,
-                    gesture = if (profile == Profile.NOT_SURE) content.gestures["ask"] else null,
-                    atSeconds = if (profile == Profile.NOT_SURE) 0.9f else null,
-                )
+                MiniFace(36.dp, LocalStageColors.current.skyTop)
                 ProfileBadge(profile, Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 4.dp))
             }
             Text(
@@ -347,7 +339,7 @@ private fun Notice(title: String?, body: String, container: Color, content: Colo
 private fun ResumeCard(session: Session, languageName: String, onResume: () -> Unit, onEnd: () -> Unit) {
     OfficerCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            MiniFace(characterFor(session.profile), 40.dp, LocalStageColors.current.skyTop)
+            MiniFace(40.dp, LocalStageColors.current.skyTop)
             Column(Modifier.weight(1f).padding(start = Spacing.md)) {
                 Text(stringResource(R.string.start_resume_title), style = MaterialTheme.typography.titleMedium)
                 Text(

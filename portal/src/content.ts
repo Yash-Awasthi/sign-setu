@@ -10,7 +10,7 @@ import signsFile from "../../app/src/main/assets/content/signs.json";
 import subjectUi from "../../app/src/main/assets/content/subject_ui.json";
 import triageFile from "../../app/src/main/assets/content/triage.json";
 import wordsFile from "../../app/src/main/assets/content/words.json";
-import type { Gesture } from "./rig";
+import type { Gesture } from "../../avatar/src/rig";
 
 export type Text = Record<string, string>;
 

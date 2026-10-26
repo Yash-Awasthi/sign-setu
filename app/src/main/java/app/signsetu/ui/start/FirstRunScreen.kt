@@ -48,7 +48,6 @@ import androidx.compose.material3.FilterChipDefaults
 import app.signsetu.data.settings.OfficerLocale
 import app.signsetu.ui.settings.languageName
 import app.signsetu.ui.avatar.Avatar
-import app.signsetu.ui.avatar.Character
 import app.signsetu.data.content.Gesture
 import app.signsetu.ui.session.Backdrop
 import androidx.compose.foundation.layout.aspectRatio
@@ -126,7 +125,6 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit) {
             Box(Modifier.fillMaxWidth().height(stageHeight).clip(MaterialTheme.shapes.large)) {
                 Backdrop(Modifier.fillMaxSize())
                 Avatar(
-                    character = Character.CHILD,
                     gesture = gestures[step.gesture],
                     playKey = index,
                     modifier = Modifier.fillMaxHeight(0.94f).aspectRatio(1f).align(Alignment.BottomCenter),

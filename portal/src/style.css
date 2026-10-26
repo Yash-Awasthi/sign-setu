@@ -115,13 +115,9 @@ nav input {
   flex-wrap: wrap;
   gap: 8px;
 }
-.stage figure {
-  margin: 0;
-  text-align: center;
-}
-canvas {
-  width: min(360px, 44vw);
-  height: auto;
+canvas.character {
+  width: min(360px, 90vw);
+  aspect-ratio: 220 / 258;
   background: #e9eef0;
   border-radius: 8px;
 }

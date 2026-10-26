@@ -32,7 +32,7 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 
 | Feature | Description |
 | --- | --- |
-| Profiles | Young child (child character, automatic speech), signs (adult character, no sound), other language (language finder first), not sure |
+| Profiles | Young child (automatic speech), signs (no sound), other language (language finder first), not sure |
 | Role | Not known yet (default), victim or witness, accused or in custody; sets which question groups appear (§4.3). An accused may be marked "may be under 18" |
 | Conversation | A messaging-style view: items shown to the subject on the right, the subject's answers with pictures on the left, notes and steps in between |
 | Prepared questions | 80 questions in 15 groups: Safety, Health, Needs, Personal, Family, Address, School, Everyday, Talking (ground rules, breaks, closing), Their account, Sensitive (victim only, locked until the officer confirms), Rights, Arrest rights (adult), Child's rights, Disability rights. A young child is not asked for a mobile number; an accused gets the factual Personal, Family, Address and School questions but not the welfare-only ones (introduce yourself, favourite subject, what they like at school) |
@@ -67,7 +67,7 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 
 | Feature | Description |
 | --- | --- |
-| Characters | A child and an adult character framed to the hips, with jointed fingers and facial expressions; motions cover 415 ISL signs retargeted from recorded Deaf signers, 42 everyday gestures, the 26-letter two-handed ISL alphabet, 10 digits and the authored word signs |
+| Character | A 3D character framed to the hips, with jointed fingers and facial expressions; motions cover 415 ISL signs retargeted from recorded Deaf signers, 42 everyday gestures, the 26-letter two-handed ISL alphabet, 10 digits and the authored word signs |
 | Opening | The officer's introduction (s1), then four pictured and signed ground rules ("you can stop or take a break whenever you want", "it is okay to say I don't know", "tell me if I get something wrong", "I did not see what happened, tell me in your own way") and a neutral practice round, "Show me something you did this morning", answered by drawing, writing or signing. The subject moves on with Next; each step is logged as shown. If the officer takes the phone back before the practice round, the log records "Officer skipped the rest of the ground rules" |
 | Caption | The question in the subject's language in large type; during typed text the current word is lit, a spelled word shows its current letter, and a word's picture is held up. Tapping a word replays it alone at half speed; tapping the question replays it |
 | Speech | Placeholder recordings until re-recorded: 1,350 recordings: the greeting in 15 languages plus 89 clips for each of those languages (Indic Parler-TTS); the rest show captions and pictures; Gondi and Halbi have no voice yet; automatic for a young child or another language, never for a signer |
@@ -138,22 +138,20 @@ With a Hindi-reading subject, Latin text the officer types is translated on the 
 
 ## 5. The character in detail
 
-The character is not a 3D model, a video or a machine-learning model. It is a parametric 2D puppet drawn in code with Compose Canvas and redrawn every frame from numbers.
+The character is a 3D VRM model rendered with three.js in a WebView that serves only the app's own avatar files. Motions stay numbers: keyframes in a 2D front view, placed on the model each frame.
 
 | Part | Location | Content |
 | --- | --- | --- |
-| Drawing | `ui/avatar/Avatar.kt` | Head, hair, torso, arms, five three-joint fingers, brows, eyes and mouth as vector shapes with soft shading; rimmed arms, a lighter palm tone and nails on the back of straight fingers; a view box to the hips |
-| Rig | `ui/avatar/Rig.kt`, `MeasuredShape.kt` | A 200 by 200 unit space, named body points, a two-bone arm solver or a recorded elbow, named and measured handshapes, face presets, keyframe interpolation with Catmull-Rom for recorded keys |
-| Characters | `ChildBuild`, `AdultBuild`, `ChildLook`, `AdultLook` | One skeleton, two sets of proportions and colours |
-| Motions | `assets/content/gestures.json`, `signs.json`, `isl_signs.json` | Keyframes: time, each hand's target point, handshape, palm roll and angle, optional elbow, face, head and body |
+| Host | `ui/avatar/Avatar.kt` | The WebView, its asset-only request filter, and the commands it sends (play, clip, view) |
+| Avatar module | `avatar/src` (built to `assets/avatar/avatar.js`) | `rig.ts`: named body points, named and measured handshapes, face presets, keyframe interpolation with Catmull-Rom for recorded keys. `retarget.ts`: rig points to model space, two-bone arms at the model's lengths, hand turn, finger bends, expressions. `clip.ts`: 48-point clip kinematics. `stage.ts`: scene, model, playback |
+| Model | `assets/avatar/model.vrm` | `ISL Sample 1` by Leo, VRM 1.0 |
+| Motions | `assets/content/gestures.json`, `signs.json`, `isl_signs.json`, `clips.json` | Keyframes: time, each hand's target point, handshape, palm roll and angle, face, head and body; recorded sentence clips |
 
-Each frame: the clock time selects two keyframes, which are blended with easing (or, for recorded keys less than 0.35 s apart, a Catmull-Rom curve); each hand is placed at a named point (for example `mouth`, `chest`, or `index_opp`, the other hand's index fingertip); the elbow is the recorded one or is solved from the shoulder and wrist; fingers bend by curl values; the face preset sets brows, eyes and mouth; breathing, blinking, sway and occasional glances are added; the result is painted as vectors. Because positions are named body points, one motion file plays on both characters. The reviewer portal draws the same motions through a TypeScript port of the rig, checked against `Rig.kt` by a shared fixture file.
+Each frame: the clock time selects two keyframes, which are blended with easing (or, for recorded keys less than 0.35 s apart, a Catmull-Rom curve); each hand is placed at a named point (for example `mouth`, `chest`, or `index_opp`, the other hand's index fingertip) and carried onto the model through matching landmarks; the arm is solved at the model's bone lengths; fingers bend by curl values; the face preset sets the model's expressions; breathing, blinking, sway and occasional glances are added. The reviewer portal renders the same module.
 
 | Strengths | Limits |
 | --- | --- |
-| Small; offline; a motion is corrected by editing numbers; motions chain smoothly; faces carry ISL facial grammar; 415 signs follow real signers | Flat 2D front view with faked depth, so fingers pointing at the camera read as bent; the alphabet, authored and recorded signs await ISL review; no mouthing; cartoon style |
-
-A 3D rig (VRoid, Blender, glTF or VRM) rendered with Filament is the upgrade path if 2D cannot show what reviewers need ([avatar and gestures](05-avatar-and-gestures.md) §5.4).
+| Offline; a motion is corrected by editing numbers; motions chain smoothly; faces carry ISL facial grammar; 415 signs follow real signers; one module for app and portal | Depth is a heuristic, so contact with the face or body is approximate; the 12 MB model needs a licence from its author before release; a WebView with WebGL costs memory beside the camera; the alphabet, authored and recorded signs await ISL review; no mouthing |
 
 ## 6. Camera and sign reading
 

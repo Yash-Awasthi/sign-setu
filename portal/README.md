@@ -9,9 +9,8 @@ the reviewer's browser.
 
 ## Screens
 
-- **ISL review**: every gesture, letter, digit and sign, played on the child and the adult character side by side.
-  The characters are drawn by a TypeScript port of the app's rig (`src/rig.ts`, `src/draw.ts`), with play, pause,
-  speed (0.25x to 1x) and a scrub bar. A link ending in `#<gesture id>` opens that gesture, and
+- **ISL review**: every gesture, letter, digit and sign, played on the app's 3D character by the same avatar
+  module the app ships (`../avatar`), with play, pause, speed (0.25x to 1x) and a scrub bar. A link ending in `#<gesture id>` opens that gesture, and
   `#<gesture id>@<seconds>` holds it at that moment, for example `#letter.b@0.6`.
 - **Language review**: every prepared question, phrase-bank sentence, subject-screen word and language-finder
   greeting, with its caption in each language and the recording beside it.
@@ -25,13 +24,13 @@ the browser's local storage, per role, and **Export JSON** downloads them all.
 
 ## Run
 
-Needs Node 22.18+, 24.11+ or 26+ (the range `vite-plus` declares). From `portal/`, after `npm install`:
+Needs Node 22.18+, 24.11+ or 26+ (the range `vite-plus` declares). Run `npm install` in `../avatar` first, then from `portal/`, after `npm install`:
 
 | Command          | Same as           | Does                                                 |
 | ---------------- | ----------------- | ---------------------------------------------------- |
 | `npx vp dev`     | `npm run dev`     | Local server with live reload                        |
 | `npx vp check`   | `npm run check`   | Format, lint and type check                          |
-| `npx vp test`    | `npm test`        | Unit tests, including the rig comparison with Rig.kt |
+| `npx vp test`    | `npm test`        | Unit tests                                           |
 | `npx vp build`   | `npm run build`   | Static site in `portal/dist`                         |
 | `npx vp preview` | `npm run preview` | Serves `portal/dist`                                 |
 
@@ -44,21 +43,12 @@ app need a rebuild.
 | -------------------------------- | --------------------------------------------------------------- |
 | `src/content.ts`                 | Imports the app's content JSON at build time                    |
 | `src/App.tsx`, `src/screens.tsx` | Roles, tabs and the review screens                              |
-| `src/rig.ts`, `src/draw.ts`      | TypeScript port of the app's rig and its drawing                |
 | `src/flags.ts`                   | Child-welfare wording hints                                     |
 | `src/missing.ts`                 | Missing-caption check for language reviewers                    |
 | `src/reviews.ts`                 | Verdict storage and the JSON export format                      |
-| `src/rig-fixtures.json`          | Poses written by `RigFixtureTest`, checked by `src/rig.test.ts` |
 
 ## Keeping the verdicts
 
 The exported JSON file is the review record: keep it with the release it reviewed.
-
-## Keeping the rig in step
-
-`src/rig.ts` is a port of `app/src/main/java/app/signsetu/ui/avatar/Rig.kt`. The Kotlin test `RigFixtureTest`
-writes `src/rig-fixtures.json` (poses of every gesture on both characters at three moments) and fails when Rig.kt no
-longer produces it; `src/rig.test.ts` checks the TypeScript rig against the same file. After a deliberate change to
-Rig.kt, delete the fixture file, run `RigFixtureTest` to write it again, and update `rig.ts` until `vp test` passes.
 
 The portal's place in the architecture is in [docs/02-architecture.md](../docs/02-architecture.md), section 12.

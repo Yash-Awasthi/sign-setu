@@ -6,7 +6,6 @@ export default defineConfig({
   lint: {
     options: { typeAware: true, typeCheck: true },
   },
-  // The rig fixtures are written by RigFixtureTest.kt, which compares the exact text.
-  fmt: { printWidth: 140, ignorePatterns: ["src/rig-fixtures.json"] },
+  fmt: { printWidth: 140 },
   test: { include: ["src/**/*.test.ts"] },
 });

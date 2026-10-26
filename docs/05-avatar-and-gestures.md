@@ -1,6 +1,6 @@
 # 05. Avatar and Gesture Design
 
-The app draws both characters in code (§5.7) and plays authored and recorded motions.
+The app shows one 3D character (a VRM model, §5.7) and plays authored and recorded motions on it.
 
 ## 1. Answers in brief
 
@@ -76,28 +76,29 @@ Every entry below is a **candidate**. None is final until the review above appro
 | Doctor | Two fingers from the ears to the chest (stethoscope) | Avoid the injection gesture, which frightens children |
 | Where? | Palms up, raised eyebrows, small shrug | The face carries the question |
 
-## 4. The two characters
+## 4. The character
 
-| | Child character | Adult character |
-| --- | --- | --- |
-| For | Young child profile | Every other profile; the officer can switch either session to the other character |
-| Look | Original Indian child in a simple style, large head and eyes, expressive brows and mouth (which carry facial grammar), five-fingered hands drawn 1.85 times the rig's hand unit | Neutral stylised adult framed from head to hips; plain dark top so hands stand out; simplified face with calm lidded eyes; hands 2.0 times the hand unit |
-| Face | Big, readable expressions | Eyebrows, eyes, mouth and head movement; this is ISL grammar, not decoration |
-| Clothes | Plain, everyday, regionally neutral; no school or police uniform, no religious markers | Plain dark V-neck top; no uniform |
-| Lexicon | Gesture lexicon, and ISL signs when Signs is on | ISL lexicon and phrase bank |
-| Background | Plain, calm, warm | Plain, contrasting with skin and clothes |
+| | |
+| --- | --- |
+| For | Every profile |
+| Model | `ISL Sample 1` by Leo, VRM 1.0 (`app/src/main/assets/avatar/model.vrm`), with jointed fingers and preset expressions |
+| Face | Brows, eyes, mouth and head movement through the model's expressions; this is ISL grammar, not decoration |
+| Lexicon | Gesture lexicon, ISL signs when Signs is on, the phrase bank and recorded sentence clips |
+| Background | Transparent, over the stage colours |
+
+The model's licence asks for credit, allows modification, and reserves use as an avatar to separately licensed people and redistribution to its author; a written licence from the author is needed before a release ships it.
 
 **Why not Shin-chan or Nobita.** Crayon Shin-chan and Doraemon (with Nobita) are protected characters owned by their Japanese rights holders, who enforce them. A "replica" infringes copyright and, for names and likeness, trademark rights, whatever the purpose. A police app cannot ship it without a licence, and such a licence is unlikely. Shin-chan was also taken off air in India after complaints about its content and returned only in an edited form, a reputational risk for a police app. The same applies to Chhota Bheem and other commercial characters. What is wanted from them, a friendly, familiar cartoon child, is achievable with an original character in a similar simple style; the custom parts belong to the department.
 
 **No blank face for adults.** A featureless "mask" face was rejected: without eyebrows and mouth, ISL questions read as statements and negation is lost. The adult's simplified face still moves its brows, eyes and mouth, keeps the neutrality a mask was meant to give, avoids the uncanny valley, and resembles no real person.
 
-**Character review.** A child psychologist reviews both characters, and they are tested with children (§8): a character that reads as a toy invites play, and one that reads as a stranger may frighten.
+**Character review.** A child psychologist reviews the character, and they are tested with children (§8): a character that reads as a toy invites play, and one that reads as a stranger may frighten.
 
 ## 5. Technical design
 
-### 5.1 One rig, two builds, one motion library
+### 5.1 One rig, one character, one motion library
 
-Both characters share one 2D upper-body rig (`ui/avatar/Rig.kt`), so every motion plays on either character. The rig is defined in §5.7.
+Motions are keyframes in a 2D front view (`avatar/src/rig.ts`), placed on the 3D character by `avatar/src/retarget.ts`. Both are defined in §5.7.
 
 ### 5.2 Lexicon entries
 
@@ -128,11 +129,11 @@ Every recorded performer signs the consent form; raw footage is kept only until 
 
 ### 5.4 Runtime
 
-Both characters are drawn live on the 2D rig, playing authored and recorded keyframes with jointed fingers and facial expression beside the picture card. No video clips or 3D renderer ship; the rig needs no dependency beyond Compose.
+The character is rendered live by the avatar module (`avatar/`, three.js and three-vrm, built into `app/src/main/assets/avatar/`) in a WebView that loads only those assets and makes no network request. It plays authored and recorded keyframes with jointed fingers and facial expression beside the picture card, and plays recorded sentence clips (48 body and hand points a frame, `content/clips.json`, from `tools/text2isl`) when a typed sentence matches one.
 
 ### 5.5 Size
 
-Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` together are a small fraction of the APK. Pre-rendered clips would cost about 75 KB each (480 by 480, H.264, about 400 kbit/s, 1.5 s), so the roughly 900 current motions (42 gestures, 156 authored, 415 ISL and 286 ASL) on two characters would add well over 100 MB, beyond the 100 MB size target.
+Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` together are a small fraction of the APK. Pre-rendered clips would cost about 75 KB each (480 by 480, H.264, about 400 kbit/s, 1.5 s), so the roughly 900 current motions (42 gestures, 156 authored, 415 ISL and 286 ASL) would add well over 60 MB; the character model itself is 12 MB, beyond the 100 MB size target.
 
 ### 5.6 Playback rules
 
@@ -140,20 +141,21 @@ Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` t
 - The caption and picture are shown first; the motion plays with them, never alone.
 - If a motion is missing, the picture and caption stand alone and the officer sees "gesture not available".
 
-### 5.7 The code-drawn rig
+### 5.7 The rig and the 3D character
 
-- **Space.** Each character lives in a 200 by 200 unit space, y down, facing the viewer; the character's right hand appears on the viewer's left. The stage shows the view box x −10 to 210, y 0 to 258 (to the hips). Proportions differ per character (`ChildBuild`, `AdultBuild`).
-- **Arms.** A key gives a target at a named anchor (`forehead`, `mouth`, `chin`, `cheek`, `ear`, `chest`, `belly`, `shoulder`, `front`, `hip`, ...) with an offset, reached by the wrist, palm, index tip or thumb. The elbow comes from a two-bone solve (out, in or down) unless the key carries a recorded elbow (`ex`, `ey`).
+- **Space.** Keys are written in a 200 by 200 unit front view, y down, facing the viewer; the character's right hand appears on the viewer's left. Content checks keep hands inside the view box x −10 to 210, y 0 to 258 (to the hips).
+- **Placing on the model.** Heights pass through matching landmarks (eyes, chin, shoulders, hips, a hanging hand), widths scale by face or shoulder width, and depth puts the hand in front of the face or chest (`retarget.ts`). Each arm is a two-bone solve at the model's bone lengths, bent down and out, in or down as the key says, and steadied by the elbow of the frame before.
+- **Arms.** A key gives a target at a named anchor (`forehead`, `mouth`, `chin`, `cheek`, `ear`, `chest`, `belly`, `shoulder`, `front`, `hip`, ...) with an offset, reached by the wrist, palm, index tip or thumb. Recorded elbows (`ex`, `ey`) in the content are not used by the 3D solve.
 - **Hands.** Five fingers of three joints. A named shape (`FLAT`, `POINT`, `BUNCH`, `PINKY`, `Y`, `CUP`, `PINCH`, counting shapes and others) or a measured `c:` shape sets each finger's curl, the thumb across the palm and the spread; `roll` shows the palm, the thumb side or the back of the hand. Shapes blend between keys.
-- **Face and body.** Brows (raise, worry, frown), eyes (open, smile, blink), mouth (smile, open, round), head tilt, nod and turn, body lean, shrug, hunch and shiver. Yes-no questions raise the brows and wh-questions furrow them.
+- **Face and body.** Brows (raise, worry, frown), eyes (open, smile, blink), mouth (smile, open, round) map to the model's expressions (happy, sad, angry, surprised, aa, ou, blink); head tilt, nod and turn, body lean, shrug, hunch and shiver turn the spine, shoulders, neck and head. Yes-no questions raise the brows and wh-questions furrow them.
 - **Playback.** A motion eases in from rest over 0.35 s and back over 0.45 s; each authored move lands slightly early and holds, and a free move overshoots and settles. Recorded keys less than 0.35 s apart are joined by a Catmull-Rom curve, so the hands pass through them. After a question's motion the character glances down at the answers. It breathes and blinks between motions unless "remove animations" is on, and stays still during a sign window.
 - **Phrases.** A phrase-bank sentence chains its signs ("you", the item, the asking pose) into one motion; each part starts from the pose it has alone, so a reviewed sign never changes inside a sentence. Each slot carries its own complete sentence in every language.
-- **Two-handed contact.** A hand can be placed on the other hand: its wrist, palm centre, thumb or any fingertip (`index_opp`, `ring_opp`, ...). The touched hand is solved first, so a fingertip lands on a fingertip on both characters. Where the two hands are layered, the front one casts a short contact shadow so the silhouettes never merge.
+- **Two-handed contact.** A hand can be placed on the other hand: its wrist, palm centre, thumb or any fingertip (`index_opp`, `ring_opp`, ...). The touched hand is solved first, so a fingertip lands on a fingertip.
 - **Typed text.** Words are looked up in `words.json` and played through one lexicon: with Signs on, the recorded sign, then the authored sign, then the everyday gesture; with Gestures on, the gesture; otherwise the word's letters (Hindi as akshara on the two-handed alphabet) or a picture beat. With Signs on, words play in draft ISL order: time words first, then the rest as typed, then negation, then the question word. The caption lights the word being played and a tile beside the character shows a spelled word's current letter.
 - **Recorded signs.** 415 signs (262 INCLUDE words and 153 ISLRTC dictionary entries), with measured hand shapes and elbows. The same lookup serves typed text, questions without a gesture of their own, sign-back of a reader label and the officer's ISL dictionary. Homonyms are offered in the dictionary only.
-- **Look.** Every arm bone and sleeve has a dark rim, so an arm crossing the body or face stays visible. A palm facing the viewer uses a lighter tone; straight fingers seen from the back show nails. Everything is drawn in code, with no image assets.
+- **Look.** The model is `ISL Sample 1` by Leo (VRM 1.0, MToon shading), shown on a transparent background over the stage colours; profile tiles use a still of its head (`res/drawable-nodpi/avatar_face.webp`).
 - **Gestures avoided.** Thumb-up, thumb-down and an open palm are never used for yes, no or stop; Stop on the stage is an octagonal sign.
-- **Review.** Debug builds include a gallery of every gesture on both characters, frozen at the moment of contact (`GalleryActivity`), and the reviewer portal plays the same motions through a TypeScript port of the rig checked against `Rig.kt`. Every entry remains a candidate until reviewed.
+- **Review.** The reviewer portal plays every motion on the same avatar module the app ships. Every entry remains a candidate until reviewed.
 
 ## 6. Officer gesture lookup
 
@@ -185,10 +187,10 @@ This works offline, needs no model, and works with home signs, because the confi
 | --- | --- | --- |
 | Each ISL sign and phrase | Deaf ISL reviewer; then 5 or more Deaf adults from at least two regions | 80% understand the phrase without the caption |
 | Each gesture entry | Child-welfare reviewer and educators; then children in deaf and hearing schools | 70% of children pick the right picture after seeing the gesture |
-| Both characters | Child psychologist; then children | No child shows fear; most children prefer the character to no character |
+| The character | Child psychologist; then children | No child shows fear; most children prefer the character to no character |
 | Officer gesture lookup | Officers in UAT | Right meaning in the top three for 80% of scripted gestures |
 
-Reviewers use the reviewer portal (`portal/`): every motion plays on both characters with speed and scrub, and verdicts export to the content review record.
+Reviewers use the reviewer portal (`portal/`): every motion plays on the character with speed and scrub, and verdicts export to the content review record.
 
 ## 9. Risks
 
@@ -197,8 +199,8 @@ Reviewers use the reviewer portal (`portal/`): every motion plays on both charac
 | A gesture means something different, or something rude, in some community | Multiple variants, community reviewers, picture always shown, show-back confirmation |
 | Character resembles a commercial cartoon | Original design, no reference images of commercial characters during design, legal check of the final design |
 | Children treat the character as a game | Psychologist review; character only plays on officer action; no game elements |
-| Facial grammar too subtle on a small screen | Exaggerated expressions on the child character; brows mark questions |
-| A retargeted sign misleads because the 2D rig flattens depth | Deaf review of every recorded sign; fingers pointing at the camera read as bent, noted for reviewers |
+| Facial grammar too subtle on a small screen | Exaggerated expressions; brows mark questions |
+| A retargeted sign misleads because the keyframes are 2D and depth is estimated | Deaf review of every recorded sign on the 3D character |
 | Performer withdraws consent | Keyframes are re-performed by another performer and re-reviewed |
 | Volunteer performers and reviewers are not available | Recruit through the department; picture cards and gesture lookup do not depend on new motions |
 

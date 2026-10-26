@@ -49,6 +49,24 @@ jobs:
           name: release-record
           path: record/
 
+  avatar:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: avatar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: avatar/package-lock.json
+      - run: npm ci
+      - run: npx vp check
+      - run: npx vp test
+      - name: The bundle in the app matches the source
+        run: npx vp build && git diff --exit-code -- ../app/src/main/assets/avatar/avatar.js
+
   portal:
     runs-on: ubuntu-24.04
     defaults:
@@ -60,7 +78,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: portal/package-lock.json
+          cache-dependency-path: |
+            portal/package-lock.json
+            avatar/package-lock.json
+      # The review screen renders with the avatar module's sources and dependencies.
+      - run: npm ci --prefix ../avatar
       - run: npm ci
       - run: npx vp check
       - run: npx vp test
@@ -76,7 +98,7 @@ jobs:
       - run: pip install numpy resvg-py pillow
       - name: Python tool tests
         run: |
-          for d in tools/isl tools/security tools/content; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
+          for d in tools/isl tools/security tools/content tools/text2isl; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
       - name: Content manifest is current
         run: python tools/content/build_content.py --check
       - name: Content references, ids and language coverage

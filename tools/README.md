@@ -16,6 +16,10 @@ Build and research scripts. None ships in the APK. Run them from the repository 
 
 See [isl/README.md](isl/README.md): `retarget.py` (INCLUDE to `isl_signs.json`), `retarget_islrtc.py` (ISLRTC dictionary words, mp environment), `retarget_asl.py` (PopSign to `asl_signs.json` and `asl_words.json`).
 
+## Text to ISL (`tools/text2isl`)
+
+See [text2isl/README.md](text2isl/README.md): the sentence-to-motion model, its video processing and training, and `export_clips.py`, which writes the recorded sentence clips the app plays (`content/clips.json`).
+
 ## Sign readers (`tools/ml`)
 
 See [ml/README.md](ml/README.md) for data, environments and the training order. Each script, with its arguments:

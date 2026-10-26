@@ -14,7 +14,7 @@ DATA_ROOT = pathlib.Path(os.environ.get("SIGNSETU_DATA", "ml-data"))
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SIGNS = ROOT / "app" / "src" / "main" / "assets" / "content" / "signs.json"
 
-# Rig.kt HandShape.ALL: thumb, index, middle, ring, pinky, thumbAcross, spread.
+# SHAPES in avatar/src/rig.ts: thumb, index, middle, ring, pinky, thumbAcross, spread.
 SHAPES = {
     "RELAX": (0.25, 0.2, 0.28, 0.34, 0.4, 0.2, 0), "FLAT": (0, 0, 0, 0, 0, 0.15, 0), "OPEN": (0, 0, 0, 0, 0, 0, 1),
     "FIST": (0.55, 1, 1, 1, 1, 1, 0), "POINT": (0.55, 0, 1, 1, 1, 1, 0), "TWO": (0.55, 0, 0, 1, 1, 1, 0.6),
@@ -28,7 +28,7 @@ SHAPES = {
 SIGN = {"R": -1.0, "L": 1.0}
 CENTER = 100.0
 SIDED = {"cheek", "ear", "shoulder", "temple", "side", "eye", "hip", "arm", "nose_side", "hair_side"}
-BUILDS = {  # Rig.kt AdultBuild and ChildBuild
+BUILDS = {  # BUILD in avatar/src/rig.ts, and a smaller child build for variety
     "adult": dict(shoulder_y=136, half=44, upper=41, fore=38, hand=2.0, anchors={
         "hairline": (100, 38), "forehead": (100, 52), "eye": (88, 67), "nose": (100, 78), "nose_side": (96, 80),
         "mouth": (100, 91), "chin": (100, 104), "cheek": (84, 84), "ear": (68, 72), "temple": (73, 58),
@@ -53,7 +53,7 @@ def shape(name: str) -> np.ndarray:
 
 def hand21(wrist, sh, roll, angle_deg, side, scale):
     """MediaPipe's 21 hand points on screen for a rig hand; the rig draws tips only, so joints follow the curls."""
-    # Built palm to the viewer, then turned about the long axis by the roll: the thumb lands where Rig.kt point() puts it.
+    # Built palm to the viewer, then turned about the long axis by the roll: the thumb lands where point() in avatar/src/rig.ts puts it.
     c0 = -SIGN[side]
     pts = np.zeros((21, 3))
     for k in range(4):
@@ -136,7 +136,7 @@ class Rig:
         return {"wrist": p, "elbow": elbow, "points": hand21(p, sh, roll, screen, side, self.hand)}
 
     def elbow(self, s, t, side, mode):
-        """Rig.kt solveElbow."""
+        """Two-bone elbow in the rig plane."""
         upper, fore = self.b["upper"], self.b["fore"]
         d = t - s
         n = float(np.clip(np.hypot(*d), abs(upper - fore) + 0.01, upper + fore - 0.01))

@@ -76,11 +76,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Switch
 import androidx.compose.ui.graphics.Color
-import app.signsetu.ui.avatar.Character
-import app.signsetu.ui.avatar.MiniFace
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.mutableStateOf
@@ -108,7 +104,6 @@ internal fun MorePage(
     onCounsel: (() -> Unit)?,
     modifier: Modifier,
     onTell: (() -> Unit)? = null,
-    onChildAvatar: (Boolean) -> Unit = {},
     auto: AutoPilot? = null,
 ) {
     val pending = ui.pending
@@ -212,15 +207,6 @@ internal fun MorePage(
             MoreRow(rememberVectorPainter(Icons.Filled.Search), stringResource(if (ui.signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary), null, first = onTell == null && onCounsel == null) { onTool(Tool.DICTIONARY) }
             MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.List), stringResource(R.string.officer_log), answers.takeIf { it > 0 }?.toString(), onClick = onLog)
             MoreRow(rememberVectorPainter(Icons.Filled.Person), stringResource(R.string.officer_change), null, onClick = onChange)
-            HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 56.dp).toggleable(ui.child, role = Role.Switch, onValueChange = onChildAvatar).padding(horizontal = Spacing.lg),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                MiniFace(Character.CHILD, 24.dp, Color(0xFFFFDDBE))
-                Text(stringResource(R.string.more_child_avatar), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f).padding(start = Spacing.lg))
-                Switch(checked = ui.child, onCheckedChange = null)
-            }
             onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, onClick = it) }
             MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
         }

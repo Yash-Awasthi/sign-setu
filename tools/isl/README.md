@@ -51,17 +51,15 @@ pipeline and compares the frames with a hand against what this script found on a
 - Wrists are placed on the adult rig by the shoulders (body) or the eyes and mouth (near the face), blended, then
   written as the nearest anchor plus dx/dy, kept within reach and far enough from the frame edges that the whole hand stays in the body view.
 - Hands: per-finger curl from joint flexion, thumb across the palm, spread, palm roll from the palm normal, angle
-  from wrist to middle knuckle, and the elbow as `ex`/`ey` from the shoulder, the longest upper arm scaled to the rig's so shorter ones foreshorten (`elbow: down` is the fallback). Shapes are written as `c:` percentages (`MeasuredShape.kt`, `handShape` in rig.ts).
+  from wrist to middle knuckle, and the elbow as `ex`/`ey` from the shoulder, the longest upper arm scaled to the rig's so shorter ones foreshorten (`elbow: down` is the fallback; the 3D character solves its own elbow). Shapes are written as `c:` percentages (`handShape` in `avatar/src/rig.ts`).
 - Keys at both ends, pauses and turns of the path, at least every 0.5 s.
 - `HOMONYMS` (fall, light, ...) stay in the dictionary but are never used for typed text.
 
 ## Checks
 
-- Side-by-side renders of the source skeleton and both characters (portal rig and drawing, headless Chromium) for
-  thank you, house, you, teacher, family, mother, father, school, hello and how are you: placement, hands used and
-  handshapes follow the signer. Fingers pointing at the camera read as bent, a limit of the flat rig.
-- `IslLexiconTest` checks every motion stays in the frame on both characters and that authored signs keep each hand on
-  its own side, and that every reader label can be signed back.
+- The reviewer portal plays each sign on the 3D character beside a link to the source clip.
+- `avatar/src/rig.test.ts` checks every motion stays in the frame and that authored signs keep each hand on its own
+  side; `IslLexiconTest` checks that every reader label can be signed back.
 
 ## Recorded ASL signs
 

@@ -47,8 +47,7 @@ import app.signsetu.sign.SignChoice
 import app.signsetu.sign.SignWindow
 import app.signsetu.ui.avatar.AVATAR_ASPECT
 import app.signsetu.ui.avatar.Avatar
-import app.signsetu.ui.avatar.Character
-import app.signsetu.ui.avatar.Timeline
+import app.signsetu.ui.avatar.LEAD_IN
 import app.signsetu.ui.components.rememberSpeechPlayer
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.Spacing
@@ -74,8 +73,6 @@ internal fun reopensInput(pending: Pending?, yes: Boolean) =
 /** A reopened input holds the item until the subject submits it; the next run step would close it. */
 internal fun advancesRun(pending: Pending?, yes: Boolean) = !reopensInput(pending, yes)
 
-fun characterFor(profile: Profile) = if (profile == Profile.YOUNG_CHILD) Character.CHILD else Character.ADULT
-fun characterFor(ui: SessionUi) = if (ui.child) Character.CHILD else Character.ADULT
 
 /** The stage: what the subject sees while the phone faces them, laid out as a one-to-one video call. */
 @Composable
@@ -197,7 +194,7 @@ fun Stage(
         playClock.floatValue = -1f
         if (plan == null || reacting || focus != null) return@LaunchedEffect
         val start = withFrameNanos { it }
-        val end = (plan.beats.lastOrNull()?.end ?: 0f) + Timeline.LEAD_IN
+        val end = (plan.beats.lastOrNull()?.end ?: 0f) + LEAD_IN
         while (playClock.floatValue < end) {
             withFrameNanos { now -> playClock.floatValue = (now - start) / 1e9f * pace }
         }
@@ -205,14 +202,14 @@ fun Stage(
     }
     val beat by remember(plan) {
         derivedStateOf {
-            val t = playClock.floatValue - Timeline.LEAD_IN
+            val t = playClock.floatValue - LEAD_IN
             plan?.beats?.lastOrNull { t >= it.start && t < it.end }
         }
     }
     val letter by remember(plan) {
         derivedStateOf {
             val b = beat ?: return@derivedStateOf -1
-            spelledIndex(b, playClock.floatValue - Timeline.LEAD_IN)
+            spelledIndex(b, playClock.floatValue - LEAD_IN)
         }
     }
     val caption = when {
@@ -239,8 +236,9 @@ fun Stage(
     val avatar: @Composable (Gesture?, Any?) -> Unit = { guide, guideKey ->
         Box(Modifier.fillMaxSize()) {
             Avatar(
-                character = characterFor(ui),
                 gesture = guide ?: gesture,
+                // A typed sentence with a recorded clip plays the recording instead of word-by-word signs.
+                clip = if (guide == null && focus == null && !reacting) (pending as? Pending.FreeText)?.let { content.clipFor(it.text) } else null,
                 playKey = guideKey ?: when {
                     reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
                     focus != null -> "word:$wordTaps"

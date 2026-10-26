@@ -286,7 +286,7 @@ fun OfficerPane(
                         .padding(vertical = Spacing.xs),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    MiniFace(characterFor(ui), 40.dp, Color(0xFFFFDDBE))
+                    MiniFace(40.dp, Color(0xFFFFDDBE))
                     // Who the person is at a glance: profile, then language and role.
                     Column(Modifier.padding(start = Spacing.md)) {
                         Text(stringResource(profileTitle(ui.session.profile)), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -348,7 +348,6 @@ fun OfficerPane(
                 onSecondScreen = onSecondScreen,
                 onFinish = { askEnd = true },
                 onCounsel = if (cloud.available) startCounsel else null,
-                onChildAvatar = vm::setChildAvatar,
                 auto = vm.auto,
                 onTell = if (canReadSigns) ({ prepareTyped(); vm.readSigns(SignWindow.NARRATIVE); page = 0 }) else null,
                 modifier = Modifier.weight(1f),

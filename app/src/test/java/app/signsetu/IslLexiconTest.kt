@@ -16,14 +16,9 @@ import app.signsetu.data.content.motionFor
 import app.signsetu.data.content.planText
 import app.signsetu.data.content.search
 import app.signsetu.data.content.signBack
-import app.signsetu.ui.avatar.AdultBuild
-import app.signsetu.ui.avatar.ChildBuild
 import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.HandKey
-import app.signsetu.ui.avatar.HandShape
 import app.signsetu.data.content.Key
-import app.signsetu.ui.avatar.Timeline
-import app.signsetu.ui.avatar.handShape
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -36,22 +31,6 @@ import org.junit.Test
 import java.io.File
 
 class IslLexiconTest {
-
-    @Test
-    fun measuredShapesParseAndClamp() {
-        assertEquals(HandShape.ALL["FIST"], handShape("FIST"))
-        assertEquals(HandShape(0.1f, 0.2f, 0.95f, 1f, 1f, 0.5f, -0.3f), handShape("c:10,20,95,100,100,50,-30"))
-        assertEquals(HandShape(0f, 1f, 0f, 0f, 0f, 0f, 1f), handShape("c:-5,140,0,0,0,0,200"))
-        for (bad in listOf("c:1,2,3", "c:a,0,0,0,0,0,0", "c:", "SPOON")) assertNull(bad, handShape(bad))
-    }
-
-    @Test
-    fun aMeasuredShapePlaysOnTheRig() {
-        val g = Gesture("isl.x", listOf(Key(0f, R = HandKey("chest", shape = "c:0,100,100,100,100,0,0")), Key(0.5f)))
-        val pose = Timeline(g, AdultBuild).pose(Timeline.LEAD_IN)
-        assertEquals(1f, pose.r.shape.index, 1e-4f)
-        assertEquals(0f, pose.r.shape.thumb, 1e-4f)
-    }
 
     private fun gesture(id: String) = Gesture(id, listOf(Key(0f, R = HandKey("chest")), Key(0.4f)))
     private fun isl(word: String, homonym: Boolean = false) =
@@ -240,24 +219,4 @@ class IslLexiconTest {
         assertEquals("namaste", bundle.gestureFor(q.copy(gesture = "namaste"))?.id)
     }
 
-    @Test
-    fun everySignStaysInFrameAndAuthoredSignsKeepEachHandOnItsSide() {
-        // Hugging yourself crosses the arms on purpose; recorded signers cross where the sign does.
-        val crossing = setOf("cold.hug")
-        // Signed questions (q.*) are chains of the signs checked here.
-        for (g in bundle.gestures.values.filterNot { it.id.startsWith("q.") }) for (build in listOf(ChildBuild, AdultBuild)) {
-            val timeline = Timeline(g, build)
-            val used = { side: (Key) -> HandKey? -> g.keys.any { side(it)?.at?.let { at -> at != "rest" } == true } }
-            val r = used { it.R }
-            val l = used { it.L }
-            var s = Timeline.LEAD_IN
-            while (s <= Timeline.LEAD_IN + g.keys.maxOf { it.t } + 1e-4f) {
-                val p = timeline.pose(s)
-                if (r) assertTrue("${g.id} right hand leaves the frame at $s", p.r.x in 4f..196f && p.r.y in 4f..196f)
-                if (l) assertTrue("${g.id} left hand leaves the frame at $s", p.l.x in 4f..196f && p.l.y in 4f..196f)
-                if (r && l && !g.id.startsWith("isl.") && g.id !in crossing) assertTrue("${g.id} crosses at $s", p.r.x <= p.l.x + 4f)
-                s += 0.05f
-            }
-        }
-    }
 }

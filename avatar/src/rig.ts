@@ -1,4 +1,4 @@
-// Port of app/src/main/java/app/signsetu/ui/avatar/Rig.kt. Keep the two in step: rig.test.ts compares them.
+// Plays content keyframes as a pose in a 200-unit front view: x right, y down, the character's right hand on the left.
 
 export type Side = 1 | -1;
 export const R: Side = -1;
@@ -49,7 +49,7 @@ export const SHAPES: Record<string, HandShape> = {
   HOOK: shape(0.55, 0.5, 1, 1, 1, 1),
 };
 
-/** MeasuredShape.kt: a named shape, or a measured "c:" shape (five curls, thumbAcross, spread, in percent). */
+/** A named shape, or a measured "c:" shape (five curls, thumbAcross, spread, in percent). */
 export function handShape(name: string): HandShape | undefined {
   if (SHAPES[name]) return SHAPES[name];
   if (!name.startsWith("c:")) return undefined;
@@ -143,11 +143,8 @@ export interface HandPose {
   roll: number;
   /** Screen angle in degrees, NaN to follow the forearm. */
   angle: number;
+  /** 1 elbow out, 0 down, -1 in. */
   elbowOut: number;
-  prop: string | null;
-  /** Recorded elbow minus shoulder on screen, NaN to solve it from elbowOut. */
-  elbowX: number;
-  elbowY: number;
 }
 
 export interface Pose {
@@ -162,10 +159,6 @@ export interface Pose {
   hunch: number;
   shiver: number;
   gaze: number;
-  /** The right hand is placed on the left one, so it draws in front. */
-  rFront: boolean;
-  /** One hand is placed on the other, so the front one casts a contact shadow. */
-  handsTouch: boolean;
 }
 
 export const lerp = (a: number, b: number, f: number) => a + (b - a) * f;
@@ -226,44 +219,7 @@ export function anchor(b: Build, name: string, side: Side): [number, number] | n
 export const shoulder = (b: Build, side: Side): [number, number] => [CENTER + side * b.shoulderHalf, b.shoulderY];
 const rest = (b: Build, side: Side): [number, number] => [CENTER + side * (b.shoulderHalf - 6), 206];
 
-export const ChildBuild: Build = {
-  headX: 100,
-  headY: 76,
-  headRx: 40,
-  headRy: 42,
-  neckTop: 110,
-  neckWidth: 17,
-  shoulderY: 140,
-  shoulderHalf: 39,
-  upperArm: 38,
-  foreArm: 35,
-  armWidth: 12,
-  handScale: 1.85,
-  anchors: {
-    hairline: [100, 40],
-    forehead: [100, 56],
-    eye: [84, 74],
-    nose: [100, 85],
-    nose_side: [95, 86],
-    mouth: [100, 99],
-    chin: [100, 114],
-    cheek: [78, 92],
-    ear: [58, 80],
-    temple: [66, 62],
-    hair_side: [64, 48],
-    head_top: [100, 30],
-    chest: [100, 156],
-    belly: [100, 188],
-    shoulder: [61, 140],
-    side: [56, 176],
-    front: [100, 168],
-    arm: [58, 166],
-    hip: [70, 196],
-    low: [100, 196],
-  },
-};
-
-export const AdultBuild: Build = {
+export const BUILD: Build = {
   headX: 100,
   headY: 70,
   headRx: 31,
@@ -314,7 +270,7 @@ const REST_KEY: FullHandKey = {
   prop: null,
 };
 const full = (k: HandKey): FullHandKey => ({ ...REST_KEY, ...k });
-const OTHER_HAND = new Set(["wrist_opp", "palm_opp", "thumb_opp", "index_opp", "middle_opp", "ring_opp", "pinky_opp"]);
+export const OTHER_HAND = new Set(["wrist_opp", "palm_opp", "thumb_opp", "index_opp", "middle_opp", "ring_opp", "pinky_opp"]);
 export const LEAD_IN = 0.35;
 export const LEAD_OUT = 0.45;
 const FLOW = 0.35;
@@ -335,11 +291,10 @@ const ease = (f: number) => (f < 0.5 ? 4 * f * f * f : 1 - (-2 * f + 2) ** 3 / 2
 const hermite = (p1: number, p2: number, m1: number, m2: number, u: number) =>
   (2 * u ** 3 - 3 * u ** 2 + 1) * p1 + (u ** 3 - 2 * u ** 2 + u) * m1 + (-2 * u ** 3 + 3 * u ** 2) * p2 + (u ** 3 - u ** 2) * m2;
 const measured = (f: Frame) => f.r.shape.startsWith("c:") || f.l.shape.startsWith("c:");
-/** Recorded keys close together sample one movement, as in Rig.kt. */
+/** Recorded keys close together sample one movement. */
 const flows = (frames: Frame[], i: number) =>
   i >= 0 && i < frames.length - 1 && frames[i + 1].t - frames[i].t < FLOW && measured(frames[i]) && measured(frames[i + 1]);
 const easeOutBack = (f: number, c1 = 1.1) => 1 + (c1 + 1) * (f - 1) ** 3 + c1 * (f - 1) ** 2;
-const recordedElbow = (k: FullHandKey, side: Side): [number, number] | null => (k.ex != null && k.ey != null ? [k.ex * side, k.ey] : null);
 const elbow = (name: string) => (name === "in" ? -1 : name === "down" ? 0 : 1);
 const blendShape = (a: HandShape, b: HandShape, f: number): HandShape =>
   shape(
@@ -355,7 +310,7 @@ const blendShape = (a: HandShape, b: HandShape, f: number): HandShape =>
 export function restPose(b: Build): Pose {
   const hand = (side: Side): HandPose => {
     const [x, y] = rest(b, side);
-    return { x, y, shape: SHAPES.RELAX, roll: -1, angle: NaN, elbowOut: 1, prop: null, elbowX: NaN, elbowY: NaN };
+    return { x, y, shape: SHAPES.RELAX, roll: -1, angle: NaN, elbowOut: 1 };
   };
   return {
     r: hand(R),
@@ -369,8 +324,6 @@ export function restPose(b: Build): Pose {
     hunch: 0,
     shiver: 0,
     gaze: 0,
-    rFront: false,
-    handsTouch: false,
   };
 }
 
@@ -381,7 +334,7 @@ export class Timeline {
 
   constructor(
     gesture: Gesture | null,
-    private readonly build: Build,
+    private readonly build: Build = BUILD,
   ) {
     this.keys = [...(gesture?.keys ?? [])].sort((a, b) => a.t - b.t);
     this.duration = this.keys.length === 0 ? 0 : LEAD_IN + this.keys[this.keys.length - 1].t + LEAD_OUT;
@@ -397,7 +350,7 @@ export class Timeline {
     const a = frames[i];
     const b = frames[i + 1] ?? a;
     if (flows(frames, i)) return this.flow(frames, i, clamp((t - a.t) / (b.t - a.t), 0, 1));
-    // Each move lands a little early and holds, as in Rig.kt.
+    // Each move lands a little early and holds.
     const hold = Math.min(0.08, 0.25 * (b.t - a.t));
     const raw = b.t > a.t ? clamp((t - a.t) / (b.t - a.t - hold), 0, 1) : 0;
     return this.blend(a, b, raw);
@@ -418,7 +371,7 @@ export class Timeline {
     });
   }
 
-  /** Catmull-Rom through the recorded keys, as in Rig.kt. */
+  /** Catmull-Rom through the recorded keys. */
   private flow(frames: Frame[], i: number, u: number): Pose {
     const base = this.blend(frames[i], frames[i + 1], u);
     const key = (k: number, side: Side) => (side === R ? frames[k].r : frames[k].l);
@@ -426,8 +379,7 @@ export class Timeline {
       const hk = key(k, side);
       const [x, y] = this.resolve(hk, side);
       const s = handShape(hk.shape) ?? SHAPES.RELAX;
-      const e = recordedElbow(hk, side) ?? this.solvedElbow([x, y], side, elbow(hk.elbow));
-      return [x, y, hk.roll, (hk.angle ?? 0) * side, s.thumb, s.index, s.middle, s.ring, s.pinky, s.thumbAcross, s.spread, e[0], e[1]];
+      return [x, y, hk.roll, (hk.angle ?? 0) * side, s.thumb, s.index, s.middle, s.ring, s.pinky, s.thumbAcross, s.spread];
     };
     const at = (side: Side, h: HandPose): HandPose => {
       const p1 = track(i, side);
@@ -442,11 +394,8 @@ export class Timeline {
         return hermite(p1[j], p2[j], m1 * (t2 - t1), m2 * (t2 - t1), u);
       });
       const curl = (j: number) => clamp(v[j], 0, 1);
-      const rec = recordedElbow(key(i, side), side) != null || recordedElbow(key(i + 1, side), side) != null;
       return {
         ...h,
-        elbowX: rec ? v[11] : h.elbowX,
-        elbowY: rec ? v[12] : h.elbowY,
         x: v[0],
         y: v[1],
         roll: v[2],
@@ -461,7 +410,6 @@ export class Timeline {
     const f = ease(raw);
     // The hand placed on the other one is solved second; fingerspelling places the right hand on the left.
     const rFollows = OTHER_HAND.has(a.r.at) || OTHER_HAND.has(b.r.at);
-    const lFollows = OTHER_HAND.has(a.l.at) || OTHER_HAND.has(b.l.at);
     let r: HandPose;
     let l: HandPose;
     if (rFollows) {
@@ -485,8 +433,6 @@ export class Timeline {
       hunch: lerp(a.body.hunch, b.body.hunch, f),
       shiver: lerp(a.body.shiver, b.body.shiver, f),
       gaze: 0,
-      rFront: rFollows,
-      handsTouch: rFollows || lFollows,
     };
   }
 
@@ -506,11 +452,6 @@ export class Timeline {
     else if (Number.isNaN(angleA)) angle = f < 0.5 ? NaN : angleB;
     else if (Number.isNaN(angleB)) angle = f < 0.5 ? angleA : NaN;
     else angle = lerp(angleA, angleB, m);
-    const ea = recordedElbow(a, side);
-    const eb = recordedElbow(b, side);
-    // A recorded elbow next to a solved one starts or ends at the solve, as in Rig.kt.
-    const oa = eb ? (ea ?? this.solvedElbow(pa, side, elbow(a.elbow))) : ea;
-    const ob = ea ? (eb ?? this.solvedElbow(pb, side, elbow(b.elbow))) : eb;
     return {
       x: lerp(pa[0], pb[0], m),
       y: lerp(pa[1], pb[1], m),
@@ -518,17 +459,7 @@ export class Timeline {
       roll: lerp(a.roll, b.roll, f),
       angle,
       elbowOut: lerp(elbow(a.elbow), elbow(b.elbow), f),
-      prop: f < 0.5 ? a.prop : b.prop,
-      elbowX: oa && ob ? lerp(oa[0], ob[0], m) : NaN,
-      elbowY: oa && ob ? lerp(oa[1], ob[1], m) : NaN,
     };
-  }
-
-  /** The two-bone elbow for wrist p as an offset from the unshifted shoulder, like a recorded one. */
-  private solvedElbow(p: [number, number], side: Side, out: number): [number, number] {
-    const [sx, sy] = shoulder(this.build, side);
-    const [ex, ey] = solveElbow(sx, sy, p[0], p[1], this.build.upperArm, this.build.foreArm, side, out);
-    return [ex - sx, ey - sy];
   }
 
   private resolve(k: FullHandKey, side: Side, other?: HandPose): [number, number] {
@@ -555,14 +486,7 @@ export class Timeline {
   }
 }
 
-/** How close the two elbow scores must be before the elbow drawn last frame decides the branch. */
-
-/** The elbow for the (possibly shifted) shoulder: recorded if the keys carry it, else the two-bone solve. */
-export const elbowAt = (h: HandPose, sx: number, sy: number, b: Build, side: Side, prefer?: [number, number]): [number, number] =>
-  Number.isNaN(h.elbowX) ? solveElbow(sx, sy, h.x, h.y, b.upperArm, b.foreArm, side, h.elbowOut, prefer) : [sx + h.elbowX, sy + h.elbowY];
-
-/** The reachable wrist for a target: a two-bone arm cannot put the hand further than upper + fore from the
- * shoulder. Kept in step with Rig.kt so the portal preview matches the app. */
+/** The reachable wrist for a target: a two-bone arm cannot put the hand further than upper + fore from the shoulder. */
 export function clampReach(sx: number, sy: number, target: [number, number], upper: number, fore: number): [number, number] {
   const dx = target[0] - sx;
   const dy = target[1] - sy;
@@ -573,47 +497,56 @@ export function clampReach(sx: number, sy: number, target: [number, number], upp
   return [sx + dx * k, sy + dy * k];
 }
 
-/** How far a wrong-sided elbow moves back toward the scored side in one frame, in character units. */
-const ELBOW_SWING = 2;
+/** The part of the 200-unit space the body view shows: to the hips, so both hands stay inside at rest. */
+export const VIEW = { left: -10, top: 0, width: 220, height: 258 };
 
-/** Two-bone arm: returns the elbow for a shoulder, wrist target and segment lengths. */
-export function solveElbow(
-  sx: number,
-  sy: number,
-  tx: number,
-  ty: number,
-  upper: number,
-  fore: number,
-  side: Side,
-  elbowOut: number,
-  prefer?: [number, number],
-): [number, number] {
-  const dx = tx - sx;
-  const dy = ty - sy;
-  const d = clamp(Math.hypot(dx, dy), Math.abs(upper - fore) + 0.01, upper + fore - 0.01);
-  const base = Math.atan2(dy, dx);
-  const offset = Math.acos(clamp((upper * upper + d * d - fore * fore) / (2 * upper * d), -1, 1));
-  const e1: [number, number] = [sx + upper * Math.cos(base + offset), sy + upper * Math.sin(base + offset)];
-  const e2: [number, number] = [sx + upper * Math.cos(base - offset), sy + upper * Math.sin(base - offset)];
-  const score = (e: [number, number]) => {
-    const outward = (e[0] - CENTER) * side;
-    return elbowOut >= 0 ? outward * elbowOut + e[1] * (1 - elbowOut) : -outward;
+export type QuestionKind = "YES_NO" | "WH";
+
+/** 0 to 1 over the lead-in, 1 while the gesture plays, back to 0 over the lead-out. */
+export const envelope = (t: number, duration: number) => clamp(t / LEAD_IN, 0, 1) * clamp((duration - t) / LEAD_OUT, 0, 1);
+
+/** The face that marks a question in ISL: raised brows for yes-no, furrowed brows for a question word. */
+export function questionFace(p: Pose, kind: QuestionKind, e: number): Pose {
+  const f = p.face;
+  if (kind === "YES_NO")
+    return { ...p, face: { ...f, browRaise: Math.max(f.browRaise, 0.85 * e), eyeOpen: f.eyeOpen * (1 + 0.1 * e) }, nod: p.nod - 0.15 * e };
+  return {
+    ...p,
+    face: { ...f, browFrown: Math.max(f.browFrown, 0.75 * e), browRaise: f.browRaise * (1 - e), eyeOpen: f.eyeOpen * (1 - 0.12 * e) },
+    nod: p.nod + 0.12 * e,
+    tilt: p.tilt + 2 * e,
   };
-  const s1 = score(e1);
-  const s2 = score(e2);
-  // A level reach gives two mirror elbows with equal scores; the margin settles float noise on e1.
-  const best = s1 >= s2 - 1e-3 ? e1 : e2;
-  if (!prefer) return best;
-  // The elbow drawn last frame keeps its side, since a jump between the two solves reads as a broken elbow. When that
-  // side is the wrong one it swings round the shoulder toward the scored side a little each frame. As in Rig.kt.
-  // Between the solves the elbow sits at base + u * offset, u = 1 on e1 and -1 on e2; moving u stays on the upper arm's circle.
-  const bestU = best === e1 ? 1 : -1;
-  let rel = Math.atan2(prefer[1] - sy, prefer[0] - sx) - base;
-  if (rel > Math.PI) rel -= 2 * Math.PI;
-  else if (rel < -Math.PI) rel += 2 * Math.PI;
-  const u = offset < 1e-4 ? bestU : clamp(rel / offset, -1, 1);
-  const du = ELBOW_SWING / upper / Math.max(offset, 1e-4);
-  if (Math.abs(bestU - u) <= du) return best;
-  const a = base + (u + du * Math.sign(bestU - u)) * offset;
-  return [sx + upper * Math.cos(a), sy + upper * Math.sin(a)];
+}
+
+/** The pose shown at [seconds]: the gesture with its question face, a lowered glance and the mouth moving while it signs. */
+export function livePose(timeline: Timeline, seconds: number, question: QuestionKind | null, gaze: number, moving: boolean): Pose {
+  const d = timeline.duration;
+  const e = d > 0 ? envelope(seconds, d) : 0;
+  let p = timeline.pose(seconds);
+  if (gaze > 0) p = { ...p, nod: p.nod + gaze * 0.5, gaze };
+  if (question && e > 0) p = questionFace(p, question, e);
+  const f = p.face;
+  if (moving && d > 0 && seconds < d && f.mouthOpen < 0.2 && f.mouthRound < 0.5) {
+    const talk = 0.07 * (0.5 + 0.5 * Math.sin(seconds * 2 * Math.PI * 2.3)) * e;
+    const smile = 0.05 * (0.5 + 0.5 * Math.cos(seconds * 2 * Math.PI * 1.5)) * e;
+    p = { ...p, face: { ...f, mouthOpen: f.mouthOpen + talk, smile: f.smile + smile } };
+  }
+  return p;
+}
+
+/** 1 open, 0 shut. One blink per 4 s slot at a hashed offset, so gaps vary from 2.6 to 5.4 s; slot 0 blinks at once. */
+export function blinkAt(time: number): number {
+  const n = Math.floor(time / 4);
+  const offset = n === 0 ? 0 : (((((Math.imul(n, 1103515245) + 12345) | 0) >>> 16) % 1000) / 1000) * 1.4;
+  const p = time - n * 4 - offset;
+  if (p < 0 || p >= 0.13) return 1;
+  return p < 0.05 ? 1 - p / 0.05 : (p - 0.05) / 0.08;
+}
+
+/** A resting body is never quite still: now and then a glance aside, as a head turn. */
+export function glanceAt(time: number): number {
+  const phase = time % 9;
+  if (phase < 5 || phase > 6.4) return 0;
+  const side = Math.floor(time / 9) % 2 === 0 ? 1 : -1;
+  return side * 0.28 * Math.sin(((phase - 5) / 1.4) * Math.PI);
 }

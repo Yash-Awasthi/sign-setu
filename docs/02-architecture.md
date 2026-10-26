@@ -175,7 +175,7 @@ One module, `app.signsetu`, organised by feature.
 | `ui` | `AppRoot`, `LockScreen`, the session route |
 | `ui.session` | Officer page, stage, view model, auto mode, counsellor, record text and grades |
 | `ui.pair` | Pairing sheet, paired bar, stage-device screens, `StageBridge` and the wire mapping of what is on stage |
-| `ui.avatar` | The 2D character: `Rig.kt` solver and timeline, `Avatar.kt` drawing |
+| `ui.avatar` | The 3D character's WebView host (`Avatar.kt`) and the profile still (`MiniFace.kt`); the character itself is the avatar module (`avatar/`) |
 | `ui.start`, `ui.settings`, `ui.practice`, `ui.theme`, `ui.components` | Home and first run, settings, type-to-sign practice, colours and type, shared widgets |
 | Flavor and build-type source sets | `src/standard` and `src/nearby` each provide `pair/StageTransports`; `src/debug` and `src/release` each provide `camera/LandmarkTrackers` (debug adds a stand-in hand and a gesture gallery) |
 
@@ -567,4 +567,4 @@ sequenceDiagram
 - `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.7.3, code 13. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
 - Release builds: R8 with resource shrinking, `android.util.Log` calls stripped, native libraries and models stored uncompressed. Default ABIs arm64-v8a and x86_64 (universal); `-Pabi=arm64-v8a` builds the phone APK. APKs are unsigned; signing is a manual offline step.
 - Build gates on every variant before packaging: `check<Variant>Permissions` fails on RECORD_AUDIO or background location in any build and on discovery and location permissions in `standard`.
-- The gateway (`backend/`, FastAPI and SQLAlchemy, SQLite or PostgreSQL) enrols devices, serves the model manifest, proxies assistant calls, and has a `/v1/feedback` endpoint for consented reader labels that the app does not call yet. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) draws every motion with a TypeScript port of the rig checked against `Rig.kt` through `src/rig-fixtures.json`.
+- The gateway (`backend/`, FastAPI and SQLAlchemy, SQLite or PostgreSQL) enrols devices, serves the model manifest, proxies assistant calls, and has a `/v1/feedback` endpoint for consented reader labels that the app does not call yet. The avatar module (`avatar/`, TypeScript, three.js 0.160 and three-vrm 3.0) plays motions on the VRM character; it builds to `app/src/main/assets/avatar/avatar.js`, which CI checks is current. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) renders every motion with that same module.

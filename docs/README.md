@@ -39,7 +39,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | [02-architecture.md](02-architecture.md) | Context, wiring, routing, packages, content bundle, data model, hash chain, keys, second screen, assistant, camera, export, build |
 | [03-ux.md](03-ux.md) | Officer and stage screens, flows, accessibility, visual and content style |
 | [04-security.md](04-security.md) | Security controls, MASVS mapping, threat model, key management, review points |
-| [05-avatar-and-gestures.md](05-avatar-and-gestures.md) | Gesture and sign lexicons, the two characters, the rig, motion pipelines |
+| [05-avatar-and-gestures.md](05-avatar-and-gestures.md) | Gesture and sign lexicons, the 3D character, the rig, motion pipelines |
 | [06-hardware-baseline-protocol.md](06-hardware-baseline-protocol.md) | Android 10 ARM64 benchmark procedure and thresholds |
 | [07-two-device-bluetooth-test.md](07-two-device-bluetooth-test.md) | Two-device pairing and recovery test |
 | [08-open-source.md](08-open-source.md) | Open-source components, licences and attribution |
@@ -216,7 +216,8 @@ flowchart LR
 | --- | --- |
 | Unit (JVM) | Content, translation, signing plans, sign pipeline, record and grades, auto mode, counsellor, pairing protocol and crypto, export integrity, segmentation numbers against the Python evaluator, both flavors |
 | Instrumented | Stage accessibility, overlay touch filter, database migrations, report export on an emulator; the camera and MediaPipe tests on a phone |
-| Portal | Formatting, lint, type checks and tests, including rig parity with `Rig.kt` |
+| Avatar | Formatting, lint, type checks, rig and retarget tests, and the built bundle matching the source |
+| Portal | Formatting, lint, type checks and tests |
 | Gateway | pytest suite for enrolment, limits, assist proxy, feedback, admin and database tools |
 | Tools | Python unit tests; content manifest and reference checks |
 | Security | Release lint, semgrep, OSV-Scanner on the shipped runtime lockfile, gitleaks |

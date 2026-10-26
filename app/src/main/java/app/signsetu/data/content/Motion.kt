@@ -2,7 +2,7 @@ package app.signsetu.data.content
 
 import kotlinx.serialization.Serializable
 
-/* Keyframe motion as the content files store it; the rig in ui.avatar plays it on either character. */
+/* Motion as the content files store it; the character in ui.avatar plays it. */
 
 @Serializable
 data class HandKey(
@@ -44,6 +44,14 @@ data class Key(
 
 @Serializable
 data class Gesture(val id: String, val keys: List<Key>)
+
+/** A recorded sentence as 48 points a frame: shoulders, elbows and wrists, then 21 points per hand, x y z each,
+ * in MediaPipe space (tools/text2isl). The character plays it in place of keyframes. */
+@Serializable
+class Clip(val sentence: String, val fps: Float = 30f, val frames: List<FloatArray>)
+
+/** The form clips are looked up by: lower case words with punctuation dropped. */
+fun clipKey(text: String) = text.lowercase().replace(Regex("[^\\p{L}\\p{N}]+"), " ").trim()
 
 /** The face that marks a question in ISL: raised brows for yes-no, furrowed brows for a question word. */
 enum class QuestionKind { YES_NO, WH }

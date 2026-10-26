@@ -74,7 +74,7 @@ import app.signsetu.ui.pair.linkText
 internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map<Long, List<SignSegment>>, onReplay: (Long) -> Unit, modifier: Modifier, onSayBack: (SessionEvent) -> Unit = {}, drawing: suspend (Long) -> ByteArray? = { null }) {
     if (events.isEmpty()) {
         Column(modifier.padding(Spacing.xxl), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            MiniFace(characterFor(profile), 72.dp, Color(0xFFFFDDBE))
+            MiniFace(72.dp, Color(0xFFFFDDBE))
             Text(
                 stringResource(R.string.chat_empty_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -178,7 +178,7 @@ private fun Answered(
         else -> PictureWell
     }
     Row(Modifier.fillMaxWidth().padding(end = 48.dp), verticalAlignment = Alignment.Bottom) {
-        MiniFace(characterFor(profile), 28.dp, Color(0xFFFFDDBE))
+        MiniFace(28.dp, Color(0xFFFFDDBE))
         Column(Modifier.padding(start = Spacing.sm)) {
             Surface(
                 shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 6.dp, bottomEnd = 20.dp),

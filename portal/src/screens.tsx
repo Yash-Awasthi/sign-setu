@@ -13,11 +13,12 @@ import {
   uiTexts,
   type Text,
 } from "./content";
-import { AdultLook, ChildLook, drawCharacter } from "./draw";
 import { flags } from "./flags";
 import { isMissing, reviewerLang } from "./missing";
 import { keyOf, type Review, type Section, type Verdict } from "./reviews";
-import { AdultBuild, ChildBuild, Timeline, type Gesture } from "./rig";
+import { AvatarStage } from "../../avatar/src/stage";
+import { Timeline, type Gesture } from "../../avatar/src/rig";
+import modelUrl from "../../app/src/main/assets/avatar/model.vrm?url";
 
 export interface ReviewProps {
   role: string;
@@ -66,23 +67,21 @@ function ReviewBox({
 
 const langName = (code: string) => (code === "en" ? "English" : (languages.find((l) => l.code === code)?.english ?? code));
 
-function Character({ gesture, child, seconds }: { gesture: Gesture; child: boolean; seconds: number }) {
+function Character({ gesture, seconds }: { gesture: Gesture; seconds: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const timeline = useMemo(() => new Timeline(gesture, child ? ChildBuild : AdultBuild), [gesture, child]);
+  const [stage, setStage] = useState<AvatarStage | null>(null);
   useEffect(() => {
-    const ctx = ref.current?.getContext("2d");
-    if (ctx) drawCharacter(ctx, child ? ChildBuild : AdultBuild, child ? ChildLook : AdultLook, timeline.pose(seconds), child);
-  }, [timeline, seconds, child]);
-  return (
-    <figure>
-      <canvas ref={ref} width={360} height={360} />
-      <figcaption>{child ? "Child" : "Adult"}</figcaption>
-    </figure>
-  );
+    const canvas = ref.current!;
+    const s = new AvatarStage(canvas);
+    s.resize(canvas.clientWidth, canvas.clientHeight);
+    void s.load(modelUrl).then(() => setStage(s));
+  }, []);
+  useEffect(() => stage?.play({ keys: gesture.keys, at: seconds, idle: false }), [stage, gesture, seconds]);
+  return <canvas ref={ref} className="character" />;
 }
 
 function Player({ gesture, start }: { gesture: Gesture; start?: number }) {
-  const duration = useMemo(() => new Timeline(gesture, ChildBuild).duration, [gesture]);
+  const duration = useMemo(() => new Timeline(gesture).duration, [gesture]);
   const [seconds, setSeconds] = useState(start ?? 0);
   const [playing, setPlaying] = useState(start === undefined);
   const [speed, setSpeed] = useState(0.5);
@@ -108,8 +107,7 @@ function Player({ gesture, start }: { gesture: Gesture; start?: number }) {
   return (
     <div>
       <div className="stage">
-        <Character gesture={gesture} child seconds={seconds} />
-        <Character gesture={gesture} child={false} seconds={seconds} />
+        <Character gesture={gesture} seconds={seconds} />
       </div>
       <div className="controls">
         <button

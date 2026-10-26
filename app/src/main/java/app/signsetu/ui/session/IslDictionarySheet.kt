@@ -49,7 +49,6 @@ import app.signsetu.data.content.Question
 import app.signsetu.data.content.dictionary
 import app.signsetu.data.content.search
 import app.signsetu.ui.avatar.Avatar
-import app.signsetu.ui.avatar.Character
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Spacing
 
@@ -76,7 +75,7 @@ fun IslDictionarySheet(content: ContentBundle, lang: String, signLanguage: SignL
             SheetTitle(stringResource(if (signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary))
             Surface(shape = RoundedCornerShape(16.dp), color = LocalStageColors.current.skyTop, modifier = Modifier.fillMaxWidth().height(180.dp)) {
                 Box {
-                    Avatar(Character.ADULT, selected?.let { content.gestures[it.gestureId] }, selectedId to plays, Modifier.align(Alignment.Center).size(180.dp))
+                    Avatar(selected?.let { content.gestures[it.gestureId] }, selectedId to plays, Modifier.align(Alignment.Center).size(180.dp))
                     if (selected != null) {
                         IconButton(onClick = { plays++ }, modifier = Modifier.align(Alignment.TopEnd)) {
                             Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.isl_dictionary_replay))
