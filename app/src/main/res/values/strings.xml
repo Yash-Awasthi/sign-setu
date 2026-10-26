@@ -110,9 +110,6 @@
 
     <!-- Show state -->
     <string name="show_officer">Officer</string>
-    <string name="show_yes">Yes</string>
-    <string name="show_no">No</string>
-    <string name="stage_proposed">Suggested</string>
     <string name="show_replay">Play again</string>
 
     <!-- Export -->
@@ -548,17 +545,10 @@ A report leaves the phone only when you export and share it, protected by a pass
     <!-- Database Downgrade Warning -->
     <string name="downgrade_reset_title">Database Downgrade Detected</string>
     <string name="downgrade_reset_body">A software downgrade occurred, causing Room to recreate session tables. Earlier unexported session records were safely purged. New sessions work as normal.</string>
-    <string name="call_breathe">Breathe</string>
     <string name="call_signing">Signing…</string>
     <string name="call_you">You</string>
     <string name="call_courtesy">Tap to say: %1$s</string>
-    <string name="call_sign_hint">Answer by signing, nodding or shaking your head</string>
     <string name="call_with_you">We are here with you.</string>
-    <string name="call_breath_title">Calm breathing</string>
-    <string name="call_inhale">Breathe in</string>
-    <string name="call_exhale">Breathe out</string>
-    <string name="call_breath_body">You are safe here. Breathe with the circle at your own pace.</string>
-    <string name="call_ready">I am ready to go on</string>
     <plurals name="call_r_fingers">
         <item quantity="one">%1$d finger shown</item>
         <item quantity="other">%1$d fingers shown</item>

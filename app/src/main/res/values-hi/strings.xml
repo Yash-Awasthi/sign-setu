@@ -105,9 +105,6 @@
     <string name="board_use">%1$d इस्तेमाल करें</string>
 
     <string name="show_officer">अधिकारी</string>
-    <string name="show_yes">हाँ</string>
-    <string name="show_no">नहीं</string>
-    <string name="stage_proposed">सुझाया गया</string>
     <string name="show_replay">फिर से दिखाएँ</string>
 
     <string name="wrap_include_summary">रिपोर्ट में AI सारांश का मसौदा जोड़ें (छिपाया हुआ पाठ ऑनलाइन भेजा जाता है)</string>
@@ -541,17 +538,10 @@
     <!-- Database Downgrade Warning -->
     <string name="downgrade_reset_title">डेटाबेस डाउनग्रेड मिला</string>
     <string name="downgrade_reset_body">ऐप डाउनग्रेड होने के कारण सत्र तालिकाएँ फिर से बनाई गई हैं। पहले के अनएक्सपोर्टेड रिकॉर्ड सुरक्षित रूप से हटा दिए गए हैं। नए सत्र सामान्य रूप से चलेंगे।</string>
-    <string name="call_breathe">साँस लें</string>
     <string name="call_signing">इशारा हो रहा है…</string>
     <string name="call_you">आप</string>
     <string name="call_courtesy">कहने के लिए दबाएँ: %1$s</string>
-    <string name="call_sign_hint">इशारे से, या सिर हिलाकर हाँ-ना में जवाब दें</string>
     <string name="call_with_you">हम आपके साथ हैं।</string>
-    <string name="call_breath_title">शांति से साँस</string>
-    <string name="call_inhale">साँस अंदर</string>
-    <string name="call_exhale">साँस बाहर</string>
-    <string name="call_breath_body">आप यहाँ सुरक्षित हैं। गोले के साथ अपनी गति से साँस लें।</string>
-    <string name="call_ready">मैं आगे बढ़ने के लिए तैयार हूँ</string>
     <plurals name="call_r_fingers">
         <item quantity="one">%1$d उँगली दिखाई</item>
         <item quantity="other">%1$d उँगलियाँ दिखाईं</item>

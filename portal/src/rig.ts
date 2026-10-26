@@ -573,6 +573,9 @@ export function clampReach(sx: number, sy: number, target: [number, number], upp
   return [sx + dx * k, sy + dy * k];
 }
 
+/** How far a wrong-sided elbow moves back toward the scored side in one frame, in character units. */
+const ELBOW_SWING = 2;
+
 /** Two-bone arm: returns the elbow for a shoulder, wrist target and segment lengths. */
 export function solveElbow(
   sx: number,
@@ -598,13 +601,19 @@ export function solveElbow(
   };
   const s1 = score(e1);
   const s2 = score(e2);
-  // The elbow drawn last frame decides whenever there is one: the mirror solutions are most of an upper arm apart, so a
-  // score-based switch mid-move is the snap a viewer sees as a broken elbow. As in Rig.kt.
-  if (prefer) {
-    const d1 = Math.hypot(e1[0] - prefer[0], e1[1] - prefer[1]);
-    const d2 = Math.hypot(e2[0] - prefer[0], e2[1] - prefer[1]);
-    return d1 <= d2 ? e1 : e2;
-  }
-  // A level reach gives two mirror elbows with equal scores; the margin settles float noise on e1, as in Rig.kt.
-  return s1 >= s2 - 1e-3 ? e1 : e2;
+  // A level reach gives two mirror elbows with equal scores; the margin settles float noise on e1.
+  const best = s1 >= s2 - 1e-3 ? e1 : e2;
+  if (!prefer) return best;
+  // The elbow drawn last frame keeps its side, since a jump between the two solves reads as a broken elbow. When that
+  // side is the wrong one it swings round the shoulder toward the scored side a little each frame. As in Rig.kt.
+  // Between the solves the elbow sits at base + u * offset, u = 1 on e1 and -1 on e2; moving u stays on the upper arm's circle.
+  const bestU = best === e1 ? 1 : -1;
+  let rel = Math.atan2(prefer[1] - sy, prefer[0] - sx) - base;
+  if (rel > Math.PI) rel -= 2 * Math.PI;
+  else if (rel < -Math.PI) rel += 2 * Math.PI;
+  const u = offset < 1e-4 ? bestU : clamp(rel / offset, -1, 1);
+  const du = ELBOW_SWING / upper / Math.max(offset, 1e-4);
+  if (Math.abs(bestU - u) <= du) return best;
+  const a = base + (u + du * Math.sign(bestU - u)) * offset;
+  return [sx + upper * Math.cos(a), sy + upper * Math.sin(a)];
 }

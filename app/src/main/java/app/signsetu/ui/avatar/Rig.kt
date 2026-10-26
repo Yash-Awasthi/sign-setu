@@ -6,11 +6,13 @@ import app.signsetu.data.content.BodyKey
 import app.signsetu.data.content.Key
 import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.RestKey
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
+import kotlin.math.sign
 import kotlin.math.sin
 
 /* A 2D upper-body rig shared by both characters. Character space is 200 x 200,
@@ -452,15 +454,24 @@ fun solveElbow(
     }
     val s1 = score(e1)
     val s2 = score(e2)
-    // The elbow drawn last frame decides whenever there is one. The two solves are most of an upper arm apart, so any score-based switch mid-move is the snap a viewer sees as a broken elbow.
-    if (prefer != null) {
-        val d1 = hypot(e1.first - prefer.first, e1.second - prefer.second)
-        val d2 = hypot(e2.first - prefer.first, e2.second - prefer.second)
-        return if (d1 <= d2) e1 else e2
-    }
     // A level reach gives two mirror elbows with equal scores; the margin settles float noise on e1 (rig.ts matches).
-    return if (s1 >= s2 - 1e-3f) e1 else e2
+    val best = if (s1 >= s2 - 1e-3f) e1 else e2
+    if (prefer == null) return best
+    // The elbow drawn last frame keeps its side, since a jump between the two solves reads as a broken elbow. When that
+    // side is the wrong one it swings round the shoulder toward the scored side a little each frame, so it never stays bent in.
+    // Between the solves the elbow sits at base + u * offset, u = 1 on e1 and -1 on e2; moving u stays on the upper arm's circle.
+    val bestU = if (best === e1) 1f else -1f
+    var rel = atan2(prefer.second - sy, prefer.first - sx) - base
+    if (rel > PI) rel -= 2 * PI.toFloat() else if (rel < -PI) rel += 2 * PI.toFloat()
+    val u = if (offset < 1e-4f) bestU else (rel / offset).coerceIn(-1f, 1f)
+    val du = ELBOW_SWING / upper / offset.coerceAtLeast(1e-4f)
+    if (abs(bestU - u) <= du) return best
+    val a = base + (u + du * sign(bestU - u)) * offset
+    return (sx + upper * cos(a)) to (sy + upper * sin(a))
 }
+
+/** How far a wrong-sided elbow moves back toward the scored side in one frame, in character units. */
+private const val ELBOW_SWING = 2f
 
 /** The reachable wrist for [target]: a two-bone arm cannot put the hand further than upper + fore from the
  * shoulder. */

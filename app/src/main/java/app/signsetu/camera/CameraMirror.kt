@@ -360,9 +360,6 @@ private val ANALYSIS_RESOLUTION = ResolutionSelector.Builder()
     .setResolutionStrategy(ResolutionStrategy(Size(848, 480), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER))
     .build()
 
-/** The shape of the upright camera frame; windows that show the camera use it so nothing is cropped or letterboxed. */
-const val CAMERA_ASPECT = 9f / 16f
-
 /** Mouth, brow, pointing, palm, shrug and thumb readings of one frame, as tuned by the constants in LandmarkTracker.kt. */
 internal fun tuningLine(f: LandmarkFrame): String {
     val (mouth, brows) = faceCues(f) ?: (Float.NaN to Float.NaN)

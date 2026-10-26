@@ -19,6 +19,7 @@ DATA_ROOT = pathlib.Path(os.environ.get("SIGNSETU_DATA", "ml-data"))
 HIDDEN, KERNEL = int(os.environ.get("SIGN_HIDDEN", 160)), 5
 STRONG = os.environ.get("SIGN_AUG") == "strong"
 DROPOUT = float(os.environ.get("SIGN_DROPOUT", 0.4))
+HAND_DROP = float(os.environ.get("SIGN_HAND_DROP", 0))
 
 
 class SignNet(nn.Module):
@@ -62,6 +63,10 @@ def features(s, aspect, rng=None):
         left, right, pose = left @ m.T, right @ m.T, pose @ m.T
         left = left + rng.normal(0, 0.003, left.shape)
         right = right + rng.normal(0, 0.003, right.shape)
+        if HAND_DROP:
+            # The phone loses a hand for a few frames at a time; drop each hand's frames at a random rate up to HAND_DROP.
+            hl = hl & (rng.random(len(hl)) >= rng.uniform(0, HAND_DROP))
+            hr = hr & (rng.random(len(hr)) >= rng.uniform(0, HAND_DROP))
         if STRONG:
             # Other signers: hands held higher, lower or wider than INCLUDE's, and larger or smaller against the body.
             sw = np.linalg.norm(pose[hp][:, 11] - pose[hp][:, 12], axis=1).mean() if hp.any() else 0.0

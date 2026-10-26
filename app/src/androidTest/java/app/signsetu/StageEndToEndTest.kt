@@ -6,7 +6,6 @@ import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -134,16 +133,15 @@ class StageEndToEndTest {
         rule.onNode(no).performClick()
         rule.waitUntil(5_000) { answers().size == 2 }
 
-        // 3. A nod on camera only makes Yes pulse; the tap after it is the answer, and its line names the nod.
-        val yes = hasContentDescription(content.subjectText("yes", "en")!!)
-        val suggested = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, str(R.string.stage_proposed))
+        // 3. A nod on camera only offers Yes; the tap on the offer is the answer, and its line names the nod.
+        val offer = hasText(content.subjectText("is_this_it", "en")!!)
         rule.waitUntil(15_000) { tracker.frames > 10 }
-        rule.onNode(yes).assert(!suggested)
+        assertEquals(0, count(offer))
         assertEquals("nothing is logged for a gesture", 2, answers().size)
         tracker.nodding = true
-        waitFor(yes and suggested)
+        waitFor(offer)
         tracker.nodding = false
-        rule.onNode(yes).performClick()
+        rule.onNode(offer).performClick()
         rule.waitUntil(5_000) { answers().size == 3 }
         val taps = answers()
         assertEquals(listOf(picked, "no", "yes"), taps.map { it.cardId })

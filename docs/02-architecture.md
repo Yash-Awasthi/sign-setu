@@ -144,8 +144,7 @@ flowchart TB
     R["SessionRoute"]:::comp --> VM["SessionViewModel<br/>ui: StateFlow&lt;SessionUi&gt;"]:::comp
     R -- "mode OFFICER, or paired" --> OP["OfficerPane<br/>Transcribe and More pages, Dock"]:::comp
     R -- "mode SHOW, not paired" --> ST["Stage"]:::comp
-    ST -- "plain item" --> VC["VideoCallStage<br/>character, camera window, answer bar, Stop row"]:::comp
-    ST -- "opening, rights, pictures, drawing,<br/>writing, lesson input, finder, choices" --> PN["Panel stage<br/>character above, rails and panel below"]:::comp
+    ST --> VC["VideoCallStage<br/>character, camera window, caption, answer bar;<br/>pictures, drawing, writing, lessons, finder, choices as a lower panel"]:::comp
     VM --> AP["AutoPilot<br/>Manual or Auto"]:::comp
     VM --> CO["Counsellor<br/>AI counsellor"]:::comp
     VM --> REPO["SessionRepository"]:::data
@@ -155,7 +154,7 @@ flowchart TB
 
 *Figure 4. The two faces of one session screen.*
 
-`SessionRoute` pins the app (`startLockTask`) for the whole session when no second screen is linked; pinning is lifted for the interpreter call or the share sheet and set again on return. While the phone's own stage shows it also hides the system bars and frees the assistant model. The officer takes the phone back by holding the chat handle for 1.5 s.
+`SessionRoute` pins the app (`startLockTask`) for the whole session when no second screen is linked; pinning is lifted for the interpreter call or the share sheet and set again on return. While the phone's own stage shows it also hides the system bars and frees the assistant model. The officer takes the phone back by holding the chat handle for 1/3 s.
 
 ## 5. Packages
 

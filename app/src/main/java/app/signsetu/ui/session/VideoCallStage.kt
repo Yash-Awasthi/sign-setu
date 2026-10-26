@@ -1,12 +1,10 @@
 package app.signsetu.ui.session
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,28 +14,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,10 +66,20 @@ import app.signsetu.camera.countOpenFingers
 import app.signsetu.data.content.or
 import app.signsetu.data.content.AnswerType
 import app.signsetu.data.content.ContentBundle
-import app.signsetu.data.content.planText
-import app.signsetu.data.content.questionKind
-import app.signsetu.ui.avatar.AVATAR_ASPECT
-import app.signsetu.ui.avatar.Avatar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import app.signsetu.data.content.Gesture
+import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
 import kotlinx.coroutines.delay
@@ -93,6 +97,12 @@ fun VideoCallStage(
     ui: SessionUi,
     content: ContentBundle,
     tracker: LandmarkTracker?,
+    /** The character as the stage builds it, given the sign the call is pointing out (if any) and its play key. */
+    avatar: @Composable (Gesture?, Any?) -> Unit,
+    caption: String?,
+    captionHighlight: IntRange?,
+    /** Tapping the caption replays it, or one word of typed text. */
+    onWordTap: ((Int) -> Unit)?,
     onCard: (String) -> Unit,
     onYesNo: (Boolean) -> Unit,
     onSignFrame: (LandmarkFrame) -> Unit,
@@ -103,6 +113,17 @@ fun VideoCallStage(
     onNeed: (String) -> Unit,
     modifier: Modifier = Modifier,
     cameraOn: Boolean = true,
+    /** Set on the opening and ground rules, which move on only when the subject is ready. */
+    onNext: (() -> Unit)? = null,
+    /** The item only tells, so a nod or shake must not be offered as an answer nobody asked for. */
+    statement: Boolean = false,
+    /** A right is only shown: it gets a way to say it was not understood, never a Yes. */
+    rightsNotice: String? = null,
+    onDoneSigning: () -> Unit = {},
+    onDraw: (() -> Unit)? = null,
+    onWrite: (() -> Unit)? = null,
+    /** Drawing, writing, pictures and the other answer panels take the lower part of the call. */
+    panel: (@Composable (Modifier) -> Unit)? = null,
 ) {
     val lang = ui.session.subjectLang
     val pending = ui.pending
@@ -115,9 +136,6 @@ fun VideoCallStage(
 
     // A string resource and its optional argument, resolved where it is drawn so a language change is followed.
     var recentReaction by remember { mutableStateOf<Reaction?>(null) }
-    var showBreathingGuide by remember { mutableStateOf(false) }
-    // A new item or a Stop closes the guide, so it never hides what was just asked or the pause.
-    LaunchedEffect(pending, ui.answeredCard in PauseCards) { showBreathingGuide = false }
     LaunchedEffect(recentReaction) {
         if (recentReaction != null) {
             delay(4000L)
@@ -162,6 +180,7 @@ fun VideoCallStage(
     var courtesy by remember { mutableStateOf<Pair<String, String?>?>(null) }
     LaunchedEffect(courtesy) { if (courtesy != null) { delay(COURTESY_MS); courtesy = null } }
     fun propose(card: String, cue: String?) {
+        if (statement && card != "stop") return
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         proposal = card to cue
     }
@@ -185,20 +204,8 @@ fun VideoCallStage(
         proposal = null
     }
 
-    val item = remember(pending, lang) { describeItem(pending, content, lang) }
-    val plan = remember(pending, lang) {
-        (pending as? Pending.FreeText)?.let { content.planText(it.text, it.modes) }
-    }
-    val gesture = remember(pending, plan) {
-        when (pending) {
-            is Pending.Ask -> content.gestureFor(pending.question)
-            is Pending.PhraseAsk -> content.gestureFor(pending.phrase, pending.slot)
-            is Pending.FreeText -> plan?.gesture ?: content.gestures["ask"] ?: content.gestures["namaste"]
-            else -> content.gestures["namaste"]
-        }
-    }
-    val shownGesture = guided?.let { content.gestures[it.second] } ?: gesture
-    val promptText = (pending as? Pending.FreeText)?.let { it.caption ?: it.text } ?: item.caption ?: content.subjectText("hint_wait", lang) ?: stringResource(R.string.call_with_you)
+    val hint = content.subjectText("hint_answer", lang)
+    val promptText = caption ?: hint ?: stringResource(R.string.call_with_you)
 
     // Held-up fingers answer an age or count question without opening a keypad.
     val isNumberOrAgeQuestion = remember(pending) {
@@ -222,7 +229,7 @@ fun VideoCallStage(
         val now = frame.timestampMs
         val handsVisible = frame.leftHand != null || frame.rightHand != null
         if (!handsVisible) handsDown.value = true
-        if (handsVisible && !signing && handsDown.value) onStartSigning()
+        if (handsVisible && !signing && !statement && handsDown.value) onStartSigning()
         if (isNumberOrAgeQuestion && handsVisible) {
             val fingers = countOpenFingers(frame)
             if (fingers != null) {
@@ -261,25 +268,7 @@ fun VideoCallStage(
                         .fillMaxSize()
                         .background(Brush.radialGradient(listOf(LocalCall.current.surface, LocalCall.current.bg))),
                 )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Avatar(
-                        character = characterFor(ui),
-                        gesture = shownGesture,
-                        playKey = guided?.let { "guide:$guideStep" } ?: pending,
-                        speed = 0.9f,
-                        idle = !signing,
-                        glance = true,
-                        question = if (pending is Pending.Ask || pending is Pending.PhraseAsk) questionKind(promptText) else null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .aspectRatio(AVATAR_ASPECT),
-                    )
-                }
+                avatar(guided?.let { content.gestures[it.second] }, guided?.let { "guide:$guideStep" })
         }
 
         val cameraView: @Composable () -> Unit = {
@@ -354,7 +343,16 @@ fun VideoCallStage(
             }
         }
 
-        Box(
+        if (panel != null) {
+            Column(Modifier.fillMaxSize().imePadding()) {
+                Box(Modifier.weight(0.4f).fillMaxWidth()) { avatarView() }
+                Text(
+                    promptText, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                )
+                panel(Modifier.weight(0.6f).fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
+            }
+        } else Box(
             modifier = Modifier.fillMaxSize().padding(bottom = if (swapped && cameraOn) 0.dp else 90.dp),
             contentAlignment = Alignment.Center,
         ) { if (swapped && cameraOn) cameraView() else avatarView() }
@@ -387,9 +385,11 @@ fun VideoCallStage(
                     }
                     .clickable { swapped = !swapped },
             ) {
-                if (swapped) avatarView() else cameraView()
+                if (swapped && panel == null) avatarView() else cameraView()
             }
         }
+
+        if (panel != null) return@Box
 
         Column(
             modifier = Modifier
@@ -402,6 +402,7 @@ fun VideoCallStage(
         ) {
             // One dot per sign seen, never the reader's words: those are proposals the subject has not confirmed.
             SeenSigns(ui.reading.orEmpty(), Modifier)
+            SignSlowerCue(ui.reading?.lastOrNull()?.takeIf { it.slower }, content, lang, Modifier)
 
             courtesy?.let { (card, cue) ->
                 Surface(
@@ -462,22 +463,14 @@ fun VideoCallStage(
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = promptText,
-                        fontFamily = Baloo,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                    )
+                    CallCaption(promptText, captionHighlight, onWordTap)
+                    rightsNotice?.let {
+                        Text(it, fontSize = 13.sp, color = LocalCall.current.accentSoft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+                    }
                     // A young child is not made to read instructions; the character and the guide show them.
-                    if (!ui.child) Text(
-                        text = stringResource(R.string.call_sign_hint),
-                        fontSize = 11.sp,
-                        color = LocalCall.current.muted,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+                    if (!ui.child && !statement && caption != null) hint?.let {
+                        Text(it, fontSize = 11.sp, color = LocalCall.current.muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
+                    }
                 }
             }
 
@@ -485,10 +478,26 @@ fun VideoCallStage(
             val answers = LocalAnswerColors.current
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answers.pause, answers.onPause, ui.answeredCard == "stop", { answer("stop") }, Modifier.weight(1.6f), height = 48.dp)
-                if (pending != null && !signing) {
+                if (signing) {
+                    SmallAnswer("done", content.subjectText("done", lang), stringResource(R.string.stage_done), answers.yes, answers.onYes, false, onDoneSigning, Modifier.weight(1.6f), height = 48.dp, icon = rememberVectorPainter(Icons.Filled.Check))
+                }
+                if (rightsNotice != null) {
+                    SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1.6f), height = 48.dp)
+                }
+                if (onNext != null) {
+                    SmallAnswer("next", content.subjectText("next", lang), stringResource(R.string.stage_next), answers.yes, answers.onYes, false, onNext, Modifier.weight(1.6f), height = 48.dp, icon = rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowForward))
+                }
+                if (pending != null && !signing && !statement) {
                     SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = 48.dp)
                     SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = 48.dp)
                     SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = 48.dp)
+                }
+            }
+            if (!signing && (onDraw != null || onWrite != null)) {
+                val stage = LocalStageColors.current
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    onDraw?.let { SmallAnswer("draw", content.subjectText("draw", lang), stringResource(R.string.stage_draw), stage.tool, stage.onTool, false, it, Modifier.weight(1f), height = 48.dp, icon = rememberVectorPainter(Icons.Filled.Create)) }
+                    onWrite?.let { SmallAnswer("write", content.subjectText("write", lang), stringResource(R.string.stage_write), stage.tool, stage.onTool, false, it, Modifier.weight(1f), height = 48.dp, icon = painterResource(R.drawable.ic_keyboard)) }
                 }
             }
         }
@@ -540,29 +549,19 @@ fun VideoCallStage(
                 CallActionButton("food", cardLabel(content, "food", lang), Color(0xFFD97706), highlight = guided?.first == "food") {
                     answer("food")
                 }
-                CallActionButton("yes", cardLabel(content, "yes", lang), Color(0xFF15803D), highlight = guided?.first == "yes") {
-                    answer("yes")
-                }
-                CallActionButton("no", cardLabel(content, "no", lang), Color(0xFFB91C1C), highlight = guided?.first == "no") {
-                    answer("no")
+                if (!statement) {
+                    CallActionButton("yes", cardLabel(content, "yes", lang), Color(0xFF15803D), highlight = guided?.first == "yes") {
+                        answer("yes")
+                    }
+                    CallActionButton("no", cardLabel(content, "no", lang), Color(0xFFB91C1C), highlight = guided?.first == "no") {
+                        answer("no")
+                    }
                 }
                 CallActionButton("express", cardLabel(content, "help", lang), Color(0xFF7C3AED), highlight = guided?.first == "express") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onOpenExpressBoard()
                 }
-                CallActionButton("breathe", stringResource(R.string.call_breathe), Color(0xFF0D9488)) {
-                    showBreathingGuide = !showBreathingGuide
-                }
             }
-        }
-
-        AnimatedVisibility(
-            visible = showBreathingGuide,
-            enter = fadeIn(tween(300)) + scaleIn(tween(300)),
-            exit = fadeOut(tween(250)),
-            modifier = Modifier.align(Alignment.Center),
-        ) {
-            CalmingBreathingGuide(onDismiss = { showBreathingGuide = false })
         }
     }
 }
@@ -584,3 +583,25 @@ private val FINGERS = Regex("n\\d+")
 
 private fun cardLabel(content: ContentBundle, card: String, lang: String): String =
     content.cards[card]?.label?.or(lang) ?: card.removePrefix("n").takeIf { card.matches(FINGERS) } ?: card
+
+/** The call's caption: the word being signed is lit, and a tap replays the line or that word. */
+@Composable
+private fun CallCaption(text: String, highlight: IntRange?, onWordTap: ((Int) -> Unit)?) {
+    val styled = buildAnnotatedString {
+        append(text)
+        highlight?.takeIf { it.last < text.length }?.let {
+            addStyle(SpanStyle(color = LocalCall.current.bg, background = LocalCall.current.accent), it.first, it.last + 1)
+        }
+    }
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val replayName = stringResource(R.string.word_replay)
+    // The caller's lambda changes every frame of typed-text playback; the tap detector must not restart with it.
+    val onTap by rememberUpdatedState(onWordTap)
+    val tap = if (onWordTap == null) Modifier else Modifier
+        .pointerInput(Unit) { detectTapGestures { p -> layout?.let { onTap?.invoke(it.getOffsetForPosition(p)) } } }
+        .semantics { onClick(replayName) { onTap?.invoke(0); true } }
+    Text(
+        styled, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
+        onTextLayout = { layout = it }, modifier = tap,
+    )
+}

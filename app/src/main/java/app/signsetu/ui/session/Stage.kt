@@ -1,92 +1,57 @@
 package app.signsetu.ui.session
 
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
-import app.signsetu.camera.CameraMirror
+import app.signsetu.camera.LandmarkFrame
 import app.signsetu.camera.LandmarkTracker
 import app.signsetu.data.content.ContentBundle
-import app.signsetu.data.content.planText
-import app.signsetu.ui.avatar.Timeline
+import app.signsetu.data.content.Gesture
+import app.signsetu.data.content.Given
+import app.signsetu.data.content.WordBeat
 import app.signsetu.data.content.chain
-import app.signsetu.data.content.signBack
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableFloatStateOf
-import app.signsetu.data.session.Profile
-import app.signsetu.ui.avatar.Avatar
-import app.signsetu.ui.avatar.AVATAR_ASPECT
+import app.signsetu.data.content.planText
 import app.signsetu.data.content.questionKind
-import app.signsetu.ui.avatar.Character
-import app.signsetu.ui.components.rememberSpeechPlayer
-import app.signsetu.ui.theme.LocalAnswerColors
-import app.signsetu.ui.theme.LocalStageColors
-import app.signsetu.ui.theme.Spacing
-import androidx.compose.ui.res.painterResource
-import app.signsetu.camera.CAMERA_ASPECT
-import app.signsetu.camera.Head
-import app.signsetu.camera.LandmarkFrame
+import app.signsetu.data.content.signBack
+import app.signsetu.data.session.Profile
 import app.signsetu.sign.SignChoice
 import app.signsetu.sign.SignWindow
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.runtime.movableContentOf
-import app.signsetu.data.content.WordBeat
-import app.signsetu.data.content.Given
+import app.signsetu.ui.avatar.AVATAR_ASPECT
+import app.signsetu.ui.avatar.Avatar
+import app.signsetu.ui.avatar.Character
+import app.signsetu.ui.avatar.Timeline
+import app.signsetu.ui.components.rememberSpeechPlayer
+import app.signsetu.ui.theme.LocalAnswerColors
+import app.signsetu.ui.theme.Spacing
 
 /** the reader's top labels a signed answer's confirm or say-back signs back before asking. */
 fun readBackLabels(ui: SessionUi): List<String> {
@@ -112,8 +77,7 @@ internal fun advancesRun(pending: Pending?, yes: Boolean) = !reopensInput(pendin
 fun characterFor(profile: Profile) = if (profile == Profile.YOUNG_CHILD) Character.CHILD else Character.ADULT
 fun characterFor(ui: SessionUi) = if (ui.child) Character.CHILD else Character.ADULT
 
-/** The stage: what the subject sees while the phone faces them. The character on top, a live mirror of their
- * hands below, and the answers within reach of a thumb. */
+/** The stage: what the subject sees while the phone faces them, laid out as a one-to-one video call. */
 @Composable
 fun Stage(
     ui: SessionUi,
@@ -143,7 +107,6 @@ fun Stage(
     /** Water or food the subject asks for by themselves; a second screen sends it as a card. */
     onNeed: (String) -> Unit = onCard,
 ) {
-    val stage = LocalStageColors.current
     val lang = ui.session.subjectLang
     val profile = ui.session.profile
     val pending = ui.pending
@@ -152,15 +115,14 @@ fun Stage(
     // A drawing the officer asked for ends with thanks and a hand-back, never a bare greeting that looks like a reset.
     var drawingSent by remember(pending) { mutableStateOf(false) }
     var writing by remember(pending) { mutableStateOf(false) }
-    // Held here, not in the panel: turning a tablet swaps the stage layout and would drop the panel's own state.
     val drawn = remember(pending) { mutableStateListOf<DrawStroke>() }
     // A young child is not asked to write; anyone else, signers above all, can answer in their own words.
     // A ground rule asks for no answer, so only the practice round opens the other ways to answer.
     val canWrite = pending != null && profile != Profile.YOUNG_CHILD && (rule == null || isPractice(pending))
-    // The introduction and ground rules only tell; Yes and No under them would ask for an answer nobody asked for.
-    val statement = rule != null && !isPractice(pending)
-    // "Show me what you did this morning" has no yes or no answer.
-    val openEnded = isPractice(pending)
+    // A Yes under a right would read as the person accepting or waiving it; it is only shown.
+    val rightsNotice = (pending as? Pending.Ask)?.question?.takeIf(content::isRights)?.let { content.subjectText("rights_interpreter", lang) }
+    // The introduction, ground rules and rights only tell; Yes and No under them would ask for an answer nobody asked for.
+    val statement = (rule != null && !isPractice(pending)) || rightsNotice != null
     val signing = ui.reading != null
     val narrative = ui.signWindow == SignWindow.NARRATIVE
     val choices = ui.confirm?.queue?.firstOrNull()
@@ -193,18 +155,6 @@ fun Stage(
     val item = describeItem(pending, content, lang)
     // A show-back or say-back with pictures asks which one; the character must not act out the officer's reading.
     val checking = pending.asksChoice
-    // One camera for the stage: a sign window adds analysis to it instead of restarting the preview. A nod or shake only highlights Yes or No; the subject's tap is the answer.
-    val nod = remember { mutableStateOf<Boolean?>(null) }
-    val point = remember { mutableStateOf<String?>(null) }
-    val palm = remember { mutableStateOf(false) }
-    val shrugged = remember { mutableStateOf(false) }
-    LaunchedEffect(pending) { nod.value = null; point.value = null; palm.value = false; shrugged.value = false }
-    val nodded = nod.value
-    val camera = remember(tracker) {
-        movableContentOf { frames: ((LandmarkFrame) -> Unit)? ->
-            CameraMirror(tracker, Modifier.fillMaxSize(), onFrame = frames, onHead = { nod.value = it == Head.Nod }, onPoint = { point.value = it }, onStopPalm = { palm.value = true }, onShrug = { shrugged.value = true }) { MirrorPlaceholder() }
-        }
-    }
     val gestureId = when {
         reacting -> "okay"
         drawing || writing -> "school.write"
@@ -266,322 +216,195 @@ fun Stage(
         }
     }
     val caption = when {
-        reacting -> content.subjectText("okay", lang)
         drawingSent -> content.subjectText("thanks", lang)
         drawing -> content.subjectText("draw", lang)
         writing -> content.subjectText("write", lang)
         choices != null -> content.subjectText("is_this_it", lang)
         narrative -> content.subjectText("watching", lang)
-        pending == null -> content.language(lang)?.hello
         // Greeting back in the language they picked tells them the tap was understood.
         pending == Pending.LanguageFinder -> ui.chosenLanguage?.let { content.language(it)?.hello }
         else -> item.caption
     }
-
-    // Over the whole stage, so no answer can be tapped during a break; the officer's way out stays above it.
-    // A break can still become a Stop without first ending the pause.
-    val pauseLayer: @Composable () -> Unit = {
-        val stopInPause: (@Composable (Modifier) -> Unit)? = if (ui.answeredCard != "break") null else { m ->
-            val answer = LocalAnswerColors.current
-            SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, false, { onCard("stop") }, m)
-        }
-        PauseLayer(content.subjectText("ready", lang), onPauseEnd, stop = stopInPause, modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f })
-    }
-
-    // The call view is the stage; pictures, drawing, writing, lessons and the language finder keep their own panels.
-    // The opening needs its Next, and a right must never sit over a Yes that would read as a waiver, so both keep the full stage.
-    val rights = (pending as? Pending.Ask)?.question?.let(content::isRights) == true
-    if (rule == null && !rights && !drawing && !writing && pending != Pending.LanguageFinder && choices == null && lesson == null && item.choices.isEmpty() && !item.canDraw) {
-        Box(Modifier.fillMaxSize()) {
-            VideoCallStage(
-                ui = ui,
-                content = content,
-                tracker = tracker,
-                onCard = onCard,
-                onYesNo = onYesNo,
-                onSignFrame = onSignFrame,
-                onStartSigning = onStartSigning,
-                onOpenExpressBoard = { showExpressBoard = true },
-                onCue = onCue,
-                onNeed = onNeed,
-                cameraOn = cameraOn,
-                modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
-                    .then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),
-            )
-            if (showExpressBoard && !paused) {
-                FullChildMuteCommunicationBoard(
-                    content = content,
-                    lang = lang,
-                    chosenCard = ui.answeredCard,
-                    onCard = { id -> onCard(id); reacting = true },
-                    onDismiss = { showExpressBoard = false },
-                )
+    val onWordTap: ((Int) -> Unit)? = when {
+        caption != item.caption -> null
+        pending is Pending.FreeText && highlightable && plan != null -> { offset ->
+            beatAt(plan.beats, offset)?.let { b ->
+                if (content.planText(pending.text.substring(b.range), pending.modes).gesture != null) { focus = b; wordTaps++ }
             }
-            if (paused) pauseLayer()
-            onOfficer?.let { OfficerHandleLayer(it, Modifier.align(if (ui.rotated) Alignment.BottomEnd else Alignment.TopStart).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) }
-            nextIn?.let { AutoNextChip(it, Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) }
         }
-        return
+        pending is Pending.Ask || pending is Pending.PhraseAsk || rule != null -> { _ -> replays++; audio?.let { speech.play(it, audioRate(pace)) } }
+        else -> null
     }
 
-    Surface(color = stage.skyBottom, modifier = Modifier.fillMaxSize()) {
+    val avatar: @Composable (Gesture?, Any?) -> Unit = { guide, guideKey ->
         Box(Modifier.fillMaxSize()) {
-        BoxWithConstraints(
-            Modifier
-                .fillMaxSize()
-                // The whole stage makes room for the keyboard, so the window never pans the character's face away.
-                .imePadding()
-                .graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
+            Avatar(
+                character = characterFor(ui),
+                gesture = guide ?: gesture,
+                playKey = guideKey ?: when {
+                    reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
+                    focus != null -> "word:$wordTaps"
+                    // Each sign being confirmed plays its own read-back.
+                    else -> Triple(pending ?: choices, replays, ui.chosenLanguage)
+                },
+                speed = if (focus != null) 0.5f else pace,
+                // Breathing redraws every frame; inside a sign window the landmark tracker needs that time.
+                idle = !signing,
+                glance = pending != null && !drawing && !reacting,
+                question = if (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) questionKind(item.caption.orEmpty()) else null,
+                onFinished = { reacting = false; focus = null },
+                modifier = Modifier.fillMaxSize().padding(16.dp).aspectRatio(AVATAR_ASPECT).align(Alignment.Center),
+            )
+            val spelled = if (focus == null) beat?.letters else null
+            val shownCard = focus?.card ?: beat?.card ?: item.held
+            if (spelled != null) {
+                LetterTile(spelled, letter, Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg))
+            } else if (shownCard != null) {
+                key(shownCard) {
+                    HeldCard(shownCard, content.cards[shownCard]?.label?.get(lang), Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg).popIn(rememberPopIn(150)))
+                }
+            }
+            val replayable = gesture != null || (audio != null && profile != Profile.ISL_USER)
+            // Replay and the phrase board sit together left of the character, clear of Stop and the answer bar.
+            Column(Modifier.align(Alignment.CenterStart).padding(start = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                if (pending != null && !drawing && replayable) {
+                    ReplayControls(
+                        pace = pace,
+                        onReplay = { focus = null; replays++; audio?.let { speech.play(it, audioRate(pace)) } },
+                        onPace = {
+                            val next = nextPace(pace)
+                            StagePace.speed.floatValue = next
+                            focus = null
+                            replays++
+                            audio?.let { speech.play(it, audioRate(next)) }
+                        },
+                        modifier = Modifier,
+                    )
+                }
+                if (onGiven != null && !signing && !saying) SayButton(content, lang, { saying = true }, Modifier)
+            }
+        }
+    }
+
+    // Answers that need room take the lower part of the call; the character and the camera window stay in view.
+    val pauseRow: @Composable () -> Unit = { PauseRow(content, lang, ui.answeredCard, onCard) }
+    val panel: (@Composable (Modifier) -> Unit)? = when {
+        choices != null -> { m ->
+            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                val last = ui.confirm.queue.size == 1
+                SignChoicePanel(choices, content, lang, {
+                    onSignChoice(it)
+                    reacting = true
+                    if (it == null && last && tracker != null) onStartSigning()
+                }, Modifier.weight(1f))
+                pauseRow()
+            }
+        }
+        drawing -> { m ->
+            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                // Only a picture that was asked for has nothing to go back to.
+                DrawingPanel(
+                    content, lang, drawn,
+                    onDone = { png ->
+                        onDrawing(png)
+                        drawn.clear()
+                        drawing = false
+                        if (pending == Pending.Drawing) drawingSent = true else reacting = true
+                    },
+                    onBack = { drawing = false }.takeIf { pending != Pending.Drawing },
+                    modifier = Modifier.weight(1f),
+                )
+                pauseRow()
+            }
+        }
+        drawingSent -> { m ->
+            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                HandBackPanel(content, lang, onDrawMore = { drawn.clear(); drawingSent = false; drawing = true }, modifier = Modifier.weight(1f))
+                pauseRow()
+            }
+        }
+        writing -> { m ->
+            WritingPanel(
+                content, lang,
+                onDone = { onWritten(it); writing = false; reacting = true },
+                onBack = { writing = false },
+                pauseRow = { PauseRow(content, lang, ui.answeredCard, onCard, compact = true) },
+                modifier = m,
+            )
+        }
+        saying && onGiven != null -> { m -> PhraseBoard(content, lang, ui.answeredCard, onCard, { onGiven(it); saying = false; reacting = true }, { saying = false }, m) }
+        lesson != null && onGiven != null -> { m ->
+            AnswerPanel(lesson, content, lang, ui.answeredCard, onCard, { onGiven(it); if (it?.confirmed == true) reacting = true }, onStartSigning.takeIf { tracker != null }, m)
+        }
+        pending == Pending.LanguageFinder -> { m ->
+            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                LanguageGrid(content, ui.chosenLanguage, Modifier.weight(1f)) { code ->
+                    onLanguage(code)
+                    content.greetingAudio(code)?.let { speech.play(it) }
+                }
+                pauseRow()
+            }
+        }
+        item.choices.isNotEmpty() && !signing -> { m ->
+            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                ChoiceGrid(item.choices, item.numbers, ui.answeredCard, content, lang, onCard, Modifier.weight(1f))
+                pauseRow()
+            }
+        }
+        else -> null
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        VideoCallStage(
+            ui = ui,
+            content = content,
+            tracker = tracker,
+            avatar = avatar,
+            caption = caption,
+            captionHighlight = (focus?.range ?: beat?.range)?.takeIf { highlightable && caption == item.caption },
+            onWordTap = onWordTap,
+            onCard = onCard,
+            onYesNo = { yes ->
+                onYesNo(yes)
+                if (reopensInput(pending, yes)) { if (canWrite) writing = true else drawing = true }
+            },
+            onSignFrame = onSignFrame,
+            onStartSigning = onStartSigning,
+            onDoneSigning = { onDoneSigning(); reacting = true },
+            onOpenExpressBoard = { showExpressBoard = true },
+            onCue = onCue,
+            onNeed = onNeed,
+            cameraOn = cameraOn,
+            onNext = onNextRule.takeIf { rule != null },
+            statement = statement,
+            rightsNotice = rightsNotice,
+            onDraw = { drawing = true }.takeIf { item.canDraw && panel == null },
+            onWrite = { writing = true }.takeIf { canWrite && panel == null },
+            panel = panel,
+            modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
                 // Covered by the pause layer: screen readers must not reach answers that cannot be tapped.
                 .then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),
-        ) {
-            // Landscape, which Android 16 forces on tablets, puts the character beside the camera instead of above it.
-            val wide = maxWidth > maxHeight
-            // A panel that needs width and height gets more room; otherwise the character and the camera split the screen.
-            val rightsNotice = (pending as? Pending.Ask)?.question?.takeIf(content::isRights)?.let { content.subjectText("rights_interpreter", lang) }
-            val topWeight = if (drawing || writing || choices != null || pending == Pending.LanguageFinder || saying || lesson != null) 0.36f else 0.5f
-            val topAnimated by animateFloatAsState(topWeight, spring(stiffness = 300f), label = "split")
-            val characterPane: @Composable (Modifier) -> Unit = { m ->
-            Box(m) {
-                Backdrop(Modifier.fillMaxSize())
-                BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
-                    val roomy = maxHeight >= 240.dp
-                    val avatarHeight = minOf(maxHeight - if (roomy) 64.dp else 48.dp, (maxWidth - SideBand * 2) / AVATAR_ASPECT).coerceAtLeast(0.dp)
-                    Avatar(
-                        character = characterFor(ui),
-                        gesture = gesture,
-                        playKey = when {
-                            reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
-                            focus != null -> "word:$wordTaps"
-                            // Each sign being confirmed plays its own read-back.
-                            else -> Triple(pending ?: choices, replays, ui.chosenLanguage)
-                        },
-                        speed = if (focus != null) 0.5f else pace,
-                        // Breathing redraws every frame; inside a sign window the landmark tracker needs that time.
-                        idle = !signing,
-                        glance = pending != null && !drawing && !reacting,
-                        question = if (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) questionKind(item.caption.orEmpty()) else null,
-                        onFinished = { reacting = false; focus = null },
-                        // Side bands keep the replay pill and held cards out of the signing space.
-                        modifier = Modifier
-                            .height(avatarHeight)
-                            .aspectRatio(AVATAR_ASPECT)
-                            .align(Alignment.BottomCenter),
-                    )
-                    val sensitiveGroups = remember(content) { content.groups.filter { it.sensitive }.map { it.id } }
-                    val sensitive = (pending as? Pending.Ask)?.question?.group in sensitiveGroups
-                    val onWordTap: ((Int) -> Unit)? = when {
-                        pending is Pending.FreeText && highlightable && plan != null -> { offset ->
-                            beatAt(plan.beats, offset)?.let { b ->
-                                if (content.planText(pending.text.substring(b.range), pending.modes).gesture != null) { focus = b; wordTaps++ }
-                            }
-                        }
-                        pending is Pending.Ask || pending is Pending.PhraseAsk || rule != null -> { _ -> replays++; audio?.let { speech.play(it, audioRate(pace)) } }
-                        else -> null
-                    }
-                    val captionTop = 12.dp
-                    AnimatedContent(
-                        targetState = caption,
-                        transitionSpec = { (fadeIn() + scaleIn(initialScale = 0.92f)) togetherWith fadeOut() },
-                        // A long caption may reach the hair, never the brows; the text shrinks to fit instead.
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = captionTop, start = 52.dp, end = 52.dp)
-                            .heightIn(max = (maxHeight - avatarHeight * 0.8f - captionTop).coerceAtLeast(48.dp)),
-                        label = "caption",
-                    ) { text ->
-                        if (text != null) {
-                            val own = text == item.caption
-                            Bubble(
-                                text, compact = !roomy,
-                                highlight = (focus?.range ?: beat?.range)?.takeIf { highlightable && own },
-                                onWordTap = onWordTap?.takeIf { own },
-                            )
-                        }
-                    }
-                    val spelled = if (focus == null) beat?.letters else null
-                    val shownCard = focus?.card ?: beat?.card
-                    if (spelled != null) {
-                        LetterTile(
-                            spelled,
-                            letter,
-                            Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg),
-                        )
-                    } else if (shownCard != null) {
-                        key(shownCard) {
-                            HeldCard(
-                                shownCard,
-                                content.cards[shownCard]?.label?.get(lang),
-                                Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg).popIn(rememberPopIn(0)),
-                            )
-                        }
-                    } else item.held?.let { id ->
-                        key(id) {
-                            HeldCard(
-                                id,
-                                content.cards[id]?.label?.get(lang),
-                                Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg).popIn(rememberPopIn(150)),
-                            )
-                        }
-                    }
-                    val replayable = gesture != null || (audio != null && profile != Profile.ISL_USER)
-                    if (pending != null && !drawing && replayable) {
-                        ReplayControls(
-                            pace = pace,
-                            onReplay = { focus = null; replays++; audio?.let { speech.play(it, audioRate(pace)) } },
-                            onPace = {
-                                val next = nextPace(pace)
-                                StagePace.speed.floatValue = next
-                                focus = null
-                                replays++
-                                audio?.let { speech.play(it, audioRate(next)) }
-                            },
-                            modifier = Modifier.align(Alignment.CenterStart).padding(start = Spacing.lg),
-                        )
-                    }
-                    if (onGiven != null && !signing && !saying) SayButton(content, lang, { saying = true }, Modifier.align(Alignment.TopStart).padding(start = 4.dp, top = 4.dp))
-                }
-            }
-            }
-            val answerPane: @Composable (Modifier) -> Unit = { m ->
-            Column(
-                m.padding(horizontal = Spacing.lg).padding(top = Spacing.md, bottom = Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md),
-            ) {
-                when {
-                    choices != null -> {
-                        val last = ui.confirm.queue.size == 1
-                        SignChoicePanel(choices, content, lang, {
-                            onSignChoice(it)
-                            reacting = true
-                            if (it == null && last && tracker != null) onStartSigning()
-                        }, Modifier.weight(1f))
-                        PauseRow(content, lang, ui.answeredCard, onCard)
-                    }
-                    drawing -> {
-                        // Only a picture that was asked for has nothing to go back to.
-                        DrawingPanel(
-                            content, lang, drawn,
-                            onDone = { png ->
-                                onDrawing(png)
-                                drawn.clear()
-                                drawing = false
-                                if (pending == Pending.Drawing) drawingSent = true else reacting = true
-                            },
-                            onBack = { drawing = false }.takeIf { pending != Pending.Drawing },
-                            modifier = Modifier.weight(1f),
-                        )
-                        PauseRow(content, lang, ui.answeredCard, onCard)
-                    }
-                    drawingSent -> {
-                        HandBackPanel(content, lang, onDrawMore = { drawn.clear(); drawingSent = false; drawing = true }, modifier = Modifier.weight(1f))
-                        PauseRow(content, lang, ui.answeredCard, onCard)
-                    }
-                    writing -> WritingPanel(
-                        content, lang,
-                        onDone = { onWritten(it); writing = false; reacting = true },
-                        onBack = { writing = false },
-                        pauseRow = { PauseRow(content, lang, ui.answeredCard, onCard, compact = true) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    saying && onGiven != null -> PhraseBoard(content, lang, ui.answeredCard, onCard, { onGiven(it); saying = false; reacting = true }, { saying = false }, Modifier.weight(1f))
-                    lesson != null && onGiven != null -> AnswerPanel(
-                        lesson, content, lang, ui.answeredCard, onCard, { onGiven(it); if (it?.confirmed == true) reacting = true },
-                        onStartSigning.takeIf { tracker != null }, Modifier.weight(1f),
-                    )
-                    pending == Pending.LanguageFinder -> {
-                        LanguageGrid(content, ui.chosenLanguage, Modifier.weight(1f)) { code ->
-                            onLanguage(code)
-                            content.greetingAudio(code)?.let { speech.play(it) }
-                        }
-                        PauseRow(content, lang, ui.answeredCard, onCard)
-                    }
-                    else -> {
-                        val answer = LocalAnswerColors.current
-                        val chosen = ui.answeredCard
-                        val asks = pending != null && rightsNotice == null && !statement
-                        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                            Rail {
-                                when {
-                                    signing -> RailCard("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, false) { onCard("stop"); onDoneSigning(); reacting = true }
-                                    // A Yes under a right would read as the person accepting or waiving it; it is only shown.
-                                    rightsNotice != null -> RailCard(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answer.unsure, answer.onUnsure, chosen == DONT_UNDERSTAND) { onCard(DONT_UNDERSTAND) }
-                                    asks -> {
-                                        if (!openEnded) RailIcon(Icons.Filled.Check, content.subjectText("yes", lang), stringResource(R.string.show_yes), answer.yes, answer.onYes, ui.answeredYes == true, proposed = nodded == true) { if (nodded == true) onCue("nod"); onYesNo(true) }
-                                        RailCard("dont_know", content.subjectText("dont_know", lang), stringResource(R.string.stage_dont_know), answer.unsure, answer.onUnsure, chosen == "dont_know", proposed = shrugged.value) { if (shrugged.value) onCue("shrug"); onCard("dont_know") }
-                                        RailCard(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answer.unsure, answer.onUnsure, chosen == DONT_UNDERSTAND) { onCard(DONT_UNDERSTAND) }
-                                    }
-                                }
-                                if (!signing && item.canDraw) RailIcon(Icons.Filled.Create, content.subjectText("draw", lang), stringResource(R.string.stage_draw), stage.tool, stage.onTool, tool = true) { drawing = true }
-                                if (!signing && canWrite) RailIcon(painterResource(R.drawable.ic_keyboard), content.subjectText("write", lang), stringResource(R.string.stage_write), stage.tool, stage.onTool, tool = true) { writing = true }
-                            }
-                            Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                                val window = Modifier.aspectRatio(CAMERA_ASPECT)
-                                if (signing) SigningPanel(camera, ui.reading.orEmpty(), content, lang, narrative, onFrame = onSignFrame, modifier = window)
-                                else MirrorWindow(camera, cameraOn, item.choices, item.numbers, chosen, content, lang, { id -> if (id == point.value) onCue("point"); onCard(id) }, window, proposedCard = point.value)
-                                // One plain line says what to do now, so a frightened person is never left guessing.
-                                val hint = when {
-                                    signing -> if (narrative) null else content.subjectText("hint_signing", lang)
-                                    rightsNotice != null || reacting || item.choices.isNotEmpty() -> null
-                                    pending == null -> content.subjectText("hint_wait", lang)
-                                    statement -> content.subjectText("hint_next", lang)
-                                    else -> content.subjectText("hint_answer", lang)
-                                }
-                                hint?.let { StageHint(it, Modifier.align(if (signing) Alignment.BottomCenter else Alignment.TopCenter).padding(bottom = if (signing) 40.dp else 0.dp)) }
-                                rightsNotice?.let {
-                                    Text(
-                                        it, style = MaterialTheme.typography.labelLarge, color = Color.White, textAlign = TextAlign.Center, maxLines = 3,
-                                        modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(Spacing.sm)
-                                            .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(14.dp)).padding(Spacing.sm),
-                                    )
-                                }
-                            }
-                            Rail {
-                                if (signing) {
-                                    RailIcon(Icons.Filled.Check, content.subjectText("done", lang), stringResource(R.string.stage_done), answer.yes, answer.onYes) { onDoneSigning(); reacting = true }
-                                } else {
-                                    if (rule != null) onNextRule.let { RailIcon(Icons.AutoMirrored.Filled.ArrowForward, content.subjectText("next", lang), stringResource(R.string.stage_next), answer.yes, answer.onYes, onClick = it) }
-                                    if (asks && !openEnded) {
-                                        RailIcon(Icons.Filled.Close, content.subjectText("no", lang), stringResource(R.string.show_no), answer.no, answer.onNo, ui.answeredYes == false, proposed = nodded == false) {
-                                            if (nodded == false) onCue("shake")
-                                            onYesNo(false)
-                                            if (reopensInput(pending, false)) { if (canWrite) writing = true else drawing = true }
-                                        }
-                                        RailCard("wrong", content.subjectText("wrong", lang), stringResource(R.string.stage_wrong), answer.unsure, answer.onUnsure, chosen == "wrong") { onCard("wrong") }
-                                    }
-                                    // A camera, not an open palm, so nothing beside Stop looks like a stop sign.
-                                    if ((canWrite || pending == null) && tracker != null) RailIcon(painterResource(R.drawable.ic_videocam), content.subjectText("sign", lang), stringResource(R.string.officer_read_signs), stage.tool, stage.onTool, tool = true, onClick = onStartSigning)
-                                    RailCard("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosen == "stop", proposed = palm.value) { if (palm.value) onCue("palm"); onCard("stop") }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            }
-            if (wide) Row(Modifier.fillMaxSize()) {
-                characterPane(Modifier.weight(topAnimated).fillMaxHeight())
-                // Room above the panels for the officer's handle, which would otherwise sit on a drawing or a keyboard.
-                answerPane(Modifier.weight(1f - topAnimated).fillMaxHeight().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.End)).padding(top = 48.dp))
-            } else Column(Modifier.fillMaxSize()) {
-                characterPane(Modifier.weight(topAnimated).fillMaxWidth())
-                answerPane(Modifier.weight(1f - topAnimated).fillMaxWidth())
-            }
-        }
-        if (paused) pauseLayer()
+        )
         if (showExpressBoard && !paused) {
             FullChildMuteCommunicationBoard(
                 content = content,
                 lang = lang,
                 chosenCard = ui.answeredCard,
-                onCard = { id ->
-                    onCard(id)
-                    reacting = true
-                },
+                onCard = { id -> onCard(id); reacting = true },
                 onDismiss = { showExpressBoard = false },
             )
         }
-        onOfficer?.let { OfficerHandleLayer(it, Modifier.align(if (ui.rotated) Alignment.BottomEnd else Alignment.TopStart).safeDrawingPadding()) }
-        nextIn?.let { AutoNextChip(it, Modifier.align(Alignment.TopCenter).safeDrawingPadding()) }
+        // Over the whole stage, so no answer can be tapped during a break; the officer's way out stays above it.
+        // A break can still become a Stop without first ending the pause.
+        if (paused) {
+            val stopInPause: (@Composable (Modifier) -> Unit)? = if (ui.answeredCard != "break") null else { m ->
+                val answer = LocalAnswerColors.current
+                SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, false, { onCard("stop") }, m)
+            }
+            PauseLayer(content.subjectText("ready", lang), onPauseEnd, stop = stopInPause, modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f })
         }
+        onOfficer?.let { OfficerHandleLayer(it, Modifier.align(if (ui.rotated) Alignment.BottomEnd else Alignment.TopStart).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) }
+        nextIn?.let { AutoNextChip(it, Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))) }
     }
 }
 

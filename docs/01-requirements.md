@@ -48,7 +48,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Finishing a session saves it under a name the officer chooses, offers export, and allows deleting it instead. | MUST |
 | The officer sets the subject language per session (Hindi and English at minimum). | MUST |
 | The officer sets a subject profile per session and can change it at any time. | MUST |
-| While a session is open on this phone, the app stays pinned (screen pinning) when the device allows it; pinning is lifted only to open the interpreter's app or the share sheet, and set again on return. Returning from the stage to the officer page needs the officer handle held for 1.5 s; Back does nothing on the stage. | MUST |
+| While a session is open on this phone, the app stays pinned (screen pinning) when the device allows it; pinning is lifted only to open the interpreter's app or the share sheet, and set again on return. Returning from the stage to the officer page needs the officer handle held for 1/3 s; Back does nothing on the stage. | MUST |
 
 ### 4.2 Asking
 
@@ -74,7 +74,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Water and food are on the stage at every moment; a tap on either is logged as the subject's request, not as an answer to the item on screen, unless that item offered the picture itself. | MUST |
 | When the subject taps a card, the officer sees the card and its label in the officer language. | MUST |
 | The subject can draw on a canvas with a finger, start again, and finish; the drawing is logged as the answer. | MUST |
-| The stage shows a live mirror of the subject from the front camera: a movable window in the call view, below the character in the panel view. Nothing is captured, recorded or stored. The officer can turn it off for one person; the department can turn it off in settings. | MUST |
+| The stage shows a live mirror of the subject from the front camera: a movable window in the video call. Nothing is captured, recorded or stored. The officer can turn it off for one person; the department can turn it off in settings. | MUST |
 | During any question the subject can also answer "I don't know", "I don't understand" or "That's wrong", or ask to Stop, which opens a pause. Stop is drawn as an octagonal stop sign, never an open palm. "Stop" is shown to the officer prominently, with guidance to pause. | MUST |
 | Gesture lookup: the officer records where the hand went (body location) and what it did (hand action); the app lists matching lexicon entries with picture and clip. | MUST |
 | Machine translation of the officer's typed text into the subject's language, shown with its translation back into English when one could be made and marked as not checked, before the officer chooses to show it: on the phone, or through the department gateway when the officer has switched the online assistant on. | SHOULD |
@@ -166,7 +166,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | The report carries a "Personal details given" table: field, value, how it was given and whether the person confirmed it. | MUST |
 | A phrase board on the stage offers the everyday phrases as pictures with words; a tap is logged as the subject's own. | SHOULD |
 | The officer can search an ISL dictionary of every recorded and authored sign in English or Hindi, play a sign, and prepare it for the stage. | SHOULD |
-| The panel view shows the camera at its own 9:16 shape without cropping, between two rails of answers; Stop is the only pause control on the phone's stage, in both views. | MUST |
+| The camera window shows the camera at its own 9:16 shape without cropping; Stop is the only pause control on the phone's stage and stays under every panel. | MUST |
 | While the stage camera shows, the subject sees their hands, arms, brows and lips traced live; a wrist leaving the frame lights that edge during a sign window. | SHOULD |
 | A nod, head shake, thumbs up or down, raised open palm, shrug, or a finger held on a body part makes the matching Yes, No, Stop, "I don't know" or picture pulse as a proposal; only the subject's tap answers. | SHOULD |
 | A sign the officer reads as a word the reader did not offer is recognised for the rest of the session and offered first. | SHOULD |

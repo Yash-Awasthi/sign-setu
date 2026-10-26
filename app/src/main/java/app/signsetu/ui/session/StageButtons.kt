@@ -1,17 +1,12 @@
 package app.signsetu.ui.session
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.foundation.layout.only
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -22,26 +17,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -55,7 +43,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,26 +56,20 @@ import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.Spacing
-import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.foundation.text.TextAutoSize
 
 @Composable
-internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, name: String? = label, proposed: Boolean = false) {
+internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, name: String? = label) {
     val answer = LocalAnswerColors.current
-    val pulse = proposalPulse(proposed && !chosen)
-    val suggested = if (proposed && !chosen) stringResource(R.string.stage_proposed) else null
     PressableSurface(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         color = Color.White,
-        border = if (chosen) BorderStroke(4.dp, answer.selection) else if (pulse > 0f) BorderStroke(4.dp, answer.selection.copy(alpha = pulse)) else TileEdge,
+        border = if (chosen) BorderStroke(4.dp, answer.selection) else TileEdge,
         modifier = modifier.heightIn(min = 96.dp).semantics {
             role = Role.Button
             (label ?: name)?.let { contentDescription = it }
             selected = chosen
-            suggested?.let { stateDescription = it }
         },
     ) {
         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -126,59 +107,6 @@ internal fun PauseRow(content: ContentBundle, lang: String, chosenCard: String?,
     SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosenCard == "stop", { onCard("stop") }, Modifier.fillMaxWidth(), height = if (compact) 48.dp else 52.dp)
 }
 
-/** Yes, No and the answers that keep a conversation honest sit in narrow rails either side of the camera,
- * always in the same place with picture, word and colour (ABE 2.104 to 2.108). */
-@Composable
-internal fun Rail(content: @Composable ColumnScope.() -> Unit) =
-    Column(Modifier.width(68.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically), content = content)
-
-@Composable
-internal fun ColumnScope.RailCard(cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, proposed: Boolean = false, onClick: () -> Unit) =
-    RailButton(label, name, color, onColor, chosen, false, onClick, proposed) { CardImage(cardId, Modifier.size(if (label != null) 28.dp else 34.dp)) }
-
-@Composable
-internal fun ColumnScope.RailIcon(icon: ImageVector, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, tool: Boolean = false, proposed: Boolean = false, onClick: () -> Unit) =
-    RailIcon(rememberVectorPainter(icon), label, name, color, onColor, chosen, tool, proposed, onClick)
-
-@Composable
-internal fun ColumnScope.RailIcon(icon: Painter, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean = false, tool: Boolean = false, proposed: Boolean = false, onClick: () -> Unit) =
-    RailButton(label, name, color, onColor, chosen, tool, onClick, proposed) { Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.size(26.dp)) }
-
-@Composable
-private fun ColumnScope.RailButton(label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, tool: Boolean, onClick: () -> Unit, proposed: Boolean = false, icon: @Composable () -> Unit) {
-    val pulse = proposalPulse(proposed && !chosen)
-    // The pulse is the only sign of a proposal, so screen readers hear it too.
-    val suggested = if (proposed && !chosen) stringResource(R.string.stage_proposed) else null
-    PressableSurface(
-        onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
-        color = color,
-        border = when {
-            chosen -> BorderStroke(3.dp, onColor)
-            pulse > 0f -> BorderStroke(4.dp, onColor.copy(alpha = pulse))
-            tool -> BorderStroke(1.dp, onColor.copy(alpha = 0.16f))
-            else -> null
-        },
-        // 68 dp fits an icon over two lines of Hindi; friendly touch target for children and mute users
-        modifier = Modifier.weight(1f, fill = false).fillMaxWidth().height(68.dp)
-            .semantics {
-                role = Role.Button
-                contentDescription = label ?: name
-                selected = chosen
-                suggested?.let { stateDescription = it }
-            },
-    ) {
-        Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            icon()
-            label?.let { Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, lineHeight = 12.sp, color = onColor, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis, autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 11.sp, stepSize = 0.5.sp)) }
-        }
-        // A tick as well as the ring: the chosen answer never relies on colour or a thin line alone.
-        if (chosen) Box(Modifier.fillMaxSize().padding(3.dp), contentAlignment = Alignment.TopEnd) {
-            Icon(Icons.Filled.Check, contentDescription = null, tint = color, modifier = Modifier.size(14.dp).background(onColor, CircleShape).padding(1.dp))
-        }
-    }
-}
-
 /** A picture over its word, for the three answers that keep a conversation honest. */
 @Composable
 internal fun StripAnswer(cardId: String, label: String?, name: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
@@ -207,6 +135,7 @@ internal fun StripAnswer(cardId: String, label: String?, name: String, chosen: B
 @Composable
 internal fun SmallAnswer(
     cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, height: Dp = 52.dp,
+    icon: Painter? = null,
 ) {
     PressableSurface(
         onClick = onClick,
@@ -220,7 +149,8 @@ internal fun SmallAnswer(
         },
     ) {
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            CardImage(cardId, Modifier.size(if (label != null) 30.dp else 40.dp))
+            if (icon != null) Icon(icon, null, tint = onColor, modifier = Modifier.size(30.dp))
+            else CardImage(cardId, Modifier.size(if (label != null) 30.dp else 40.dp))
             label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = onColor, modifier = Modifier.padding(start = Spacing.sm)) }
         }
     }
@@ -286,8 +216,3 @@ internal fun LanguageGrid(content: ContentBundle, chosen: String?, modifier: Mod
 }
 
 internal val StageColors.toolEdge get() = BorderStroke(1.dp, onTool.copy(alpha = 0.16f))
-
-/** The ring on an answer a gesture proposed, pulsing until the subject taps; 0 when nothing is proposed. */
-@Composable
-private fun proposalPulse(on: Boolean): Float =
-    if (on) rememberInfiniteTransition(label = "proposed").animateFloat(0.25f, 1f, infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "ring").value else 0f

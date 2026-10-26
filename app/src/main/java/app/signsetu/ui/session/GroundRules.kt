@@ -8,13 +8,14 @@ import app.signsetu.data.content.ContentBundle
 internal data class RuleStep(val key: String, val gesture: String, val card: String?)
 
 /** The session opening (ABE 3.14 to 3.16): the officer's introduction, the ground rules, then a neutral
- * practice round so the subject learns the answers and the character before anything that matters is asked. */
+ * practice round so the subject learns the answers and the character before anything that matters is asked.
+ * Stopping comes first, so the person knows they are in control before any rule about answering. */
 internal val RuleSteps = listOf(
     RuleStep("s1", "police.salute", "police"),
-    RuleStep("rule_not_there", "me.chest", null),
+    RuleStep("rule_break", "okay", "stop"),
     RuleStep("rule_dont_know", "ask", "dont_know"),
     RuleStep("rule_wrong", "no.shake", "wrong"),
-    RuleStep("rule_break", "okay", "stop"),
+    RuleStep("rule_not_there", "me.chest", null),
     RuleStep("practice_morning", "show_me", null),
 )
 

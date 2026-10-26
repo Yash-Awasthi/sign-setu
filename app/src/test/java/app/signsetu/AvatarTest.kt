@@ -404,6 +404,22 @@ class AvatarTest {
     }
 
     @Test
+    fun anElbowLeftBentInSwingsBackOutWithoutAJump() {
+        // Hands that met at the chest carry the elbows inward; lowered to rest they must swing back out, a little each frame.
+        val target = shoulder.first + 15f to shoulder.second + 50f
+        val out = solveElbow(shoulder.first, shoulder.second, target.first, target.second, upper, fore, Side.R, 1f)
+        var elbow = solveElbow(shoulder.first, shoulder.second, target.first, target.second, upper, fore, Side.R, -1f)
+        var frames = 0
+        while (distance(elbow, out) > 0.01f && frames < 200) {
+            val next = solveElbow(shoulder.first, shoulder.second, target.first, target.second, upper, fore, Side.R, 1f, elbow)
+            assertTrue("frame $frames jumped ${distance(elbow, next)}", distance(elbow, next) < 5f)
+            elbow = next
+            frames++
+        }
+        assertTrue("still bent in after $frames frames", distance(elbow, out) <= 0.01f)
+    }
+
+    @Test
     fun aFollowingWordStartsFromTheHandTheLastOneEndedOn() {
         val first = Gesture("one", listOf(Key(0f, R = HandKey(at = "chest", shape = "FLAT")), Key(0.4f, R = HandKey(at = "chest", shape = "FLAT"))))
         val second = Gesture("two", listOf(Key(0f), Key(0.4f, R = HandKey(at = "front", shape = "POINT"))))

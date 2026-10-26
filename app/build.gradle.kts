@@ -31,8 +31,8 @@ android {
         applicationId = "in.signsetu"
         minSdk = 29
         targetSdk = 37
-        versionCode = 13
-        versionName = "0.7.3"
+        versionCode = 14
+        versionName = "0.7.4"
         buildConfigField("long", "BUILD_EPOCH_DAY", "${providers.of(EpochDay::class.java) {}.get()}L")
         buildConfigField("boolean", "SECURE_SCREEN", "$secureScreen")
         // The department's gateway: -PgatewayUrl=https://... or gatewayUrl in local.properties.
