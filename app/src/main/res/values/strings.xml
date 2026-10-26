@@ -43,7 +43,6 @@
     <string name="officer_end">Finish session</string>
     <string name="officer_rotate">They sit opposite me</string>
     <string name="officer_change">Change profile or language</string>
-    <string name="more_child_avatar">Child character (under 10)</string>
     <string name="officer_caption_missing">No caption in %1$s. They will see pictures only.</string>
     <string name="officer_gesture">Gesture</string>
     <plurals name="officer_pictures">
@@ -249,6 +248,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="cloud_notice_title">Send text to the department gateway?</string>
     <string name="cloud_notice_body">While this is on and the phone is online, session text goes to the department gateway, which passes it to an AI service. The subject\'s names are replaced with \"Ravi\" and phone numbers are masked before sending; the real names are put back on this phone. Words the officer types as notes are not checked, so avoid names there. If the service cannot be reached, the on-device version is used.</string>
     <string name="cloud_notice_accept">I understand, turn on</string>
+    <string name="cloud_notice_custom">Custom API endpoint</string>
     <string name="settings_isl_reorder">Sign in ISL order</string>
     <string name="settings_isl_reorder_summary">Typed sentences are reordered into ISL grammar, time first and the question word last, before the character signs them. Off: words are signed exactly as typed.</string>
     <string name="settings_lang_system">Same as the phone</string>

@@ -78,21 +78,30 @@ class AiProbeTest {
     }
 
     @Test
-    fun aSavedServiceNeverReplacesTheGatewayOfAGatewayBuild() = runBlocking {
-        val vault = object : TokenVault {
+    fun aSavedServiceTakesOverFromTheGatewayUntilItIsRemoved() = runBlocking {
+        val key = object : TokenVault {
+            var token: String? = null
+            override fun get() = token
+            override fun put(token: String): Boolean { this.token = token; return true }
+            override fun clear() { token = null }
+        }
+        val gatewayToken = object : TokenVault {
             override fun get() = "tok"
             override fun put(token: String) = true
             override fun clear() {}
         }
-        val s = Server { _, _, _ -> Reply(200, """{"text":"hi"}""") }
-        val c = CloudAi({ true }, "https://gw.example", s, vault, null, vault) { true }
-        assertFalse(c.saveCustom("https://llm.example/v1", "m", "k"))
+        val s = Server { _, url, _ -> if ("gw.example" in url) Reply(200, """{"text":"gateway"}""") else Reply(200, """{"choices":[{"message":{"role":"assistant","content":"custom"}}]}""") }
+        val c = CloudAi({ true }, "https://gw.example", s, gatewayToken, null, key) { true }
+        assertTrue(c.hasGateway && c.viaGateway)
+        assertTrue(c.saveCustom("https://llm.example/v1", "m", "k"))
+        assertFalse(c.viaGateway)
+        assertEquals("k", c.customKey())
+        assertEquals("custom", c.ask("sys", "user", emptyList()))
+        c.clearCustom()
+        assertTrue(c.viaGateway)
+        assertEquals("gateway", c.ask("sys", "user", emptyList()))
         c.restoreCustom("https://llm.example/v1", "m")
         assertNull(c.custom)
-        assertNull(c.customKey())
-        assertTrue(c.viaGateway)
-        assertEquals("hi", c.ask("sys", "user", emptyList()))
-        assertEquals("https://gw.example/v1/assist", s.calls.single()[1])
     }
 
     @Test

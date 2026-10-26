@@ -9,8 +9,8 @@
       {"t": 1.1}
     ]},
     {"id": "namaste", "keys": [
-      {"face":"gentle","t": 0.0, "R": {"at": "chest", "dy": 8, "dx": 7, "shape": "FLAT", "roll": 0, "angle": 0}, "L": {"at": "chest", "dy": 8, "dx": 7, "shape": "FLAT", "roll": 0, "angle": 0}, "face": "smile"},
-      {"t": 0.35, "R": {"at": "chest", "dy": 6, "dx": 7, "shape": "FLAT", "roll": 0, "angle": 0}, "L": {"at": "chest", "dy": 6, "dx": 7, "shape": "FLAT", "roll": 0, "angle": 0}, "head": {"nod": 0.6}},
+      {"face":"gentle","t": 0.0, "R": {"at": "chest", "dy": 8, "dx": 5, "shape": "FLAT", "roll": 0, "angle": 0}, "L": {"at": "chest", "dy": 8, "dx": 5, "shape": "FLAT", "roll": 0, "angle": 0}, "face": "smile"},
+      {"t": 0.35, "R": {"at": "chest", "dy": 6, "dx": 5, "shape": "FLAT", "roll": 0, "angle": 0}, "L": {"at": "chest", "dy": 6, "dx": 5, "shape": "FLAT", "roll": 0, "angle": 0}, "head": {"nod": 0.6}},
       {"t": 0.9, "head": {"nod": 0}, "face": "happy"},
       {"t": 1.5}
     ]},
@@ -193,7 +193,7 @@
       {"t": 1.7}
     ]},
     {"id": "cold.hug", "keys": [
-      {"t": 0.0, "R": {"at": "shoulder_opp", "dy": 18, "touch": "palm", "shape": "CUP", "roll": -1, "angle": -95}, "L": {"at": "shoulder_opp", "dy": 24, "touch": "palm", "shape": "CUP", "roll": -1, "angle": -95}, "face": "cold", "body": {"shrug": 0.7, "shiver": 1}},
+      {"t": 0.0, "R": {"at": "shoulder_opp", "dy": 18, "touch": "palm", "shape": "c:50,70,75,78,80,60,0", "roll": -1, "angle": -95}, "L": {"at": "shoulder_opp", "dy": 24, "touch": "palm", "shape": "c:50,70,75,78,80,60,0", "roll": -1, "angle": -95}, "face": "cold", "body": {"shrug": 0.7, "shiver": 1}},
       {"t": 1.4, "body": {"shrug": 0.7, "shiver": 1}},
       {"t": 1.7, "body": {"shrug": 0, "shiver": 0}}
     ]},

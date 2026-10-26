@@ -3,6 +3,7 @@ package app.signsetu.ui.avatar
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -90,6 +91,8 @@ private class AvatarWebView(context: Context) : WebView(context) {
     private var onFinished: () -> Unit = {}
 
     init {
+        // Compose sizes the view; a wrap_content WebView lays its page out at zero height.
+        layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setBackgroundColor(Color.TRANSPARENT)
         settings.javaScriptEnabled = true
         settings.allowFileAccess = false

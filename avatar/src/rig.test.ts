@@ -13,7 +13,6 @@ import {
   Timeline,
   VIEW,
   anchor,
-  clampReach,
   handShape,
   point,
   restPose,
@@ -192,19 +191,5 @@ describe("hand shapes", () => {
     const p = new Timeline(g).pose(LEAD_IN);
     expect(p.r.shape.index).toBeCloseTo(1, 4);
     expect(p.r.shape.thumb).toBeCloseTo(0, 4);
-  });
-});
-
-describe("reach", () => {
-  const { upperArm: upper, foreArm: fore } = BUILD;
-  const s: [number, number] = [100, 130];
-
-  it("leaves a reachable wrist and pulls a far one back along its line", () => {
-    const near: [number, number] = [s[0] + 20, s[1] + 15];
-    expect(clampReach(s[0], s[1], near, upper, fore)).toEqual(near);
-    const far: [number, number] = [s[0] + 400, s[1] - 300];
-    const [x, y] = clampReach(s[0], s[1], far, upper, fore);
-    expect(dist([x, y], s)).toBeCloseTo(upper + fore - 0.01, 1);
-    expect(Math.atan2(y - s[1], x - s[0])).toBeCloseTo(Math.atan2(far[1] - s[1], far[0] - s[0]), 4);
   });
 });

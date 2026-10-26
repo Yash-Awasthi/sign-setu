@@ -1,9 +1,9 @@
 # Sign Setu
 
-An offline Android app that helps a police officer communicate with a person who cannot communicate in words: deaf, non-verbal, traumatised or speaking another language. A code-drawn character signs and gestures, pictures and captions carry the question, typed text is played in draft Indian Sign Language order, and signed answers are read on the phone inside explicit sign windows. The app is a communication aid, not an interpreter, and never records statements.
+An offline Android app that helps a police officer communicate with a person who cannot communicate in words: deaf, non-verbal, traumatised or speaking another language. A 3D character signs and gestures, pictures and captions carry the question, typed text is played in draft Indian Sign Language order, and signed answers are read on the phone inside explicit sign windows. The app is a communication aid, not an interpreter, and never records statements.
 
-- Version 0.7.3 (version code 13). Android 10 (API 29) and later; Kotlin and Jetpack Compose; one `app` module.
-- Works fully offline. A build with a department gateway (`-PgatewayUrl=https://...`) enrols with a one-time department code; a build without one can use an OpenAI-compatible service the officer sets up in Settings, Developer. Either is used only while online and once the officer switches the online assistant on; otherwise nothing ever connects. No assistant key is ever compiled into an APK. No RECORD_AUDIO permission, and no location or scanning permission in the `standard` flavor; every build fails if a forbidden permission reaches the merged manifest.
+- Version 0.7.5 (version code 15). Android 10 (API 29) and later; Kotlin and Jetpack Compose; one `app` module.
+- Works fully offline. One build carries the department gateway (`-PgatewayUrl=https://...`): turning the online assistant on asks the officer to continue with the gateway, which enrols with a one-time department code, or to set a custom API endpoint (any OpenAI-compatible service) in the same dialog. Either is used only while online and once the officer switches the online assistant on; otherwise nothing ever connects. No assistant key is ever compiled into an APK. No RECORD_AUDIO permission, and no location or scanning permission in the `standard` flavor; every build fails if a forbidden permission reaches the merged manifest.
 - Optional on-device assistant: an instruction-tuned small language model (Gemma 3 1B Q4_K_M GGUF, about 806 MB, from [Hugging Face](https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf)) that the department hands out as a file; the app imports it in Settings and keeps it only if its SHA-256 is on the allow-list. The app never downloads it.
 - A Type-to-Sign practice screen (Settings, Practice) plays any Hindi or English sentence outside a session, with nothing recorded.
 - Raised hands open a sign window on the stage, and it closes by itself when the hands rest for 2 s, nothing is signed for 3 s, or 20 s pass.
@@ -19,7 +19,7 @@ An offline Android app that helps a police officer communicate with a person who
 
 ## What it does
 
-- **Stage for the person:** a drawn character signs questions in draft ISL order (recorded ISL signers for most words), with pictures, captions in 17 languages and recorded speech; answers by tap, picture, writing, drawing, nod or shake, finger count, or signing to the camera; a signed meaning becomes the person's own only when they pick it from pictures. Water and food can be asked for at any moment and are logged as requests, not answers.
+- **Stage for the person:** a 3D character signs questions in draft ISL order (recorded ISL signers for most words, recorded sentence clips where a typed sentence matches one), with pictures, captions in 17 languages and recorded speech; answers by tap, picture, writing, drawing, nod or shake, finger count, or signing to the camera; a signed meaning becomes the person's own only when they pick it from pictures. Water and food can be asked for at any moment and are logged as requests, not answers.
 - **Sign reading:** MediaPipe Holistic landmarks feed small on-device readers for ISL and ASL words and fingerspelling. Guesses that answer the question on screen, through its own answer cards (`sign_words.json`, `cards`), are ranked first. The reading goes to the officer only; the officer can then ask the person to choose the meaning from pictures. Accuracy is in [tools/ml/EVAL.md](tools/ml/EVAL.md).
 - **Officer side:** quick two-way transcription, a question bank including a full ISL lesson sheet (introduction, family, address, school, everyday phrases) in Hindi and English, phrases, show-back, an ISL dictionary and Manual or Auto conversation. Back leaves a session for the start screen without ending it; with a second screen connected it asks first, because leaving drops the link. Settings has Appearance (device default, light or dark) and seven colour themes: Emerald, Mocha, Sage, Cerulean, Amethyst, AMOLED black and High contrast.
 - **Second screen:** a paired phone shows the stage over bonded Bluetooth.
@@ -35,7 +35,8 @@ The build needs JDK 21, Android SDK 37, NDK `30.0.16248370` and CMake 4.1.1. Dep
 | `./gradlew assembleStandardDebug` | Debug APK |
 | `./gradlew testStandardDebugUnitTest` | Unit tests (also `testNearbyDebugUnitTest`) |
 | `./gradlew connectedStandardDebugAndroidTest` | Instrumented tests on an emulator or phone |
-| `cd portal && npm install && npx vp test` | Reviewer portal tests, including rig parity with `Rig.kt` |
+| `cd avatar && npm install && npx vp test` | Avatar module tests: rig, content motions and retargeting; `npx vp build` rebuilds `app/src/main/assets/avatar/avatar.js` |
+| `cd portal && npm install && npx vp test` | Reviewer portal tests (needs `npm install` in `avatar/` first) |
 | `cd backend && pip install -e ".[test]" && pytest` | Department gateway tests |
 | `python tools/content/build_content.py --manifest-only` | Rebuilds the content hash manifest; run after any content change |
 
@@ -43,7 +44,6 @@ Tests worth knowing:
 
 - `LessonTest` and `LessonSigningAuditTest` pin the lesson sheet's wording and how each sentence is signed.
 - `SignPipelineDeviceTest` runs real ISLRTC clips (`app/src/androidTest/assets/islrtc/`) through the camera pipeline. It must pass after any MediaPipe or protobuf update: MediaPipe 1.1.1 runs on `protobuf-javalite`, and the full runtime breaks the landmarker without failing a unit test.
-- `RigFixtureTest` keeps the portal's TypeScript rig in step with `Rig.kt` (see [portal/README.md](portal/README.md)).
 
 ## MVP — Live links
 
@@ -68,7 +68,7 @@ Tests worth knowing:
 | `./gradlew assembleStandardRelease` | Universal APK, arm64-v8a and x86_64 (about 109 MB): phones, tablets and emulators |
 | `./gradlew assembleStandardRelease -Pabi=arm64-v8a` | Phone-only APK (about 83 MB) |
 
-Release builds use R8 with resource shrinking. Screenshots and screen recording stay open while testing; set `secureScreen=true` in `gradle.properties` (or pass `-PsecureScreen=true`) for the final APK, which turns on `FLAG_SECURE`. Add `-PgatewayUrl=https://...` (or `gatewayUrl=` in `local.properties`) for a gateway build. No assistant key is compiled into any build: the gateway holds the service key, and a build without a gateway takes the officer's own key in Settings. The APKs are signed with the release key, which is held offline; signing is a manual `zipalign` and `apksigner` step on that machine. See [docs/README.md](docs/README.md), section 5.
+Release builds use R8 with resource shrinking. Screenshots and screen recording stay open while testing; set `secureScreen=true` in `gradle.properties` (or pass `-PsecureScreen=true`) for the final APK, which turns on `FLAG_SECURE`. Add `-PgatewayUrl=https://...` (or `gatewayUrl=` in `local.properties`) for a gateway build. No assistant key is compiled into any build: the gateway holds the service key, and a custom endpoint takes the officer's own key in Settings. The APKs are signed with the release key, which is held offline; signing is a manual `zipalign` and `apksigner` step on that machine. See [docs/README.md](docs/README.md), section 5.
 
 ## Repository
 
@@ -77,6 +77,7 @@ Release builds use R8 with resource shrinking. Screenshots and screen recording 
 | `app/` | The Android app (`app.signsetu`; application ID `in.signsetu`), flavors `standard` and `nearby` (Play services) |
 | `app/src/main/assets/content/` | Content bundle: questions, cards, motions, vocabulary, audio, models, hash manifest |
 | `backend/` | Department gateway (FastAPI, SQLAlchemy): device enrolment, model manifest, assistant proxy, and an endpoint for consented feedback labels that the app does not call yet; optional ([README](backend/README.md)) |
+| `avatar/` | The 3D character (TypeScript, three.js, three-vrm): keyframe rig, retargeting onto the VRM model, clip playback; built into `app/src/main/assets/avatar/` |
 | `portal/` | Static reviewer portal for content sign-off (Vite+, React, TypeScript); not shipped ([README](portal/README.md)) |
 | `tools/content/` | Content bundle, audio and sign builders; `build_content.py --manifest-only` |
 | `tools/isl/` | Retargeting recorded ISL and ASL signers onto the character ([README](tools/isl/README.md)) |

@@ -42,7 +42,6 @@
     <string name="officer_end">सत्र पूरा करें</string>
     <string name="officer_rotate">वे मेरे सामने बैठे हैं</string>
     <string name="officer_change">प्रोफ़ाइल या भाषा बदलें</string>
-    <string name="more_child_avatar">बच्चे वाला पात्र (10 से कम उम्र)</string>
     <string name="officer_caption_missing">%1$s में कैप्शन नहीं है। उन्हें केवल चित्र दिखेंगे।</string>
     <string name="officer_gesture">इशारा</string>
     <plurals name="officer_pictures">
@@ -242,6 +241,7 @@
     <string name="cloud_notice_title">पाठ विभागीय गेटवे को भेजें?</string>
     <string name="cloud_notice_body">इसके चालू और फ़ोन के ऑनलाइन रहने पर, सत्र का पाठ विभागीय गेटवे को जाता है, जो उसे एक AI सेवा तक पहुँचाता है। भेजने से पहले व्यक्ति के नाम \"Ravi\" से बदल दिए जाते हैं और फ़ोन नंबर छिपा दिए जाते हैं; असली नाम इसी फ़ोन पर वापस लगाए जाते हैं। अधिकारी के लिखे नोट जाँचे नहीं जाते, इसलिए उनमें नाम न लिखें। सेवा न मिले तो फ़ोन पर बना संस्करण इस्तेमाल होता है।</string>
     <string name="cloud_notice_accept">मैं समझता/समझती हूँ, चालू करें</string>
+    <string name="cloud_notice_custom">कस्टम API एंडपॉइंट</string>
     <string name="settings_isl_reorder">ISL क्रम में साइन करें</string>
     <string name="settings_isl_reorder_summary">लिखे वाक्य ISL व्याकरण में बदलकर साइन होते हैं: समय पहले, प्रश्न-शब्द अंत में। बंद होने पर शब्द जैसे लिखे वैसे साइन होते हैं।</string>
     <string name="settings_lang_system">फ़ोन जैसी</string>

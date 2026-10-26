@@ -43,22 +43,23 @@ class Direct(val url: String, val model: String, val key: String) {
 /** What the officer is told, once per change, when the online assistant stops or starts working. */
 enum class Notice { FALLBACK_OFFLINE, FALLBACK_ERROR, REVOKED, BACK_ONLINE, ENROLLED, ENROLL_FAILED, ENROLL_RATE_LIMITED }
 
-/** The online half of the assistant: the project gateway when the build has one (else a [Direct] service), the
- * phone is online, the officer has switched it on and, for the gateway, the device is enrolled. */
+/** The online half of the assistant: the service the officer saved, else the project gateway when the build has one
+ * (else the build's [Direct] default), once the phone is online, the officer has switched it on and, for the
+ * gateway, the device is enrolled. */
 class CloudAi(
     private val enabled: suspend () -> Boolean,
     gatewayUrl: String,
     private val http: Http,
     private val vault: TokenVault,
     private val builtIn: Direct? = null,
-    /** Holds the key the officer saves for a direct service; unused on a gateway build. */
+    /** Holds the key the officer saves for a direct service. */
     private val customVault: TokenVault? = null,
     private val online: () -> Boolean,
 ) {
     // Defaults are encoded: a request option left at its default must still reach the service; nulls are left out.
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; explicitNulls = false }
 
-    /** The service the officer saved in Settings; it replaces the build's default and never exists on a gateway build. */
+    /** The service the officer saved in Settings; it replaces the gateway and the build's default until removed. */
     @Volatile var custom: Direct? = null
     private val direct: Direct? get() = custom ?: builtIn
 
@@ -73,8 +74,10 @@ class CloudAi(
 
     private val base = gatewayUrl.trimEnd('/')
 
-    /** The gateway is used whenever the build has one; a direct service only without it. */
-    val viaGateway: Boolean get() = base.startsWith("https://")
+    val hasGateway: Boolean get() = base.startsWith("https://")
+
+    /** The gateway is used when the build has one and the officer has not saved a service of their own. */
+    val viaGateway: Boolean get() = hasGateway && custom == null
 
     /** This build has somewhere to send to; without it the online switches are not shown. */
     val available: Boolean get() = viaGateway || direct?.url?.startsWith("https://") == true && directKey() != null
@@ -83,12 +86,12 @@ class CloudAi(
     private fun directKey(): String? = customVault?.get()?.takeIf { it.isNotBlank() } ?: direct?.key?.takeIf { it.isNotBlank() }
 
     /** The saved key, to show it is set; null when none is stored. */
-    fun customKey(): String? = if (viaGateway) null else customVault?.get()
+    fun customKey(): String? = customVault?.get()
 
-    /** Stores the key apart from the settings and switches to the service; false on a gateway build or when storage fails. */
+    /** Stores the key apart from the settings and switches to the service; false when storage fails. */
     fun saveCustom(url: String, model: String, key: String): Boolean {
         val vault = customVault ?: return false
-        if (viaGateway || !vault.put(key.trim())) return false
+        if (!vault.put(key.trim())) return false
         custom = Direct(AiEndpoint.chatUrl(url), model.trim(), key.trim())
         degraded = false
         return true
@@ -102,7 +105,7 @@ class CloudAi(
     /** At launch: bring back the service saved in Settings, if its key is still readable. */
     fun restoreCustom(url: String, model: String) {
         val key = customVault?.get()
-        custom = if (viaGateway || url.isBlank() || model.isBlank() || key.isNullOrBlank()) null else Direct(AiEndpoint.chatUrl(url), model.trim(), key)
+        custom = if (url.isBlank() || model.isBlank() || key.isNullOrBlank()) null else Direct(AiEndpoint.chatUrl(url), model.trim(), key)
     }
 
     /** True when a request would actually leave the phone: the officer must have allowed that for the session. */

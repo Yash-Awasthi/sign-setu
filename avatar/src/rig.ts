@@ -467,10 +467,8 @@ export class Timeline {
     if (k.at === "rest") base = rest(this.build, side);
     else if (OTHER_HAND.has(k.at) && other) base = point(other, k.at.slice(0, -4), -side as Side, this.build.handScale);
     else base = anchor(this.build, k.at, side) ?? rest(this.build, side);
-    // +dx is outward: towards the viewer's left for the right hand.
-    const [bx, by] = this.reachBack(k, [base[0] + k.dx * side, base[1] + k.dy], side);
-    const [sx, sy] = shoulder(this.build, side);
-    return clampReach(sx, sy, [bx, by], this.build.upperArm, this.build.foreArm);
+    // +dx is outward: towards the viewer's left for the right hand. The 3D arm, longer than this view's, sets the reach.
+    return this.reachBack(k, [base[0] + k.dx * side, base[1] + k.dy], side);
   }
 
   /** Moves the target back along the hand so the fingertip or palm, not the wrist, lands on the anchor. */
@@ -484,17 +482,6 @@ export class Timeline {
     const a = rad((k.angle ?? 0) * side);
     return [p[0] - Math.sin(a) * reach, p[1] + Math.cos(a) * reach];
   }
-}
-
-/** The reachable wrist for a target: a two-bone arm cannot put the hand further than upper + fore from the shoulder. */
-export function clampReach(sx: number, sy: number, target: [number, number], upper: number, fore: number): [number, number] {
-  const dx = target[0] - sx;
-  const dy = target[1] - sy;
-  const d = Math.hypot(dx, dy);
-  const max = upper + fore - 0.01;
-  if (d <= max) return target;
-  const k = max / d;
-  return [sx + dx * k, sy + dy * k];
 }
 
 /** The part of the 200-unit space the body view shows: to the hips, so both hands stay inside at rest. */

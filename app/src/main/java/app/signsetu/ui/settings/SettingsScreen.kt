@@ -102,7 +102,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
     // The saved developer service changes what the assistant is; the screen reads it again after a save or a removal.
     var devVersion by remember { mutableIntStateOf(0) }
     val available = remember(devVersion, s.devAiUrl) { cloud.available }
-    val viaGateway = cloud.viaGateway
+    val viaGateway = remember(devVersion) { cloud.viaGateway }
     val probe = remember { AiProbe(UrlHttp()) }
     var modelState by remember { mutableStateOf(models.state()) }
     var importing by remember { mutableStateOf(false) }
@@ -191,6 +191,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                 )
                 if (s.cloudAi) {
                     if (viaGateway) Item(stringResource(R.string.settings_cloud_ai_key), if (enrolled) stringResource(R.string.settings_cloud_ai_enrolled) else notSet) { dialog = Dialog.AIKEY }
+                    else if (cloud.hasGateway) Item(stringResource(R.string.cloud_notice_custom), "${s.devAiModel} · ${s.devAiUrl.removePrefix("https://")}") { dialog = Dialog.DEVELOPER }
                 }
                 ListItem(
                     headlineContent = {
@@ -222,7 +223,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                     }
                 }
             }
-            if (!viaGateway) Group(R.string.settings_developer) {
+            if (!cloud.hasGateway) Group(R.string.settings_developer) {
                 Item(
                     stringResource(R.string.settings_developer_mode),
                     if (s.devAiUrl.isBlank()) stringResource(R.string.settings_developer_summary) else "${s.devAiModel} · ${s.devAiUrl.removePrefix("https://")}",
@@ -309,7 +310,13 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                     Text(stringResource(R.string.cloud_notice_accept))
                 }
             },
-            dismissButton = { TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.cancel)) } },
+            dismissButton = {
+                Row {
+                    // The gateway or the officer's own OpenAI-compatible service, chosen in the same dialog.
+                    TextButton(onClick = { scope.launch { store.setCloudAi(true) }; dialog = Dialog.DEVELOPER }) { Text(stringResource(R.string.cloud_notice_custom)) }
+                    TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.cancel)) }
+                }
+            },
         )
         Dialog.AIKEY -> {
             var key by rememberSaveable { mutableStateOf("") }

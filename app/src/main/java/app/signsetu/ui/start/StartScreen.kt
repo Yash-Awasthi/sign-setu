@@ -185,7 +185,7 @@ fun StartScreen(
                 Avatar(
                     gesture = content.gestures["namaste"],
                     playKey = profile,
-                    modifier = Modifier.align(Alignment.BottomCenter).requiredSize(304.dp, 346.dp).offset(y = 34.dp),
+                    modifier = Modifier.align(Alignment.BottomCenter).requiredSize(243.dp, 277.dp).offset(y = 27.dp),
                 )
                 Column {
                     Row(Modifier.fillMaxWidth().offset(y = (-10).dp).height(56.dp).padding(start = Spacing.lg, end = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
