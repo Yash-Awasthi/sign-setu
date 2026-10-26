@@ -15,6 +15,7 @@ class ExportClipsTest(unittest.TestCase):
         [clip] = export_clips.clips(export_clips.read_predictions(path))
         self.assertEqual("hi there", clip["sentence"])
         self.assertEqual([[0.123] * 144], clip["frames"])
+        self.assertEqual(25, clip["fps"])  # every ISL-CSLTR video is 25 fps
 
     def test_skips_a_clip_with_short_frames(self):
         self.assertEqual([], export_clips.clips({"x": {"frames": [{"coordinates": [0.0] * 10}]}}))

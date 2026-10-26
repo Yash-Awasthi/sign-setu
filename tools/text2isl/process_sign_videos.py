@@ -16,17 +16,18 @@ from mediapipe.tasks.python.vision import (
 FEATURE_DIM = 196  # 52 Face Blendshapes + 144 Normalized 3D Coordinates (48 points x 3)
 
 
-def get_landmark_xyz(landmarks, index):
+def get_landmark_xyz(landmarks, index, aspect=1.0):
     """Safely extracts 3D landmark coordinates, keeping Z forward (+Z is front)."""
     if landmarks is None or index >= len(landmarks):
         return None
     lm = landmarks[index]
-    return [float(lm.x), -float(lm.y), float(lm.z)]
+    # MediaPipe divides x by width and y by height; dividing y by width/height puts both in width units.
+    return [float(lm.x), -float(lm.y) / aspect, float(lm.z)]
 
 
-def extract_normalized_keypoints(pose_landmarks, left_hand_landmarks, right_hand_landmarks):
-    l_sh = get_landmark_xyz(pose_landmarks, 11)
-    r_sh = get_landmark_xyz(pose_landmarks, 12)
+def extract_normalized_keypoints(pose_landmarks, left_hand_landmarks, right_hand_landmarks, aspect=1.0):
+    l_sh = get_landmark_xyz(pose_landmarks, 11, aspect)
+    r_sh = get_landmark_xyz(pose_landmarks, 12, aspect)
 
     if l_sh is not None and r_sh is not None:
         root_center = np.array(
@@ -36,7 +37,7 @@ def extract_normalized_keypoints(pose_landmarks, left_hand_landmarks, right_hand
         shoulder_dist = float(np.linalg.norm(np.array(l_sh) - np.array(r_sh)))
         scale = (shoulder_dist * 2.5) if shoulder_dist > 0.05 else 0.75
     else:
-        root_center = np.array([0.5, -0.5, 0.0], dtype=np.float32)
+        root_center = np.array([0.5, -0.5 / aspect, 0.0], dtype=np.float32)
         scale = 0.75
 
     keypoints = []
@@ -44,7 +45,7 @@ def extract_normalized_keypoints(pose_landmarks, left_hand_landmarks, right_hand
     # 1. Body joints
     body_indices = [11, 12, 13, 14, 15, 16]
     for idx in body_indices:
-        pt = get_landmark_xyz(pose_landmarks, idx)
+        pt = get_landmark_xyz(pose_landmarks, idx, aspect)
         if pt is None:
             keypoints.extend([0.0, 0.0, 0.0])
         else:
@@ -58,7 +59,7 @@ def extract_normalized_keypoints(pose_landmarks, left_hand_landmarks, right_hand
 
     # 2. Left Hand
     for idx in range(21):
-        pt = get_landmark_xyz(left_hand_landmarks, idx)
+        pt = get_landmark_xyz(left_hand_landmarks, idx, aspect)
         if pt is None:
             keypoints.extend([0.0, 0.0, 0.0])
         else:
@@ -68,7 +69,7 @@ def extract_normalized_keypoints(pose_landmarks, left_hand_landmarks, right_hand
 
     # 3. Right Hand
     for idx in range(21):
-        pt = get_landmark_xyz(right_hand_landmarks, idx)
+        pt = get_landmark_xyz(right_hand_landmarks, idx, aspect)
         if pt is None:
             keypoints.extend([0.0, 0.0, 0.0])
         else:
@@ -130,9 +131,13 @@ def interpolate_missing_points(feature_matrix: np.ndarray) -> np.ndarray:
 
 
 def process_video(video_path: Path, output_dir: Path, face_landmarker, pose_landmarker, hand_landmarker):
+    out_file = output_dir / f"{video_path.stem}.npy"
+    if out_file.exists():
+        return out_file
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         return None
+    aspect = cap.get(cv2.CAP_PROP_FRAME_WIDTH) / cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
     all_frames = []
 
@@ -167,7 +172,7 @@ def process_video(video_path: Path, output_dir: Path, face_landmarker, pose_land
             face_res = face_landmarker.detect(mp_image)
             face_bs = extract_face_blendshapes(face_res)
 
-        kpts = extract_normalized_keypoints(pose_landmarks, left_hand_landmarks, right_hand_landmarks)
+        kpts = extract_normalized_keypoints(pose_landmarks, left_hand_landmarks, right_hand_landmarks, aspect)
         all_frames.append(face_bs + kpts)
 
     cap.release()

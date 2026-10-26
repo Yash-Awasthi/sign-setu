@@ -33,11 +33,17 @@ import kotlinx.serialization.json.Json
 @Serializable private data class OutPart(val type: String = "", val text: String = "")
 @Serializable private data class OutItem(val type: String = "", val content: List<OutPart> = emptyList())
 @Serializable private data class ResponsesResp(val output: List<OutItem> = emptyList(), val output_text: String? = null)
+// Anthropic-style services (Anthropic, KeyRouter, OpenRouter) take the system prompt apart and answer in content blocks.
+@Serializable private data class MessagesReq(val model: String, val system: String, val messages: List<Msg>, val max_tokens: Int)
+@Serializable private data class MessagesResp(val content: List<OutPart> = emptyList())
 
-/** An OpenAI-style service a build without a gateway talks to; the key is the one the officer saves in Settings. */
+/** An OpenAI- or Anthropic-style service the officer saved in Settings, or the build's default; the key is the officer's. */
 class Direct(val url: String, val model: String, val key: String) {
     /** True when the service speaks the Responses API rather than chat completions. */
     val responses: Boolean get() = url.contains("/responses")
+
+    /** True for the Anthropic Messages API. */
+    val messages: Boolean get() = url.endsWith("/messages")
 }
 
 /** What the officer is told, once per change, when the online assistant stops or starts working. */
@@ -154,7 +160,14 @@ class CloudAi(
                 if (viaGateway) http.call("POST", "$base/v1/assist", json.encodeToString(AssistReq.serializer(), AssistReq(system, mask.mask(user), maxTokens)), token, timeoutMs)
                 // A reasoning model spends the first tokens on thinking, so a short reply budget is all thinking
                 // and no answer; the floor leaves room for the answer itself. Output stays as short as it likes.
-                else if (d!!.responses) http.call(
+                else if (d!!.messages) http.call(
+                    "POST",
+                    d.url,
+                    json.encodeToString(MessagesReq.serializer(), MessagesReq(d.model, system, listOf(Msg("user", mask.mask(user))), maxOf(maxTokens, DIRECT_MIN_TOKENS))),
+                    token,
+                    timeoutMs,
+                )
+                else if (d.responses) http.call(
                     "POST",
                     d.url,
                     json.encodeToString(ResponsesReq.serializer(), ResponsesReq(d.model, system, mask.mask(user), maxOf(maxTokens, DIRECT_MIN_TOKENS))),
@@ -177,7 +190,8 @@ class CloudAi(
         val text = reply?.takeIf { it.ok }?.let {
             runCatching {
                 if (viaGateway) json.decodeFromString(AssistResp.serializer(), it.body).text.trim()
-                else if (d!!.responses) responsesText(it.body)
+                else if (d!!.messages) json.decodeFromString(MessagesResp.serializer(), it.body).content.filter { p -> p.type == "text" }.joinToString("") { p -> p.text }.trim()
+                else if (d.responses) responsesText(it.body)
                 else json.decodeFromString(ChatResp.serializer(), it.body).choices.first().message.content.trim()
             }.getOrNull()
         }

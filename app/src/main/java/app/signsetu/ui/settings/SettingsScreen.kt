@@ -85,11 +85,11 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import app.signsetu.ui.components.GuardedAlertDialog
 
-private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, THEME, COLOUR, CLOUD, AIKEY, DEVELOPER }
+private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, CLOUD, AIKEY, DEVELOPER }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onCallInterpreter: (() -> Unit)?) {
+fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?) {
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
@@ -240,8 +240,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                 }
             }
             Group(R.string.settings_about) {
-                Item(stringResource(R.string.settings_theme), stringResource(themeName(s.themeMode))) { dialog = Dialog.THEME }
-                Item(stringResource(R.string.settings_color_theme), stringResource(colorName(s.colorTheme))) { dialog = Dialog.COLOUR }
+                Item(stringResource(R.string.settings_theme), "${stringResource(themeName(s.themeMode))} · ${stringResource(colorName(s.colorTheme))}", onClick = onAppearance)
                 Item(stringResource(R.string.settings_app_language), stringResource(languageName(OfficerLocale.get(context)))) { dialog = Dialog.LANGUAGE }
                 Item(stringResource(R.string.settings_licences), stringResource(R.string.settings_licences_summary)) { dialog = Dialog.LICENCES }
                 ListItem(
@@ -256,7 +255,6 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                         }
                     },
                 )
-                SwitchItem(R.string.settings_reduce_motion, R.string.settings_reduce_motion_summary, s.reduceMotion) { on -> scope.launch { store.setReduceMotion(on) } }
             }
             Spacer(Modifier.height(Spacing.xl))
         }
@@ -363,22 +361,6 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
             },
             onDismiss = { dialog = null },
         )
-        Dialog.THEME -> ChoiceDialog(
-            title = stringResource(R.string.settings_theme),
-            options = ThemeMode.entries,
-            selected = s.themeMode,
-            label = { stringResource(themeName(it)) },
-            onPick = { scope.launch { store.setThemeMode(it) }; dialog = null },
-            onDismiss = { dialog = null },
-        )
-        Dialog.COLOUR -> ChoiceDialog(
-            title = stringResource(R.string.settings_color_theme),
-            options = ColorTheme.entries,
-            selected = s.colorTheme,
-            label = { stringResource(colorName(it)) },
-            onPick = { scope.launch { store.setColorTheme(it) }; dialog = null },
-            onDismiss = { dialog = null },
-        )
         null -> Unit
     }
 }
@@ -390,23 +372,6 @@ fun languageName(tag: String) = when (tag) {
     else -> R.string.settings_lang_system
 }
 
-@StringRes
-private fun themeName(mode: ThemeMode) = when (mode) {
-    ThemeMode.SYSTEM -> R.string.settings_theme_system
-    ThemeMode.LIGHT -> R.string.settings_theme_light
-    ThemeMode.DARK -> R.string.settings_theme_dark
-}
-
-@StringRes
-private fun colorName(theme: ColorTheme) = when (theme) {
-    ColorTheme.EMERALD -> R.string.theme_emerald
-    ColorTheme.MOCHA -> R.string.theme_mocha
-    ColorTheme.SAGE -> R.string.theme_sage
-    ColorTheme.CERULEAN -> R.string.theme_cerulean
-    ColorTheme.AMETHYST -> R.string.theme_amethyst
-    ColorTheme.AMOLED -> R.string.theme_amoled
-    ColorTheme.CONTRAST -> R.string.theme_contrast
-}
 
 @StringRes
 private fun appName(app: InterpreterApp) = when (app) {
@@ -416,7 +381,7 @@ private fun appName(app: InterpreterApp) = when (app) {
 }
 
 @Composable
-private fun Group(@StringRes title: Int, content: @Composable ColumnScope.() -> Unit) {
+internal fun Group(@StringRes title: Int, content: @Composable ColumnScope.() -> Unit) {
     SectionLabel(stringResource(title), Modifier.padding(start = Spacing.xxl, end = Spacing.lg, top = Spacing.xl, bottom = Spacing.sm))
     OfficerCard(Modifier.padding(horizontal = Spacing.lg), padding = 0.dp) {
         val divider = MaterialTheme.colorScheme.outlineVariant
@@ -446,7 +411,7 @@ private fun SpeedItem(speed: Float, onChange: (Float) -> Unit) {
 }
 
 @Composable
-private fun SwitchItem(@StringRes title: Int, @StringRes summary: Int, checked: Boolean, onChange: (Boolean) -> Unit) {
+internal fun SwitchItem(@StringRes title: Int, @StringRes summary: Int, checked: Boolean, onChange: (Boolean) -> Unit) {
     ListItem(
         headlineContent = { Text(stringResource(title)) },
         supportingContent = { Text(stringResource(summary)) },
@@ -456,10 +421,10 @@ private fun SwitchItem(@StringRes title: Int, @StringRes summary: Int, checked: 
     )
 }
 
-private val ItemColors @Composable get() = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
+internal val ItemColors @Composable get() = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
 
 @Composable
-private fun Item(title: String, summary: String, note: String? = null, destructive: Boolean = false, onClick: () -> Unit) {
+internal fun Item(title: String, summary: String, note: String? = null, destructive: Boolean = false, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     ListItem(
         headlineContent = { Text(title, color = if (destructive) colors.error else colors.onSurface) },
@@ -555,6 +520,9 @@ private val LICENCES = listOf(
         "Changed: hand landmarks extracted from the English and number photographs, a letter classifier trained.",
     "ISLAN (ISL letter reader test data)" to "CC BY 4.0. Mendeley Data, doi:10.17632/rc349j45m5.1. " +
         "Changed: photographs turned upright and hand landmarks extracted to measure the letter reader; not shipped.",
+    "ISL-CSLTR (ISL sentence clips)" to "CC BY 4.0. \"ISL-CSLTR: Indian Sign Language Dataset for Continuous Sign Language Translation and Recognition\", " +
+        "Elakkiya R., Natarajan B. (SASTRA), Mendeley Data 2021, doi:10.17632/kcmpdxky7p.1. " +
+        "Changed: sentence videos converted to landmark clips.",
     "ASLNow! fingerspelling landmarks" to "MIT. sid220, huggingface.co/datasets/sid220/asl-now-fingerspelling. " +
         "Changed: letters chained into synthetic spelling to train a reader, and posed as the ASL alphabet.",
     "MediaPipe and the Holistic landmarker model" to "Apache 2.0. Google LLC",

@@ -4,7 +4,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Field | Value |
 | --- | --- |
-| Version | 0.7.3 (version code 13), applicationId `in.signsetu` |
+| Version | 0.7.5 (version code 15), applicationId `in.signsetu` |
 | Classification | Internal |
 | Source of truth | This repository; the code wins over any document, and documents are corrected when they drift |
 
@@ -12,10 +12,8 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Resource | URL | Notes |
 | --- | --- | --- |
-| 📱 Phone APK — gateway (arm64, ~83 MB) | [sign-setu-0.7.2-arm64-v8a-gateway.apk](https://github.com/Yash-Awasthi/sign-setu/releases/download/v0.7.2/sign-setu-0.7.2-arm64-v8a-gateway.apk) | Signed; calls the department gateway |
-| 📱 Phone APK — no gateway (arm64, ~83 MB) | [sign-setu-0.7.2-arm64-v8a-nogateway.apk](https://github.com/Yash-Awasthi/sign-setu/releases/download/v0.7.2/sign-setu-0.7.2-arm64-v8a-nogateway.apk) | Signed; no key built in; Settings, Developer: address, key and model of any OpenAI compatible service (Groq by default), with a model list and a test ping |
-| 📦 Universal APK — gateway (arm64 + x86\_64, ~109 MB) | [sign-setu-0.7.2-universal-gateway.apk](https://github.com/Yash-Awasthi/sign-setu/releases/download/v0.7.2/sign-setu-0.7.2-universal-gateway.apk) | Signed; phones, tablets and emulators; calls the department gateway |
-| 📦 Universal APK — no gateway (arm64 + x86\_64, ~109 MB) | [sign-setu-0.7.2-universal-nogateway.apk](https://github.com/Yash-Awasthi/sign-setu/releases/download/v0.7.2/sign-setu-0.7.2-universal-nogateway.apk) | Signed; no key built in; Settings, Developer: address, key and model of any OpenAI compatible service (Groq by default), with a model list and a test ping |
+| 📱 Phone APK (arm64, ~83 MB) | [sign-setu-0.7.2-arm64-v8a-gateway.apk](https://github.com/Yash-Awasthi/sign-setu/releases/download/v0.7.2/sign-setu-0.7.2-arm64-v8a-gateway.apk) | Signed; calls the department gateway |
+| 📦 Universal APK (arm64 + x86\_64, ~109 MB) | [sign-setu-0.7.2-universal-gateway.apk](https://github.com/Yash-Awasthi/sign-setu/releases/download/v0.7.2/sign-setu-0.7.2-universal-gateway.apk) | Signed; phones, tablets and emulators; calls the department gateway |
 | 🏷️ GitHub release | [v0.7.2](https://github.com/Yash-Awasthi/sign-setu/releases/tag/v0.7.2) | All APKs |
 | 🌐 Department gateway (API) | [signsetu-gateway.onrender.com](https://signsetu-gateway.onrender.com/healthz) | FastAPI; Neon Postgres; cold-start ~30 s on free tier |
 | 🖥️ Reviewer portal | [signsetu-portal.pages.dev](https://signsetu-portal.pages.dev) | Vite + React; Cloudflare Pages |
@@ -199,7 +197,7 @@ flowchart LR
 | D4 Keystore | Non-exportable AES keys: database KEK, gateway token key, key for the officer's own assistant key | Secret |
 | D5 Assistant model | Optional GGUF file, hash-checked on import | Internal |
 | D6 Landmark memory | Hand, face and pose points of signed answers, view-model memory only | Personal, volatile |
-| D9 Assistant credentials | Gateway bearer token, or on a build without a gateway the key the officer saved in Settings, Developer; each wrapped by its own Keystore key | Secret |
+| D9 Assistant credentials | Gateway bearer token, or the key of the officer's custom API endpoint; each wrapped by its own Keystore key | Secret |
 
 ### 3.3 Trust boundaries
 
@@ -239,7 +237,7 @@ The readers generalise poorly to people they have not seen, so a reading is neve
 | Topic | Practice |
 | --- | --- |
 | Reproducibility | Gradle wrapper, version catalog, lockfile and checksum verification; llama.cpp vendored; `.gitattributes` forces LF so content hashes hold on every checkout |
-| Release build | `./gradlew assembleStandardRelease` (universal) and `-Pabi=arm64-v8a` (phone); add `-PgatewayUrl=https://...` for a gateway build and `-PsecureScreen=true` for the final APK. No assistant key is ever compiled in: a gateway build enrols with a department code, a build without one takes the officer's own service and key in Settings, Developer |
+| Release build | `./gradlew assembleStandardRelease` (universal) and `-Pabi=arm64-v8a` (phone); add `-PgatewayUrl=https://...` for a gateway build and `-PsecureScreen=true` for the final APK. No assistant key is ever compiled in: turning the assistant on offers the gateway, which enrols with a department code, or a custom API endpoint with the officer's own key |
 | Signing | `zipalign` and `apksigner` with the department key, offline, signature scheme v3 |
 | Expiry | A build refuses new sessions 180 days after its build day |
 | Install | Allow installs from the source and open the APK. A screen lock is strongly recommended; without one the app warns once and keeps records under a key not tied to unlocking until a lock is set |

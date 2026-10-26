@@ -122,4 +122,25 @@ class AiProbeTest {
         c.clearCustom()
         assertFalse(c.available)
     }
+
+    @Test
+    fun anAnthropicStyleServiceIsAskedOnTheMessagesApi() = runBlocking {
+        assertEquals("https://kr.example/v1/messages", AiEndpoint.chatUrl("https://kr.example/v1/messages"))
+        assertEquals("https://kr.example/v1/models", AiEndpoint.modelsUrl("https://kr.example/v1/messages"))
+        val key = object : TokenVault {
+            var token: String? = null
+            override fun get() = token
+            override fun put(token: String): Boolean { this.token = token; return true }
+            override fun clear() { token = null }
+        }
+        val s = Server { _, _, _ -> Reply(200, """{"content":[{"type":"thinking","thinking":"x"},{"type":"text","text":"namaste"}]}""") }
+        val c = CloudAi({ true }, "https://gw.example", s, key, null, key) { true }
+        assertTrue(c.saveCustom("https://kr.example/v1/messages", "claude-haiku-5-5", "k"))
+        assertEquals("namaste", c.ask("sys", "user", emptyList()))
+        val (_, url, body) = s.calls.single()
+        assertEquals("https://kr.example/v1/messages", url)
+        assertTrue(body!!.contains("\"system\":\"sys\""))
+        assertTrue(body.contains("\"max_tokens\""))
+        assertTrue(AiProbe(Server { _, _, _ -> Reply(200, "{}") }).ping("https://kr.example/v1/messages", "m", "k").ok)
+    }
 }

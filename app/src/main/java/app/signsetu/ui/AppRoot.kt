@@ -50,6 +50,7 @@ import app.signsetu.data.settings.AppSettings
 import app.signsetu.data.settings.InterpreterApp
 import app.signsetu.data.settings.whatsappNumber
 import app.signsetu.ui.practice.PracticeScreen
+import app.signsetu.ui.settings.AppearanceScreen
 import app.signsetu.ui.settings.SettingsScreen
 import app.signsetu.ui.start.FirstRunScreen
 import kotlinx.coroutines.launch
@@ -134,6 +135,7 @@ import app.signsetu.ui.pair.UseAsStageButton
 @Serializable data class SessionKey(val id: String) : NavKey
 @Serializable data object SettingsKey : NavKey
 @Serializable data object PracticeKey : NavKey
+@Serializable data object AppearanceKey : NavKey
 
 private const val SANDES_PACKAGE = "in.nic.gimkerala"
 
@@ -164,9 +166,8 @@ fun AppRoot(container: AppContainer) {
     }
 
     val appContext = LocalContext.current
-    val motionOn = settings?.reduceMotion != true && systemAnimationsOn(appContext)
-    val blackTheme = settings?.colorTheme.let { it == ColorTheme.AMOLED || it == ColorTheme.CONTRAST }
-    val dark = blackTheme || when (settings?.themeMode) {
+    val motionOn = systemAnimationsOn(appContext)
+    val dark = settings?.colorTheme == ColorTheme.CONTRAST || when (settings?.themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
         else -> isSystemInDarkTheme()
@@ -181,7 +182,7 @@ fun AppRoot(container: AppContainer) {
     }
 
     CompositionLocalProvider(LocalContentRepository provides container.content, LocalCloudAi provides container.cloudAi, LocalMotion provides motionOn) { NoPersonalisedLearning {
-        SignSetuTheme(dark = dark, theme = settings?.colorTheme ?: ColorTheme.EMERALD) {
+        SignSetuTheme(dark = dark, theme = settings?.colorTheme ?: ColorTheme.EMERALD, amoled = settings?.amoled == true) {
             val r = repo
             val c = content
             val s = settings
@@ -297,7 +298,10 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                 PracticeScreen(content, onBack = { backStack.removeLastOrNull() })
             }
             entry<SettingsKey> {
-                SettingsScreen(container.settings, container.models, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onCallInterpreter = interpreterCall)
+                SettingsScreen(container.settings, container.models, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall)
+            }
+            entry<AppearanceKey> {
+                AppearanceScreen(container.settings, onBack = { backStack.removeLastOrNull() })
             }
             entry<SessionKey> { key ->
                 SessionRoute(

@@ -1,9 +1,13 @@
 filename,sentence
+are you free today (2),are you free today
+are you free today,are you free today
 free (2),are you free today
 free (3),are you free today
 free (4),are you free today
 free (5),are you free today
 free,are you free today
+are you hiding something (2),are you hiding something
+are you hiding something,are you hiding something
 MVI_6209,are you hiding something
 MVI_6507,are you hiding something
 MVI_6685,are you hiding something
@@ -13,7 +17,11 @@ bring water for me (1),bring water for me
 bring water for me (3),bring water for me
 bring water for me (4),bring water for me
 bring water for me (5),bring water for me
+bring water for me (6),bring water for me
+bring water for me (7),bring water for me
 bring water for me (8),bring water for me
+can i help you (2),can i help you
+can i help you,can i help you
 cannot help,can i help you
 help (2),can i help you
 help (3),can i help you
@@ -25,21 +33,31 @@ can you repeat that please (3),can you repeat that please
 can you repeat that please (4),can you repeat that please
 can you repeat that please (5),can you repeat that please
 can you repeat that please (6),can you repeat that please
+can you repeat that please (7),can you repeat that please
+can you repeat that please (8),can you repeat that please
 comb (2),comb your hair
 comb (3),comb your hair
 comb (4),comb your hair
 comb (5),comb your hair
+comb your hair (2),comb your hair
+comb your hair,comb your hair
 comb,comb your hair
+congratulations (2),congratulations
 congratulations (3),congratulations
 congratulations (4),congratulations
 congratulations (5),congratulations
 congratulations (6),congratulations
 congratulations (7),congratulations
+congratulations,congratulations
+could you please talk slower (1),could you please talk slower
+could you please talk slower (2),could you please talk slower
 could you please talk slower (3),could you please talk slower
 could you please talk slower (4),could you please talk slower
 could you please talk slower (5),could you please talk slower
 could you please talk slower (6),could you please talk slower
 could you please talk slower (7),could you please talk slower
+do me a favour (2),do me a favour
+do me a favour,do me a favour
 favour (2),do me a favour
 favour (3),do me a favour
 favour (4),do me a favour
@@ -49,18 +67,622 @@ abuse (2),do not abuse him
 abuse (3),do not abuse him
 abuse (4),do not abuse him
 abuse,do not abuse him
+do not abuse him (2),do not abuse him
+do not abuse him,do not abuse him
+do not be stubborn (2),do not be stubborn
+do not be stubborn,do not be stubborn
 stubborn (2),do not be stubborn
 stubborn (3),do not be stubborn
 stubborn (4),do not be stubborn
 stubborn,do not be stubborn
+do not hurt me (2),do not hurt me
+do not hurt me,do not hurt me
+hurt me (2),do not hurt me
+hurt me (3),do not hurt me
+hurt me (4),do not hurt me
+hurt me,do not hurt me
+hurt,do not hurt me
+do not make me angry (2),do not make me angry
+do not make me angry,do not make me angry
+me angry (2),do not make me angry
+me angry (3),do not make me angry
+me angry (4),do not make me angry
+me angry (5),do not make me angry
+me angry,do not make me angry
+do not take it to the heart (2),do not take it to the heart
+do not take it to the heart,do not take it to the heart
+heart (2),do not take it to the heart
+heart (3),do not take it to the heart
+heart (4),do not take it to the heart
+heart (5),do not take it to the heart
+heart,do not take it to the heart
+do not worry (2),do not worry
+do not worry,do not worry
+MVI_6633,do not worry
+worry (2),do not worry
+worry (3),do not worry
+worry (4),do not worry
+worry,do not worry
+do you need something (2),do you need something
+do you need something,do you need something
+need something (2),do you need something
+need something,do you need something
+something (2),do you need something
+something (3),do you need something
+something,do you need something
+go and sleep (2),go and sleep
+go and sleep,go and sleep
+sleep (2),go and sleep
+sleep (3),go and sleep
+sleep (4),go and sleep
+sleep (5),go and sleep
+sleep (6),go and sleep
+sleep,go and sleep
+food (2),had your food
+food (3),had your food
+food (4),had your food
+food (5),had your food
+food,had your food
+had your food (2),had your food
+had your food,had your food
+he came by train (2),he came by train
+he came by train,he came by train
+train (2),he came by train
+train (3),he came by train
+train (4),he came by train
+train (5),he came by train
+train,he came by train
+he is going into the room (2),he is going into the room
+he is going into the room,he is going into the room
 MVI_6503,he is going into the room
 room (2),he is going into the room
 room (3),he is going into the room
 room (4),he is going into the room
 room,he is going into the room
+he is on the way (2),he is on the way
+he is on the way,he is on the way
+way (2),he is on the way
+way (3),he is on the way
+way (4),he is on the way
+way,he is on the way
+friend (2),he she is my friend
+friend (3),he she is my friend
+friend (4),he she is my friend
+friend,he she is my friend
+heshe is my friend,he she is my friend
+MVI_6500,he she is my friend
+she is my friend,he she is my friend
+he would be coming today (2),he would be coming today
+he would be coming today,he would be coming today
+today (2),he would be coming today
+today (3),he would be coming today
+today (4),he would be coming today
+today (5),he would be coming today
+today,he would be coming today
+help me (1),help me
+help me (3),help me
+help me (4),help me
+help me (5),help me
+help me (6),help me
+help me (7),help me
+help me (8),help me
+hi how are you (1),hi how are you
+hi how are you (2),hi how are you
+hi how are you (3),hi how are you
+hi how are you (4),hi how are you
+hi how are you (5),hi how are you
+hi how are you (6),hi how are you
+hi how are you (7),hi how are you
+how are things (2),how are things
+how are things,how are things
+things (2),how are things
+things (3),how are things
+things (4),how are things
+things,how are things
+how can i help you (1),how can i help you
+how can i help you (2),how can i help you
+how can i help you (3),how can i help you
+how can i help you (4),how can i help you
+how can i help you (5),how can i help you
+how can i help you (6),how can i help you
+how can i help you (7),how can i help you
+how can i trust you (2),how can i trust you
+how can i trust you,how can i trust you
+trust (2),how can i trust you
+trust (3),how can i trust you
+trust (4),how can i trust you
+trust (5),how can i trust you
+trust,how can i trust you
+dare (2),how dare you
+dare (3),how dare you
+dare (4),how dare you
+dare (5),how dare you
+dare,how dare you
+how dare you (2),how dare you
+how dare you,how dare you
+how old are you (1),how old are you
+how old are you (2),how old are you
+how old are you (3),how old are you
+how old are you (4),how old are you
+how old are you (5),how old are you
+how old are you (6),how old are you
+how old are you (7),how old are you
+i am (age) (1),i am (age)
+i am (age) (2),i am (age)
+i am (age) (3),i am (age)
+i am (age) (4),i am (age)
+i am (age) (5),i am (age)
+i am (age) (6),i am (age)
+afraid (2),i am afraid of that
+afraid (3),i am afraid of that
+afraid (4),i am afraid of that
+afraid (5),i am afraid of that
+afraid,i am afraid of that
+i am afraid of that (2),i am afraid of that
+i am afraid of that,i am afraid of that
+i am crying (2),i am crying
+i am crying (3),i am crying
+i am crying (4),i am crying
+i am crying (5),i am crying
+i am crying (6),i am crying
+i am crying (7),i am crying
+i am crying,i am crying
+bored (2),i am feeling bored
+bored (3),i am feeling bored
+bored (4),i am feeling bored
+bored (5),i am feeling bored
+bored,i am feeling bored
+i am feeling bored (2),i am feeling bored
+i am feeling bored,i am feeling bored
+cold (2),i am feeling cold
+cold (3),i am feeling cold
+cold (4),i am feeling cold
+cold (5),i am feeling cold
+cold,i am feeling cold
+i am feeling cold (2),i am feeling cold
+i am feeling cold,i am feeling cold
+fine thank (2),i am fine. thank you sir
+fine thank (3),i am fine. thank you sir
+fine thank (4),i am fine. thank you sir
+fine thank (5),i am fine. thank you sir
+fine thank,i am fine. thank you sir
+i am fine. thank you sir (2),i am fine. thank you sir
+i am fine. thank you sir,i am fine. thank you sir
+i am hungry   (1),i am hungry
+i am hungry   (2),i am hungry
+i am hungry   (3),i am hungry
+i am hungry   (4),i am hungry
+i am hungry   (5),i am hungry
+i am hungry   (6),i am hungry
+i am hungry   (7),i am hungry
+dilemma (2),i am in dilemma what to do
+dilemma (3),i am in dilemma what to do
+dilemma (4),i am in dilemma what to do
+dilemma (5),i am in dilemma what to do
+dilemma,i am in dilemma what to do
+i am in dilemma what to do (2),i am in dilemma what to do
+i am in dilemma what to do,i am in dilemma what to do
+i am not really sure (2),i am not really sure
+i am not really sure,i am not really sure
+MVI_6546,i am not really sure
+really sure (2),i am not really sure
+really sure (3),i am not really sure
+really sure (4),i am not really sure
+really sure,i am not really sure
+i am really grateful (2),i am really grateful
+i am really grateful,i am really grateful
+MVI_6104,i am really grateful
+MVI_6395,i am really grateful
+MVI_6539,i am really grateful
+MVI_6721,i am really grateful
+MVI_6849,i am really grateful
+i am sitting in the class (2),i am sitting in the class
+i am sitting in the class,i am sitting in the class
+sitting (2),i am sitting in the class
+sitting (3),i am sitting in the class
+sitting (4),i am sitting in the class
+sitting (5),i am sitting in the class
+sitting,i am sitting in the class
+i am so sorry to hear that (2),i am so sorry to hear that
+i am so sorry to hear that,i am so sorry to hear that
+sorry hear (2),i am so sorry to hear that
+sorry hear (3),i am so sorry to hear that
+sorry hear (4),i am so sorry to hear that
+sorry hear (5),i am so sorry to hear that
+sorry hear,i am so sorry to hear that
+fever (2),i am suffering from fever
+fever (3),i am suffering from fever
+fever (4),i am suffering from fever
+fever (5),i am suffering from fever
+fever,i am suffering from fever
+i am suffering from fever (2),i am suffering from fever
+i am suffering from fever,i am suffering from fever
+i am tired (2),i am tired
+i am tired,i am tired
+tired (2),i am tired
+tired (3),i am tired
+tired (4),i am tired
+tired (5),i am tired
+tired,i am tired
+i am very happy (2),i am very happy
+i am very happy,i am very happy
+very happy (2),i am very happy
+very happy (3),i am very happy
+very happy (4),i am very happy
+very happy,i am very happy
+i can not help you there (2),i can not help you there
+i can not help you there,i can not help you there
+MVI_6109,i can not help you there
+MVI_6399,i can not help you there
+MVI_6545,i can not help you there
+MVI_6725,i can not help you there
+MVI_6854,i can not help you there
+agree (2),i do not agree
+agree (3),i do not agree
+agree (4),i do not agree
+agree (5),i do not agree
+agree,i do not agree
+i do not agree (2),i do not agree
+i do not agree,i do not agree
+hate (2),i do not like it
+hate (3),i do not like it
+hate (4),i do not like it
+hate it,i do not like it
+hate,i do not like it
+i do not like it (2),i do not like it
+i do not like it,i do not like it
+i do not mean it (3),i do not mean it
+i do not mean it,i do not mean it
+mean (2),i do not mean it
+mean (3),i do not mean it
+mean (4),i do not mean it
+mean (5),i do not mean it
+mean,i do not mean it
+MVI_6494,i dont agree
+enjoy (2),i enjoyed a lot
+enjoy,i enjoyed a lot
+enjoyed (2),i enjoyed a lot
+enjoyed (3),i enjoyed a lot
+enjoyed (4),i enjoyed a lot
+enjoyed,i enjoyed a lot
+i enjoyed a lot (2),i enjoyed a lot
+i enjoyed a lot,i enjoyed a lot
+got hurt (2),i got hurt
+got hurt (3),i got hurt
+got hurt (4),i got hurt
+got hurt (5),i got hurt
+got hurt,i got hurt
+i got hurt (2),i got hurt
+i got hurt,i got hurt
+i love you (2),i like you i love you
+i love you,i like you i love you
+love,i like you i love you
+MVI_6207,i like you i love you
+MVI_6505,i like you i love you
+MVI_6682,i like you i love you
+MVI_6814,i like you i love you
+MVI_6956,i like you i love you
+i need water 1,i need water
+i need water 2,i need water
+i need water 3,i need water
+i need water 4,i need water
+i need water 5,i need water
+i need water 6,i need water
+i need water 7,i need water
+i promise (2),i promise
+i promise,i promise
+promise (2),i promise
+promise (3),i promise
+promise (4),i promise
+promise (5),i promise
+promise,i promise
+i really appreciate it (1),i really appreciate it
+i really appreciate it (2),i really appreciate it
+i really appreciate it (3),i really appreciate it
+i really appreciate it (4),i really appreciate it
+i really appreciate it (5),i really appreciate it
+i really appreciate it (6),i really appreciate it
+i really appreciate it (7),i really appreciate it
+i somehow got to know about it.,i somehow got to know about it
+i somehow got to know about it,i somehow got to know about it
+somehow (2),i somehow got to know about it
+somehow (3),i somehow got to know about it
+somehow (4),i somehow got to know about it
+somehow (5),i somehow got to know about it
+somehow,i somehow got to know about it
+i was stopped by someone (2),i was stopped by some one
+i was stopped by someone,i was stopped by some one
+MVI_6504,i was stopped by some one
+MVI_6955,i was stopped by some one
+stopped (2),i was stopped by some one
+stopped (3),i was stopped by some one
+stopped,i was stopped by some one
+difference (2),it does not make any difference to me
+difference (3),it does not make any difference to me
+difference (4),it does not make any difference to me
+difference (5),it does not make any difference to me
+difference,it does not make any difference to me
+it does not make any difference to me (2),it does not make any difference to me
+it does not make any difference to me,it does not make any difference to me
+it was nice chatting with you (2),it was nice chatting with you
+it was nice chatting with you,it was nice chatting with you
+MVI_6107,it was nice chatting with you
+MVI_6398,it was nice chatting with you
+MVI_6542,it was nice chatting with you
+MVI_6724,it was nice chatting with you
+MVI_6853,it was nice chatting with you
+let him take time (2),let him take time
+let him take time,let him take time
+time (2),let him take time
+time (3),let him take time
+time (4),let him take time
+time (5),let him take time
+time,let him take time
+my name is xxxxxxxx (1),my name is xxxxxxxx
+my name is xxxxxxxx (2),my name is xxxxxxxx
+my name is xxxxxxxx (3),my name is xxxxxxxx
+my name is xxxxxxxx (4),my name is xxxxxxxx
+my name is xxxxxxxx (5),my name is xxxxxxxx
+my name is xxxxxxxx (6),my name is xxxxxxxx
+my name is xxxxxxxx (7),my name is xxxxxxxx
+nice to meet you (1),nice to meet you
+nice to meet you (3),nice to meet you
+nice to meet you (4),nice to meet you
+nice to meet you (5),nice to meet you
+nice to meet you (6),nice to meet you
+nice to meet you (7),nice to meet you
+nice to meet you (8),nice to meet you
 MVI_6496,no need to worry dont worry
+never hurt (2),now onwards he will never hurt you
+never hurt (3),now onwards he will never hurt you
+never hurt (4),now onwards he will never hurt you
+never hurt (5),now onwards he will never hurt you
+never hurt,now onwards he will never hurt you
+now onwards he will never hurt you,now onwards he will never hurt you
+pour (2),pour some more water into the glass
+pour (3),pour some more water into the glass
+pour (4),pour some more water into the glass
+pour (5),pour some more water into the glass
+pour some more water into the glass (2),pour some more water into the glass
+pour some more water into the glass,pour some more water into the glass
+pour,pour some more water into the glass
+bed (2),prepare the bed
+bed (3),prepare the bed
+bed (4),prepare the bed
+bed (5),prepare the bed
+bed,prepare the bed
+prepare the bed (2),prepare the bed
+prepare the bed,prepare the bed
+serve (2),serve the food
+serve (3),serve the food
+serve (4),serve the food
+serve (5),serve the food
+serve 1,serve the food
+serve food,serve the food
+serve the food (2),serve the food
+serve the food,serve the food
+serve,serve the food
+MVI_6498,shall we go outside
+outside (2),shall we go outside
+outside (3),shall we go outside
+outside (4),shall we go outside
+outside,shall we go outside
+shall we go outside (2),shall we go outside
+shall we go outside,shall we go outside
+softly (2),speak softly
+softly (3),speak softly
+softly (4),speak softly
+softly (5),speak softly
+softly 1,speak softly
+softly,speak softly
+speak softly (2),speak softly
+speak softly,speak softly
+Take care (2),take care of yourself
+take care (3),take care of yourself
+take care (4),take care of yourself
+take care (5),take care of yourself
+take care of yourself (2),take care of yourself
+take care of yourself,take care of yourself
+take care,take care of yourself
+tell me truth (2),tell me truth
+tell me truth,tell me truth
+truth (2),tell me truth
+truth (3),tell me truth
+truth (4),tell me truth
+truth,tell me truth
+thank you so much (1),thank you so much
+thank you so much (3),thank you so much
+thank you so much (4),thank you so much
+thank you so much (5),thank you so much
+thank you so much (6),thank you so much
+thank you so much (7),thank you so much
+thank you so much (8),thank you so much
+MVI_6106,that is so kind of you
+MVI_6396,that is so kind of you
+MVI_6540,that is so kind of you
+MVI_6722,that is so kind of you
+MVI_6850,that is so kind of you
+that is so kind of you (2),that is so kind of you
+that is so kind of you,that is so kind of you
 beautiful (2),this place is beautiful
 beautiful (3),this place is beautiful
 beautiful (4),this place is beautiful
 beautiful,this place is beautiful
 MVI_6502,this place is beautiful
+this place is beautiful (2),this place is beautiful
+this place is beautiful,this place is beautiful
+try to understand (2),try to understand
+try to understand,try to understand
+understand (2),try to understand
+understand (3),try to understand
+understand (4),try to understand
+understand (5),try to understand
+understand,try to understand
+turn on (2),turn on light turn off light
+turn on (3),turn on light turn off light
+turn on (4),turn on light turn off light
+turn on (5),turn on light turn off light
+turn on light turn off light,turn on light turn off light
+turn on lightturn off light,turn on light turn off light
+turn on,turn on light turn off light
+all,we are all with you
+MVI_6208,we are all with you
+MVI_6506,we are all with you
+MVI_6684,we are all with you
+MVI_6957,we are all with you
+we are all with you (2),we are all with you
+we are all with you,we are all with you
+shirt (2),wear the shirt
+shirt (3),wear the shirt
+shirt (4),wear the shirt
+shirt (5),wear the shirt
+shirt,wear the shirt
+wear the shirt (2),wear the shirt
+wear the shirt,wear the shirt
+what are you doing (1),what are you doing
+what are you doing (3),what are you doing
+what are you doing (4),what are you doing
+what are you doing (5),what are you doing
+what are you doing (6),what are you doing
+what are you doing (7),what are you doing
+what are you doing (8),what are you doing
+MVI_6497,what did you tell him
+tell him (2),what did you tell him
+tell him (3),what did you tell him
+tell him (4),what did you tell him
+tell him,what did you tell him
+what did you tell him (2),what did you tell him
+what did you tell him,what did you tell him
+what do you do (1),what do you do
+what do you do (3),what do you do
+what do you do (4),what do you do
+what do you do (5),what do you do
+what do you do (6),what do you do
+what do you do (7),what do you do
+what do you think (1),what do you think
+what do you think (3),what do you think
+what do you think (4),what do you think
+what do you think (5),what do you think
+what do you think (6),what do you think
+what do you think (7),what do you think
+what do you think (8),what do you think
+become (2),what do you want to become
+become (3),what do you want to become
+become (4),what do you want to become
+become (5),what do you want to become
+become,what do you want to become
+what do you want to become (2),what do you want to become
+what do you want to become,what do you want to become
+happen,what happened
+happened (2),what happened
+happened (3),what happened
+happened,what happened
+MVI_6495,what happened
+what happened,what happened
+MVI_6499,what have you planned for your career
+what have you planned for your career (2),what have you planned for your career
+what have you planned for your career,what have you planned for your career
+what is your phone number (1),what is your phone number
+what is your phone number (3),what is your phone number
+what is your phone number (4),what is your phone number
+what is your phone number (5),what is your phone number
+what is your phone number (6),what is your phone number
+what is your phone number (7),what is your phone number
+what is your phone number (8),what is your phone number
+what you want (1),what you want
+what you want (3),what you want
+what you want (4),what you want
+what you want (5),what you want
+what you want (6),what you want
+what you want (7),what you want
+what you want (8),what you want
+leave (2),when will the train leave
+leave (3),when will the train leave
+leave (4),when will the train leave
+leave (5),when will the train leave
+leave,when will the train leave
+when will the train leave (2),when will the train leave
+when will the train leave,when will the train leave
+where are you from (1),where are you from
+where are you from (3),where are you from
+where are you from (4),where are you from
+where are you from (5),where are you from
+where are you from (6),where are you from
+where are you from (7),where are you from
+college school (2),which collegeschool are you from
+college school (3),which collegeschool are you from
+college school,which collegeschool are you from
+school college (2),which collegeschool are you from
+school college,which collegeschool are you from
+which collegeschool are you from (2),which collegeschool are you from
+which collegeschool are you from,which collegeschool are you from
+who are you (1),who are you
+who are you (3),who are you
+who are you (4),who are you
+who are you (5),who are you
+who are you (6),who are you
+who are you (7),who are you
+who are you (8),who are you
+angry (2),why are you angry
+angry (3),why are you angry
+angry (4),why are you angry
+angry (5),why are you angry
+angry,why are you angry
+why are you angry (2),why are you angry
+why are you angry,why are you angry
+crying (2),why are you crying
+crying (3),why are you crying
+crying (4),why are you crying
+crying (5),why are you crying
+crying,why are you crying
+why are you crying (2),why are you crying
+why are you crying,why are you crying
+disappointed (2),why are you disappointed
+disappointed (3),why are you disappointed
+disappointed (4),why are you disappointed
+disappointed (5),why are you disappointed
+disappointed,why are you disappointed
+why are you disappointed (2),why are you disappointed
+why are you disappointed,why are you disappointed
+bad (2),you are bad
+bad (3),you are bad
+bad (4),you are bad
+bad (5),you are bad
+bad 1,you are bad
+bad,you are bad
+you are bad (2),you are bad
+you are bad,you are bad
+good (2),you are good
+good (3),you are good
+good (4),you are good
+good (5),you are good
+good,you are good
+you are good (2),you are good
+you are good,you are good
+welcome (2),you are welcome
+welcome (3),you are welcome
+welcome (4),you are welcome
+welcome (5),you are welcome
+welcome,you are welcome
+you are welcome (2),you are welcome
+you are welcome,you are welcome
+can do (2),you can do it
+can do (3),you can do it
+can do (4),you can do it
+can do (5),you can do it
+can do,you can do it
+you can do it (2),you can do it
+you can do it,you can do it
+care,"you do anything, i do not care"
+donotcare,"you do anything, i do not care"
+dont care (2),"you do anything, i do not care"
+dont care,"you do anything, i do not care"
+"you do anything, i do not care (2)","you do anything, i do not care"
+"you do anything, i do not care","you do anything, i do not care"
+medicine (2),"you need a medicine, take this one"
+medicine (3),"you need a medicine, take this one"
+medicine (4),"you need a medicine, take this one"
+medicine (5),"you need a medicine, take this one"
+medicine,"you need a medicine, take this one"
+"you need a medicine, take this one.","you need a medicine, take this one"
+"you need a medicine, take this one","you need a medicine, take this one"

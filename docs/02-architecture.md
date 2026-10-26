@@ -7,7 +7,7 @@ How Sign Setu is built: the parts, how they talk, where data lives and which key
 Sign Setu is one Android application. The officer's phone holds everything a session needs: the content bundle, the vision and sign-reader models, and the encrypted session store. Two optional paths leave the phone:
 
 - **Second screen.** A bonded Bluetooth phone or tablet (Nearby Connections in the `nearby` flavor) shows the subject's stage over an encrypted link and stores nothing (§9).
-- **Online assistant.** When the build has a department gateway (`-PgatewayUrl=https://...`), or else the officer has saved their own OpenAI-compatible service in Settings, Developer, and has switched the assistant on, masked text goes over HTTPS for translation, the AI counsellor and the draft report (§10). Without either, nothing in the app opens a connection.
+- **Online assistant.** When the build has a department gateway (`-PgatewayUrl=https://...`) or the officer has saved the officer's own custom API endpoint (any OpenAI- or Anthropic-compatible service, KeyRouter included), offered beside the gateway when the assistant is turned on, and has switched the assistant on, masked text goes over HTTPS for translation, the AI counsellor and the draft report (§10). Without either, nothing in the app opens a connection.
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "step"}}}%%
@@ -32,7 +32,7 @@ flowchart LR
     BUNDLE --> APP
     APP -- "RFCOMM, AES-256-GCM frames" --> STAGE
     APP -- "HTTPS, masked text" --> GW
-    APP -. "HTTPS, masked text,<br/>only without a gateway" .-> DIRECT
+    APP -. "HTTPS, masked text,<br/>custom endpoint" .-> DIRECT
     GW -- "HTTPS" --> UP
     APP -- "contact link" --> MSG
     APP -- "encrypted PDF via share sheet" --> CUST
@@ -511,7 +511,7 @@ flowchart TB
 *Figure 15. Translation path (`Assistant.suggest`, `CloudAi.ask`).*
 
 - **Local.** `ModelStore` imports a GGUF file and keeps it only if its SHA-256 is on `KNOWN_MODELS` (Gemma 3 1B Q4_K_M). It is offered on phones reporting at least 2.4 GB and loads only with 1.2 GB free; it is freed on lock, on memory pressure, and whenever the stage shows or a sign window opens. Each request starts from an empty 1,024-token context with greedy decoding.
-- **Online.** `CloudAi` uses the gateway when the build has one: a one-time department code is traded at `/v1/enroll` for a token stored by `KeystoreVault`; a 401 clears it. Without a gateway it uses the OpenAI-compatible service the officer saves in Settings, Developer (address, model and key, the key held by its own `KeystoreVault`, `assist.bin` under `signsetu.assist.key`); no key is ever compiled into an APK. Session data (the AI counsellor, the draft report) goes out only after the officer allows it once for the session. The gateway accepts only system prompts that match the app's own (`app_prompts.json`, written by `GatewayPromptContractTest`).
+- **Online.** `CloudAi` uses the gateway when the build has one: a one-time department code is traded at `/v1/enroll` for a token stored by `KeystoreVault`; a 401 clears it. A custom API endpoint saved by the officer takes over from the gateway until removed: chat completions, the Responses API (an address ending in `/responses`) or the Anthropic Messages API (an address ending in `/messages`, key sent as `x-api-key`), with address, model and key, the key held by its own `KeystoreVault`, `assist.bin` under `signsetu.assist.key`); no key is ever compiled into an APK. Session data (the AI counsellor, the draft report) goes out only after the officer allows it once for the session. The gateway accepts only system prompts that match the app's own (`app_prompts.json`, written by `GatewayPromptContractTest`).
 - **Without a network** the report falls back to `OfflineReport`, a rule-based draft marked "not part of the record", and follow-up questions to a fixed list.
 
 ## 11. Camera and sign reading
@@ -564,7 +564,7 @@ sequenceDiagram
 
 ## 13. Build and delivery
 
-- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.7.3, code 13. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
+- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.7.5, code 15. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
 - Release builds: R8 with resource shrinking, `android.util.Log` calls stripped, native libraries and models stored uncompressed. Default ABIs arm64-v8a and x86_64 (universal); `-Pabi=arm64-v8a` builds the phone APK. APKs are unsigned; signing is a manual offline step.
 - Build gates on every variant before packaging: `check<Variant>Permissions` fails on RECORD_AUDIO or background location in any build and on discovery and location permissions in `standard`.
 - The gateway (`backend/`, FastAPI and SQLAlchemy, SQLite or PostgreSQL) enrols devices, serves the model manifest, proxies assistant calls, and has a `/v1/feedback` endpoint for consented reader labels that the app does not call yet. The avatar module (`avatar/`, TypeScript, three.js 0.160 and three-vrm 3.0) plays motions on the VRM character; it builds to `app/src/main/assets/avatar/avatar.js`, which CI checks is current. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) renders every motion with that same module.

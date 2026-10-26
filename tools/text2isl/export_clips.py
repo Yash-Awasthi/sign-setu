@@ -1,4 +1,4 @@
-"""Writes app/src/main/assets/content/clips.json from a prediction file (inspect_ground_truth.py or evaluate.py).
+"""Writes app/src/main/assets/content/clips.json from a prediction file (pick_clips.py, inspect_ground_truth.py or evaluate.py).
 
 Each clip keeps the 144 coordinates of every frame (48 points, x y z) at three decimals; blendshapes are dropped
 because the character takes its face from the rig. Run from the repository root, then refresh the manifest:
@@ -28,7 +28,7 @@ def clips(predictions: dict) -> list:
     for sentence, entry in sorted(predictions.items()):
         frames = [[round(v, 3) for v in f["coordinates"][:144]] for f in entry["frames"]]
         if frames and all(len(f) == 144 for f in frames):
-            out.append({"sentence": sentence, "fps": 30, "frames": frames})
+            out.append({"sentence": sentence, "fps": 25, "frames": frames})
     return out
 
 

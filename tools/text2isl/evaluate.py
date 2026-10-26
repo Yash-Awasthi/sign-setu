@@ -2,6 +2,7 @@ import json
 import pandas as pd
 import torch
 from transformers import DistilBertTokenizer
+from dataset_loader import resample
 from model import TextToSignModel
 
 
@@ -18,14 +19,9 @@ def generate_all_animations(model_path='isl_transformer_v1.pth', output_file='pr
         sentences = ["can i help you", "are you free today", "comb your hair", "congratulations"]
 
     tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-    model = TextToSignModel(feature_dim=196, max_frames=100)
-
-    try:
-        model.load_state_dict(torch.load(model_path, map_location=device))
-        print("Model weights loaded successfully.")
-    except Exception as e:
-        print(f"Error loading model weights: {e}")
-        return
+    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    model = TextToSignModel(feature_dim=196, max_frames=checkpoint["max_frames"])
+    model.load_state_dict(checkpoint["state"])
 
     model.to(device)
     model.eval()
@@ -46,9 +42,11 @@ def generate_all_animations(model_path='isl_transformer_v1.pth', output_file='pr
         attention_mask = text_tokens['attention_mask'].to(device)
 
         with torch.no_grad():
-            predicted_frames_tensor = model(input_ids, attention_mask=attention_mask)
+            predicted_frames_tensor, log_length = model(input_ids, attention_mask=attention_mask)
 
-        predicted_frames = predicted_frames_tensor.squeeze(0).cpu().numpy()
+        # The model predicts z-scored, time-resampled frames; restore units and the predicted clip length.
+        predicted_frames = predicted_frames_tensor.squeeze(0).cpu().numpy() * checkpoint["std"] + checkpoint["mean"]
+        predicted_frames = resample(predicted_frames, max(2, round(float(log_length.exp()))))
 
         frames_list = []
         for frame_idx, frame_data in enumerate(predicted_frames):

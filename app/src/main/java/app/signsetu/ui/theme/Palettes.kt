@@ -6,6 +6,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.lerp
 import app.signsetu.data.settings.ColorTheme
 
 // Officer-side colour themes. Each has a light and a dark scheme; every text pair was checked for contrast
@@ -30,13 +31,24 @@ class Palette(val light: ColorScheme, val dark: ColorScheme, val inkLight: InkCo
 
 private fun ink(c: Color) = InkColors(onBand = Color.White, onBandMuted = Color(0xBFFFFFFF), brush = SolidColor(c))
 
+/** A borrowed scheme; white band text needs a darker band, so the ink is its primary taken toward black. */
+internal fun mihon(light: ColorScheme, dark: ColorScheme) =
+    Palette(light, dark, ink(lerp(light.primary, Color.Black, 0.35f)), ink(lerp(dark.primary, Color.Black, 0.6f)))
+
+/** Dark scheme on pure black for OLED screens; containers stay just off black so scrolled content still separates. */
+internal fun ColorScheme.amoled() = copy(
+    background = Color.Black, surface = Color.Black, surfaceVariant = Color(0xFF0C0C0C),
+    surfaceContainerLowest = Color.Black, surfaceContainerLow = Color(0xFF070707), surfaceContainer = Color(0xFF0C0C0C),
+    surfaceContainerHigh = Color(0xFF131313), surfaceContainerHighest = Color(0xFF1B1B1B),
+)
+
 private val EmeraldPalette = Palette(
     light = lightColorScheme(
-        primary = Color(0xFF2E6A4F),
+        primary = Color(0xFF3A6E58),
         onPrimary = Color(0xFFFFFFFF),
-        primaryContainer = Color(0xFFD3E7DB),
+        primaryContainer = Color(0xFFD9E8DF),
         onPrimaryContainer = Color(0xFF0E2A1C),
-        inversePrimary = Color(0xFF5FD39A),
+        inversePrimary = Color(0xFF7CC4A0),
         secondary = Color(0xFF5E5632),
         onSecondary = Color(0xFFFFFFFF),
         secondaryContainer = Color(0xFFEAE2C6),
@@ -66,11 +78,11 @@ private val EmeraldPalette = Palette(
         surfaceContainerHighest = Color(0xFFD7D1C7),
     ),
     dark = darkColorScheme(
-        primary = Color(0xFF5FD39A),
+        primary = Color(0xFF7CC4A0),
         onPrimary = Color(0xFF00391C),
-        primaryContainer = Color(0xFF0F4F31),
-        onPrimaryContainer = Color(0xFFBDEBCF),
-        inversePrimary = Color(0xFF2E6A4F),
+        primaryContainer = Color(0xFF1E4C37),
+        onPrimaryContainer = Color(0xFFC9E6D5),
+        inversePrimary = Color(0xFF3A6E58),
         secondary = Color(0xFFC8D3B0),
         onSecondary = Color(0xFF253019),
         secondaryContainer = Color(0xFF2A3326),
@@ -99,8 +111,8 @@ private val EmeraldPalette = Palette(
         surfaceContainerHigh = Color(0xFF232E29),
         surfaceContainerHighest = Color(0xFF2D3934),
     ),
-    inkLight = ink(Color(0xFF2E6A4F)),
-    inkDark = ink(Color(0xFF17704F)),
+    inkLight = ink(Color(0xFF3A6E58)),
+    inkDark = ink(Color(0xFF2A6A50)),
 )
 
 private val MochaPalette = Palette(
@@ -174,79 +186,6 @@ private val MochaPalette = Palette(
     ),
     inkLight = ink(Color(0xFF5B4632)),
     inkDark = ink(Color(0xFF7A5C3E)),
-)
-
-private val SagePalette = Palette(
-    light = lightColorScheme(
-        primary = Color(0xFF3F6B58),
-        onPrimary = Color(0xFFFFFFFF),
-        primaryContainer = Color(0xFFD5E5DC),
-        onPrimaryContainer = Color(0xFF12281D),
-        inversePrimary = Color(0xFFA8CBBB),
-        secondary = Color(0xFF5A3E2B),
-        onSecondary = Color(0xFFFFFFFF),
-        secondaryContainer = Color(0xFFEBDCCF),
-        onSecondaryContainer = Color(0xFF2E1E13),
-        tertiary = Color(0xFFA35F0E),
-        onTertiary = Color(0xFFFFFFFF),
-        tertiaryContainer = Color(0xFFFADFBA),
-        onTertiaryContainer = Color(0xFF4A2900),
-        error = Color(0xFFB3261E),
-        onError = Color(0xFFFFFFFF),
-        errorContainer = Color(0xFFF9DEDC),
-        onErrorContainer = Color(0xFF410E0B),
-        background = Color(0xFFF6F5EE),
-        onBackground = Color(0xFF1E231F),
-        surface = Color(0xFFF9F8F4),
-        onSurface = Color(0xFF1E231F),
-        surfaceVariant = Color(0xFFE7E6E0),
-        onSurfaceVariant = Color(0xFF5A5E59),
-        outline = Color(0xFF81847E),
-        outlineVariant = Color(0xFFD3D3CD),
-        inverseSurface = Color(0xFF2F3430),
-        inverseOnSurface = Color(0xFFF6F5EE),
-        surfaceContainerLowest = Color(0xFFFCFCFA),
-        surfaceContainerLow = Color(0xFFF9F8F4),
-        surfaceContainer = Color(0xFFEDEDE6),
-        surfaceContainerHigh = Color(0xFFE3E2DB),
-        surfaceContainerHighest = Color(0xFFD6D6CF),
-    ),
-    dark = darkColorScheme(
-        primary = Color(0xFFA8CBBB),
-        onPrimary = Color(0xFF0A0A0A),
-        primaryContainer = Color(0xFF2F4A3E),
-        onPrimaryContainer = Color(0xFFD2EADD),
-        inversePrimary = Color(0xFF3F6B58),
-        secondary = Color(0xFFD2B49C),
-        onSecondary = Color(0xFF0A0A0A),
-        secondaryContainer = Color(0xFF3A2C22),
-        onSecondaryContainer = Color(0xFFEBD6C5),
-        tertiary = Color(0xFFF0B25C),
-        onTertiary = Color(0xFF0A0A0A),
-        tertiaryContainer = Color(0xFF5C3A0A),
-        onTertiaryContainer = Color(0xFFFBE2BC),
-        error = Color(0xFFF2B8B5),
-        onError = Color(0xFF601410),
-        errorContainer = Color(0xFF8C1D18),
-        onErrorContainer = Color(0xFFF9DEDC),
-        background = Color(0xFF111513),
-        onBackground = Color(0xFFE6EAE4),
-        surface = Color(0xFF111513),
-        onSurface = Color(0xFFE6EAE4),
-        surfaceVariant = Color(0xFF222624),
-        onSurfaceVariant = Color(0xFFA2A6A1),
-        outline = Color(0xFF626662),
-        outlineVariant = Color(0xFF333734),
-        inverseSurface = Color(0xFFE6EAE4),
-        inverseOnSurface = Color(0xFF222624),
-        surfaceContainerLowest = Color(0xFF171B19),
-        surfaceContainerLow = Color(0xFF1C201D),
-        surfaceContainer = Color(0xFF222624),
-        surfaceContainerHigh = Color(0xFF2D312E),
-        surfaceContainerHighest = Color(0xFF373B39),
-    ),
-    inkLight = ink(Color(0xFF3F6B58)),
-    inkDark = ink(Color(0xFF3F6B58)),
 )
 
 private val CeruleanPalette = Palette(
@@ -395,14 +334,6 @@ private val AmethystPalette = Palette(
     inkDark = ink(Color(0xFF7140B8)),
 )
 
-// Pure black for OLED screens: the emerald dark scheme with its greys dropped to black.
-private val AmoledScheme = EmeraldPalette.dark.copy(
-    background = Color.Black, surface = Color.Black, surfaceVariant = Color(0xFF111111),
-    surfaceContainerLowest = Color.Black, surfaceContainerLow = Color(0xFF050505), surfaceContainer = Color(0xFF0A0A0A),
-    surfaceContainerHigh = Color(0xFF111111), surfaceContainerHighest = Color(0xFF181818),
-)
-private val AmoledPalette = Palette(AmoledScheme, AmoledScheme, EmeraldPalette.inkDark, EmeraldPalette.inkDark)
-
 // Black and white with white outlines; colour is left to icons and the primary accent.
 private val ContrastScheme = darkColorScheme(
     primary = Color(0xFFFFE14D), onPrimary = Color.Black, primaryContainer = Color.Black, onPrimaryContainer = Color.White,
@@ -421,9 +352,12 @@ private val ContrastPalette = Palette(ContrastScheme, ContrastScheme, InkColors(
 internal fun paletteOf(theme: ColorTheme): Palette = when (theme) {
     ColorTheme.EMERALD -> EmeraldPalette
     ColorTheme.MOCHA -> MochaPalette
-    ColorTheme.SAGE -> SagePalette
     ColorTheme.CERULEAN -> CeruleanPalette
     ColorTheme.AMETHYST -> AmethystPalette
-    ColorTheme.AMOLED -> AmoledPalette
     ColorTheme.CONTRAST -> ContrastPalette
+    ColorTheme.TEAL_TURQUOISE -> MihonTealTurqoise
+    ColorTheme.TIDAL_WAVE -> MihonTidalWave
+    ColorTheme.TOKYO_NIGHT -> MihonTokyoNight
+    ColorTheme.YIN_YANG -> MihonYinYang
+    ColorTheme.YOTSUBA -> MihonYotsuba
 }

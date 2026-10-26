@@ -9,7 +9,7 @@ Sign Setu is an offline Android application that helps a police officer communic
 | Property | Value |
 | --- | --- |
 | Platform | Android 10 (API 29) and later; sign reading on 64-bit phones |
-| Network | Optional: the department gateway (or, in a build without a gateway, the OpenAI-compatible service the officer sets up in Settings), only when the officer switches the online assistant on and the phone is online; everything works without it |
+| Network | Optional: the department gateway, or the officer's own custom API endpoint chosen in the same dialog, only when the officer switches the online assistant on and the phone is online; everything works without it |
 | Languages for the subject | 17 in the language finder, including Chhattisgarhi, Gondi and Halbi; every stage word, question, phrase and picture label in all 17 (drafts beyond English and Hindi); typed English captioned in Hindi on the phone; sign languages ISL and ASL |
 | Officer interface languages | English, Hindi |
 | Release APK | arm64-v8a phone APK and universal APK (arm64-v8a and x86_64); nothing compressed for size |

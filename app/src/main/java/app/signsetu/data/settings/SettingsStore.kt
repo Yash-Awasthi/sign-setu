@@ -23,7 +23,7 @@ enum class InterpreterApp { NONE, WHATSAPP, SANDES }
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 /** The officer-side colour theme; each has a light and a dark form. */
-enum class ColorTheme { EMERALD, MOCHA, SAGE, CERULEAN, AMETHYST, AMOLED, CONTRAST }
+enum class ColorTheme { EMERALD, MOCHA, CERULEAN, AMETHYST, CONTRAST, TEAL_TURQUOISE, TIDAL_WAVE, TOKYO_NIGHT, YIN_YANG, YOTSUBA }
 
 /** Settings hold no personal data about any subject. */
 @Immutable
@@ -39,8 +39,6 @@ data class AppSettings(
     val cameraEnabled: Boolean = true,
     /** The character's signing speed, 0.25 to 1.5; the subject can change it on the stage. */
     val gestureSpeed: Float = 1f,
-    /** Officer-side screens skip non-sign animation; the character's signs always play. */
-    val reduceMotion: Boolean = false,
     /** Picture-board cards the officer starred; card IDs only. */
     val favourites: Set<String> = emptySet(),
     /** This device has served as a second screen; it never offers to unlock by itself, so a subject cannot open it. */
@@ -54,6 +52,8 @@ data class AppSettings(
     val devAiModel: String = "",
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val colorTheme: ColorTheme = ColorTheme.EMERALD,
+    /** Pure black backgrounds in dark mode, for OLED screens. */
+    val amoled: Boolean = false,
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -82,7 +82,6 @@ class SettingsStore(private val context: Context) {
         val newestSession = longPreferencesKey("newest_session_at")
         val camera = booleanPreferencesKey("camera_enabled")
         val gestureSpeed = floatPreferencesKey("gesture_speed")
-        val reduceMotion = booleanPreferencesKey("reduce_motion")
         val favourites = stringSetPreferencesKey("favourites")
         val stageDevice = booleanPreferencesKey("stage_device")
         val islReorder = booleanPreferencesKey("isl_reorder")
@@ -91,6 +90,7 @@ class SettingsStore(private val context: Context) {
         val devAiModel = stringPreferencesKey("dev_ai_model")
         val themeMode = stringPreferencesKey("theme_mode")
         val colorTheme = stringPreferencesKey("color_theme")
+        val amoled = booleanPreferencesKey("amoled")
     }
 
     val settings: Flow<AppSettings> = context.store.data.map { it.toSettings() }
@@ -106,7 +106,6 @@ class SettingsStore(private val context: Context) {
     suspend fun setNewestSessionAt(time: Long) = context.store.edit { it[Keys.newestSession] = time }
     suspend fun setCameraEnabled(on: Boolean) = context.store.edit { it[Keys.camera] = on }
     suspend fun setGestureSpeed(speed: Float) = context.store.edit { it[Keys.gestureSpeed] = speed }
-    suspend fun setReduceMotion(on: Boolean) = context.store.edit { it[Keys.reduceMotion] = on }
     suspend fun setStageDevice() = context.store.edit { it[Keys.stageDevice] = true }
     suspend fun setIslReorder(on: Boolean) = context.store.edit { it[Keys.islReorder] = on }
     suspend fun setCloudAi(on: Boolean) = context.store.edit { it[Keys.cloudAi] = on }
@@ -116,6 +115,7 @@ class SettingsStore(private val context: Context) {
     }
     suspend fun setThemeMode(mode: ThemeMode) = context.store.edit { it[Keys.themeMode] = mode.name }
     suspend fun setColorTheme(theme: ColorTheme) = context.store.edit { it[Keys.colorTheme] = theme.name }
+    suspend fun setAmoled(on: Boolean) = context.store.edit { it[Keys.amoled] = on }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -129,7 +129,6 @@ class SettingsStore(private val context: Context) {
         newestSessionAt = this[Keys.newestSession] ?: 0L,
         cameraEnabled = this[Keys.camera] ?: true,
         gestureSpeed = this[Keys.gestureSpeed] ?: 1f,
-        reduceMotion = this[Keys.reduceMotion] ?: false,
         favourites = this[Keys.favourites].orEmpty(),
         stageDevice = this[Keys.stageDevice] ?: false,
         islReorder = this[Keys.islReorder] ?: true,
@@ -138,6 +137,8 @@ class SettingsStore(private val context: Context) {
         devAiModel = this[Keys.devAiModel] ?: "",
         themeMode = this[Keys.themeMode]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,
         colorTheme = this[Keys.colorTheme]?.let { runCatching { ColorTheme.valueOf(it) }.getOrNull() } ?: ColorTheme.EMERALD,
+        // The AMOLED colour theme became this switch; a phone that had it picked keeps black.
+        amoled = this[Keys.amoled] ?: (this[Keys.colorTheme] == "AMOLED"),
     )
 }
 

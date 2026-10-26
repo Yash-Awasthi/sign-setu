@@ -28,6 +28,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | `ISL Sample 1` VRM model by Leo | VRM Public License 1.0, credit required, redistribution and avatar use reserved | Ship only with the author's written licence | The character; clip kinematics in `avatar/src/clip.ts` from the SignSetu avatar module (Lilesh Lahre) |
 | | ISL-CSLTR sentence videos | CC BY 4.0 | Data | Recorded sentence clips (`clips.json`) through `tools/text2isl` |
 | | Media3 ExoPlayer | Apache-2.0 | Ship | Recorded speech |
+| Officer colour themes | Mihon colour schemes | Apache-2.0 | Ship (values) | Fourteen light and dark schemes copied into `ui/theme/MihonPalettes.kt` |
 | Sign recognition | MediaPipe Tasks Vision 1.1.1 with the Holistic landmarker model | Apache-2.0 | Ship | On-device hand, face and pose landmarks, GPU then CPU; 64-bit native library only; usage-statistics upload backend excluded |
 | | Protocol Buffers for Java 4.36.2 (`protobuf-javalite`) | BSD-3-Clause | Ship | Lite runtime MediaPipe 1.1.1 is built on, pinned past CVE-2024-7254 |
 | | Sign reader (`LandmarkSignReader`), trained in `tools/ml` | Project code; weights derived from INCLUDE (CC BY 4.0) | Ship | Plain Kotlin forward pass; no inference library |
@@ -74,11 +75,12 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 
 ## 2. Attribution
 
-The INCLUDE, OpenHands, PopSign ASL, ASLNow! and MediaPipe notices appear in the app's **Settings > Open-source licences**, the ISL dictionary carries the INCLUDE notice for recorded signs, and all travel with any redistribution of the models or motions.
+The INCLUDE, OpenHands, PopSign ASL, ISL-CSLTR, ASLNow! and MediaPipe notices appear in the app's **Settings > Open-source licences**, the ISL dictionary carries the INCLUDE notice for recorded signs, and all travel with any redistribution of the models or motions.
 
 - **INCLUDE**: "INCLUDE: A Large Scale Dataset for Indian Sign Language Recognition" by Advaith Sridhar, Rohith Gandhi Ganesan, Pratyush Kumar and Mitesh Khapra (IIT Madras, AI4Bharat), ACM Multimedia 2020, Zenodo doi:10.5281/zenodo.4010759, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: a sign classifier was trained on its landmarks, and the signers' landmarks for each word were retargeted onto the app's characters as keyframes.
 - **OpenHands**: "OpenHands v1: Labelled ISLR datasets, Poses" (AI4Bharat), Zenodo record 6674324, licensed under CC BY 4.0. Changes: poses resampled and normalised as reader input.
 - **PopSign ASL v1.0**: "PopSign ASL v1.0: An Isolated American Sign Language Dataset Collected via Smartphones", Starner, Forbes, So, Martin, Sridhar, Deshpande et al. (Georgia Tech, NTID), NeurIPS 2023 Datasets and Benchmarks, signdata.cc.gatech.edu, licensed under CC BY 4.0. Frames taken from huggingface.co/datasets/sign/popsign-images (CC BY 4.0). Changes: MediaPipe Holistic landmarks extracted, a sign classifier trained on them, and the signers' landmarks retargeted onto the app's characters as keyframes, mirrored to right-hand dominant where the left hand led.
+- **ISL-CSLTR**: "ISL-CSLTR: Indian Sign Language Dataset for Continuous Sign Language Translation and Recognition" by Elakkiya R. and Natarajan B. (SASTRA), Mendeley Data 2021, doi:10.17632/kcmpdxky7p.1, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: sentence videos converted to landmark clips.
 - **ASLNow!**: fingerspelling hand landmarks by sid220, huggingface.co/datasets/sid220/asl-now-fingerspelling, MIT licence. Changes: static letters chained into synthetic spelling sequences to train a reader, and one typical hand per letter posed as the ASL alphabet.
 - **MediaPipe**: Google LLC, Apache License 2.0; the Holistic landmarker model is distributed under the same licence.
 - **Ping**: Yash Awasthi, MIT licence; the pairing design is adapted from its CryptoUtils and transport interface.

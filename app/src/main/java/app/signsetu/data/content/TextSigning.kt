@@ -36,6 +36,13 @@ private val FILLER = setOf(
 /** Words ISL leaves unsigned, carried by placement or pointing instead; anywhere in a sentence, unlike [FILLER]. */
 private val ISL_UNSIGNED = setOf("in", "at", "on", "into", "with", "about", "or", "it", "there")
 
+/** "don't", "dont", "can't": the negation is the sign; the auxiliary before it carries none. */
+private val NEGATED = Regex("(?:do|does|did|is|are|was|were|ca|could|wo|would|should|have|has|had|must|ai)n['’]?t|cannot")
+
+/** Words only English uses: with one in the sentence, a final "do" is English, not Hindi "give". */
+// ponytail: word-list guess at the sentence's language; a language tag on the text would replace it.
+private val ENGLISH_ONLY = setOf("you", "i", "we", "they", "he", "she", "what", "how", "why", "where", "who", "can", "will")
+
 /** A word with no entry or sign of its own, as its base form when that has one: "years" is year, "doing" do. */
 private fun ContentBundle.base(word: String, modes: Set<SignMode>): String {
     if (word.length < 4 || word in FILLER || isPhrase(word, modes)) return word
@@ -76,11 +83,12 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
         t += g.keys.maxOf { it.t } + GAP
     }
     // "Ravi's" plays as Ravi: a possessive or contraction keeps only its stem.
-    val tokens = phrases(TOKEN.findAll(text).map { it.range to it.value.lowercase().split('\'', '’').first() }.toList(), modes)
+    val tokens = phrases(TOKEN.findAll(text).map { it.range to it.value.lowercase().let { w -> if (NEGATED.matches(w)) "not" else w.split('\'', '’').first() } }.toList(), modes)
         .map { (range, w) -> range to base(w, modes) }
     val isl = language == SignLanguage.ISL && SignMode.SIGNS in modes
-    // Hindi "do" (give) ends its sentence; anywhere else it is the English helper word.
-    fun grammar(i: Int) = (tokens[i].second in FILLER && i != tokens.lastIndex) || (isl && tokens[i].second in ISL_UNSIGNED)
+    // Hindi "do" (give) ends its sentence; anywhere else, or in an English sentence, it is the English helper word.
+    val english = tokens.any { it.second in ENGLISH_ONLY }
+    fun grammar(i: Int) = (tokens[i].second in FILLER && (i != tokens.lastIndex || english)) || (isl && tokens[i].second in ISL_UNSIGNED)
     fun entryOf(i: Int) = tokens[i].second.let { w -> words[w]?.takeIf { !grammar(i) } }
     val order = tokens.indices.let { all -> if (isl && SignMode.TYPED_ORDER !in modes) all.sortedBy { islRank(tokens[it].second, entryOf(it)) } else all }
     // A sentence break inside the text is a pause in the signing: without it two sentences read as one long run.

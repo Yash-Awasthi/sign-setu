@@ -10,9 +10,10 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-/** Addresses of an OpenAI-style service from whatever the developer typed: a base such as .../v1, or a full chat or responses address. */
+/** Addresses of an OpenAI- or Anthropic-style service from whatever the developer typed: a base such as .../v1, or a full
+ * chat, responses or messages address. */
 object AiEndpoint {
-    private val suffixes = listOf("/chat/completions", "/responses")
+    private val suffixes = listOf("/chat/completions", "/responses", "/messages")
 
     private fun clean(input: String): String = input.trim().trimEnd('/')
 
@@ -47,6 +48,7 @@ class PingResult(val ok: Boolean, val code: Int?, val ms: Long, val detail: Stri
 @Serializable private data class ProbeMsg(val role: String, val content: String)
 @Serializable private data class ProbeChat(val model: String, val messages: List<ProbeMsg>, val max_tokens: Int)
 @Serializable private data class ProbeResponses(val model: String, val input: String, val max_output_tokens: Int, val store: Boolean = false)
+@Serializable private data class ProbeMessages(val model: String, val messages: List<ProbeMsg>, val max_tokens: Int)
 
 /** Lists a service's models and sends it one tiny request, for the developer settings. Nothing from a session goes here. */
 class AiProbe(private val http: Http) {
@@ -64,6 +66,7 @@ class AiProbe(private val http: Http) {
         if (model.isBlank()) return PingResult(false, null, 0, "Choose or type a model name")
         val target = AiEndpoint.chatUrl(url)
         val body = if (target.endsWith("/responses")) json.encodeToString(ProbeResponses.serializer(), ProbeResponses(model, "ping", 64))
+        else if (target.endsWith("/messages")) json.encodeToString(ProbeMessages.serializer(), ProbeMessages(model, listOf(ProbeMsg("user", "Reply with the word pong.")), 64))
         else json.encodeToString(ProbeChat.serializer(), ProbeChat(model, listOf(ProbeMsg("user", "Reply with the word pong.")), 64))
         val start = System.nanoTime()
         val reply = withContext(Dispatchers.IO) { runCatching { http.call("POST", target, body, key.ifBlank { null }, TIMEOUT_MS) }.getOrNull() }

@@ -40,13 +40,15 @@ class TextToSignModel(nn.Module):
         )
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
 
-        # 4. Per-Frame Output Head: maps each frame's d_model -> 148 features (52 blendshapes + 96 quaternions)
+        # 4. Per-Frame Output Head: maps each frame's d_model -> 196 features (52 blendshapes + 48 points x 3)
         self.output_head = nn.Sequential(
             nn.Linear(d_model, d_model),
             nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(d_model, feature_dim),
         )
+        # Frames are time-resampled to max_frames, so the clip's real frame count is predicted separately.
+        self.length_head = nn.Linear(d_model, 1)
 
     def forward(self, input_ids, attention_mask=None):
         batch_size = input_ids.shape[0]
@@ -68,6 +70,8 @@ class TextToSignModel(nn.Module):
             memory_key_padding_mask=key_padding_mask,
         )  # (batch_size, 100, d_model)
 
-        # E. Project to (batch_size, 100, 148)
+        # E. Project to (batch_size, 100, 196), plus log frame count from the masked mean of the text
         frame_sequence = self.output_head(decoded_frames)
-        return frame_sequence
+        keep = attention_mask.unsqueeze(-1).float() if attention_mask is not None else torch.ones_like(memory[..., :1])
+        pooled = (memory * keep).sum(1) / keep.sum(1).clamp(min=1.0)
+        return frame_sequence, self.length_head(pooled).squeeze(-1)

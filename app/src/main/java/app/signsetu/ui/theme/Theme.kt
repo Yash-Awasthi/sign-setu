@@ -77,7 +77,7 @@ private val SubjectType = OfficerType.copy(
 val LocalHighContrast = staticCompositionLocalOf { false }
 
 @Composable
-fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), theme: ColorTheme = ColorTheme.EMERALD, content: @Composable () -> Unit) {
+fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), theme: ColorTheme = ColorTheme.EMERALD, amoled: Boolean = false, content: @Composable () -> Unit) {
     val palette = paletteOf(theme)
     CompositionLocalProvider(
         LocalAnswerColors provides if (dark) AnswerDark else AnswerLight,
@@ -87,7 +87,7 @@ fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), theme: ColorTheme = Col
         LocalHighContrast provides (theme == ColorTheme.CONTRAST),
     ) {
         MaterialTheme(
-            colorScheme = if (dark) palette.dark else palette.light,
+            colorScheme = if (!dark) palette.light else if (amoled) palette.dark.amoled() else palette.dark,
             typography = OfficerType,
             shapes = AppShapes,
             content = content,

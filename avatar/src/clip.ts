@@ -5,6 +5,8 @@ import type { VRM, VRMHumanBoneName } from "@pixiv/three-vrm";
 
 const LEFT_REST = new THREE.Vector3(1, 0, 0);
 const RIGHT_REST = new THREE.Vector3(-1, 0, 0);
+/** The shipped model's eyes above its shoulder line, in this solver's 0.39-wide shoulder units. */
+const EYE_LEVEL = 0.29;
 
 // Extracts 3D keypoint and negates Z so +Z points forward
 function getVec3(coords: number[], idx: number): THREE.Vector3 {
@@ -74,20 +76,24 @@ export function getCalibratedArmTargets(coords: number[]) {
   lWrist.x = THREE.MathUtils.lerp(lIdleWristX, lSignWristX, lActive);
   rWrist.x = THREE.MathUtils.lerp(rIdleWristX, rSignWristX, rActive);
 
-  // 3. Vertical Wrist Y (compensates for 1:1 VRM forearm ratio so hands stay below the face)
+  // 3. Vertical Wrist Y (compensates for the VRM's long forearm, so a raised hand lands where the signer's did)
   const lForearmDy = lWrist.y - lElbow.y;
   const rForearmDy = rWrist.y - rElbow.y;
   if (lForearmDy > 0) lWrist.y = lElbow.y + lForearmDy * 0.58;
   if (rForearmDy > 0) rWrist.y = rElbow.y + rForearmDy * 0.58;
 
-  lWrist.y = Math.min(-0.28, lWrist.y);
-  rWrist.y = Math.min(-0.28, rWrist.y);
+  // Chin and face signs need the hand up to eye level (0.29 above the shoulders here), never above it.
+  lWrist.y = Math.min(EYE_LEVEL, lWrist.y);
+  rWrist.y = Math.min(EYE_LEVEL, rWrist.y);
 
   // 4. Forward Wrist Z
   const lIdleZ = lElbow.z + 0.07;
   const rIdleZ = rElbow.z + 0.07;
-  const lSignZ = lElbow.z + Math.max(0.26, lReachZ * 0.38) + lInward * 0.08;
-  const rSignZ = rElbow.z + Math.max(0.3, rReachZ * 0.38) + rInward * 0.12 + bothCrossing * 0.07;
+  // A forearm raised toward the face folds up instead of reaching forward; tracked wrist depth overstates reach.
+  const lRise = THREE.MathUtils.clamp(lForearmDy / 0.3, 0, 1);
+  const rRise = THREE.MathUtils.clamp(rForearmDy / 0.3, 0, 1);
+  const lSignZ = lElbow.z + THREE.MathUtils.lerp(Math.max(0.26, lReachZ * 0.38), 0.1, lRise) + lInward * 0.08;
+  const rSignZ = rElbow.z + THREE.MathUtils.lerp(Math.max(0.3, rReachZ * 0.38), 0.1, rRise) + rInward * 0.12 + bothCrossing * 0.07;
 
   lWrist.z = THREE.MathUtils.lerp(lIdleZ, lSignZ, lActive);
   rWrist.z = THREE.MathUtils.lerp(rIdleZ, rSignZ, rActive);

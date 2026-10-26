@@ -21,7 +21,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | No personal data in Logcat; release builds strip `android.util.Log` calls (`proguard-rules.pro`); the four remaining log lines carry exception classes or timings only; no crash SDK. | CERT-In 6.2.5 |
 | Every text field asks the keyboard for no personalised learning (`AppRoot.NoPersonalisedLearning`); the enrolment code field is a password field. | MASVS-STORAGE-2 |
 | Only the interpreter's contact ever reaches the clipboard, on the officer's tap. | MASVS-STORAGE-2 |
-| DataStore `settings` and the plain preference files `locale` and `clock` hold settings only. The gateway token, and on a build without a gateway the officer's own service key, are each wrapped by their own Keystore key (`KeystoreVault`) in `noBackupFilesDir`. | MASVS-STORAGE-1 |
+| DataStore `settings` and the plain preference files `locale` and `clock` hold settings only. The gateway token and the officer's custom endpoint key are each wrapped by their own Keystore key (`KeystoreVault`) in `noBackupFilesDir`. | MASVS-STORAGE-1 |
 | Retention purge with `PRAGMA secure_delete` on and a truncated journal; while the app is locked the whole store is destroyed once even the newest session is past retention (the retention sweep, also run hourly by `RetentionJob`). | DPDP s.8(7) |
 
 ### 2.2 Cryptography
@@ -29,7 +29,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | Control | Source |
 | --- | --- |
 | Platform JCA, Android Keystore and SQLCipher only; no custom algorithms. AES-256-GCM, P-256 ECDH, HKDF-SHA256, SHA-256; `SecureRandom` for every key, nonce and passphrase (`kotlin.random` is used only to shuffle pictures). | MASVS-CRYPTO-1 |
-| No key in the source, the repository or any APK: the build has no field for an assistant key. A gateway build enrols with a one-time department code; a build without a gateway takes the officer's own key in Settings, Developer, kept in the Keystore. gitleaks runs on every push. | MASVS-CRYPTO-2 |
+| No key in the source, the repository or any APK: the build has no field for an assistant key. The gateway enrols with a one-time department code; a custom API endpoint takes the officer's own key, kept in the Keystore. gitleaks runs on every push. | MASVS-CRYPTO-2 |
 | Export: PDF encrypted with AES-256 under a one-time 80-bit passphrase shown once, and a random owner password. Every page carries the record digest and the hash-chain head; the certificate page carries the full chain head and its status (`EvidenceIntegrity`). | MASVS-CRYPTO-1 |
 | Event log sealed as a SHA-256 chain as rows are written (`EventSeal`); export re-walks it and reports the first broken row. | BSA s.63 |
 
@@ -129,7 +129,7 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | KEK `signsetu.kek.unlocked` | Android Keystore, non-exportable, unlocked-device only | On reinstall, or when Android drops it | Store deleted, new keys made, officer told once |
 | KEK `signsetu.kek.open` | Keystore, only while the phone has no secure lock | Moved under the unlocked-only key at the first unlock with a lock | Same |
 | Gateway token key `signsetu.gateway.token` | Keystore, wraps `gw.bin` | On Clear of the token (401) | Device enrols again with a new code |
-| Service key key `signsetu.assist.key` | Keystore, wraps `assist.bin` (builds without a gateway) | When the officer removes or replaces the service | Officer enters the key again |
+| Service key key `signsetu.assist.key` | Keystore, wraps `assist.bin` (custom API endpoint) | When the officer removes or replaces the service | Officer enters the key again |
 | Export passphrase | Shown once | Per export | Report unreadable; export again |
 | Link keys | ECDH and HKDF per link, memory only | Every link and resume | Link closes; pair again |
 | Resume secret | Memory only | Every new link; zeroed on Bye, expiry, lock, end | Reconnect needs the code |

@@ -38,7 +38,11 @@ class UrlHttp : Http {
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             // The configured service can insist on a particular client; the value comes from the build, not from here.
             setRequestProperty("User-Agent", BuildConfig.ASSIST_UA)
-            bearer?.let { setRequestProperty("Authorization", "Bearer $it") }
+            // Anthropic-style services read the key from x-api-key and want an API version; everything else takes a bearer token.
+            if (bearer != null && (url.endsWith("/messages") || "://api.anthropic.com/" in url)) {
+                setRequestProperty("x-api-key", bearer)
+                setRequestProperty("anthropic-version", "2023-06-01")
+            } else bearer?.let { setRequestProperty("Authorization", "Bearer $it") }
             if (bytes != null) {
                 doOutput = true
                 // A declared length lets the gateway refuse an oversized body before reading it, and avoids chunked uploads.

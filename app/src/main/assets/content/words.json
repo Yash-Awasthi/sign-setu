@@ -762,16 +762,28 @@
     {
       "w": [
         "who",
-        "why",
-        "which",
         "whom",
         "kaun",
+        "कौन",
+        "किस"
+      ],
+      "sign": "ask",
+      "gesture": "ask"
+    },
+    {
+      "w": [
+        "why",
         "kyon",
         "kyun",
         "kyu",
-        "कौन",
-        "क्यों",
-        "किस"
+        "क्यों"
+      ],
+      "sign": "ask",
+      "gesture": "ask"
+    },
+    {
+      "w": [
+        "which"
       ],
       "sign": "ask",
       "gesture": "ask"
