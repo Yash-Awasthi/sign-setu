@@ -13,6 +13,7 @@ import app.signsetu.data.session.Role
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
+import app.signsetu.camera.Head
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.sign.HomeSigns
 import app.signsetu.sign.SignCapture
@@ -225,15 +226,34 @@ class SessionViewModel(
         }
     }
 
+    /** Every nod and shake by camera time, kept for [HEAD_KEEP_MS]: a head answer often comes before the hands are up
+     * or after they drop, so a reading takes those from [HEAD_MARGIN_MS] either side of its window. */
+    private val heads = ArrayDeque<Pair<Long, Head>>()
+    @Volatile private var lastFrameMs = 0L
+    @Volatile private var windowStartMs = 0L
+
+    private fun headsAround(from: Long, to: Long): Set<Head> = synchronized(heads) {
+        heads.filter { (ms, _) -> ms in (from - HEAD_MARGIN_MS)..(to + HEAD_MARGIN_MS) }.map { it.second }.toSet()
+    }
+
     fun startReading(window: SignWindow = SignWindow.ANSWER) {
         if (capture != null) return
         context = local.value.pending.answerCards()
         capture = SignCapture(window)
+        windowStartMs = lastFrameMs
         local.update { it.copy(reading = emptyList(), signWindow = window, confirm = null) }
     }
 
     /** Every tracked camera frame, on the analysis thread. */
     fun onSignFrame(frame: LandmarkFrame) {
+        lastFrameMs = frame.timestampMs
+        frame.head?.let { h ->
+            synchronized(heads) {
+                heads.addLast(frame.timestampMs to h)
+                while (frame.timestampMs - heads.first().first > HEAD_KEEP_MS) heads.removeFirst()
+            }
+            if (app.signsetu.BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "head $h at ${frame.timestampMs}")
+        }
         val c = capture ?: return
         // Three seconds with nothing raised, or two since the hands stopped: what was given is ingested, no tap needed.
         val (segments, done) = synchronized(c) {
@@ -266,12 +286,22 @@ class SessionViewModel(
         }
         viewModelScope.launch {
             pending.joinAll()
-            val segments = local.value.reading.orEmpty()
+            val start = windowStartMs
+            val end = lastFrameMs
+            val segments = local.value.reading.orEmpty().map { it.withWindowHead(headsAround(start, end)) }
             val narrative = local.value.signWindow == SignWindow.NARRATIVE
             local.update { it.copy(reading = null, signWindow = null) }
             if (segments.isEmpty()) return@launch
             val words = segments.map { it.word ?: "?" }
             val id = logSigned(segments, words, EventSource.MACHINE, "en")
+            // A nod or shake just after the hands drop still belongs to this answer: look again once the margin has passed.
+            viewModelScope.launch {
+                delay(HEAD_MARGIN_MS)
+                val later = headsAround(start, end)
+                if (later != segments.firstOrNull()?.windowHead) {
+                    local.update { l -> l.signed[id]?.let { segs -> l.copy(signed = l.signed + (id to segs.map { it.withWindowHead(later) })) } ?: l }
+                }
+            }
             // The subject is not asked to confirm: the officer settles any doubt from the reader's guesses.
             val signWords = reader?.words.orEmpty()
             val gloss = segments.flatMap { s -> glossOf(s.guesses?.firstOrNull(), signWords) }
@@ -282,6 +312,16 @@ class SessionViewModel(
     }
 
     /** The officer's reading of a signed answer, logged beside the app's so the record shows both. */
+    /** A nod, shake, thumb, point, held fingers, palm or shrug the camera read: logged as the app's reading, never as
+     * the person's answer, for the officer to accept from the chat like a signed reading. */
+    fun cameraRead(card: String, cue: String?) {
+        val label = content.cards[card]?.label?.get(officerLang) ?: content.subjectText(card, officerLang) ?: card
+        viewModelScope.launch {
+            val id = repo.log(sessionId, EventType.ANSWER_SIGNED, EventSource.MACHINE, officerLang, text = label, cardId = card, shownId = local.value.itemId, via = cue)
+            local.update { it.copy(signed = it.signed + (id to emptyList())) }
+        }
+    }
+
     fun acceptSigned(eventId: Long, words: List<String>, sentence: String? = null) {
         val segments = local.value.signed[eventId] ?: return
         segments.zip(words).forEach { (s, w) -> if (w.isNotBlank() && w != "?" && w != s.word) homeSigns.teach(s.frames, w) }
@@ -808,3 +848,7 @@ class SessionViewModel(
         }
     }
 }
+
+/** How long before a sign window opens and after it closes a nod or shake still counts for its reading. */
+private const val HEAD_MARGIN_MS = 5_000L
+private const val HEAD_KEEP_MS = 30_000L

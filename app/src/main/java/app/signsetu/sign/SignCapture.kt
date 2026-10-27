@@ -1,6 +1,7 @@
 package app.signsetu.sign
 
 import androidx.compose.runtime.Immutable
+import app.signsetu.camera.Head
 import app.signsetu.camera.LandmarkFrame
 import androidx.compose.ui.geometry.Offset
 import kotlin.math.hypot
@@ -62,7 +63,11 @@ class SignSegment(
     val candidates: List<SignGuess> = emptyList(),
     /** The reader's conformal set for this sign is too large to trust any one word (ReadPolicy.kt). */
     val unsure: Boolean = false,
+    /** Nods and shakes seen anywhere in the sign window, between signs included: negation is often not inside a sign. */
+    val windowHead: Set<Head> = emptySet(),
 ) {
+    fun withWindowHead(head: Set<Head>) = SignSegment(frames, guesses, slower, context, candidates, unsure, head)
+
     val word: String? get() = guesses?.let { it.firstOrNull()?.word ?: "?" }
     /** Brows raised over most of the sign's face frames. */
     val browsUp: Boolean get() = frames.filter { it.face != null }.let { f -> f.isNotEmpty() && f.count { it.browsUp } * 2 > f.size }

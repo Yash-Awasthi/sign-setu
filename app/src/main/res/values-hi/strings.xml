@@ -646,4 +646,8 @@
     <string name="practice_no_sign">इस पाठ में साइन करने योग्य कुछ नहीं है। दूसरे शब्द आज़माएँ।</string>
     <string name="practice_signed">साइन</string>
     <string name="practice_spelled">अक्षर-दर-अक्षर</string>
+    <string name="reading_sign_again">पढ़ा नहीं जा सका। उनसे कैमरे की ओर मुँह करके, अच्छी रोशनी में फिर से इशारा करने को कहें।</string>
+    <string name="reading_check">जाँचें: %1$s</string>
+    <string name="reading_confirm">स्वास्थ्य या सुरक्षा: इस पर कार्रवाई से पहले उनसे पुष्टि करें।</string>
+    <string name="reading_camera">कैमरे ने पढ़ा: %1$s। मानने के लिए टैप करें।</string>
 </resources>

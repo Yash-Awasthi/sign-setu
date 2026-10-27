@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,23 +23,27 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import app.signsetu.data.content.ContentBundle
-import app.signsetu.data.content.SignMode
-import app.signsetu.data.content.glossToText
-import app.signsetu.data.content.planText
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.SessionEvent
-import app.signsetu.sign.NGram
+import app.signsetu.BuildConfig
+import app.signsetu.R
+import app.signsetu.camera.verifiedAsset
+import app.signsetu.gloss.GlossLattice
+import app.signsetu.gloss.IntentMatch
+import app.signsetu.gloss.Phrasebook
+import app.signsetu.gloss.Rung
+import app.signsetu.gloss.ladder
 import app.signsetu.sign.SENTENCE_SYSTEM
 import app.signsetu.sign.SentenceGuess
 import app.signsetu.sign.SignSegment
-import app.signsetu.sign.expectedWords
 import app.signsetu.sign.parseSentences
-import app.signsetu.sign.rankSentences
 import app.signsetu.sign.sentencePrompt
 import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.theme.Spacing
@@ -52,48 +57,61 @@ internal fun pendingReading(events: List<SessionEvent>): SessionEvent? {
     return events[i].takeIf { events.drop(i + 1).none { it.type in AnswerEvents } }
 }
 
-/** Up to five likely sentences for a reading: ranked on the phone at once for two or more signs (reader scores, a
- * trigram model of the app's own sentences, the question's words, spelling fixes), with the online assistant's
- * answers to the question first when the officer has switched it on and it replies. */
+/** What the app may say about a reading (docs/10-gloss-to-text.md): the phrasebook's rung for the lattice, with the
+ * question on screen as evidence, and the online assistant's sentences when it is switched on, each one checked so it
+ * holds no word that was not signed. */
+internal class Reading(val rung: Rung?, val online: List<SentenceGuess>)
+
 @Composable
-internal fun rememberSentences(
+internal fun rememberReading(
     eventId: Long,
     segments: List<SignSegment>,
     pending: Pending?,
     content: ContentBundle,
     names: Collection<String>,
     details: Collection<String>,
-): List<SentenceGuess> {
-    val guesses = segments.map { it.candidates.ifEmpty { it.guesses.orEmpty() } }
+): Reading {
+    val context = LocalContext.current
+    val book by produceState<Phrasebook?>(null) { value = withContext(Dispatchers.IO) { loadPhrasebook(context) } }
+    val question = (pending as? Pending.Ask)?.question?.id
+    // Keyed on the head movement too: a nod or shake just after the window updates the reading.
+    val rung = remember(eventId, book, segments.firstOrNull()?.windowHead) {
+        book?.let { b ->
+            GlossLattice.of(segments, BuildConfig.VERSION_NAME).let { l ->
+                ladder(l, b.match(l, question), b).also { r ->
+                    // Debug builds only: the lattice and the rung, the start of docs/10's decision log.
+                    if (BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "q=$question rung=${r::class.simpleName} lattice=${l.toJson()}")
+                }
+            }
+        }
+    }
     val cloud = LocalOnlineAssistant.current
-    // Signs arrive in ISL order without small words, so the model learns each sentence as the character would sign
-    // it (planText's own order) as well as written; built off the main thread, once per bundle.
-    val lm by produceState<NGram?>(null, content) {
-        value = withContext(Dispatchers.Default) {
-            val written = content.clips.keys + content.questions.mapNotNull { it.text["en"] } + content.phrases.flatMap { p -> p.slots.mapNotNull { it.text["en"] } }
-            NGram(written + written.map { t -> content.planText(t, setOf(SignMode.SIGNS)).beats.sortedBy { it.start }.joinToString(" ") { t.substring(it.range) } })
+    val guesses = segments.map { it.candidates.ifEmpty { it.guesses.orEmpty() }.take(ONLINE_GUESSES) }
+    val caption = describeItem(pending, content, "en").caption
+    // A sure full sentence needs no second opinion; anything less may get one.
+    val online by produceState(emptyList<SentenceGuess>(), eventId, rung) {
+        if (rung != null && rung !is Rung.Sentence && guesses.any { it.isNotEmpty() }) {
+            value = cloud.ask(SENTENCE_SYSTEM, sentencePrompt(caption, guesses), names, 250, details)?.let { parseSentences(it, guesses) }.orEmpty()
         }
     }
-    val known = remember(content, names) { content.words.keys.filter { w -> w.all { it.isLetter() } } + names.map { it.lowercase() } }
-    val question = describeItem(pending, content, "en").caption
-    val offline by produceState(emptyList<SentenceGuess>(), eventId, lm) {
-        if (guesses.count { it.isNotEmpty() } >= 2) value = withContext(Dispatchers.Default) {
-            rankSentences(guesses, expectedWords(question, pending.answerCards()), lm, known, { glossToText(it, content.words, content.language).en }, top = SENTENCES)
-        }
-    }
-    val online by produceState(emptyList<SentenceGuess>(), eventId) {
-        if (guesses.any { it.isNotEmpty() }) value = cloud.ask(SENTENCE_SYSTEM, sentencePrompt(question, guesses.map { it.take(ONLINE_GUESSES) }), names, 250, details)?.let { parseSentences(it, guesses.map { g -> g.take(ONLINE_GUESSES) }) }.orEmpty()
-    }
-    return (online + offline).distinctBy { it.text.lowercase().trimEnd('.', '?', '!') }.take(SENTENCES)
+    return Reading(rung, online)
 }
 
-private const val SENTENCES = 5
+/** The bundled phrasebook, memory-mapped once its file matches the manifest (it is stored uncompressed, like every
+ * file the detection pipeline reads); null without it, and readings fall back to the word strip. */
+private fun loadPhrasebook(context: android.content.Context): Phrasebook? = runCatching {
+    verifiedAsset(context, PHRASEBOOK)!!.let { b -> Phrasebook(ByteArray(b.remaining()).also { b.duplicate().get(it) }.decodeToString()) }
+}.onFailure { if (BuildConfig.DEBUG) android.util.Log.w("SignSetuGloss", "phrasebook not loaded", it) }.getOrNull()
+
+private const val PHRASEBOOK = "intents.json"
+
 /** Guesses per sign sent online: enough to recover a misread, few enough to keep the prompt short. */
 private const val ONLINE_GUESSES = 6
 
-/** The likeliest whole sentences first, then the reader's top guesses for each sign. A sentence tap logs that reading at
- * once. Otherwise the officer taps one guess per sign, which hides the rest; tapping it again takes the choice back.
- * Once every sign with guesses has one, the reading is logged once as the officer's: the record is append-only, so
+/** The reading as the ladder allows: a full sentence (English and Hindi) to accept with one tap, the same with the
+ * doubtful signs marked, or nothing but the signs; "sign again" when too little was read. Under it, the reader's top
+ * guesses for each sign: the officer taps one per sign, which hides the rest, and tapping it again takes it back.
+ * Once every sign with guesses has one, the reading is logged once as the officer's; the record is append-only, so
  * half-made picks never reach it. The subject is never asked to confirm. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -102,14 +120,29 @@ internal fun SignPredictions(
     segments: List<SignSegment>,
     onPick: (words: List<String>, sentence: String?) -> Unit,
     modifier: Modifier = Modifier,
-    sentences: List<SentenceGuess> = emptyList(),
+    reading: Reading = Reading(null, emptyList()),
+    /** A camera read (nod, point, fingers…) has no signs: its text is the one reading to accept. */
+    cameraText: String? = null,
 ) {
     val picked = remember(eventId) { mutableStateMapOf<Int, String>() }
     val guesses = segments.map { s -> s.guesses.orEmpty().take(PREDICTIONS).map { it.word } }
-    if (guesses.all { it.isEmpty() }) return
+    val rung = reading.rung
+    if (segments.isEmpty() && cameraText != null) {
+        SuggestionChip(onClick = { onPick(listOf(cameraText), cameraText) }, label = { Text(stringResource(R.string.reading_camera, cameraText)) }, modifier = modifier.padding(horizontal = Spacing.lg))
+        return
+    }
+    if (guesses.all { it.isEmpty() } && rung == null) return
+    // The words the sentence stands on, one per sign, so the record keeps them beside the sentence.
+    fun wordsOf(m: IntentMatch) = segments.mapIndexed { i, s -> m.fills.firstOrNull { it.token == i }?.label ?: s.word ?: "?" }
     // A long account reads as many signs; the guesses scroll so the conversation above stays in view.
-    Column(modifier.fillMaxWidth().animateContentSize(motion(spring())).heightIn(max = 168.dp).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.lg, vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        if (picked.isEmpty()) sentences.forEach { g ->
+    Column(modifier.fillMaxWidth().animateContentSize(motion(spring())).heightIn(max = 220.dp).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.lg, vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        if (picked.isEmpty()) when (rung) {
+            is Rung.Sentence -> SentenceCard(rung.en, rung.hi, null, rung.confirm) { onPick(wordsOf(rung.match), rung.en) }
+            is Rung.FixWords -> SentenceCard(rung.en, rung.hi, rung.doubtful.mapNotNull { segments.getOrNull(it)?.word }, rung.confirm) { onPick(wordsOf(rung.match), rung.en) }
+            Rung.SignAgain -> Text(stringResource(R.string.reading_sign_again), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+            else -> Unit
+        }
+        if (picked.isEmpty()) reading.online.forEach { g ->
             SuggestionChip(onClick = { onPick(g.words, g.text) }, label = { Text(g.text, style = MaterialTheme.typography.bodyMedium) })
         }
         guesses.forEachIndexed { i, words ->
@@ -129,6 +162,19 @@ internal fun SignPredictions(
                     )
                 }
             }
+        }
+    }
+}
+
+/** One sentence to accept with a tap: English over Hindi, the signs to check under it, and a note when it is risky. */
+@Composable
+private fun SentenceCard(en: String, hi: String, check: List<String>?, confirm: Boolean, onUse: () -> Unit) {
+    OutlinedCard(onClick = onUse, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(en, style = MaterialTheme.typography.titleSmall)
+            Text(hi, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (!check.isNullOrEmpty()) Text(stringResource(R.string.reading_check, check.joinToString(", ") { it.replace('_', ' ') }), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+            if (confirm) Text(stringResource(R.string.reading_confirm), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
         }
     }
 }

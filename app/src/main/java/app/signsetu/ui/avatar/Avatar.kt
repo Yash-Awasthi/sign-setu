@@ -56,7 +56,9 @@ fun Avatar(
     val finished by rememberUpdatedState(onFinished)
     DisposableEffect(web) { onDispose { web.destroy() } }
     LaunchedEffect(view) { web.run("signsetu.view('${view.js}')") }
-    LaunchedEffect(playKey, gesture, clip, speed, atSeconds, idle, glance, question, negated) {
+    // Breathing and glancing change as the person starts and stops signing; that must not restart the signs.
+    LaunchedEffect(idle, glance) { web.run("signsetu.mode({\"idle\": $idle, \"glance\": $glance})") }
+    LaunchedEffect(playKey, gesture, clip, speed, atSeconds, question, negated) {
         val token = web.nextToken { finished() }
         web.run(
             if (clip != null) {

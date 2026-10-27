@@ -119,8 +119,8 @@ class HeadGestures(private val windowMs: Long = WINDOW_MS, private val swing: Fl
         val dx = spread { it.along }
         val dy = spread { it.across }
         val head = when {
-            dy > swing && dy > 2 * dx && turns { it.across } >= 2 -> Head.Nod
-            dx > swing && dx > 2 * dy && turns { it.along } >= 2 -> Head.Shake
+            dy > swing && dy > DOMINANCE * dx && turns { it.across } >= 2 -> Head.Nod
+            dx > swing && dx > DOMINANCE * dy && turns { it.along } >= 2 -> Head.Shake
             else -> null
         } ?: return frame
         track.clear()
@@ -159,6 +159,8 @@ class HeadGestures(private val windowMs: Long = WINDOW_MS, private val swing: Fl
         const val WINDOW_MS = 1500L
         // Calibration knob: nose travel in eye spans; tune on device.
         const val SWING = 0.12f
+        /** How much the main axis must outmove the other; signing moves the head both ways, so 2 missed real shakes. */
+        const val DOMINANCE = 1.5f
     }
 }
 

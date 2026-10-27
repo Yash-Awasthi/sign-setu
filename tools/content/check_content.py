@@ -38,6 +38,7 @@ def check(assets: pathlib.Path = ASSETS) -> list[str]:
     groups = unique("triage.json groups", [g["id"] for g in triage["groups"]])
     questions = unique("triage.json questions", [q["id"] for q in triage["questions"]])
     unique("words.json", [w["w"][0] for w in words_file["words"] if w.get("w")])
+    seen_intents: set[str] = set()
     unique("isl_signs.json", [g["id"] for g in load(assets, "isl_signs.json")["gestures"]])
 
     def label(where: str, values, allowed: set[str]) -> None:
@@ -101,6 +102,22 @@ def check(assets: pathlib.Path = ASSETS) -> list[str]:
     for key, values in subject_ui.items():
         if isinstance(values, dict) and set(values) & allowed:
             label(f"subject_ui {key}", values, allowed)
+    # Every word an intent waits for must be one the sign reader can actually give (docs/10, step 4.1).
+    if (assets / "intents.json").exists():
+        intents = load(assets, "intents.json")
+        readable = set(load(assets, "models/sign_reader.json")["labels"]) | set(load(assets, "sign_words.json")["words"].values())
+        for intent in intents["intents"]:
+            if intent["id"] in seen_intents:
+                errors.append(f"intent {intent['id']}: duplicate id")
+            seen_intents.add(intent["id"])
+            for item in intent["pattern"]:
+                if item.startswith("$") and item.rstrip("?")[1:] not in set(intents["slots"]) | {"NAME", "NUM"}:
+                    errors.append(f"intent {intent['id']}: unknown slot {item}")
+                elif not item.startswith(("$", "@")):
+                    errors += [f"intent {intent['id']}: the reader cannot sign {w!r}" for w in item.rstrip("?").split("|") if w not in readable]
+            errors += [f"intent {intent['id']}: unknown question {q}" for q in intent["questions"] if q not in questions]
+        for slot, entries in intents["slots"].items():
+            errors += [f"slot {slot}: the reader cannot sign {w!r}" for w in entries if w not in readable]
     return errors
 
 

@@ -1,49 +1,139 @@
 package app.signsetu
 
-import app.signsetu.data.content.SignMode
-import app.signsetu.data.content.planText
-import app.signsetu.sign.NGram
+import app.signsetu.gloss.Filled
+import app.signsetu.gloss.GlossLattice
+import app.signsetu.gloss.GlossToken
+import app.signsetu.gloss.IntentMatch
+import app.signsetu.gloss.NonManual
+import app.signsetu.gloss.Phrasebook
+import app.signsetu.gloss.Rung
+import app.signsetu.gloss.TokenType
+import app.signsetu.gloss.ladder
+import app.signsetu.sign.CANDIDATES
+import app.signsetu.sign.Conformal
 import app.signsetu.sign.SignGuess
-import app.signsetu.sign.rankSentences
+import app.signsetu.sign.SignSegment
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import kotlin.random.Random
 
-/** Offline evaluation of the sentence ranker: each app sentence, signed in ISL order, is read by a simulated reader
- * whose right-word rank follows the shipped reader on 269 new-signer ISLRTC clips (top-1 0.342, top-3 0.442, top-5
- * 0.480, top-10 0.524), and ranked with a trigram model built without that sentence. Prints top-1 and top-5 sentence
- * accuracy for 3 and 10 candidates per sign, with and without the model. */
+/** Simulated lattices from real held-out readings (docs/10-gloss-to-text.md, upgrade 3): every sentence the
+ * phrasebook can say is "signed" by drawing, for each sign, a real reading of that word by a signer the reader never
+ * saw (tools/ml/held_out_readings.py), with missed and extra segments at the planned rates. Development numbers only:
+ * the release gates need recorded sentences. Prints the plan's metrics per source, with and without the question. */
 class SentenceEvalTest {
-    private val recall = listOf(0f, 0.342f, 0.392f, 0.442f, 0.461f, 0.480f, 0.489f, 0.498f, 0.507f, 0.516f, 0.524f)
-    private val probs = listOf(0.20f, 0.10f, 0.07f, 0.05f, 0.04f, 0.035f, 0.03f, 0.025f, 0.02f, 0.02f)
+    private val book = Phrasebook(File(ASSETS, "intents.json").readText())
+    private val readings = Json.parseToJsonElement(File("src/test/resources/held_out_readings.json").readText())
+        .jsonObject.getValue("readings").jsonObject.mapValues { (_, byWord) ->
+            byWord.jsonObject.mapValues { (_, rows) -> rows.jsonArray.map { r -> r.jsonArray.map { c -> SignGuess(c.jsonArray[0].jsonPrimitive.content, c.jsonArray[1].jsonPrimitive.float) } } }
+        }
+    private val conformal = Json.parseToJsonElement(File(ASSETS, "models/sign_reader.json").readText()).jsonObject.getValue("conformal").jsonObject.let { c ->
+        Conformal(c.getValue("thresholds").jsonObject.mapValues { it.value.jsonPrimitive.float }, c.getValue("k_reg").jsonPrimitive.content.toInt(), c.getValue("lambda").jsonPrimitive.float)
+    }
+    private val slots = Json.parseToJsonElement(File(ASSETS, "intents.json").readText()).jsonObject.getValue("slots").jsonObject.mapValues { it.value.jsonObject.keys }
+
+    private data class Case(val truth: IntentMatch, val lattice: GlossLattice, val question: String)
+
+    private fun cases(source: Map<String, List<List<SignGuess>>>, rnd: Random): List<Case> = book.intents.flatMap { intent ->
+        List(40) {
+            val tokens = ArrayList<GlossToken>()
+            val fills = ArrayList<Filled>()
+            var shake = false
+            var nod = false
+            for (item in intent.pattern) {
+                if (item.endsWith("?") && rnd.nextBoolean()) continue
+                val name = item.removeSuffix("?")
+                val id = tokens.size
+                when {
+                    name == "@shake" -> shake = true
+                    name == "@nod" -> nod = true
+                    name == "\$NAME" -> {
+                        val n = listOf("ram", "sunita", "raipur", "durg").random(rnd)
+                        // The speller's held-out character error rate is about 12%: a third of names come back unverified.
+                        tokens += GlossToken(id, TokenType.SPELL, 0, 0, listOf(app.signsetu.gloss.Candidate(n, 0.8f)), verified = rnd.nextFloat() > 0.33f)
+                        fills += Filled("NAME", n, id, 0.8f)
+                    }
+                    name == "\$NUM" -> { tokens += GlossToken(id, TokenType.NUM, 0, 0, listOf(app.signsetu.gloss.Candidate("12", 0.8f))); fills += Filled("NUM", "12", id, 0.8f) }
+                    else -> {
+                        val slot = name.removePrefix("$").takeIf { name.startsWith("$") }
+                        val options = (if (slot != null) slots.getValue(slot) else name.split('|')).filter { it in source }
+                        if (options.isEmpty()) return@List null
+                        val word = options.random(rnd)
+                        tokens += read(id, source.getValue(word).random(rnd))
+                        fills += Filled(slot ?: name, word, id, 1f)
+                    }
+                }
+            }
+            if (tokens.isEmpty()) tokens += read(0, source.values.random(rnd).random(rnd))
+            // Missed and extra segments at the planned rates (docs/10, Phase 2.5 will measure them).
+            val kept = tokens.filter { rnd.nextFloat() > 0.05f }.toMutableList()
+            if (rnd.nextFloat() < 0.1f) kept.add(rnd.nextInt(kept.size + 1), read(0, source.values.random(rnd).random(rnd)))
+            if (kept.isEmpty()) return@List null
+            val withHead = kept.mapIndexed { i, t ->
+                t.copy(id = i, nonManual = NonManual(headShake = if (shake && i == 0) 1f else 0f, headNod = if (nod && i == 0) 1f else 0f))
+            }
+            val truth = IntentMatch(intent, 0f, fills, emptySet())
+            Case(truth, GlossLattice(withHead), intent.questions.firstOrNull().orEmpty())
+        }.filterNotNull()
+    }
+
+    private fun read(id: Int, row: List<SignGuess>): GlossToken {
+        // Only the top 10 were exported, so a set that reaches 10 stands for ReadPolicy's "larger than 10".
+        val size = conformal.size(row)
+        return GlossLattice.token(id, SignSegment(emptyList(), row.take(3), candidates = row.take(size), unsure = size >= CANDIDATES))
+    }
 
     @Test
-    fun deeperCandidatesAndTheLanguageModelBeatTheTopThreeAlone() {
-        val written = (shipped.clips.keys + shipped.questions.mapNotNull { it.text["en"] }).distinct()
-        fun gloss(t: String) = shipped.planText(t, setOf(SignMode.SIGNS)).beats.sortedBy { it.start }.map { t.substring(it.range).lowercase() }
-        val glosses = written.associateWith(::gloss).filterValues { it.size in 2..6 }
-        val vocab = glosses.values.flatten().distinct()
-        val rng = Random(7)
-        fun read(word: String): List<SignGuess> {
-            val r = rng.nextFloat()
-            val rank = recall.indexOfFirst { it > r } - 1
-            val others = (vocab - word).shuffled(rng).take(10)
-            val words = if (rank !in 0..9) others else others.take(9).toMutableList().apply { add(rank, word) }
-            return words.mapIndexed { i, w -> SignGuess(w, probs[i]) }
-        }
-        val cases = glosses.entries.map { (t, g) -> Triple(t, g, g.map(::read)) }
-        val models = cases.associate { (t) -> t to NGram(written.filter { it != t }.let { w -> w + w.map { gloss(it).joinToString(" ") } }) }
-        fun score(k: Int, useLm: Boolean): String {
-            var top1 = 0; var top5 = 0
-            for ((t, g, guesses) in cases) {
-                val ranked = rankSentences(guesses.map { it.take(k) }, emptySet(), models[t].takeIf { useLm }, top = 5).map { it.words }
-                if (ranked.firstOrNull() == g) top1++
-                if (g in ranked) top5++
+    fun printTheLadderMetricsOnSimulatedLattices() {
+        for ((name, source) in readings) for (withQuestion in listOf(true, false)) {
+            val cs = cases(source, Random(11))
+            var top1 = 0; var top2 = 0; val rungs = IntArray(4); var wrong1 = 0; var right12 = 0
+            for (c in cs) {
+                val q = c.question.takeIf { withQuestion && it.isNotEmpty() }
+                val ms = book.match(c.lattice, q)
+                val truth = book.english(c.truth)
+                if (ms.firstOrNull()?.let(book::english) == truth) top1++
+                if (ms.take(2).any { book.english(it) == truth }) top2++
+                when (val r = ladder(c.lattice, ms, book)) {
+                    is Rung.Sentence -> { rungs[0]++; if (r.en != truth) { wrong1++; if (name == "islrtc" && withQuestion) println("    WRONG ${c.question}: said '${r.en}', signed '$truth'") } else right12++ }
+                    is Rung.FixWords -> { rungs[1]++; if (r.en == truth) right12++ }
+                    is Rung.WordStrip -> rungs[2]++
+                    Rung.SignAgain -> rungs[3]++
+                }
             }
-            return "top1 %.3f top5 %.3f".format(top1.toFloat() / cases.size, top5.toFloat() / cases.size)
+            val n = cs.size.toFloat()
+            println("%-7s question=%-5s n=%d  sentence top1 %.3f top2 %.3f | rungs %.2f %.2f %.2f %.2f | rung-1 wrong %.3f of rung 1 | right at rung 1-2 %.3f"
+                .format(name, withQuestion, cs.size, top1 / n, top2 / n, rungs[0] / n, rungs[1] / n, rungs[2] / n, rungs[3] / n,
+                    if (rungs[0] == 0) 0f else wrong1.toFloat() / rungs[0], right12 / n))
+            assertTrue(cs.isNotEmpty())
         }
-        println("sentences ${cases.size}")
-        for (k in listOf(3, 10)) for (lm in listOf(false, true)) println("  k=$k lm=$lm  ${score(k, lm)}")
-        assertTrue(cases.isNotEmpty())
+    }
+
+    /** Rung 1's threshold, chosen on even-numbered cases of the new signer and reported on the odd ones. */
+    @Test
+    fun printTheThresholdSweep() {
+        val cs = cases(readings.getValue("islrtc"), Random(11))
+        val tune = cs.filterIndexed { i, _ -> i % 2 == 0 }
+        val test = cs.filterIndexed { i, _ -> i % 2 == 1 }
+        fun stats(set: List<Case>, high: Float, doubt: Float): Pair<Float, Float> {
+            var shown = 0; var wrong = 0
+            for (c in set) {
+                val r = ladder(c.lattice, book.match(c.lattice, c.question.ifEmpty { null }), book, high = high, doubt = doubt)
+                if (r is Rung.Sentence) { shown++; if (r.en != book.english(c.truth)) wrong++ }
+            }
+            return shown.toFloat() / set.size to if (shown == 0) 0f else wrong.toFloat() / shown
+        }
+        // Doubt in conformal-set terms: 0 keeps only signs whose 50% set is one word, 1/9 allows two, 2/9 three.
+        val grid = listOf(0f, 1f / 9, 2f / 9).flatMap { d -> listOf(0.5f, 0.6f, 0.7f, 0.8f, 0.9f).map { it to d } }
+        for ((h, d) in grid) stats(tune, h, d).let { (cov, wrong) -> println("  tune high %.2f set<=%d: rung-1 share %.3f wrong %.3f".format(h, (d * 9).toInt() + 1, cov, wrong)) }
+        // The largest rung-1 share whose wrong rate stays under 2% on the tuning half.
+        val pick = grid.filter { (h, d) -> stats(tune, h, d).second <= 0.02f }.maxByOrNull { (h, d) -> stats(tune, h, d).first } ?: grid.last()
+        stats(test, pick.first, pick.second).let { (cov, wrong) -> println("  chosen high %.2f set<=%d on held-out half: rung-1 share %.3f wrong %.3f".format(pick.first, (pick.second * 9).toInt() + 1, cov, wrong)) }
     }
 }

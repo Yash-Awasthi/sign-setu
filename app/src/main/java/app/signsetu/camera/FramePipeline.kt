@@ -6,7 +6,8 @@ import android.graphics.Bitmap
 internal class FramePipeline {
     private val stable = Stabilizer()
     private val cues = FaceCueTracker()
-    private val heads = HeadGestures(windowMs = 900L, swing = 0.10f)
+    // 1.3 s: a shake made while signing is slower than one made alone, and 900 ms missed it on the phone.
+    private val heads = HeadGestures(windowMs = 1300L, swing = 0.10f)
     private val thumbs = ThumbGestures(holdMs = 280L)
     private val pointing = BodyPointing(holdMs = 320L)
     private val palms = PalmGestures(holdMs = 380L)

@@ -454,6 +454,7 @@ internal fun SessionRoute(
                     onCard = vm::answerCard,
                     onYesNo = vm::answerYesNo,
                     onCue = vm::noteCue,
+                    onCameraRead = vm::cameraRead,
                     onLanguage = vm::chooseLanguage,
                     onDrawing = vm::submitDrawing,
                     onWritten = vm::answerText,

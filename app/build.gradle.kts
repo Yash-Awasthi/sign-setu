@@ -109,7 +109,11 @@ android {
     packaging { jniLibs { useLegacyPackaging = false } }
 
     androidResources {
-        noCompress += listOf("webp", "ogg", "mp4", "task", "bin")
+        // The detection pipeline is never compressed, so every file it reads can be memory-mapped like the models.
+        noCompress += listOf(
+            "webp", "ogg", "mp4", "task", "bin",
+            "_reader.json", "_spell.json", "_ctc.json", "sign_words.json", "asl_words.json", "sign_confusion.json", "intents.json", "names.txt",
+        )
     }
 }
 

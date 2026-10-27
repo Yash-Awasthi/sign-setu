@@ -105,6 +105,12 @@ export class AvatarStage {
     this.begin(p.token);
   }
 
+  /** Breathing and glancing switch on or off without restarting what is being signed. */
+  mode(m: { idle?: boolean; glance?: boolean }) {
+    this.request = { ...this.request, ...m };
+    this.wake();
+  }
+
   clip(c: Clip) {
     this.clipData = c;
     this.begin(c.token);

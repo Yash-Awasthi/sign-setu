@@ -126,6 +126,9 @@ fun VideoCallStage(
     panel: (@Composable (Modifier) -> Unit)? = null,
     /** The share of the height the panel takes; the character gets the rest. */
     panelShare: Float = 0.6f,
+    /** A nod, shake, thumb, point, held fingers, palm or shrug the camera read, sent to the officer to accept. The
+     * person may not read, so nothing is asked of them; null (a second screen) keeps the tap-to-accept chip. */
+    onCameraRead: ((card: String, cue: String?) -> Unit)? = null,
 ) {
     val lang = ui.session.subjectLang
     val pending = ui.pending
@@ -182,9 +185,18 @@ fun VideoCallStage(
     // subject can accept. It is never logged until they tap it, and it is forgotten if they ignore it.
     var courtesy by remember { mutableStateOf<Pair<String, String?>?>(null) }
     LaunchedEffect(courtesy) { if (courtesy != null) { delay(COURTESY_MS); courtesy = null } }
+    var lastRead by remember { mutableStateOf("" to 0L) }
     fun propose(card: String, cue: String?) {
         if (statement && card != "stop") return
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        onCameraRead?.let { send ->
+            // One nod fires several head events; the same read within a few seconds is the same answer.
+            val now = SystemClock.elapsedRealtime()
+            if (card == lastRead.first && now - lastRead.second < SAME_READ_MS) return
+            lastRead = card to now
+            send(card, cue)
+            return
+        }
         proposal = card to cue
     }
     fun answer(card: String, cue: String? = null) {
@@ -238,6 +250,13 @@ fun VideoCallStage(
         val handsVisible = frame.leftHand != null || frame.rightHand != null
         val clock = SystemClock.elapsedRealtime()
         if (!handsVisible) { handsDown.value = true; handsSince.longValue = 0L } else if (handsSince.longValue == 0L) handsSince.longValue = clock
+        // The camera analyses every frame here, so its own head proposals never fire: outside a sign window a nod or
+        // shake is offered from the frame itself. Inside one it is part of the answer (SessionViewModel's head margin).
+        if (!signing) when (frame.head) {
+            Head.Nod -> propose("yes", "nod")
+            Head.Shake -> propose("no", "shake")
+            null -> Unit
+        }
         val held = handsVisible && clock - handsSince.longValue >= HANDS_HOLD_MS
         // Picture tiles are the answer while they are up: a hand seen then must not cover them with a reading window.
         if (held && panel == null && !signing && !statement && handsDown.value && clock - closedAt.longValue >= REOPEN_MS) onStartSigning()
@@ -595,6 +614,9 @@ private val IdleSteps = listOf(IdleStep("hint_answer", 10_000), IdleStep("watchi
 private const val HintSteps = 1
 private const val HINT_IDLE_MS = 8_000L
 private const val REASSURE_IDLE_MS = 15_000L
+/** A repeat of the same camera read within this is not sent again. */
+private const val SAME_READ_MS = 3_000L
+
 /** How long a read courtesy waits for the subject's tap before it is dropped. */
 private const val COURTESY_MS = 6_000L
 

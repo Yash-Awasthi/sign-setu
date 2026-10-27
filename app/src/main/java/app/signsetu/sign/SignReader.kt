@@ -40,4 +40,10 @@ data class Conformal(val thresholds: Map<String, Float>, @kotlinx.serialization.
 
 /** One candidate word with the model's probability, highest first. */
 @Immutable
-data class SignGuess(val word: String, val score: Float, val spelled: Boolean = false)
+data class SignGuess(
+    val word: String,
+    val score: Float,
+    val spelled: Boolean = false,
+    /** A spelled reading checked against known names; null for word signs and unchecked spellings. */
+    val name: ResolvedName? = null,
+)

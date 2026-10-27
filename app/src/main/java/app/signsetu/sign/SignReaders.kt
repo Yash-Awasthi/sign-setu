@@ -12,6 +12,9 @@ import kotlin.math.exp
 import kotlin.math.hypot
 
 /** Creates the bundled sign reader for a language, or none when its models are missing or fail their check. */
+/** Names and places signers spell (NameResolver.kt). */
+private const val NAMES = "names.txt"
+
 object SignReaders {
     fun create(context: Context, lang: SignLanguage = SignLanguage.ISL): SignReader? =
         load(lang) { path -> runCatching { context.assets.open("content/$path").use { it.readBytes() } }.getOrNull() }
@@ -40,8 +43,12 @@ object SignReaders {
         // The CTC reader gates itself and has no softmax over words to weigh against, so any read it gives wins.
         val read = if (spell != null) CombinedReader(words, spell, if (spell is CtcSpell) 0f else SPELL_ODDS) else words
         // ISL keeps its letter and digit reader for single signs and adds the continuous one for spelled names.
+        val lexicon = verified(NAMES)?.decodeToString()?.let(NameResolver::parseLexicon)
         val names = lang.names?.let { base ->
-            runCatching { CtcSpell(CtcSpellReader(verified("$base.json")!!.decodeToString(), verified("$base.bin")!!)) }.getOrNull()
+            runCatching {
+                val reader = CtcSpellReader(verified("$base.json")!!.decodeToString(), verified("$base.bin")!!)
+                CtcSpell(reader, lexicon?.let { NameResolver(it, reader.alphabet) })
+            }.getOrNull()
         }
         if (names != null) CombinedReader(read, names, 0f) else read
     }.getOrNull()
@@ -80,8 +87,9 @@ internal fun wristReach(frames: List<LandmarkFrame>): Float? {
     return maxOf(reach { it.leftHand }, reach { it.rightHand }) / sw
 }
 
-/** The format 2 CTC reader as a [SignReader]: one guess, the letters read, scored by its least sure letter. */
-private class CtcSpell(private val ctc: CtcSpellReader) : SignReader {
+/** The format 2 CTC reader as a [SignReader]: the letters read, scored by its least sure letter. With [names], the
+ * reading is resolved against known names and the alternatives follow it as further guesses. */
+private class CtcSpell(private val ctc: CtcSpellReader, private val names: NameResolver? = null) : SignReader {
     override val labels = ctc.alphabet.map { it.lowercaseChar().toString() }
     override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
         val logits = ctc.logits(frames) ?: return emptyList()
@@ -95,7 +103,10 @@ private class CtcSpell(private val ctc: CtcSpellReader) : SignReader {
             last = best
         }
         if (peaks.size < SPELL_MIN_LETTERS || peaks.min() < (ctc.minPeak ?: SPELL_MIN_PEAK)) return emptyList()
-        return listOf(SignGuess(ctc.decode(logits).trim().lowercase(), peaks.min(), spelled = true))
+        val resolved = names?.resolve(logits)
+            ?: return listOf(SignGuess(ctc.decode(logits).trim().lowercase(), peaks.min(), spelled = true))
+        return listOf(SignGuess(resolved.text.lowercase(), peaks.min(), spelled = true, name = resolved)) +
+            resolved.alternatives.map { SignGuess(it.lowercase(), peaks.min() / 2, spelled = true) }
     }
 }
 

@@ -197,3 +197,23 @@ other 126 clips report. The held-out Kaggle signer is reported too.
   100% 0.60. Even the surest tenth of a new signer's signs is wrong one time in six.
 - Shipped: the temperature, and the 50% set as each sign's candidates; a set over 10 words marks the sign unsure.
   For a new signer no vocabulary-wide set is both small and safe; the question's answer words have to narrow it first.
+
+## Gloss engine on simulated lattices (2026-10-28, `SentenceEvalTest`)
+
+Every phrasebook intent (39) "signed" 40 times: each sign is a real held-out reading of that word
+(`held_out_readings.py`: ISLRTC new signer 269 readings of 200 words; held-out Kaggle signer 816 of 261), names as
+spelled tokens with a third unverified, 5% missed and 10% extra segments. Development numbers, not release ones.
+
+| source, question on screen | n | intent sentence top-1 / top-2 | rungs 1 / 2 / 3 / 4 | wrong at rung 1 | right at rung 1 or 2 |
+|---|---|---|---|---|---|
+| ISLRTC, yes | 889 | 0.535 / 0.556 | 0.16 / 0.61 / 0.06 / 0.17 | 0.007 | 0.474 |
+| ISLRTC, no | 889 | 0.336 / 0.445 | 0.07 / 0.39 / 0.25 / 0.29 | 0.032 | 0.242 |
+| Kaggle, yes | 1151 | 0.945 / 0.953 | 0.69 / 0.16 / 0.16 / 0.00 | 0.029 | 0.809 |
+| Kaggle, no | 1151 | 0.761 / 0.915 | 0.50 / 0.15 / 0.35 / 0.00 | 0.054 | 0.604 |
+
+- The question on screen is the largest single gain: new-signer top-1 0.336 to 0.535.
+- Before the "no sign vanishes" rule, rung 1 was wrong 5.7% of the time on the new signer: an unreadable sign was
+  dropped as an extra segment and the sentence came out less specific ("a shirt" for "a pink shirt"). Unplaced signs
+  now hold a sentence at rung 2.
+- Remaining rung-1 errors are signs the segmenter missed outright, which no lattice evidence shows; the segmentation
+  sanity term (docs/10, 2.5 and 5.2) needs recorded sentences.

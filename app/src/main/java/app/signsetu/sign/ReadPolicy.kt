@@ -39,7 +39,9 @@ fun decideRead(
     // The 50% conformal set adapts to how sure the reader is: one word for a clear sign, dozens for a new signer's.
     // Fingerspelling and a matched home sign are judged by their own readers, not this set.
     val size = if (conformal == null || all.firstOrNull()?.spelled == true || home != null) null else conformal.size(all)
-    val candidates = (guesses + all.take(size ?: CANDIDATES)).distinctBy { it.word }.take(CANDIDATES)
+    // In the app's own words ("store or shop" is shop), which the phrasebook and the lattice use.
+    val candidates = (guesses + all.take(size ?: CANDIDATES).map { g -> signWords[g.word]?.let { g.copy(word = it) } ?: g })
+        .distinctBy { it.word }.take(CANDIDATES)
     return SignSegment(frames, guesses, needsSlower(frames, all), cards, candidates, unsure = size != null && size > CANDIDATES)
 }
 

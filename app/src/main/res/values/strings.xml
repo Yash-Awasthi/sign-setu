@@ -653,4 +653,8 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="practice_no_sign">Nothing in this text can be signed. Try other words.</string>
     <string name="practice_signed">signed</string>
     <string name="practice_spelled">spelled</string>
+    <string name="reading_sign_again">Could not read that. Ask them to sign again, facing the camera in good light.</string>
+    <string name="reading_check">Check: %1$s</string>
+    <string name="reading_confirm">Health or safety: confirm with them before acting on it.</string>
+    <string name="reading_camera">Camera read: %1$s. Tap to accept.</string>
 </resources>
