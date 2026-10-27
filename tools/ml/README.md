@@ -56,6 +56,7 @@ range reads of only the row groups that hold them (`popsign_labels.json` lists t
     python train_asl.py <asl.pkl> <out.pt> <epochs> [teacher.pt ...]   # asl_reader, augmentation on the GPU
     signsetu-mp/python -I prepare_islrtc.py           # islrtc.pkl: real ISL signers for eval_isl.py only
     python spell_ctc.py prepare | train | export      # asl_spell, format 2
+    signsetu-mp/python -s prepare_islrtc_words.py     # islrtc_words.pkl: ISLRTC clips of INCLUDE words, eval only
     python eval_isl.py                                # top-1/top-3: ISL words, letters, digits; sentence demo
     python eval_asl.py                                # top-1/top-3: ASL words; fingerspelling CER
     python eval_signers.py <cache.pkl> <split> <model.pt>...   # checkpoints on held-out signers

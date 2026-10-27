@@ -46,7 +46,7 @@ data class AppSettings(
     /** Signs reorders typed words into ISL order; off keeps them as typed, until Deaf reviewers confirm the rules. */
     val islReorder: Boolean = true,
     /** Sends masked session text to the department gateway while online; off until the officer accepts the notice. */
-    val cloudAi: Boolean = false,
+    val onlineAssistant: Boolean = false,
     /** Developer settings: an OpenAI-style service the officer's phone talks to instead of the build's own; its key is kept apart, in the Keystore. */
     val devAiUrl: String = "",
     val devAiModel: String = "",
@@ -91,7 +91,8 @@ class SettingsStore(private val context: Context) {
         val favourites = stringSetPreferencesKey("favourites")
         val stageDevice = booleanPreferencesKey("stage_device")
         val islReorder = booleanPreferencesKey("isl_reorder")
-        val cloudAi = booleanPreferencesKey("cloud_ai")
+        // Kept under its old name so the saved switch survives the rename.
+        val onlineAssistant = booleanPreferencesKey("cloud_ai")
         val devAiUrl = stringPreferencesKey("dev_ai_url")
         val devAiModel = stringPreferencesKey("dev_ai_model")
         val themeMode = stringPreferencesKey("theme_mode")
@@ -117,7 +118,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setGestureSpeed(speed: Float) = context.store.edit { it[Keys.gestureSpeed] = speed }
     suspend fun setStageDevice() = context.store.edit { it[Keys.stageDevice] = true }
     suspend fun setIslReorder(on: Boolean) = context.store.edit { it[Keys.islReorder] = on }
-    suspend fun setCloudAi(on: Boolean) = context.store.edit { it[Keys.cloudAi] = on }
+    suspend fun setOnlineAssistant(on: Boolean) = context.store.edit { it[Keys.onlineAssistant] = on }
     suspend fun setDevAi(url: String, model: String) = context.store.edit {
         it[Keys.devAiUrl] = url.trim()
         it[Keys.devAiModel] = model.trim()
@@ -144,7 +145,7 @@ class SettingsStore(private val context: Context) {
         favourites = this[Keys.favourites].orEmpty(),
         stageDevice = this[Keys.stageDevice] ?: false,
         islReorder = this[Keys.islReorder] ?: true,
-        cloudAi = this[Keys.cloudAi] ?: false,
+        onlineAssistant = this[Keys.onlineAssistant] ?: false,
         devAiUrl = this[Keys.devAiUrl] ?: "",
         devAiModel = this[Keys.devAiModel] ?: "",
         themeMode = this[Keys.themeMode]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM,

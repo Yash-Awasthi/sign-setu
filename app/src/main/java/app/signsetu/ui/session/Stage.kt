@@ -49,7 +49,7 @@ import app.signsetu.sign.SignWindow
 import app.signsetu.ui.avatar.AVATAR_ASPECT
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.LEAD_IN
-import app.signsetu.ui.components.LocalCloudAi
+import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.components.rememberSpeechPlayer
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.Spacing
@@ -147,7 +147,7 @@ fun Stage(
     val audio = speechFor(pending, content, lang)
     // Every item speaks once by itself, signers included (many have some hearing, and a companion may hear); play replays it.
     LaunchedEffect(pending, lang) { if (audio != null) speech.play(audio) }
-    val cloud = LocalCloudAi.current
+    val cloud = LocalOnlineAssistant.current
     // Typed text has no recording; with online help allowed, the gateway speaks it in the subject's language.
     LaunchedEffect(pending, lang) {
         val typed = (pending as? Pending.FreeText)?.text

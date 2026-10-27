@@ -55,7 +55,7 @@ import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
 import app.signsetu.ui.theme.SubjectCardMin
 
-val LocalCloudAi = staticCompositionLocalOf<app.signsetu.assistant.CloudAi> { error("CloudAi not provided") }
+val LocalOnlineAssistant = staticCompositionLocalOf<app.signsetu.assistant.OnlineAssistant> { error("OnlineAssistant not provided") }
 val LocalContentRepository = staticCompositionLocalOf<ContentRepository> { error("ContentRepository not provided") }
 
 @Composable

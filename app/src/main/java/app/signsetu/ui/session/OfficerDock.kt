@@ -72,7 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.signsetu.R
-import app.signsetu.ui.components.LocalCloudAi
+import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.Question
@@ -168,7 +168,7 @@ internal fun Dock(
             }
 
             // Follow-up prompts: on-device rules, or the optional cloud AI when the officer has switched it on.
-            val cloud = LocalCloudAi.current
+            val cloud = LocalOnlineAssistant.current
             val lastAnswerEvent = remember(ui.events) { ui.events.lastOrNull { it.type in AnswerEvents } }
             // Keyed on the answer, not the log size: rows logged after an answer must not drop its suggestions.
             var aiFollowUps by remember(lastAnswerEvent?.id) { mutableStateOf<List<String>>(emptyList()) }

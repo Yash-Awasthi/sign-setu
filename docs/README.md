@@ -4,7 +4,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Field | Value |
 | --- | --- |
-| Version | 0.7.5 (version code 15), applicationId `in.signsetu` |
+| Version | 0.8.0 (version code 16), applicationId `in.signsetu` |
 | Classification | Internal |
 | Source of truth | This repository; the code wins over any document, and documents are corrected when they drift |
 
@@ -237,8 +237,8 @@ The readers generalise poorly to people they have not seen, so a reading is neve
 | Topic | Practice |
 | --- | --- |
 | Reproducibility | Gradle wrapper, version catalog, lockfile and checksum verification; llama.cpp vendored; `.gitattributes` forces LF so content hashes hold on every checkout |
-| Release build | `./gradlew assembleStandardRelease` (universal) and `-Pabi=arm64-v8a` (phone); add `-PgatewayUrl=https://...` for a gateway build and `-PsecureScreen=true` for the final APK. No assistant key is ever compiled in: turning the assistant on offers the gateway, which enrols with a department code, or a custom API endpoint with the officer's own key |
-| Signing | `zipalign` and `apksigner` with the department key, offline, signature scheme v3 |
+| Release build | `./gradlew assembleStandardRelease` (universal) and `-Pabi=arm64-v8a` (phone); `-PgatewayUrl=https://...` builds in the department gateway (every published APK carries it) and `-PsecureScreen=true` turns Block screenshots on by default. No assistant key is ever compiled in: turning the assistant on offers the gateway, which enrols with a department code, or a custom API endpoint with the officer's own key |
+| Signing | CI runs `zipalign` and `apksigner` with the release key from repository secrets, signature scheme v3; a green `master` push publishes `v<versionName>`, replacing the APKs while the version is unchanged. The emulator tests run only for a new version or a manual run |
 | Expiry | A build refuses new sessions 180 days after its build day |
 | Install | Allow installs from the source and open the APK. A screen lock is strongly recommended; without one the app warns once and keeps records under a key not tied to unlocking until a lock is set |
 | Export | Finish, name the session, Export report, share the PDF, give the passphrase by another channel |

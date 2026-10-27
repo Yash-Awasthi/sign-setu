@@ -1,6 +1,6 @@
 package app.signsetu
 
-import app.signsetu.assistant.CloudAi
+import app.signsetu.assistant.OnlineAssistant
 import app.signsetu.net.Http
 import app.signsetu.net.Reply
 import app.signsetu.net.TokenVault
@@ -22,7 +22,7 @@ class CloudSpeechTest {
     private val urls = mutableListOf<String>()
     private val server = Http { _, url, _, _, _ -> urls += url; Reply(200, "", mp3) }
 
-    private fun ai(on: Boolean = true, online: Boolean = true, vault: Vault = Vault()) = CloudAi({ on }, "https://gw.example", server, vault) { online }
+    private fun ai(on: Boolean = true, online: Boolean = true, vault: Vault = Vault()) = OnlineAssistant({ on }, "https://gw.example", server, vault) { online }
 
     @Test
     fun typedTextIsSpokenThroughTheGatewayWhenTheOfficerAllowedOnlineHelp() = runBlocking {

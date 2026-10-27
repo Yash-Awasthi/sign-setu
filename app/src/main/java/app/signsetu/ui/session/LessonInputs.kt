@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -181,62 +182,70 @@ private fun NumberPad(type: AnswerType, title: (@Composable () -> Unit)? = null,
     var digits by rememberSaveable { mutableStateOf("") }
     val answer = LocalAnswerColors.current
     val ok = valid(type, digits)
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-            title?.invoke()
-            Surface(shape = RoundedCornerShape(18.dp), color = Color.White, modifier = Modifier.weight(1f).height(52.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        if (type == AnswerType.PHONE) groupPhone(digits) else digits, fontFamily = Baloo, fontWeight = FontWeight.Bold, color = Ink, maxLines = 1,
-                        autoSize = TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 34.sp),
-                    )
+    val hand = type == AnswerType.AGE || type == AnswerType.COUNT
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Four 48 dp key rows need this much at normal sizes; below it the gaps and hand row shrink and the display takes what is left.
+        val tight = maxHeight < (4 * 48 + 52 + 4 * 6 + if (hand) 42 + 6 else 0).dp
+        val gap = if (tight) 4.dp else 6.dp
+        val handHeight = if (tight) 40.dp else 42.dp
+        val display = if (!tight) 52.dp else (maxHeight - 49.dp * 4 - gap * (if (hand) 5 else 4) - if (hand) handHeight else 0.dp).coerceIn(32.dp, 52.dp)
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(gap)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                title?.invoke()
+                Surface(shape = RoundedCornerShape(18.dp), color = Color.White, modifier = Modifier.weight(1f).height(display)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            if (type == AnswerType.PHONE) groupPhone(digits) else digits, fontFamily = Baloo, fontWeight = FontWeight.Bold, color = Ink, maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 34.sp),
+                        )
+                    }
                 }
             }
-        }
-        // One tap on a held-up hand of 1 to 10 for a child who cannot work the pad.
-        if (type == AnswerType.AGE || type == AnswerType.COUNT) {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().height(42.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                items(10) { index ->
-                    val num = (index + 1).toString()
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (digits == num) Color(0xFFFFB300) else Color.White,
-                        border = BorderStroke(1.dp, Color(0xFFD7C9B8)),
-                        modifier = Modifier
-                            .height(38.dp)
-                            .padding(horizontal = 2.dp)
-                            .clickable {
-                                digits = num
-                                if (valid(type, num)) {
-                                    onEnter(num)
-                                }
-                            },
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            // One tap on a held-up hand of 1 to 10 for a child who cannot work the pad.
+            if (hand) {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().height(handHeight),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    items(10) { index ->
+                        val num = (index + 1).toString()
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (digits == num) Color(0xFFFFB300) else Color.White,
+                            border = BorderStroke(1.dp, Color(0xFFD7C9B8)),
+                            modifier = Modifier
+                                .height(if (tight) 36.dp else 38.dp)
+                                .padding(horizontal = 2.dp)
+                                .clickable {
+                                    digits = num
+                                    if (valid(type, num)) {
+                                        onEnter(num)
+                                    }
+                                },
                         ) {
-                            Text("🖐", fontSize = 14.sp)
-                            Text(num, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Ink)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Text("🖐", fontSize = 14.sp)
+                                Text(num, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Ink)
+                            }
                         }
                     }
                 }
             }
-        }
-        listOf("123", "456", "789").forEach { row ->
-            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEach { c -> PadKey(c.toString(), Modifier.weight(1f)) { digits = padPress(type, digits, c) } }
+            listOf("123", "456", "789").forEach { row ->
+                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { c -> PadKey(c.toString(), Modifier.weight(1f)) { digits = padPress(type, digits, c) } }
+                }
             }
-        }
-        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            PadIcon(rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowBack), stringResource(R.string.pad_delete), Soft, OnSoft, Modifier.weight(1f)) { digits = digits.dropLast(1) }
-            PadKey("0", Modifier.weight(1f)) { digits = padPress(type, digits, '0') }
-            PadIcon(rememberVectorPainter(Icons.Filled.Check), stringResource(R.string.stage_done), if (ok) answer.yes else Off, answer.onYes, Modifier.weight(1f)) { if (ok) onEnter(digits) }
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                PadIcon(rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowBack), stringResource(R.string.pad_delete), Soft, OnSoft, Modifier.weight(1f)) { digits = digits.dropLast(1) }
+                PadKey("0", Modifier.weight(1f)) { digits = padPress(type, digits, '0') }
+                PadIcon(rememberVectorPainter(Icons.Filled.Check), stringResource(R.string.stage_done), if (ok) answer.yes else Off, answer.onYes, Modifier.weight(1f)) { if (ok) onEnter(digits) }
+            }
         }
     }
 }

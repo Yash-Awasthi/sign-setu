@@ -318,9 +318,26 @@ export function applyClipFrame(vrm: VRM, coords: number[], slerpAlpha: number) {
 
 // MediaPipe's 52 face blendshapes, by the index of each name in its output.
 const B = {
-  browDownL: 1, browDownR: 2, browInnerUp: 3, browOuterUpL: 4, browOuterUpR: 5, cheekSquintL: 7, cheekSquintR: 8,
-  blinkL: 9, blinkR: 10, eyeSquintL: 19, eyeSquintR: 20, eyeWideL: 21, eyeWideR: 22, jawOpen: 25, frownL: 30,
-  frownR: 31, funnel: 32, pucker: 38, smileL: 44, smileR: 45,
+  browDownL: 1,
+  browDownR: 2,
+  browInnerUp: 3,
+  browOuterUpL: 4,
+  browOuterUpR: 5,
+  cheekSquintL: 7,
+  cheekSquintR: 8,
+  blinkL: 9,
+  blinkR: 10,
+  eyeSquintL: 19,
+  eyeSquintR: 20,
+  eyeWideL: 21,
+  eyeWideR: 22,
+  jawOpen: 25,
+  frownL: 30,
+  frownR: 31,
+  funnel: 32,
+  pucker: 38,
+  smileL: 44,
+  smileR: 45,
 };
 
 /** A tracked face as the rig's face sliders; null when the frame has no face, so the rig keeps its own. */

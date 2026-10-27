@@ -260,8 +260,8 @@ def train(data: pathlib.Path, epochs: int = 60, per_epoch: int = 4000) -> None:
             score = cer(predict, letters, aspect, 200)
             real_score = real_cer(predict, real_test) if real_test else None
         print(f"epoch {epoch + 1}: loss {loss.item():.3f} test CER {score:.4f} real CER {real_score}", flush=True)
-    torch.save({"state": model.cpu().state_dict(), "cer": score, "real_cer": real_score, "epochs": epochs},
-               data / "asl_spell.pt")  # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
+    torch.save({"state": model.cpu().state_dict(), "cer": score, "real_cer": real_score, "epochs": epochs},  # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
+               data / "asl_spell.pt")
 
 
 def export(data: pathlib.Path) -> None:

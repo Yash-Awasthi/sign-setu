@@ -3,6 +3,7 @@ import {
   audioUrl,
   cardUrl,
   cards,
+  clips,
   gestures as allGestures,
   groups,
   languages,
@@ -16,7 +17,7 @@ import {
 import { flags } from "./flags";
 import { isMissing, reviewerLang } from "./missing";
 import { keyOf, type Review, type Section, type Verdict } from "./reviews";
-import { AvatarStage } from "../../avatar/src/stage";
+import { AvatarStage, type Clip } from "../../avatar/src/stage";
 import { Timeline, type Gesture } from "../../avatar/src/rig";
 import modelUrl from "../../app/src/main/assets/avatar/model.vrm?url";
 
@@ -141,6 +142,53 @@ function Player({ gesture, start }: { gesture: Gesture; start?: number }) {
           ))}
         </select>
       </div>
+    </div>
+  );
+}
+
+/** The recorded sentences the app plays from clips.json, as the app plays them. */
+export function ClipReview(props: ReviewProps) {
+  const [filter, setFilter] = useState("");
+  const [selected, setSelected] = useState(clips[0].sentence);
+  const ref = useRef<HTMLCanvasElement>(null);
+  const [stage, setStage] = useState<AvatarStage | null>(null);
+  useEffect(() => {
+    const canvas = ref.current!;
+    const s = new AvatarStage(canvas);
+    s.resize(canvas.clientWidth, canvas.clientHeight);
+    void s.load(modelUrl).then(() => setStage(s));
+  }, []);
+  const shown = clips.filter((c) => c.sentence.includes(filter.trim().toLowerCase()));
+  const clip = clips.find((c) => c.sentence === selected)!;
+  useEffect(() => stage?.clip(clip as Clip), [stage, clip]);
+  return (
+    <div className="split">
+      <nav>
+        <input placeholder="Filter" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <ul>
+          {shown.map((c) => {
+            const v = props.reviews[keyOf({ section: "clip", id: c.sentence, role: props.role })]?.verdict;
+            return (
+              <li key={c.sentence}>
+                <button className={c.sentence === selected ? "on" : ""} onClick={() => setSelected(c.sentence)}>
+                  {c.sentence}
+                  {v && <span className={`badge v${v}`}>{v}</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <section>
+        <h2>{clip.sentence}</h2>
+        <p className="muted">
+          {clip.frames.length} frames at {clip.fps} fps
+        </p>
+        <div className="stage">
+          <canvas ref={ref} className="character" />
+        </div>
+        <ReviewBox {...props} section="clip" id={clip.sentence} />
+      </section>
     </div>
   );
 }

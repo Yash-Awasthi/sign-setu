@@ -1,6 +1,7 @@
 // The app's content files, read straight from the Android assets at build time.
 import aslFile from "../../app/src/main/assets/content/asl_signs.json";
 import cardsFile from "../../app/src/main/assets/content/cards.json";
+import clipsFile from "../../app/src/main/assets/content/clips.json";
 import gesturesFile from "../../app/src/main/assets/content/gestures.json";
 import islFile from "../../app/src/main/assets/content/isl_signs.json";
 import languagesFile from "../../app/src/main/assets/content/languages.json";
@@ -46,6 +47,8 @@ export const phrases = phrasesFile.phrases;
 export const cards = new Map((cardsFile.cards as Card[]).map((c) => [c.id, c]));
 export const languages = languagesFile.languages;
 export const uiTexts = subjectUi as Record<string, Text>;
+/** Recorded sentences the app plays (clips.json), the ISL-CSLTR medoids plus the team's questions. */
+export const clips = clipsFile.clips as { sentence: string; fps: number; frames: number[][]; face?: number[][] }[];
 
 const lexicon = new Map(lexiconFile.entries.map((e) => [e.id, e]));
 const wordFor = new Map<string, string>();

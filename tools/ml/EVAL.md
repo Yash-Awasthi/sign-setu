@@ -80,6 +80,15 @@ Notes:
 - A transformer head (3 layers, width 192, same features and strong augmentation, 300 epochs) scored 0.276 top-1 and
   0.377 top-3 on the unseen ISLRTC signer, and 0.62 inside the lesson questions' answer cards (shipped: 0.73), so the
   convolution reader stays.
+- Pretraining the trunk without labels (SimCLR on the training augmentation, 20,000 steps on the 6.8 hours of
+  OpenHands Sign Library poses, zenodo.org/records/5558897; the script is not kept) then fine-tuning on INCLUDE gave 0.316 / 0.424 on all 269 ISLRTC clips of INCLUDE words
+  (`prepare_islrtc_words.py`) against 0.312 / 0.428 from scratch, within noise; at 100 epochs 0.283 against 0.271.
+  It reaches INCLUDE's own accuracy sooner but does not help new signers, so it is not shipped. Adding ISH News
+  (51.6 hours with Sign Library, many presenters) gave 0.309 / 0.446, also within noise: more unlabelled signers do
+  not move this reader; labelled clips from more signers are what would.
+- OpenHands' released INCLUDE checkpoint (ST-GCN with DPC pretraining on 1,129 hours, 263 classes, 3.6M parameters)
+  scores 0.75 on INCLUDE's test split here and 0.07 to 0.09 top-1 on the ISLRTC clips (shipped: 0.32); it reads only
+  each clip's first 60 frames, and its preprocessing could not be matched beyond 0.75.
 - Lesson-sheet answers, read among the question's own answer cards as the app does (`decideRead` with two or
   more cards): unseen ISLRTC signer top-1 0.73, top-3 0.88 (n=26); INCLUDE test signers 0.98 and 1.00 (n=111). The
   misses are male and female pairs (mother and father, grandmother and grandfather, wife and husband). Averaging over

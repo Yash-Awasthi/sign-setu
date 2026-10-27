@@ -26,26 +26,26 @@ the browser's local storage, per role, and **Export JSON** downloads them all.
 
 Needs Node 22.18+, 24.11+ or 26+ (the range `vite-plus` declares). Run `npm install` in `../avatar` first, then from `portal/`, after `npm install`:
 
-| Command          | Same as           | Does                                                 |
-| ---------------- | ----------------- | ---------------------------------------------------- |
-| `npx vp dev`     | `npm run dev`     | Local server with live reload                        |
-| `npx vp check`   | `npm run check`   | Format, lint and type check                          |
-| `npx vp test`    | `npm test`        | Unit tests                                           |
-| `npx vp build`   | `npm run build`   | Static site in `portal/dist`                         |
-| `npx vp preview` | `npm run preview` | Serves `portal/dist`                                 |
+| Command          | Same as           | Does                          |
+| ---------------- | ----------------- | ----------------------------- |
+| `npx vp dev`     | `npm run dev`     | Local server with live reload |
+| `npx vp check`   | `npm run check`   | Format, lint and type check   |
+| `npx vp test`    | `npm test`        | Unit tests                    |
+| `npx vp build`   | `npm run build`   | Static site in `portal/dist`  |
+| `npx vp preview` | `npm run preview` | Serves `portal/dist`          |
 
 The built `dist/` folder can be copied to any machine and served by any static file server. Content changes in the
 app need a rebuild.
 
 ## Key files
 
-| Path                             | Contents                                                        |
-| -------------------------------- | --------------------------------------------------------------- |
-| `src/content.ts`                 | Imports the app's content JSON at build time                    |
-| `src/App.tsx`, `src/screens.tsx` | Roles, tabs and the review screens                              |
-| `src/flags.ts`                   | Child-welfare wording hints                                     |
-| `src/missing.ts`                 | Missing-caption check for language reviewers                    |
-| `src/reviews.ts`                 | Verdict storage and the JSON export format                      |
+| Path                             | Contents                                     |
+| -------------------------------- | -------------------------------------------- |
+| `src/content.ts`                 | Imports the app's content JSON at build time |
+| `src/App.tsx`, `src/screens.tsx` | Roles, tabs and the review screens           |
+| `src/flags.ts`                   | Child-welfare wording hints                  |
+| `src/missing.ts`                 | Missing-caption check for language reviewers |
+| `src/reviews.ts`                 | Verdict storage and the JSON export format   |
 
 ## Keeping the verdicts
 

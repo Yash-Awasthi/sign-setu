@@ -1,8 +1,8 @@
 // Verdicts live in this browser only; the JSON export is the review record.
 
 export type Verdict = "A" | "C" | "R";
-/** Sections of the export: gesture, phrase (pid.card), question, ui, greeting. */
-export type Section = "gesture" | "phrase" | "question" | "ui" | "greeting";
+/** Sections of the export: gesture, phrase (pid.card), question, ui, greeting, clip (sentence). */
+export type Section = "gesture" | "phrase" | "question" | "ui" | "greeting" | "clip";
 
 export interface Review {
   section: Section;

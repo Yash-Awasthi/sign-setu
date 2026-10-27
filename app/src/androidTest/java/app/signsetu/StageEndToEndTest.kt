@@ -31,7 +31,7 @@ import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.data.settings.AppSettings
 import app.signsetu.ui.SessionRoute
-import app.signsetu.ui.components.LocalCloudAi
+import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.components.LocalContentRepository
 import app.signsetu.ui.theme.SignSetuTheme
 import kotlinx.coroutines.runBlocking
@@ -104,7 +104,7 @@ class StageEndToEndTest {
         val tracker = NoddingTracker()
         val settings = AppSettings(firstRunDone = true)
         rule.setContent {
-            CompositionLocalProvider(LocalContentRepository provides container.content, LocalCloudAi provides container.cloudAi) {
+            CompositionLocalProvider(LocalContentRepository provides container.content, LocalOnlineAssistant provides container.onlineAssistant) {
                 SignSetuTheme {
                     SessionRoute(id, repo, content, settings, container.report, tracker, null, null, {}, {}, container, null, null)
                 }

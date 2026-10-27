@@ -72,7 +72,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import app.signsetu.assistant.AiProbe
 import app.signsetu.net.UrlHttp
-import app.signsetu.ui.components.LocalCloudAi
+import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.data.settings.AppSettings
 import app.signsetu.data.settings.InterpreterApp
 import app.signsetu.data.settings.SettingsStore
@@ -99,7 +99,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
     var dialog by rememberSaveable { mutableStateOf<Dialog?>(null) }
     val scroll = TopAppBarDefaults.pinnedScrollBehavior()
     val notSet = stringResource(R.string.settings_not_set)
-    val cloud = LocalCloudAi.current
+    val cloud = LocalOnlineAssistant.current
     var enrolled by remember { mutableStateOf(cloud.enrolled) }
     // The saved developer service changes what the assistant is; the screen reads it again after a save or a removal.
     var devVersion by remember { mutableIntStateOf(0) }
@@ -190,16 +190,16 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
             }
             Group(R.string.settings_assistant) {
                 if (available) ListItem(
-                    headlineContent = { Text(stringResource(if (viaGateway) R.string.settings_cloud_ai else R.string.settings_cloud_ai_direct)) },
-                    supportingContent = { Text(stringResource(if (viaGateway) R.string.settings_cloud_ai_summary else R.string.settings_cloud_ai_summary_direct)) },
+                    headlineContent = { Text(stringResource(if (viaGateway) R.string.settings_online_assistant else R.string.settings_online_assistant_direct)) },
+                    supportingContent = { Text(stringResource(if (viaGateway) R.string.settings_online_assistant_summary else R.string.settings_online_assistant_summary_direct)) },
                     colors = ItemColors,
-                    trailingContent = { Switch(checked = s.cloudAi, onCheckedChange = null) },
-                    modifier = Modifier.toggleable(s.cloudAi, role = Role.Switch) { on ->
-                        if (on) dialog = Dialog.CLOUD else scope.launch { store.setCloudAi(false) }
+                    trailingContent = { Switch(checked = s.onlineAssistant, onCheckedChange = null) },
+                    modifier = Modifier.toggleable(s.onlineAssistant, role = Role.Switch) { on ->
+                        if (on) dialog = Dialog.CLOUD else scope.launch { store.setOnlineAssistant(false) }
                     },
                 )
-                if (s.cloudAi) {
-                    if (viaGateway) Item(stringResource(R.string.settings_cloud_ai_key), if (enrolled) stringResource(R.string.settings_cloud_ai_enrolled) else notSet) { dialog = Dialog.AIKEY }
+                if (s.onlineAssistant) {
+                    if (viaGateway) Item(stringResource(R.string.settings_online_assistant_key), if (enrolled) stringResource(R.string.settings_online_assistant_enrolled) else notSet) { dialog = Dialog.AIKEY }
                     else if (cloud.hasGateway) Item(stringResource(R.string.cloud_notice_custom), "${s.devAiModel} · ${s.devAiUrl.removePrefix("https://")}") { dialog = Dialog.DEVELOPER }
                 }
                 ListItem(
@@ -313,14 +313,14 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
             title = { Text(stringResource(if (viaGateway) R.string.cloud_notice_title else R.string.cloud_notice_title_direct)) },
             text = { Text(stringResource(if (viaGateway) R.string.cloud_notice_body else R.string.cloud_notice_body_direct)) },
             confirmButton = {
-                TextButton(onClick = { scope.launch { store.setCloudAi(true) }; dialog = if (viaGateway && !enrolled) Dialog.AIKEY else null }) {
+                TextButton(onClick = { scope.launch { store.setOnlineAssistant(true) }; dialog = if (viaGateway && !enrolled) Dialog.AIKEY else null }) {
                     Text(stringResource(R.string.cloud_notice_accept))
                 }
             },
             dismissButton = {
                 Row {
                     // The gateway or the officer's own OpenAI-compatible service, chosen in the same dialog.
-                    TextButton(onClick = { scope.launch { store.setCloudAi(true) }; dialog = Dialog.DEVELOPER }) { Text(stringResource(R.string.cloud_notice_custom)) }
+                    TextButton(onClick = { scope.launch { store.setOnlineAssistant(true) }; dialog = Dialog.DEVELOPER }) { Text(stringResource(R.string.cloud_notice_custom)) }
                     TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.cancel)) }
                 }
             },
@@ -329,7 +329,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
             var key by rememberSaveable { mutableStateOf("") }
             GuardedAlertDialog(
                 onDismissRequest = { dialog = null },
-                title = { Text(stringResource(R.string.settings_cloud_ai_key)) },
+                title = { Text(stringResource(R.string.settings_online_assistant_key)) },
                 text = {
                     OutlinedTextField(
                         value = key,

@@ -2,7 +2,7 @@ package app.signsetu
 
 import app.signsetu.assistant.AiEndpoint
 import app.signsetu.assistant.AiProbe
-import app.signsetu.assistant.CloudAi
+import app.signsetu.assistant.OnlineAssistant
 import app.signsetu.assistant.Direct
 import app.signsetu.net.Http
 import app.signsetu.net.Reply
@@ -91,7 +91,7 @@ class AiProbeTest {
             override fun clear() {}
         }
         val s = Server { _, url, _ -> if ("gw.example" in url) Reply(200, """{"text":"gateway"}""") else Reply(200, """{"choices":[{"message":{"role":"assistant","content":"custom"}}]}""") }
-        val c = CloudAi({ true }, "https://gw.example", s, gatewayToken, null, key) { true }
+        val c = OnlineAssistant({ true }, "https://gw.example", s, gatewayToken, null, key) { true }
         assertTrue(c.hasGateway && c.viaGateway)
         assertTrue(c.saveCustom("https://llm.example/v1", "m", "k"))
         assertFalse(c.viaGateway)
@@ -113,7 +113,7 @@ class AiProbeTest {
             override fun clear() { token = null }
         }
         val s = Server { _, _, _ -> Reply(200, """{"choices":[{"message":{"role":"assistant","content":"hi"}}]}""") }
-        val c = CloudAi({ true }, "", s, key, Direct("https://api.groq.com/openai/v1/chat/completions", "d", ""), key) { true }
+        val c = OnlineAssistant({ true }, "", s, key, Direct("https://api.groq.com/openai/v1/chat/completions", "d", ""), key) { true }
         assertFalse(c.viaGateway)
         assertTrue(c.saveCustom("https://llm.example/v1", "m", "k"))
         assertEquals("hi", c.ask("sys", "user", emptyList()))
@@ -134,7 +134,7 @@ class AiProbeTest {
             override fun clear() { token = null }
         }
         val s = Server { _, _, _ -> Reply(200, """{"content":[{"type":"thinking","thinking":"x"},{"type":"text","text":"namaste"}]}""") }
-        val c = CloudAi({ true }, "https://gw.example", s, key, null, key) { true }
+        val c = OnlineAssistant({ true }, "https://gw.example", s, key, null, key) { true }
         assertTrue(c.saveCustom("https://kr.example/v1/messages", "claude-haiku-5-5", "k"))
         assertEquals("namaste", c.ask("sys", "user", emptyList()))
         val (_, url, body) = s.calls.single()

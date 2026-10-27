@@ -50,7 +50,7 @@ The Gemma licence is free for government use but is not an OSI open-source licen
 
 ## 6. Online path
 
-`CloudAi` serves the translation when no local model is ready, and is the only path for the AI counsellor and the draft report.
+`OnlineAssistant` serves the translation when no local model is ready, and is the only path for the AI counsellor and the draft report.
 
 | Item | Behaviour |
 | --- | --- |

@@ -76,7 +76,8 @@ export class AvatarStage {
       vrm.scene.traverse((o) => {
         const dict = (o as THREE.Mesh).morphTargetDictionary;
         for (const [m, weight] of Object.entries(morphs))
-          if (dict?.[m] !== undefined) e.addBind(new VRMExpressionMorphTargetBind({ primitives: [o as THREE.Mesh], index: dict[m], weight }));
+          if (dict?.[m] !== undefined)
+            e.addBind(new VRMExpressionMorphTargetBind({ primitives: [o as THREE.Mesh], index: dict[m], weight }));
       });
       const old = vrm.expressionManager?.getExpression(name);
       if (old) vrm.expressionManager!.unregisterExpression(old);

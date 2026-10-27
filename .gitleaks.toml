@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+# Vendored third-party sources; the xxhash key names are not secrets.
+[allowlist]
+paths = ['^app/src/main/cpp/third_party/']

@@ -2,12 +2,18 @@ import { useRef, useState, type KeyboardEvent } from "react";
 import { aslGestures, languages } from "./content";
 import { reviewerRoles } from "./missing";
 import { exportJson, keyOf, load, save, type Review } from "./reviews";
-import { IslReview, LanguageReview, WelfareReview } from "./screens";
+import { ClipReview, IslReview, LanguageReview, WelfareReview } from "./screens";
 import { nextTabIndex } from "./tabs";
 
 const ROLES = reviewerRoles(languages);
 
-const TABS = { isl: "ISL review", asl: "ASL review", language: "Language review", welfare: "Child-welfare review" } as const;
+const TABS = {
+  isl: "ISL review",
+  asl: "ASL review",
+  clip: "Clip review",
+  language: "Language review",
+  welfare: "Child-welfare review",
+} as const;
 type Tab = keyof typeof TABS;
 
 export default function App() {
@@ -86,6 +92,7 @@ export default function App() {
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === "isl" && <IslReview {...props} />}
         {tab === "asl" && <IslReview key="asl" {...props} items={aslGestures} />}
+        {tab === "clip" && <ClipReview {...props} />}
         {tab === "language" && <LanguageReview {...props} />}
         {tab === "welfare" && <WelfareReview {...props} />}
       </div>

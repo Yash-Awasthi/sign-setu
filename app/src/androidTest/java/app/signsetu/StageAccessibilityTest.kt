@@ -22,6 +22,7 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.ContentRepository
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Session
+import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.components.LocalContentRepository
 import app.signsetu.ui.session.BoardSheet
 import app.signsetu.ui.session.Mode
@@ -59,7 +60,8 @@ class StageAccessibilityTest(private val dark: Boolean) {
     fun load() {
         // The character's idle breathing never settles; with animations off (a setting the app honours) the UI goes idle.
         shell("settings put global animator_duration_scale 0")
-        repo = ContentRepository(InstrumentationRegistry.getInstrumentation().targetContext.assets)
+        // One shared bundle: a fresh load per test filled the 192 MB emulator heap.
+        repo = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as SignSetuApp).container.content
         content = runBlocking { repo.load() }
         rule.enableAccessibilityChecks()
     }
@@ -67,12 +69,14 @@ class StageAccessibilityTest(private val dark: Boolean) {
     @After
     fun restore() = shell("settings put global animator_duration_scale 1")
 
+    private val onlineAssistant = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as SignSetuApp).container.onlineAssistant
+
     private fun shell(command: String) {
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command).close()
     }
 
     private fun show(atf: Boolean = true, body: @Composable () -> Unit) {
-        rule.setContent { CompositionLocalProvider(LocalContentRepository provides repo) { SignSetuTheme(dark = dark, content = body) } }
+        rule.setContent { CompositionLocalProvider(LocalContentRepository provides repo, LocalOnlineAssistant provides onlineAssistant) { SignSetuTheme(dark = dark, content = body) } }
         // A sheet opens its own window; the last root is the one on top.
         if (atf) rule.onAllNodes(isRoot()).onLast().tryPerformAccessibilityChecks()
     }

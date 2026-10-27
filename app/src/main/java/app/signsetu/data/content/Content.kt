@@ -10,8 +10,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Role
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
@@ -315,10 +317,11 @@ class ContentRepository(private val open: (String) -> InputStream) {
     }
 
     /** A file that matches its hash can still be unreadable or malformed; mark it rejected rather than crashing the app. */
+    @OptIn(ExperimentalSerializationApi::class)
     private inline fun <reified T> verified(name: String, rejected: MutableSet<String>): T? {
         if (name in rejected) return null
         return try {
-            json.decodeFromString<T>(open(name).bufferedReader().use { it.readText() })
+            open(name).use { json.decodeFromStream<T>(it) }
         } catch (_: Exception) {
             rejected += name
             null

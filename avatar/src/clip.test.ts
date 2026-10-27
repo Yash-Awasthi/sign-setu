@@ -33,7 +33,12 @@ describe("clipFace", () => {
 
   it("reads raised brows, an open jaw and closed eyes", () => {
     const b = Array(52).fill(0);
-    b[3] = 0.8; b[4] = 0.8; b[5] = 0.8; b[25] = 0.5; b[9] = 1; b[10] = 1;
+    b[3] = 0.8;
+    b[4] = 0.8;
+    b[5] = 0.8;
+    b[25] = 0.5;
+    b[9] = 1;
+    b[10] = 1;
     const f = clipFace(b)!;
     expect(f.browRaise).toBeCloseTo(0.8);
     expect(f.browWorry).toBeCloseTo(0);

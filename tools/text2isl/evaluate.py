@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import pandas as pd
 import torch
 from transformers import DistilBertTokenizer
@@ -19,7 +20,11 @@ def generate_all_animations(model_path='isl_transformer_v1.pth', output_file='pr
         sentences = ["can i help you", "are you free today", "comb your hair", "congratulations"]
 
     tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    # The checkpoint's mean and std are numpy arrays; allow only those, not arbitrary pickles.
+    numpy_globals = [np._core.multiarray._reconstruct, np._core.multiarray.scalar, np.ndarray, np.dtype,
+                     type(np.dtype("float32")), type(np.dtype("float64"))]
+    with torch.serialization.safe_globals(numpy_globals):
+        checkpoint = torch.load(model_path, map_location=device, weights_only=True)  # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
     model = TextToSignModel(feature_dim=196, max_frames=checkpoint["max_frames"])
     model.load_state_dict(checkpoint["state"])
 

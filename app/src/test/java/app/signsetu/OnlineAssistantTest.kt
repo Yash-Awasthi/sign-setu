@@ -1,7 +1,7 @@
 package app.signsetu
 
 import app.signsetu.assistant.Assistant
-import app.signsetu.assistant.CloudAi
+import app.signsetu.assistant.OnlineAssistant
 import app.signsetu.assistant.Direct
 import app.signsetu.assistant.ModelStore
 import app.signsetu.assistant.Notice
@@ -17,7 +17,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class CloudAiTest {
+class OnlineAssistantTest {
     private class Vault(var token: String? = null, private val writable: Boolean = true) : TokenVault {
         override fun get() = token
         override fun put(token: String): Boolean {
@@ -39,7 +39,7 @@ class CloudAiTest {
     }
 
     private fun ai(server: Server, vault: Vault = Vault("tok"), on: Boolean = true, online: Boolean = true, url: String = "https://gw.example") =
-        CloudAi({ on }, url, server, vault) { online }
+        OnlineAssistant({ on }, url, server, vault) { online }
 
     private val text = Server { _, _ -> Reply(200, """{"text":"hello Ravi"}""") }
 
@@ -119,7 +119,7 @@ class CloudAiTest {
         var fail = false
         val server = Server { _, _ -> if (fail) Reply(500, "") else Reply(200, """{"text":"ok"}""") }
         val told = mutableListOf<Notice>()
-        val c = CloudAi({ true }, "https://gw.example", server, Vault("tok")) { online }.apply { onNotice = { told += it } }
+        val c = OnlineAssistant({ true }, "https://gw.example", server, Vault("tok")) { online }.apply { onNotice = { told += it } }
         c.ask("s", "u", emptyList()); c.ask("s", "u", emptyList())
         online = true
         c.ask("s", "u", emptyList()); c.ask("s", "u", emptyList())
@@ -141,7 +141,7 @@ class CloudAiTest {
     @Test
     fun withoutAGatewayTheDirectServiceIsUsedInItsOwnFormat() = runBlocking {
         val s = Server { _, _ -> Reply(200, """{"choices":[{"message":{"role":"assistant","content":" hi Ravi "}}]}""") }
-        val c = CloudAi({ true }, "", s, Vault(null), Direct("https://llm.example/v1/chat", "m", "k")) { true }
+        val c = OnlineAssistant({ true }, "", s, Vault(null), Direct("https://llm.example/v1/chat", "m", "k")) { true }
         assertTrue(c.available && c.enrolled && !c.viaGateway)
         assertEquals("hi Asha", c.ask("sys", "Asha here", listOf("Asha")))
         val (url, body, bearer) = s.calls.single()
@@ -154,7 +154,7 @@ class CloudAiTest {
     fun aResponsesServiceIsAskedInItsOwnFormatAndAnsweredFromTheMessageOnly() = runBlocking {
         val answer = """{"output":[{"type":"reasoning","content":[]},{"type":"message","content":[{"type":"output_text","text":" hi Ravi"},{"type":"output_text","text":" there "}]}]}"""
         val s = Server { _, _ -> Reply(200, answer) }
-        val c = CloudAi({ true }, "", s, Vault(null), Direct("https://llm.example/v1/responses", "m", "k")) { true }
+        val c = OnlineAssistant({ true }, "", s, Vault(null), Direct("https://llm.example/v1/responses", "m", "k")) { true }
         assertEquals("hi Asha there", c.ask("sys", "Asha here", listOf("Asha")))
         val (url, body, bearer) = s.calls.single()
         assertEquals("https://llm.example/v1/responses", url)
@@ -175,13 +175,13 @@ class CloudAiTest {
 
     @Test
     fun aKeylessDirectServiceIsNotAvailable() {
-        assertFalse(CloudAi({ true }, "", text, Vault(null), Direct("https://llm.example", "m", "")) { true }.available)
+        assertFalse(OnlineAssistant({ true }, "", text, Vault(null), Direct("https://llm.example", "m", "")) { true }.available)
     }
 
     @Test
     fun aKeyTheOfficerTypesOverridesTheOneCompiledIntoTheApp() = runBlocking {
         val s = Server { _, _ -> Reply(200, """{"choices":[{"message":{"role":"assistant","content":"ok"}}]}""") }
-        val c = CloudAi({ true }, "", s, Vault(null), Direct("https://llm.example/v1/chat", "m", "embedded"), Vault("typed")) { true }
+        val c = OnlineAssistant({ true }, "", s, Vault(null), Direct("https://llm.example/v1/chat", "m", "embedded"), Vault("typed")) { true }
         assertEquals("ok", c.ask("sys", "hi", emptyList()))
         assertEquals("typed", s.calls.single().third)
     }
@@ -189,7 +189,7 @@ class CloudAiTest {
     @Test
     fun aKeyTypedIntoADirectBuildIsStoredAndMakesItAvailable() {
         val own = Vault(null)
-        val c = CloudAi({ true }, "", text, Vault(null), Direct("https://llm.example/v1/chat", "m", ""), own) { true }
+        val c = OnlineAssistant({ true }, "", text, Vault(null), Direct("https://llm.example/v1/chat", "m", ""), own) { true }
         assertFalse(c.available)
         assertTrue(c.saveCustom("https://llm.example/v1", "m2", " typed "))
         assertTrue(c.available && c.enrolled)

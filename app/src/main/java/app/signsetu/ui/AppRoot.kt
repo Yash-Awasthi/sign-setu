@@ -38,7 +38,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.toClipEntry
 import android.content.ClipData
 import android.content.Context
-import app.signsetu.ui.components.LocalCloudAi
+import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.components.OfficerAuth
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -165,10 +165,10 @@ fun AppRoot(container: AppContainer) {
         if (block) activity?.window?.addFlags(flag) else activity?.window?.clearFlags(flag)
     }
     DisposableEffect(container) {
-        container.cloudAi.onNotice = { n ->
+        container.onlineAssistant.onNotice = { n ->
             context.mainExecutor.execute { Toast.makeText(context, noticeText(context, n), Toast.LENGTH_LONG).show() }
         }
-        onDispose { container.cloudAi.onNotice = {} }
+        onDispose { container.onlineAssistant.onNotice = {} }
     }
 
     val appContext = LocalContext.current
@@ -187,7 +187,7 @@ fun AppRoot(container: AppContainer) {
         onDispose {}
     }
 
-    CompositionLocalProvider(LocalContentRepository provides container.content, LocalCloudAi provides container.cloudAi, LocalMotion provides motionOn) { NoPersonalisedLearning {
+    CompositionLocalProvider(LocalContentRepository provides container.content, LocalOnlineAssistant provides container.onlineAssistant, LocalMotion provides motionOn) { NoPersonalisedLearning {
         SignSetuTheme(dark = dark, theme = settings?.colorTheme ?: ColorTheme.EMERALD, amoled = settings?.amoled == true) {
             val r = repo
             val c = content
@@ -394,7 +394,7 @@ internal fun SessionRoute(
     }
     // The camera service and the sleeping gateway take longest on first use; waking them now keeps the first item quick.
     val appContext = LocalContext.current
-    val cloud = container.cloudAi
+    val cloud = container.onlineAssistant
     LaunchedEffect(Unit) {
         if (cameraOn && ContextCompat.checkSelfPermission(appContext, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             runCatching { ProcessCameraProvider.awaitInstance(appContext) }

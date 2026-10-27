@@ -21,7 +21,7 @@ flowchart LR
     end
     STAGE["Stage device<br/>bonded phone or tablet"]:::ext
     GW["Department gateway<br/>FastAPI, optional"]:::ext
-    DIRECT["Officer's own assistant service<br/>no-gateway build, optional"]:::ext
+    DIRECT["Officer's own assistant service<br/>custom endpoint, optional"]:::ext
     UP["Upstream model service"]:::ext
     MSG["WhatsApp or Sandes"]:::ext
     CUST["Records custodian"]:::ext
@@ -47,7 +47,7 @@ The reviewer portal (`portal/`) and the gateway (`backend/`) are separate progra
 
 ## 2. Principles
 
-1. **Offline first.** Every feature works with no network. Online calls fall back to the on-device path on any failure and tell the officer once per change (`CloudAi.Notice`).
+1. **Offline first.** Every feature works with no network. Online calls fall back to the on-device path on any failure and tell the officer once per change (`OnlineAssistant.Notice`).
 2. **Content is data.** Questions, cards, signs, translations and motions are asset files checked against a hash manifest, not code.
 3. **Write before show.** Every event is written to the encrypted store before the screen reflects it.
 4. **The subject owns meaning.** A machine or officer reading is a proposal; only the subject's own pick records a meaning.
@@ -89,8 +89,8 @@ flowchart TB
     C --> DK["DatabaseKey<br/>wrapped DEK"]:::sec
     C --> SR["sessions: StateFlow&lt;SessionRepository?&gt;<br/>null while locked"]:::data
     C --> MS["ModelStore<br/>GGUF import, LocalModel"]:::comp
-    C --> CA["CloudAi<br/>gateway or direct"]:::comp
-    C --> AS["Assistant<br/>local first, then CloudAi"]:::comp
+    C --> CA["OnlineAssistant<br/>gateway or direct"]:::comp
+    C --> AS["Assistant<br/>local first, then OnlineAssistant"]:::comp
     C --> LT["LandmarkTracker<br/>lazy, per build type"]:::comp
     C --> RD["SignReader per SignLanguage<br/>lazy"]:::comp
     C --> PT["StageTransport<br/>per flavor"]:::sec
@@ -169,7 +169,7 @@ One module, `app.signsetu`, organised by feature.
 | `camera` | `CameraMirror` (Preview plus ImageAnalysis), `LandmarkTracker` and `LandmarkFrame`, `HolisticTracker`, the per-frame cue detectors, `Stabilizer` |
 | `sign` | `SignCapture` and `SignWindow` (segmentation), readers (`LandmarkSignReader`, `CtcSpellReader`, `SignReaders`), `ReadPolicy` and `SignChoices` (ranking and choices), `HomeSigns`, `SkeletonPlayer` |
 | `pair` | The second-screen protocol with no Android UI: `PairCrypto`, `StageWire` messages, `StageTransport` and `BluetoothTransport`, `StageLink` state machine, `Drawings` |
-| `assistant` | `Assistant`, `LocalModel` and `ModelStore` (llama.cpp), `CloudAi`, `Pseudonymizer`, `OfflineReport` |
+| `assistant` | `Assistant`, `LocalModel` and `ModelStore` (llama.cpp), `OnlineAssistant`, `Pseudonymizer`, `OfflineReport` |
 | `net` | `UrlHttp` (HTTPS only) and `KeystoreVault` |
 | `export` | `SessionReport` (PDF and encryption), `EvidenceIntegrity` (chain check and certificate) |
 | `ui` | `AppRoot`, `LockScreen`, the session route |
@@ -494,7 +494,7 @@ flowchart TB
     N -- "English, or Hindi in Devanagari" --> X["no suggestion"]:::comp
     N -- "yes" --> L{"local model ready<br/>and memory free?"}
     L -- "yes" --> LM["LocalModel, llama.cpp<br/>caption, then back to English"]:::comp
-    L -- "no" --> C{"CloudAi available, switched on,<br/>enrolled and online?"}
+    L -- "no" --> C{"OnlineAssistant available, switched on,<br/>enrolled and online?"}
     C -- "no" --> X
     C -- "yes" --> MK["Pseudonymizer masks names,<br/>details, numbers, emails, links"]:::sec
     MK --> GW{"build has a gateway?"}
@@ -508,10 +508,10 @@ flowchart TB
     classDef sec fill:#e9f1e8,stroke:#35603a,stroke-width:1.5px,color:#16202e
 ```
 
-*Figure 15. Translation path (`Assistant.suggest`, `CloudAi.ask`).*
+*Figure 15. Translation path (`Assistant.suggest`, `OnlineAssistant.ask`).*
 
 - **Local.** `ModelStore` imports a GGUF file and keeps it only if its SHA-256 is on `KNOWN_MODELS` (Gemma 3 1B Q4_K_M). It is offered on phones reporting at least 2.4 GB and loads only with 1.2 GB free; it is freed on lock, on memory pressure, and whenever the stage shows or a sign window opens. Each request starts from an empty 1,024-token context with greedy decoding.
-- **Online.** `CloudAi` uses the gateway when the build has one: a one-time department code is traded at `/v1/enroll` for a token stored by `KeystoreVault`; a 401 clears it. A custom API endpoint saved by the officer takes over from the gateway until removed: chat completions, the Responses API (an address ending in `/responses`) or the Anthropic Messages API (an address ending in `/messages`, key sent as `x-api-key`), with address, model and key, the key held by its own `KeystoreVault`, `assist.bin` under `signsetu.assist.key`); no key is ever compiled into an APK. Session data (the AI counsellor, the draft report) goes out only after the officer allows it once for the session. The gateway accepts only system prompts that match the app's own (`app_prompts.json`, written by `GatewayPromptContractTest`).
+- **Online.** `OnlineAssistant` uses the gateway when the build has one: a one-time department code is traded at `/v1/enroll` for a token stored by `KeystoreVault`; a 401 clears it. A custom API endpoint saved by the officer takes over from the gateway until removed: chat completions, the Responses API (an address ending in `/responses`) or the Anthropic Messages API (an address ending in `/messages`, key sent as `x-api-key`), with address, model and key, the key held by its own `KeystoreVault`, `assist.bin` under `signsetu.assist.key`); no key is ever compiled into an APK. Session data (the AI counsellor, the draft report) goes out only after the officer allows it once for the session. The gateway accepts only system prompts that match the app's own (`app_prompts.json`, written by `GatewayPromptContractTest`).
 - **Without a network** the report falls back to `OfflineReport`, a rule-based draft marked "not part of the record", and follow-up questions to a fixed list.
 
 ## 11. Camera and sign reading
@@ -564,7 +564,7 @@ sequenceDiagram
 
 ## 13. Build and delivery
 
-- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.7.5, code 15. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
+- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.8.0, code 16. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
 - Release builds: R8 with resource shrinking, `android.util.Log` calls stripped, native libraries and models stored uncompressed. Default ABIs arm64-v8a and x86_64 (universal); `-Pabi=arm64-v8a` builds the phone APK. APKs are unsigned; signing is a manual offline step.
 - Build gates on every variant before packaging: `check<Variant>Permissions` fails on RECORD_AUDIO or background location in any build and on discovery and location permissions in `standard`.
 - The gateway (`backend/`, FastAPI and SQLAlchemy, SQLite or PostgreSQL) enrols devices, serves the model manifest, proxies assistant calls, and has a `/v1/feedback` endpoint for consented reader labels that the app does not call yet. The avatar module (`avatar/`, TypeScript, three.js 0.160 and three-vrm 3.0) plays motions on the VRM character; it builds to `app/src/main/assets/avatar/avatar.js`, which CI checks is current. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) renders every motion with that same module.

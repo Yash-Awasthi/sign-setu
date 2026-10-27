@@ -11,7 +11,7 @@ data class Suggestion(val caption: String, val meaning: String?)
 
 /** The on-device assistant. It only translates the officer's own words into the subject's language and back; it
  * never answers, judges or adds anything, and the officer decides whether the caption is used. */
-class Assistant(private val models: ModelStore, private val cloud: CloudAi? = null) {
+class Assistant(private val models: ModelStore, private val cloud: OnlineAssistant? = null) {
     suspend fun suggest(text: String, language: Language): Suggestion? {
         if (!needsTranslation(text, language.code)) return null
         val local = models.use { model ->
@@ -36,7 +36,7 @@ class Assistant(private val models: ModelStore, private val cloud: CloudAi? = nu
     }
 }
 
-/** The gateway refuses a system prompt that does not open as the ones in this file and CloudAi.kt do (assist_prompt_openings). */
+/** The gateway refuses a system prompt that does not open as the ones in this file and OnlineAssistant.kt do (assist_prompt_openings). */
 internal fun translatePrompt(language: Language) =
     "Translate the sentence into ${language.english} (${language.name}), in its own script. Keep the exact meaning, " +
         "tense and who does what. Use simple words for a child. Reply with the translated sentence only."

@@ -14,6 +14,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.ContentRepository
 import app.signsetu.pair.LinkState
+import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.components.LocalContentRepository
 import app.signsetu.ui.pair.Break
 import app.signsetu.ui.pair.CheckValue
@@ -50,7 +51,8 @@ class StageDeviceAccessibilityTest(private val dark: Boolean) {
     @Before
     fun load() {
         shell("settings put global animator_duration_scale 0")
-        repo = ContentRepository(InstrumentationRegistry.getInstrumentation().targetContext.assets)
+        // One shared bundle: a fresh load per test filled the 192 MB emulator heap.
+        repo = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as SignSetuApp).container.content
         content = runBlocking { repo.load() }
         rule.enableAccessibilityChecks()
     }
@@ -58,12 +60,14 @@ class StageDeviceAccessibilityTest(private val dark: Boolean) {
     @After
     fun restore() = shell("settings put global animator_duration_scale 1")
 
+    private val onlineAssistant = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as SignSetuApp).container.onlineAssistant
+
     private fun shell(command: String) {
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command).close()
     }
 
     private fun show(body: @Composable () -> Unit) {
-        rule.setContent { CompositionLocalProvider(LocalContentRepository provides repo) { SignSetuTheme(dark = dark) { SubjectTheme(body) } } }
+        rule.setContent { CompositionLocalProvider(LocalContentRepository provides repo, LocalOnlineAssistant provides onlineAssistant) { SignSetuTheme(dark = dark) { SubjectTheme(body) } } }
         rule.onAllNodes(isRoot()).onLast().tryPerformAccessibilityChecks()
     }
 

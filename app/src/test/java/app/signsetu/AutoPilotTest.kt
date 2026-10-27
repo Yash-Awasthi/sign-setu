@@ -47,7 +47,7 @@ class AutoPilotTest {
 
         suspend fun start(handsOff: Boolean = false) {
             id = repo.start(Profile.NOT_SURE, "hi", Role.VICTIM)
-            pilot = AutoPilot(id, repo, bank, "en", scope, signing = { signing }, handsOff = handsOff, present = { q, lang -> present(q, lang) })
+            pilot = AutoPilot(id, repo, bank, "en", scope, signing = { signing }, handsOff = handsOff, present = { q, lang, _ -> present(q, lang) })
             settle()
         }
 
@@ -126,9 +126,10 @@ class AutoPilotTest {
         pilot.setAuto(true); tick(1)
         val q = runToQuestion()
         assertEquals(1, shownCount(q))
-        tick(10_500)
+        // The 10 s wait starts once the character has finished signing the question.
+        tick(25_000)
         assertEquals(2, shownCount(q))
-        tick(10_500)
+        tick(25_000)
         assertEquals("no_answer", rows.last { it.type == EventType.SKIPPED.name }.reason)
         assertEquals(2, shownCount(q))
     }

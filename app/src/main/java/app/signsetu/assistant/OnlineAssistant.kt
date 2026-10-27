@@ -53,7 +53,7 @@ enum class Notice { FALLBACK_OFFLINE, FALLBACK_ERROR, REVOKED, BACK_ONLINE, ENRO
 /** The online half of the assistant: the service the officer saved, else the project gateway when the build has one
  * (else the build's [Direct] default), once the phone is online, the officer has switched it on and, for the
  * gateway, the device is enrolled. */
-class CloudAi(
+class OnlineAssistant(
     private val enabled: suspend () -> Boolean,
     gatewayUrl: String,
     private val http: Http,

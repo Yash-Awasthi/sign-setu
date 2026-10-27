@@ -70,7 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import app.signsetu.R
 import androidx.compose.runtime.mutableIntStateOf
-import app.signsetu.ui.components.LocalCloudAi
+import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.Question
@@ -148,7 +148,7 @@ fun OfficerPane(
     val backAction = backAction(page, paired != null)
     BackHandler(enabled = backAction != BackAction.LEAVE) { if (backAction == BackAction.FIRST_TAB) page = 0 else askLeave = true }
     var export by remember { mutableStateOf<ExportState?>(null) }
-    val cloud = LocalCloudAi.current
+    val cloud = LocalOnlineAssistant.current
     val autoConv by vm.auto.conv.collectAsStateWithLifecycle()
     val aiOffer by produceState(false, cloud) { value = cloud.sendsSessionData() }
     // The AI draft summary joins the export only when the officer ticks it in the finish dialog.

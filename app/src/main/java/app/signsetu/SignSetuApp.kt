@@ -2,7 +2,7 @@ package app.signsetu
 
 import app.signsetu.assistant.ModelStore
 import app.signsetu.assistant.Assistant
-import app.signsetu.assistant.CloudAi
+import app.signsetu.assistant.OnlineAssistant
 import app.signsetu.assistant.Direct
 import app.signsetu.net.KeystoreVault
 import app.signsetu.net.UrlHttp
@@ -71,8 +71,8 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     val settings = SettingsStore(app)
     val report = SessionReport(app)
     val models = ModelStore(app)
-    val cloudAi = CloudAi({ settings.current().cloudAi }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, ""), KeystoreVault(app, "assist.bin", "signsetu.assist.key")) { isOnline(app) }
-    val assistant = Assistant(models, cloudAi)
+    val onlineAssistant = OnlineAssistant({ settings.current().onlineAssistant }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, ""), KeystoreVault(app, "assist.bin", "signsetu.assist.key")) { isOnline(app) }
+    val assistant = Assistant(models, onlineAssistant)
 
     /** Landmark tracking, created per build type; without it the stage shows a plain mirror. */
     private val tracker = lazy { LandmarkTrackers.create(app) }
@@ -109,7 +109,7 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     private val databaseKey = DatabaseKey(app)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     init {
-        scope.launch(Dispatchers.IO) { settings.current().let { cloudAi.restoreCustom(it.devAiUrl, it.devAiModel) } }
+        scope.launch(Dispatchers.IO) { settings.current().let { onlineAssistant.restoreCustom(it.devAiUrl, it.devAiModel) } }
     }
     private var database: SessionDatabase? = null
     private var backgroundedAt = 0L

@@ -1,4 +1,5 @@
 """Trains a format 1 reader on a landmark cache and reports test-split accuracy. See tools/README.md."""
+import functools
 import os
 import pathlib
 import pickle
@@ -20,6 +21,7 @@ HIDDEN, KERNEL = int(os.environ.get("SIGN_HIDDEN", 160)), 5
 STRONG = os.environ.get("SIGN_AUG") == "strong"
 DROPOUT = float(os.environ.get("SIGN_DROPOUT", 0.4))
 HAND_DROP = float(os.environ.get("SIGN_HAND_DROP", 0))
+WORKERS = int(os.environ.get("SIGN_WORKERS", 6))
 
 
 class SignNet(nn.Module):
@@ -81,6 +83,28 @@ def batch(samples, aspect, rng=None):
     return torch.tensor(np.stack([x if x is not None else np.zeros((FRAMES, FEATURES), np.float32) for x in xs]))
 
 
+class Batches(torch.utils.data.IterableDataset):
+    """Endless batches from make(rng), built in worker processes: featurising in Python is what limits training speed."""
+
+    def __init__(self, make):
+        self.make = make
+
+    def __iter__(self):
+        info = torch.utils.data.get_worker_info()
+        rng = np.random.default_rng([7, info.id if info else 0])
+        while True:
+            yield self.make(rng)
+
+
+def loader(make):
+    return iter(torch.utils.data.DataLoader(Batches(make), batch_size=None, num_workers=WORKERS))
+
+
+def labelled_batch(train, y, aspect, rng):
+    ids = rng.choice(len(train), 64)
+    return batch([train[i] for i in ids], aspect, rng), torch.tensor(y[ids])
+
+
 def evaluate(model, x, y):
     model.eval()
     with torch.no_grad():
@@ -97,7 +121,6 @@ def main(cache: pathlib.Path, out: pathlib.Path, epochs: int = 400) -> None:
     train = [s for s in samples if s["split"] == "train"]
     test = [s for s in samples if s["split"] == "test"]
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    rng = np.random.default_rng(7)
     torch.manual_seed(7)
 
     xt = batch(test, aspect).to(dev)
@@ -108,13 +131,12 @@ def main(cache: pathlib.Path, out: pathlib.Path, epochs: int = 400) -> None:
     steps = epochs * ((len(train) + 63) // 64)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=2e-3, total_steps=steps)
     loss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)
+    batches = loader(functools.partial(labelled_batch, train, ytr, aspect))
     for epoch in range(epochs):
         model.train()
-        order = rng.permutation(len(train))
-        for k in range(0, len(order), 64):
-            ids = order[k:k + 64]
-            x = batch([train[i] for i in ids], aspect, rng).to(dev)
-            loss = loss_fn(model(x), torch.tensor(ytr[ids], device=dev))
+        for _ in range((len(train) + 63) // 64):
+            x, y = next(batches)
+            loss = loss_fn(model(x.to(dev)), y.to(dev))
             opt.zero_grad()
             loss.backward()
             opt.step()

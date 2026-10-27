@@ -33,8 +33,8 @@ android {
         applicationId = "in.signsetu"
         minSdk = 29
         targetSdk = 37
-        versionCode = 15
-        versionName = "0.7.5"
+        versionCode = 16
+        versionName = "0.8.0"
         buildConfigField("long", "BUILD_EPOCH_DAY", "${providers.of(EpochDay::class.java) {}.get()}L")
         buildConfigField("boolean", "SECURE_SCREEN", "$secureScreen")
         buildConfigField("boolean", "TEST_UNLOCKED", "false")
@@ -113,7 +113,7 @@ android {
     }
 }
 
-// INTERNET is allowed only for the department gateway (CloudAi). the build fails if any library brings a forbidden permission into the merged manifest.
+// INTERNET is allowed only for the department gateway (OnlineAssistant). the build fails if any library brings a forbidden permission into the merged manifest.
 // The nearby flavor needs scanning and, below Android 13, location for Nearby Connections; it keeps the rest.
 androidComponents {
     onVariants { variant ->
