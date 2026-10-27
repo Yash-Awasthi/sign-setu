@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clip viewer</title>
+<!-- Plays clips on the app's own avatar page. Serve the repository root (py -m http.server 8802 -d .) and open
+     /tools/avatar-viewer/; the frame loads app/src/main/assets/avatar, so what plays here is what the phone plays. -->
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; display: grid; grid-template-columns: 320px 1fr; height: 100vh; background: #1b1d22; color: #e8e8e8; }
+  aside { padding: 12px; overflow: auto; border-right: 1px solid #333; display: flex; flex-direction: column; gap: 10px; }
+  iframe { border: 0; width: 100%; height: 100%; background: #2a2d33; }
+  input[type=search], select { width: 100%; box-sizing: border-box; background: #24262b; color: inherit; border: 1px solid #444; padding: 6px; }
+  select { flex: 1; min-height: 200px; }
+  label { display: flex; align-items: center; gap: 8px; }
+  input[type=range] { flex: 1; }
+  button { background: #2f6f5e; color: #fff; border: 0; padding: 8px; cursor: pointer; }
+  small { color: #999; }
+</style>
+</head>
+<body>
+<aside>
+  <div><b>Clips</b> <small id="count"></small></div>
+  <label>File <input type="file" id="file" accept=".js,.json" /></label>
+  <input type="search" id="filter" placeholder="Filter sentences" />
+  <select id="list" size="20"></select>
+  <button id="play">Play</button>
+  <label>Speed <input type="range" id="speed" min="0.25" max="1.5" step="0.25" value="1" /> <span id="speedText">1×</span></label>
+  <label>Frame <input type="range" id="frame" min="0" value="0" /> <span id="frameText">–</span></label>
+  <small>Dragging Frame holds that pose. The list starts with the app's content/clips.json; a prediction file
+  (prediction.js or medoids.json style) replaces it.</small>
+</aside>
+<iframe id="stage" src="../../app/src/main/assets/avatar/index.html"></iframe>
+<script>
+  let clips = [];
+  const $ = (id) => document.getElementById(id);
+  const stage = () => $("stage").contentWindow.signsetu;
+  const current = () => clips.find((c) => c.sentence === $("list").value);
+
+  function show() {
+    const q = $("filter").value.toLowerCase();
+    $("list").replaceChildren(...clips.filter((c) => c.sentence.includes(q)).map((c) => new Option(`${c.sentence} (${c.frames.length})`, c.sentence)));
+    $("count").textContent = `${clips.length}`;
+  }
+
+  // clips.json is a list; a prediction file maps each sentence to frames of {coordinates}.
+  function parse(text) {
+    const data = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+    if (Array.isArray(data.clips)) return data.clips;
+    return Object.entries(data).map(([sentence, e]) => ({ sentence: sentence.trim(), fps: 25, frames: e.frames.map((f) => f.coordinates.slice(0, 144)) }));
+  }
+
+  function play() {
+    const c = current();
+    if (!c || !stage()) return;
+    stage().clip({ ...c, fps: (c.fps ?? 25) * Number($("speed").value) });
+  }
+
+  function hold() {
+    const c = current();
+    if (!c || !stage()) return;
+    const i = Number($("frame").value);
+    $("frameText").textContent = `${i}/${c.frames.length - 1}`;
+    // The stage returns to rest when a clip ends, so the pose is held as a minute-long clip of one frame.
+    stage().clip({ sentence: c.sentence, fps: 25, frames: Array(1500).fill(c.frames[i]) });
+  }
+
+  $("list").onchange = () => {
+    const c = current();
+    $("frame").max = c ? c.frames.length - 1 : 0;
+    $("frame").value = 0;
+    $("frameText").textContent = "–";
+    play();
+  };
+  $("play").onclick = play;
+  $("frame").oninput = hold;
+  $("speed").oninput = () => ($("speedText").textContent = `${$("speed").value}×`);
+  $("filter").oninput = show;
+  $("file").onchange = async () => {
+    clips = parse(await $("file").files[0].text());
+    show();
+  };
+  fetch("../../app/src/main/assets/content/clips.json").then((r) => r.json()).then((d) => { clips = d.clips; show(); });
+</script>
+</body>
+</html>

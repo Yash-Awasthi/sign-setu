@@ -19,7 +19,11 @@ See [isl/README.md](isl/README.md): `retarget.py` (INCLUDE to `isl_signs.json`),
 
 ## Text to ISL (`tools/text2isl`)
 
-See [text2isl/README.md](text2isl/README.md): the sentence-to-motion model, its video processing and training, and `export_clips.py`, which writes the recorded sentence clips the app plays (`content/clips.json`).
+See [text2isl/README.md](text2isl/README.md): the sentence-to-motion model, its video processing and training, and `export_clips.py`, which writes the recorded sentence clips the app plays (`content/clips.json`). `get-data.ps1` downloads the corpus and MediaPipe models into `$SIGNSETU_DATA\text2isl`.
+
+## Clip viewer (`tools/avatar-viewer`)
+
+Plays `content/clips.json`, or any prediction file, on the app's own avatar page, with speed and a frame slider that holds a pose. Serve the repository root (`py -m http.server 8802 -d .`) and open `http://localhost:8802/tools/avatar-viewer/`.
 
 ## Sign readers (`tools/ml`)
 
