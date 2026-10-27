@@ -55,6 +55,10 @@ object DebugRecorder {
         pts(f.pose?.takeIf { it.size > 16 }?.subList(11, 17))?.let { put("arms", it) }
         if (f.browsUp) put("brows", true)
         f.head?.let { put("head", it.name) }
+        f.yaw?.let { put("yaw", round(it)) }
+        f.pitch?.let { put("pitch", round(it)) }
+        // Mouth blendshapes in MOUTH_SHAPES order: the data a mouthing model will be trained on.
+        f.mouth?.let { m -> put("mouth", JsonArray(m.map { JsonPrimitive(round(it)) })) }
     }
 
     private fun round(v: Float) = Math.round(v * 1e5f) / 1e5f

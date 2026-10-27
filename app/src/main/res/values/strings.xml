@@ -657,4 +657,10 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="reading_check">Check: %1$s</string>
     <string name="reading_confirm">Health or safety: confirm with them before acting on it.</string>
     <string name="reading_camera">Camera read: %1$s. Tap to accept.</string>
+    <string name="settings_sentence_helper">Offline sentence helper</string>
+    <string name="settings_sentence_ready">Installed. When a signed answer is unclear, it puts the likeliest of the checked sentences first, on this phone only. It never adds words.</string>
+    <string name="settings_sentence_missing">Not installed. This optional small model helps order sentences for unclear signed answers without internet. It needs a phone with 3 GB of memory or more. Import the file your department gives you.</string>
+    <string name="settings_sentence_import">Import sentence helper file</string>
+    <string name="settings_sentence_remove">Remove the sentence helper</string>
+    <string name="reading_helper_pick">Helper\'s pick: %1$s</string>
 </resources>

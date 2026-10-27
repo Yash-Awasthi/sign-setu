@@ -73,6 +73,8 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     val settings = SettingsStore(app)
     val report = SessionReport(app)
     val models = ModelStore(app)
+    /** The optional sentence helper, imported separately from the assistant's model. */
+    val sentenceModel = ModelStore(app, "sentence", ModelStore.KNOWN_SENTENCE_MODELS)
     val onlineAssistant = OnlineAssistant({ settings.current().onlineAssistant }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, ""), KeystoreVault(app, "assist.bin", "signsetu.assist.key")) { isOnline(app) }
     val assistant = Assistant(models, onlineAssistant)
 

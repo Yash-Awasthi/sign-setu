@@ -56,6 +56,8 @@ import app.signsetu.ui.theme.Spacing
 import app.signsetu.ui.theme.SubjectCardMin
 
 val LocalOnlineAssistant = staticCompositionLocalOf<app.signsetu.assistant.OnlineAssistant> { error("OnlineAssistant not provided") }
+/** The optional imported sentence helper (docs/10, item 6); null where none is wired, as in previews and tests. */
+val LocalSentenceHelper = staticCompositionLocalOf<app.signsetu.assistant.ModelStore?> { null }
 val LocalContentRepository = staticCompositionLocalOf<ContentRepository> { error("ContentRepository not provided") }
 
 @Composable

@@ -650,4 +650,10 @@
     <string name="reading_check">जाँचें: %1$s</string>
     <string name="reading_confirm">स्वास्थ्य या सुरक्षा: इस पर कार्रवाई से पहले उनसे पुष्टि करें।</string>
     <string name="reading_camera">कैमरे ने पढ़ा: %1$s। मानने के लिए टैप करें।</string>
+    <string name="settings_sentence_helper">ऑफ़लाइन वाक्य सहायक</string>
+    <string name="settings_sentence_ready">इंस्टॉल है। जब इशारों वाला जवाब साफ़ न हो, यह जाँचे गए वाक्यों में से सबसे संभावित को पहले रखता है, सिर्फ़ इसी फ़ोन पर। यह कोई शब्द नहीं जोड़ता।</string>
+    <string name="settings_sentence_missing">इंस्टॉल नहीं है। यह वैकल्पिक छोटा मॉडल बिना इंटरनेट के अस्पष्ट इशारों वाले जवाबों के वाक्य क्रम में लगाता है। इसके लिए कम से कम 3 GB मेमोरी वाला फ़ोन चाहिए। अपने विभाग से मिली फ़ाइल इंपोर्ट करें।</string>
+    <string name="settings_sentence_import">वाक्य सहायक फ़ाइल इंपोर्ट करें</string>
+    <string name="settings_sentence_remove">वाक्य सहायक हटाएँ</string>
+    <string name="reading_helper_pick">सहायक की पसंद: %1$s</string>
 </resources>

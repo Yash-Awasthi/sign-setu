@@ -37,6 +37,11 @@ data class LandmarkFrame(
     val everyday: Everyday? = null,
     /** The camera picture behind this frame was smeared; the landmarks are kept, the picture is not. */
     val blurry: Boolean = false,
+    /** Head turn and nod angles in degrees from the face model's transform; null from trackers without one. */
+    val yaw: Float? = null,
+    val pitch: Float? = null,
+    /** Mouth blendshape scores, 0 to 1, in [MOUTH_SHAPES] order; null without the face model. */
+    val mouth: List<Float>? = null,
 ) {
     val hands: List<List<Offset>> get() = listOfNotNull(leftHand, rightHand)
 }
@@ -108,12 +113,20 @@ class HeadGestures(private val windowMs: Long = WINDOW_MS, private val swing: Fl
 
     fun mark(frame: LandmarkFrame): LandmarkFrame {
         val f = frame.face?.takeIf { it.size >= 468 } ?: return frame.also { track.clear() }
-        val eyes = f.dist(33, 263, frame.aspect).takeIf { it > 0f } ?: return frame
-        val mid = Offset((f[33].x + f[263].x) / 2f, (f[33].y + f[263].y) / 2f)
-        // Along and across the eye line, so a tilted head still separates turning from nodding.
-        val ex = Offset((f[263].x - f[33].x) * frame.aspect, f[263].y - f[33].y) / eyes
-        val n = Offset((f[1].x - mid.x) * frame.aspect, f[1].y - mid.y) / eyes
-        track.addLast(Sample(frame.timestampMs, n.x * ex.x + n.y * ex.y, n.y * ex.x - n.x * ex.y))
+        val yaw = frame.yaw
+        val pitch = frame.pitch
+        if (yaw != null && pitch != null) {
+            // The face model's own head rotation: a hand moving past the face, or the body leaning while signing,
+            // does not turn the head, so it no longer reads as a nod or shake.
+            track.addLast(Sample(frame.timestampMs, yaw / DEGREES_PER_UNIT, pitch / DEGREES_PER_UNIT))
+        } else {
+            val eyes = f.dist(33, 263, frame.aspect).takeIf { it > 0f } ?: return frame
+            val mid = Offset((f[33].x + f[263].x) / 2f, (f[33].y + f[263].y) / 2f)
+            // Along and across the eye line, so a tilted head still separates turning from nodding.
+            val ex = Offset((f[263].x - f[33].x) * frame.aspect, f[263].y - f[33].y) / eyes
+            val n = Offset((f[1].x - mid.x) * frame.aspect, f[1].y - mid.y) / eyes
+            track.addLast(Sample(frame.timestampMs, n.x * ex.x + n.y * ex.y, n.y * ex.x - n.x * ex.y))
+        }
         while (frame.timestampMs - track.first().ms > windowMs) track.removeFirst()
         if (track.size < 6) return frame
         val dx = spread { it.along }
@@ -161,6 +174,9 @@ class HeadGestures(private val windowMs: Long = WINDOW_MS, private val swing: Fl
         const val SWING = 0.12f
         /** How much the main axis must outmove the other; signing moves the head both ways, so 2 missed real shakes. */
         const val DOMINANCE = 1.5f
+        /** Head degrees that count as one unit of the geometric swing: 0.10 of an eye width is about 6 degrees of turn.
+         * Calibration knob; tune on recorded nods and shakes. */
+        const val DEGREES_PER_UNIT = 60f
     }
 }
 

@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.toClipEntry
 import android.content.ClipData
 import android.content.Context
 import app.signsetu.ui.components.LocalOnlineAssistant
+import app.signsetu.ui.components.LocalSentenceHelper
 import app.signsetu.ui.components.OfficerAuth
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -187,7 +188,7 @@ fun AppRoot(container: AppContainer) {
         onDispose {}
     }
 
-    CompositionLocalProvider(LocalContentRepository provides container.content, LocalOnlineAssistant provides container.onlineAssistant, LocalMotion provides motionOn) { NoPersonalisedLearning {
+    CompositionLocalProvider(LocalContentRepository provides container.content, LocalOnlineAssistant provides container.onlineAssistant, LocalSentenceHelper provides container.sentenceModel, LocalMotion provides motionOn) { NoPersonalisedLearning {
         SignSetuTheme(dark = dark, theme = settings?.colorTheme ?: ColorTheme.EMERALD, amoled = settings?.amoled == true) {
             val r = repo
             val c = content
@@ -304,7 +305,7 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                 PracticeScreen(content, onBack = { backStack.removeLastOrNull() })
             }
             entry<SettingsKey> {
-                SettingsScreen(container.settings, container.models, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall)
+                SettingsScreen(container.settings, container.models, container.sentenceModel, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall)
             }
             entry<AppearanceKey> {
                 AppearanceScreen(container.settings, onBack = { backStack.removeLastOrNull() })

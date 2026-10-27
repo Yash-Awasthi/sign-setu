@@ -90,7 +90,7 @@ private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?) {
+fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?) {
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
@@ -106,21 +106,6 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
     val available = remember(devVersion, s.devAiUrl) { cloud.available }
     val viaGateway = remember(devVersion) { cloud.viaGateway }
     val probe = remember { AiProbe(UrlHttp()) }
-    var modelState by remember { mutableStateOf(models.state()) }
-    var importing by remember { mutableStateOf(false) }
-    var badModel by remember { mutableStateOf(false) }
-    // The department hands out the model as a file; it is copied in and checked, never downloaded.
-    val pickModel = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            importing = true
-            badModel = false
-            scope.launch {
-                badModel = !models.import(uri)
-                modelState = models.state()
-                importing = false
-            }
-        }
-    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -188,35 +173,11 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                     if (viaGateway) Item(stringResource(R.string.settings_online_assistant_key), if (enrolled) stringResource(R.string.settings_online_assistant_enrolled) else notSet) { dialog = Dialog.AIKEY }
                     else if (cloud.hasGateway) Item(stringResource(R.string.cloud_notice_custom), "${s.devAiModel} · ${s.devAiUrl.removePrefix("https://")}") { dialog = Dialog.DEVELOPER }
                 }
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            stringResource(
-                                when {
-                                    importing -> R.string.settings_assistant_importing
-                                    badModel -> R.string.settings_assistant_bad
-                                    else -> when (modelState) {
-                                        ModelStore.State.READY -> R.string.settings_assistant_ready
-                                        ModelStore.State.NOT_INSTALLED -> R.string.settings_assistant_missing
-                                        ModelStore.State.TOO_LITTLE_MEMORY -> R.string.settings_assistant_memory
-                                        ModelStore.State.UNSUPPORTED -> R.string.settings_assistant_unsupported
-                                    }
-                                },
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (badModel) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                        )
-                    },
-                    colors = ItemColors,
-                )
-                if (!importing && modelState == ModelStore.State.NOT_INSTALLED) {
-                    Item(stringResource(R.string.settings_assistant_import), "") { pickModel.launch(arrayOf("*/*")) }
-                }
-                if (!importing && modelState == ModelStore.State.READY) {
-                    Item(stringResource(R.string.settings_assistant_remove), "", destructive = true) {
-                        scope.launch { models.remove(); modelState = models.state() }
-                    }
-                }
+                ModelImport(models, ModelLabels.ASSISTANT)
+            }
+            // A separate model and import from the assistant's, which serves the automation agents.
+            Group(R.string.settings_sentence_helper) {
+                ModelImport(sentenceModel, ModelLabels.SENTENCE)
             }
             if (!cloud.hasGateway) Group(R.string.settings_developer) {
                 Item(
@@ -583,4 +544,69 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
     )
+}
+
+/** The words one model import uses: its state, the import and the removal. */
+internal enum class ModelLabels(
+    @StringRes val ready: Int, @StringRes val missing: Int, @StringRes val memory: Int, @StringRes val unsupported: Int,
+    @StringRes val import: Int, @StringRes val importing: Int, @StringRes val bad: Int, @StringRes val remove: Int,
+) {
+    ASSISTANT(
+        R.string.settings_assistant_ready, R.string.settings_assistant_missing, R.string.settings_assistant_memory, R.string.settings_assistant_unsupported,
+        R.string.settings_assistant_import, R.string.settings_assistant_importing, R.string.settings_assistant_bad, R.string.settings_assistant_remove,
+    ),
+    SENTENCE(
+        R.string.settings_sentence_ready, R.string.settings_sentence_missing, R.string.settings_assistant_memory, R.string.settings_assistant_unsupported,
+        R.string.settings_sentence_import, R.string.settings_assistant_importing, R.string.settings_assistant_bad, R.string.settings_sentence_remove,
+    ),
+}
+
+/** One model file's state with its own import and removal. The department hands out the file; it is copied in and
+ * checked against the store's known hashes, never downloaded. */
+@Composable
+internal fun ModelImport(models: ModelStore, labels: ModelLabels) {
+    val scope = rememberCoroutineScope()
+    var modelState by remember { mutableStateOf(models.state()) }
+    var importing by remember { mutableStateOf(false) }
+    var badModel by remember { mutableStateOf(false) }
+    val pickModel = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            importing = true
+            badModel = false
+            scope.launch {
+                badModel = !models.import(uri)
+                modelState = models.state()
+                importing = false
+            }
+        }
+    }
+    ListItem(
+        headlineContent = {
+            Text(
+                stringResource(
+                    when {
+                        importing -> labels.importing
+                        badModel -> labels.bad
+                        else -> when (modelState) {
+                            ModelStore.State.READY -> labels.ready
+                            ModelStore.State.NOT_INSTALLED -> labels.missing
+                            ModelStore.State.TOO_LITTLE_MEMORY -> labels.memory
+                            ModelStore.State.UNSUPPORTED -> labels.unsupported
+                        }
+                    },
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (badModel) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            )
+        },
+        colors = ItemColors,
+    )
+    if (!importing && modelState == ModelStore.State.NOT_INSTALLED) {
+        Item(stringResource(labels.import), "") { pickModel.launch(arrayOf("*/*")) }
+    }
+    if (!importing && modelState == ModelStore.State.READY) {
+        Item(stringResource(labels.remove), "", destructive = true) {
+            scope.launch { models.remove(); modelState = models.state() }
+        }
+    }
 }

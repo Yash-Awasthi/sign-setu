@@ -40,10 +40,11 @@ class LocalModel private constructor(private var handle: Long) {
     }
 }
 
-/** The model file on this phone. It is imported once from a file the department hands out, and accepted only if
- * its hash is one the app knows, so a swapped or damaged file is never parsed. */
-class ModelStore(private val context: Context) {
-    private val file = File(context.noBackupFilesDir, "models/assistant.gguf")
+/** A model file on this phone. It is imported once from a file the department hands out, and accepted only if
+ * its hash is in [known], so a swapped or damaged file is never parsed. Each store ([name]) has its own file and its
+ * own import: the assistant's is for the automation agents, the sentence helper's for reading signed answers. */
+class ModelStore(private val context: Context, private val name: String = "assistant", private val known: Set<String> = KNOWN_MODELS) {
+    private val file = File(context.noBackupFilesDir, "models/$name.gguf")
     private val lock = Mutex()
     private var model: LocalModel? = null
 
@@ -60,13 +61,13 @@ class ModelStore(private val context: Context) {
     suspend fun import(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         lock.withLock {
             unload()
-            val partial = File(file.parentFile, "import.part").apply { parentFile?.mkdirs() }
+            val partial = File(file.parentFile, "$name.part").apply { parentFile?.mkdirs() }
             val digest = MessageDigest.getInstance("SHA-256")
             val ok = runCatching {
                 DigestInputStream(context.contentResolver.openInputStream(uri)!!, digest).use { input ->
                     partial.outputStream().use { input.copyTo(it, 1 shl 20) }
                 }
-                digest.digest().toHexString() in KNOWN_MODELS
+                digest.digest().toHexString() in known
             }.getOrDefault(false)
             (ok && partial.renameTo(file)).also { if (!it) partial.delete() }
         }
@@ -104,6 +105,12 @@ class ModelStore(private val context: Context) {
         private const val MIN_FREE_BYTES = 1_200L * 1024 * 1024
 
         /** SHA-256 of the model files the department may install; see docs/10-on-device-assistant.md. */
+        /** SHA-256 of the sentence helper files the department may install (docs/10-gloss-to-text.md, item 6). */
+        val KNOWN_SENTENCE_MODELS = setOf(
+            // Qwen2.5 0.5B Instruct, Q4_K_M GGUF (Apache-2.0), from Qwen/Qwen2.5-0.5B-Instruct-GGUF; 491 MB.
+            "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        )
+
         val KNOWN_MODELS = setOf(
             // Gemma 3 1B instruction-tuned, Q4_K_M GGUF (Gemma Terms of Use), from ggml-org/gemma-3-1b-it-GGUF.
             "8ccc5cd1f1b3602548715ae25a66ed73fd5dc68a210412eea643eb20eb75a135",

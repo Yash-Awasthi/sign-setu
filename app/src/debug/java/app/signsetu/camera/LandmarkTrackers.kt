@@ -8,11 +8,11 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** Debug builds: the bundled holistic model, or a stand-in tracker that reports one open right hand that waves
+/** Debug builds: the bundled landmark models (SplitTracker.kt), or a stand-in tracker that reports one open right hand that waves
  * and rests, to check the camera, analysis, overlay and capture path without a model. */
 object LandmarkTrackers {
     fun create(context: Context): LandmarkTracker? =
-        if (File(context.filesDir, "demo_hands").exists()) DemoTracker() else holisticTracker(context)
+        if (File(context.filesDir, "demo_hands").exists()) DemoTracker() else landmarkTracker(context)
 }
 
 private class DemoTracker : LandmarkTracker {

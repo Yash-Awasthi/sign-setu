@@ -40,7 +40,12 @@ import app.signsetu.gloss.GlossLattice
 import app.signsetu.gloss.IntentMatch
 import app.signsetu.gloss.Phrasebook
 import app.signsetu.gloss.Rung
+import app.signsetu.assistant.ModelStore
+import app.signsetu.gloss.RERANK_SYSTEM
 import app.signsetu.gloss.faithful
+import app.signsetu.gloss.parseOrder
+import app.signsetu.gloss.rerankPrompt
+import app.signsetu.ui.components.LocalSentenceHelper
 import app.signsetu.gloss.ladder
 import app.signsetu.sign.SENTENCE_SYSTEM
 import app.signsetu.sign.SentenceGuess
@@ -62,7 +67,13 @@ internal fun pendingReading(events: List<SessionEvent>): SessionEvent? {
 /** What the app may say about a reading (docs/10-gloss-to-text.md): the phrasebook's rung for the lattice, with the
  * question on screen as evidence, and the online assistant's sentences when it is switched on, each one checked so it
  * holds no word that was not signed. */
-internal class Reading(val rung: Rung?, val online: List<SentenceGuess>, val alternatives: List<SentenceGuess> = emptyList())
+internal class Reading(
+    val rung: Rung?,
+    val online: List<SentenceGuess>,
+    val alternatives: List<SentenceGuess> = emptyList(),
+    /** The imported sentence helper's first choice when it differs from the rung's sentence. */
+    val helperPick: SentenceGuess? = null,
+)
 
 @Composable
 internal fun rememberReading(
@@ -103,7 +114,20 @@ internal fun rememberReading(
             value = cloud.ask(SENTENCE_SYSTEM, sentencePrompt(caption, guesses), names, 250, details)?.let { parseSentences(it, guesses) }.orEmpty()
         }
     }
-    return Reading(rung, online, alternatives.toList())
+    // The imported helper only reorders checked sentences, and only when the ladder is unsure.
+    val helper = LocalSentenceHelper.current
+    val helperPick by produceState<SentenceGuess?>(null, eventId, rung) {
+        val unsure = rung is Rung.FixWords || rung is Rung.WordStrip
+        if (helper == null || !unsure || helper.state() != ModelStore.State.READY) return@produceState
+        val first = (rung as? Rung.FixWords)?.let { SentenceGuess(segments.mapIndexed { i, s -> it.match.fills.firstOrNull { f -> f.token == i }?.label ?: s.word ?: "?" }, it.en) }
+        val pool = listOfNotNull(first) + alternatives.toList()
+        if (pool.size < 2) return@produceState
+        val signs = segments.map { it.candidates.ifEmpty { it.guesses.orEmpty() }.take(3).map { g -> g.word } }
+        val reply = helper.use { it.chat(RERANK_SYSTEM, rerankPrompt(caption, signs, pool.map { g -> g.text }), HELPER_TOKENS) }
+        val pick = reply?.let { parseOrder(it, pool.size) }?.firstOrNull()?.let(pool::get)
+        value = pick?.takeIf { it != first }
+    }
+    return Reading(rung, online, alternatives.toList(), helperPick)
 }
 
 /** The bundled phrasebook, memory-mapped once its file matches the manifest (it is stored uncompressed, like every
@@ -116,6 +140,9 @@ private const val PHRASEBOOK = "intents.json"
 
 /** An intent below this share of the posterior is not worth offering as an alternative. */
 private const val ALTERNATIVE_FLOOR = 0.1f
+
+/** The helper answers with a short list of numbers. */
+private const val HELPER_TOKENS = 16
 
 /** Guesses per sign sent online: enough to recover a misread, few enough to keep the prompt short. */
 private const val ONLINE_GUESSES = 6
@@ -154,7 +181,10 @@ internal fun SignPredictions(
             Rung.SignAgain -> Text(stringResource(R.string.reading_sign_again), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
             else -> Unit
         }
-        if (picked.isEmpty() && rung !is Rung.Sentence) reading.alternatives.forEach { g ->
+        if (picked.isEmpty()) reading.helperPick?.let { g ->
+            SuggestionChip(onClick = { onPick(g.words, g.text) }, label = { Text(stringResource(R.string.reading_helper_pick, g.text), style = MaterialTheme.typography.bodyMedium) })
+        }
+        if (picked.isEmpty() && rung !is Rung.Sentence) reading.alternatives.filter { it != reading.helperPick }.forEach { g ->
             SuggestionChip(onClick = { onPick(g.words, g.text) }, label = { Text(g.text, style = MaterialTheme.typography.bodyMedium) })
         }
         if (picked.isEmpty()) reading.online.forEach { g ->
