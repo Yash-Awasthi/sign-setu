@@ -90,18 +90,19 @@ review of meaning. Until then every number from simulated lattices is a developm
 | 0.2 debug recorder, 5.6 decision log | Done in debug builds: `gloss/DebugRecorder.kt`, landmarks only |
 | 0.3, 0.4, 6.1 to 6.4 recorded test set | Needs signers: not started |
 | 0.5, 6.5 to 6.7 one-command evaluation and report | Done: `tools/eval/run_eval.py`; per-signer views wait for recordings |
-| 1 lattice | Done: `gloss/GlossLattice.kt` with JSON; POINT tokens have no producer yet |
+| 1 lattice | Done: `gloss/GlossLattice.kt` with JSON; POINT tokens from a sideways point (`sign/Pointing.kt`) when the reader is unsure; "I" and "you" stay with the reader (no depth to tell a point at the camera from a fist) |
 | 2.1 to 2.3, 2.6 calibration, conformal sets, risk curve, confusion | Done: `tools/ml/calibrate.py`, `tools/ml/plots/risk_coverage.svg` |
 | 2.4 background class | Waiting for recorded non-sign motion (the recorder collects it) |
 | 2.5 segmentation error rate | Waiting for recorded sentences |
 | 2.7 better reader | Ongoing ML work (section 2 of `C:\work\newses.md`) |
 | 3 name resolver | Done: CTC-scored, margin rule, 425-entry `names.txt`, names confirmed in a session; margin needs tuning on held-out spelling |
-| 4 phrasebook | Done: 39 intents, English and Hindi, question prior, lattice matcher; review sheet `docs/review/intents_review.csv` |
+| 4 phrasebook | Done: 44 intents (every asking question has one, enforced by `check_content.py`), English and Hindi, question prior, lattice matcher; review sheet `docs/review/intents_review.csv` |
 | 4.8 review | Needs a Hindi speaker and a Deaf ISL reviewer |
 | 5 checker and ladder | Done: checker fuzz-tested, four rungs, alternatives, risky intents flagged |
-| Speaker gender setting (4.6) | Not built: Hindi shows both forms ("आया/आई") |
+| Speaker gender setting (4.6) | Done: start card sets it (logged as a system row); Hindi shows one form, both while unset |
 | 7 neural tagger, 8 continuous reader | Held for Gate B (real sentence data) |
 | Faster tracking (on-device roadmap) | Built, not yet measured on a phone: `camera/SplitTracker.kt` runs hands every frame and body and face on alternate frames (GPU, own CPU fallback, Holistic if hands cannot open); nods and shakes from the face model's head rotation; 19 mouth blendshapes per frame into the recorder. Offline the word reader barely depends on frame rate (ISLRTC top-1 0.342 at 25 fps, 0.316 at 8 fps); the gain is for head movement, mouth, spelling and segmentation |
 | Mouthing (item 5) | Features recorded; a model waits for videos with faces (full ISLRTC download) |
 | Sentence helper (item 6) | Built: its own Settings import (`ModelStore` "sentence"), separate from the automation agents' model; only reorders checked sentences when the ladder is unsure. Accepts Qwen2.5 0.5B Instruct Q4_K_M (491 MB, Apache-2.0, hash in `KNOWN_SENTENCE_MODELS`); the department copies `C:\work\ml-data\sentence_helper\qwen2.5-0.5b-instruct-q4_k_m.gguf` to the phone and imports it |
+| Camera reads (all screens) | Nods, shakes, thumbs, points at the body, held fingers, palm, shrug and courtesies go to the officer as "Camera read" on both the phone and a paired second screen; the person is never asked to confirm |
 

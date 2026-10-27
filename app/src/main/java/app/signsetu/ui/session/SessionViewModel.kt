@@ -132,7 +132,7 @@ class SessionViewModel(
             val session = repo.session(sessionId).first() ?: return@launch
             // Starting a session is the officer's confirmation of its opening: the stage greets the person first,
             // or, for someone who speaks another language, lets them find it.
-            if (repo.events(sessionId).first().all { it.type == EventType.SYSTEM && (it.text in StartRows || it.text?.startsWith(SYSTEM_SIGN_LANGUAGE) == true) }) {
+            if (repo.events(sessionId).first().all { it.type == EventType.SYSTEM && (it.text in StartRows || it.text?.startsWith(SYSTEM_SIGN_LANGUAGE) == true || it.text?.startsWith(SYSTEM_SPEAKER_GENDER) == true) }) {
                 val opening = if (session.profile == Profile.OTHER_LANGUAGE) Pending.LanguageFinder
                 else Pending.GroundRules().takeIf { content.question(RuleSteps.first().key) != null }
                 opening?.let { present(it, session.subjectLang) }
@@ -232,7 +232,9 @@ class SessionViewModel(
      * or after they drop, so a reading takes those from [HEAD_MARGIN_MS] either side of its window. */
     private val heads = ArrayDeque<Pair<Long, Head>>()
     @Volatile private var lastFrameMs = 0L
+    @Volatile private var lastBody: LandmarkFrame? = null
     @Volatile private var windowStartMs = 0L
+    @Volatile private var windowEndMs = Long.MIN_VALUE / 2
 
     private fun headsAround(from: Long, to: Long): Set<Head> = synchronized(heads) {
         heads.filter { (ms, _) -> ms in (from - HEAD_MARGIN_MS)..(to + HEAD_MARGIN_MS) }.map { it.second }.toSet()
@@ -249,6 +251,7 @@ class SessionViewModel(
     /** Every tracked camera frame, on the analysis thread. */
     fun onSignFrame(frame: LandmarkFrame) {
         lastFrameMs = frame.timestampMs
+        if (frame.pose != null || frame.leftHand != null || frame.rightHand != null) lastBody = frame
         frame.head?.let { h ->
             synchronized(heads) {
                 heads.addLast(frame.timestampMs to h)
@@ -286,14 +289,15 @@ class SessionViewModel(
             c.finish().forEach(::readSegment)
             reads.toList().also { reads.clear() }
         }
+        val start = windowStartMs
+        val end = lastFrameMs
+        windowEndMs = end
         viewModelScope.launch {
             pending.joinAll()
-            val start = windowStartMs
-            val end = lastFrameMs
             val segments = local.value.reading.orEmpty().map { it.withWindowHead(headsAround(start, end)) }
             val narrative = local.value.signWindow == SignWindow.NARRATIVE
             local.update { it.copy(reading = null, signWindow = null) }
-            if (segments.isEmpty()) return@launch
+            if (segments.isEmpty()) { windowEndMs = Long.MIN_VALUE / 2; return@launch }
             val words = segments.map { it.word ?: "?" }
             val id = logSigned(segments, words, EventSource.MACHINE, "en")
             DebugRecorder.window(id, (local.value.pending as? Pending.Ask)?.question?.id, segments, app.signsetu.BuildConfig.VERSION_NAME)
@@ -314,17 +318,21 @@ class SessionViewModel(
         }
     }
 
-    /** The officer's reading of a signed answer, logged beside the app's so the record shows both. */
     /** A nod, shake, thumb, point, held fingers, palm or shrug the camera read: logged as the app's reading, never as
      * the person's answer, for the officer to accept from the chat like a signed reading. */
     fun cameraRead(card: String, cue: String?) {
+        // A nod or shake in a sign window's margin is already in that reading; logged apart it would hide the reading.
+        if ((cue == "nod" || cue == "shake") && (capture != null || lastFrameMs - windowEndMs <= HEAD_MARGIN_MS)) return
         val label = content.cards[card]?.label?.get(officerLang) ?: content.subjectText(card, officerLang) ?: card
         viewModelScope.launch {
-            val id = repo.log(sessionId, EventType.ANSWER_SIGNED, EventSource.MACHINE, officerLang, text = label, cardId = card, shownId = local.value.itemId, via = cue)
+            val shownId = local.value.itemId
+            val id = repo.log(sessionId, EventType.ANSWER_SIGNED, EventSource.MACHINE, officerLang, text = label, cardId = card, shownId = shownId, via = cue)
             local.update { it.copy(signed = it.signed + (id to emptyList())) }
+            keepSkeleton(lastBody, EventSource.MACHINE, shownId)
         }
     }
 
+    /** The officer's reading of a signed answer, logged beside the app's so the record shows both. */
     fun acceptSigned(eventId: Long, words: List<String>, sentence: String? = null) {
         DebugRecorder.decision(eventId, "accepted", sentence ?: words.joinToString(" "))
         // A spelled name the officer accepted is this person's: it ranks first the next time it is spelled.
@@ -339,17 +347,17 @@ class SessionViewModel(
     private suspend fun logSigned(segments: List<SignSegment>, words: List<String>, source: EventSource, lang: String, shownId: Long? = local.value.itemId, sentence: String? = null): Long {
         val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = sentence ?: words.joinToString(" "), shownId = shownId)
         local.update { it.copy(signed = it.signed + (id to segments)) }
-        if (EvidenceMode.autoCapture.value) {
-            val keyFrame = segments.flatMap { it.frames }.firstOrNull { it.pose != null || it.leftHand != null || it.rightHand != null }
-                ?: segments.firstOrNull()?.frames?.firstOrNull()
-            if (keyFrame != null) {
-                val png = withContext(Dispatchers.Default) { runCatching { renderSkeletonPng(keyFrame) }.getOrNull() }
-                if (png != null) {
-                    repo.log(sessionId, EventType.ANSWER_DRAWING, source, drawingPng = png, shownId = shownId, reason = "evidence:skeleton")
-                }
-            }
-        }
+        keepSkeleton(
+            segments.flatMap { it.frames }.firstOrNull { it.pose != null || it.leftHand != null || it.rightHand != null } ?: segments.firstOrNull()?.frames?.firstOrNull(),
+            source, shownId,
+        )
         return id
+    }
+
+    private suspend fun keepSkeleton(frame: LandmarkFrame?, source: EventSource, shownId: Long?) {
+        if (!EvidenceMode.autoCapture.value || frame == null) return
+        val png = withContext(Dispatchers.Default) { runCatching { renderSkeletonPng(frame) }.getOrNull() } ?: return
+        repo.log(sessionId, EventType.ANSWER_DRAWING, source, drawingPng = png, shownId = shownId, reason = "evidence:skeleton")
     }
 
     /** The subject chooses what each sign meant, from the officer's reading and the reader's guesses. Each set of
@@ -409,6 +417,7 @@ class SessionViewModel(
     /** Landmarks are biometric: they go when the session ends, the app locks or this model is cleared. */
     fun wipeSigns() {
         capture = null
+        lastBody = null
         reads.forEach { it.cancel() }
         reads.clear()
         local.update { it.copy(reading = null, signed = emptyMap(), signWindow = null, confirm = null) }
@@ -529,6 +538,7 @@ class SessionViewModel(
                 }
             }
             AnswerBody.Change -> if (current) hold(null, via)
+            is AnswerBody.CameraRead -> cameraRead(body.card, body.cue)
             is AnswerBody.Text -> repo.log(sessionId, EventType.ANSWER_TEXT, EventSource.SUBJECT, ui.value?.session?.subjectLang, text = body.text.trim().take(TEXT_CAP), shownId = q, via = via)
             is AnswerBody.Drawing -> {
                 val png = remotePng(body.png)

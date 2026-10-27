@@ -105,8 +105,8 @@ fun Stage(
     onCue: (String) -> Unit = {},
     /** Water or food the subject asks for by themselves; a second screen sends it as a card. */
     onNeed: (String) -> Unit = onCard,
-    /** What the camera read, for the officer to accept (VideoCallStage); null keeps the person's own accept chip. */
-    onCameraRead: ((card: String, cue: String?) -> Unit)? = null,
+    /** What the camera read, for the officer to accept (VideoCallStage). */
+    onCameraRead: (card: String, cue: String?) -> Unit = { _, _ -> },
 ) {
     val lang = ui.session.subjectLang
     val profile = ui.session.profile

@@ -8,121 +8,155 @@
     "en": "mother",
     "hi_my": "मेरी माँ",
     "hai": "हैं",
-    "ref": "my mother"
+    "ref": "my mother",
+    "hi_ne": "मेरी माँ ने"
    },
    "father": {
     "en": "father",
     "hi_my": "मेरे पिता",
     "hai": "हैं",
-    "ref": "my father"
+    "ref": "my father",
+    "hi_ne": "मेरे पिता ने"
    },
    "brother": {
     "en": "brother",
     "hi_my": "मेरा भाई",
     "hai": "है",
-    "ref": "my brother"
+    "ref": "my brother",
+    "hi_ne": "मेरा भाई ने"
    },
    "sister": {
     "en": "sister",
     "hi_my": "मेरी बहन",
     "hai": "है",
-    "ref": "my sister"
+    "ref": "my sister",
+    "hi_ne": "मेरी बहन ने"
    },
    "grandmother": {
     "en": "grandmother",
     "hi_my": "मेरी दादी",
     "hai": "हैं",
-    "ref": "my grandmother"
+    "ref": "my grandmother",
+    "hi_ne": "मेरी दादी ने"
    },
    "grandfather": {
     "en": "grandfather",
     "hi_my": "मेरे दादा",
     "hai": "हैं",
-    "ref": "my grandfather"
+    "ref": "my grandfather",
+    "hi_ne": "मेरे दादा ने"
    },
    "husband": {
     "en": "husband",
     "hi_my": "मेरे पति",
     "hai": "हैं",
-    "ref": "my husband"
+    "ref": "my husband",
+    "hi_ne": "मेरे पति ने"
    },
    "wife": {
     "en": "wife",
     "hi_my": "मेरी पत्नी",
     "hai": "हैं",
-    "ref": "my wife"
+    "ref": "my wife",
+    "hi_ne": "मेरी पत्नी ने"
    },
    "son": {
     "en": "son",
     "hi_my": "मेरा बेटा",
     "hai": "है",
-    "ref": "my son"
+    "ref": "my son",
+    "hi_ne": "मेरा बेटा ने"
    },
    "daughter": {
     "en": "daughter",
     "hi_my": "मेरी बेटी",
     "hai": "है",
-    "ref": "my daughter"
+    "ref": "my daughter",
+    "hi_ne": "मेरी बेटी ने"
    },
    "uncle": {
     "en": "uncle",
     "hi_my": "मेरे चाचा",
     "hai": "हैं",
-    "ref": "my uncle"
+    "ref": "my uncle",
+    "hi_ne": "मेरे चाचा ने"
    },
    "friend": {
     "en": "friend",
     "hi_my": "मेरा दोस्त",
     "hai": "है",
-    "ref": "my friend"
+    "ref": "my friend",
+    "hi_ne": "मेरा दोस्त ने"
    },
    "neighbour": {
     "en": "neighbour",
     "hi_my": "मेरा पड़ोसी",
     "hai": "है",
-    "ref": "my neighbour"
+    "ref": "my neighbour",
+    "hi_ne": "मेरा पड़ोसी ने"
    },
    "teacher": {
     "en": "teacher",
     "hi_my": "मेरे शिक्षक",
     "hai": "हैं",
-    "ref": "my teacher"
+    "ref": "my teacher",
+    "hi_ne": "मेरे शिक्षक ने"
    },
    "man": {
     "en": "man",
     "hi_my": "एक आदमी",
     "hai": "है",
-    "ref": "a man"
+    "ref": "a man",
+    "hi_ne": "एक आदमी ने"
    },
    "woman": {
     "en": "woman",
     "hi_my": "एक औरत",
     "hai": "है",
-    "ref": "a woman"
+    "ref": "a woman",
+    "hi_ne": "एक औरत ने"
    },
    "boy": {
     "en": "boy",
     "hi_my": "एक लड़का",
     "hai": "है",
-    "ref": "a boy"
+    "ref": "a boy",
+    "hi_ne": "एक लड़का ने"
    },
    "girl": {
     "en": "girl",
     "hi_my": "एक लड़की",
     "hai": "है",
-    "ref": "a girl"
+    "ref": "a girl",
+    "hi_ne": "एक लड़की ने"
    },
    "police": {
     "en": "police",
     "hi_my": "पुलिस",
     "hai": "है",
-    "ref": "the police"
+    "ref": "the police",
+    "hi_ne": "पुलिस ने"
    },
    "soldier": {
     "en": "soldier",
     "hi_my": "एक सैनिक",
     "hai": "है",
-    "ref": "a soldier"
+    "ref": "a soldier",
+    "hi_ne": "एक सैनिक ने"
+   },
+   "he": {
+    "en": "he",
+    "hi_my": "वह",
+    "hai": "है",
+    "ref": "he",
+    "hi_ne": "उसने"
+   },
+   "she": {
+    "en": "she",
+    "hi_my": "वह",
+    "hai": "है",
+    "ref": "she",
+    "hi_ne": "उसने"
    }
   },
   "PLACE": {
@@ -448,6 +482,28 @@
     "en": "computers",
     "hi": "कंप्यूटर"
    }
+  },
+  "SCHOOL_LIKE": {
+   "sport": {
+    "en": "playing sports",
+    "hi": "खेल"
+   },
+   "friend": {
+    "en": "my friends",
+    "hi": "मेरे दोस्त"
+   },
+   "book": {
+    "en": "reading",
+    "hi": "पढ़ाई"
+   },
+   "paint": {
+    "en": "drawing",
+    "hi": "चित्र बनाना"
+   },
+   "teacher": {
+    "en": "my teacher",
+    "hi": "मेरे शिक्षक"
+   }
   }
  },
  "intents": [
@@ -699,7 +755,7 @@
     "x3"
    ],
    "en": "{TIME, }{PERSON.ref.cap} attacked me.",
-   "hi": "{TIME }{PERSON.hi_my} ने मुझ पर हमला किया।",
+   "hi": "{TIME }{PERSON.hi_ne} मुझ पर हमला किया।",
    "risk": true
   },
   {
@@ -718,7 +774,7 @@
     "d3"
    ],
    "en": "{TIME, }{PERSON.ref.cap} attacked me with {OBJECT}.",
-   "hi": "{TIME }{PERSON.hi_my} ने मुझ पर {OBJECT.hi} से हमला किया।",
+   "hi": "{TIME }{PERSON.hi_ne} मुझ पर {OBJECT.hi} से हमला किया।",
    "risk": true
   },
   {
@@ -925,6 +981,74 @@
    "questions": [],
    "en": "I am deaf.",
    "hi": "मैं सुन नहीं सकता/सकती।",
+   "risk": false
+  },
+  {
+   "id": "phone_number",
+   "pattern": [
+    "telephone|cell phone|phone?",
+    "$NUM"
+   ],
+   "questions": [
+    "p2",
+    "f4"
+   ],
+   "en": "The phone number is {NUM}.",
+   "hi": "फ़ोन नंबर {NUM} है।",
+   "risk": false
+  },
+  {
+   "id": "brothers",
+   "pattern": [
+    "i?",
+    "brother",
+    "$NUM"
+   ],
+   "questions": [
+    "f8"
+   ],
+   "en": "I have {NUM} brothers.",
+   "hi": "मेरे {NUM} भाई हैं।",
+   "risk": false
+  },
+  {
+   "id": "sisters",
+   "pattern": [
+    "i?",
+    "sister",
+    "$NUM"
+   ],
+   "questions": [
+    "f8"
+   ],
+   "en": "I have {NUM} sisters.",
+   "hi": "मेरी {NUM} बहनें हैं।",
+   "risk": false
+  },
+  {
+   "id": "school_name",
+   "pattern": [
+    "school",
+    "$NAME"
+   ],
+   "questions": [
+    "sc1"
+   ],
+   "en": "My school's name is {NAME}.",
+   "hi": "मेरे स्कूल का नाम {NAME} है।",
+   "risk": false
+  },
+  {
+   "id": "like_at_school",
+   "pattern": [
+    "i?",
+    "$SCHOOL_LIKE"
+   ],
+   "questions": [
+    "sc5"
+   ],
+   "en": "I like {SCHOOL_LIKE} at school.",
+   "hi": "मुझे स्कूल में {SCHOOL_LIKE.hi} पसंद है।",
    "risk": false
   },
   {

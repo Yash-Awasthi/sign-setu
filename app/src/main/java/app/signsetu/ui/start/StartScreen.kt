@@ -1,68 +1,51 @@
 package app.signsetu.ui.start
 
-import androidx.compose.material.icons.filled.Call
-import app.signsetu.ui.session.clockDate
-import app.signsetu.ui.session.clockTime
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.clickable
-import app.signsetu.ui.session.defaultTitle
-import androidx.compose.ui.platform.LocalResources
+import android.Manifest
+import android.app.Activity
 import android.widget.Toast
-import androidx.compose.runtime.key
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.material.icons.filled.Delete
-import app.signsetu.ui.session.SYSTEM_SIGN_LANGUAGE
-import app.signsetu.data.content.SignLanguage
-import app.signsetu.ui.components.GuardedAlertDialog
-import app.signsetu.ui.components.BrandButton
-import app.signsetu.ui.components.ChoiceTile
-import app.signsetu.ui.components.OfficerCard
+import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.LocalActivity
-import app.signsetu.ui.components.OfficerAuth
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.foundation.selection.toggleable
-import app.signsetu.data.session.EventSource
-import app.signsetu.data.session.EventType
-import app.signsetu.ui.session.SYSTEM_JJ_NOTICE
-import app.signsetu.ui.session.SYSTEM_JUVENILE
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,7 +54,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -82,34 +67,51 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.signsetu.R
 import app.signsetu.camera.hasCameraPermission
 import app.signsetu.data.content.ContentBundle
+import app.signsetu.data.content.SignLanguage
+import app.signsetu.data.session.EventSource
+import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Role as SessionRole
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionRepository
+import app.signsetu.gloss.Gender
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.MiniFace
+import app.signsetu.ui.components.BrandButton
+import app.signsetu.ui.components.ChoiceTile
+import app.signsetu.ui.components.GuardedAlertDialog
+import app.signsetu.ui.components.OfficerAuth
+import app.signsetu.ui.components.OfficerCard
+import app.signsetu.ui.session.SYSTEM_JJ_NOTICE
+import app.signsetu.ui.session.SYSTEM_JUVENILE
+import app.signsetu.ui.session.SYSTEM_SIGN_LANGUAGE
+import app.signsetu.ui.session.SYSTEM_SPEAKER_GENDER
+import app.signsetu.ui.session.clockDate
+import app.signsetu.ui.session.clockTime
+import app.signsetu.ui.session.defaultTitle
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalInk
-import androidx.compose.runtime.DisposableEffect
-import androidx.core.view.WindowCompat
-import androidx.compose.ui.platform.LocalView
-import android.app.Activity
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
@@ -147,6 +149,8 @@ fun StartScreen(
     // The officer does not know the language: the session opens on the language finder.
     var langUnknown by rememberSaveable { mutableStateOf(false) }
     var signer by rememberSaveable { mutableStateOf(false) }
+    // Only Hindi first-person verbs need it ("आया" or "आई"); left unset, both forms are shown.
+    var gender by rememberSaveable { mutableStateOf(Gender.UNKNOWN) }
     var role by rememberSaveable { mutableStateOf(SessionRole.NOT_KNOWN) }
     var underAge by rememberSaveable { mutableStateOf(false) }
     var signLang by rememberSaveable { mutableStateOf(SignLanguage.ISL) }
@@ -163,6 +167,7 @@ fun StartScreen(
             if (p == Profile.ISL_USER && signLang != SignLanguage.ISL) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_SIGN_LANGUAGE + signLang.name)
             // The record shows the officer saw the Juvenile Justice notice, and whether they marked the person a child.
             if (role == SessionRole.ACCUSED) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JJ_NOTICE)
+            if (gender != Gender.UNKNOWN) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_SPEAKER_GENDER + gender.name)
             if (underAge && p != Profile.YOUNG_CHILD) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JUVENILE)
             onOpenSession(id)
         }
@@ -257,6 +262,14 @@ fun StartScreen(
                                     ChoiceTile(s == signLang, onClick = { signLang = s }, modifier = Modifier.weight(1f).fillMaxHeight()) {
                                         Text(stringResource(if (s == SignLanguage.ASL) R.string.sign_asl else R.string.sign_isl), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                                     }
+                                }
+                            }
+                        }
+                        Text(stringResource(R.string.start_gender), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            listOf(Gender.MASCULINE to R.string.gender_male, Gender.FEMININE to R.string.gender_female, Gender.UNKNOWN to R.string.gender_unknown).forEach { (g, label) ->
+                                ChoiceTile(g == gender, onClick = { gender = g }, modifier = Modifier.weight(1f).fillMaxHeight()) {
+                                    Text(stringResource(label), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                                 }
                             }
                         }

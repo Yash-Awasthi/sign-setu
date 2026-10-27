@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import app.signsetu.camera.SkeletonOverlay
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -46,9 +47,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -80,7 +79,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import app.signsetu.ui.theme.LocalStageColors
-import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
@@ -126,9 +124,8 @@ fun VideoCallStage(
     panel: (@Composable (Modifier) -> Unit)? = null,
     /** The share of the height the panel takes; the character gets the rest. */
     panelShare: Float = 0.6f,
-    /** A nod, shake, thumb, point, held fingers, palm or shrug the camera read, sent to the officer to accept. The
-     * person may not read, so nothing is asked of them; null (a second screen) keeps the tap-to-accept chip. */
-    onCameraRead: ((card: String, cue: String?) -> Unit)? = null,
+    /** A nod, shake, thumb, point, held fingers, palm, shrug or courtesy the camera read, sent to the officer to accept. */
+    onCameraRead: (card: String, cue: String?) -> Unit = { _, _ -> },
 ) {
     val lang = ui.session.subjectLang
     val pending = ui.pending
@@ -156,8 +153,8 @@ fun VideoCallStage(
         recentReaction = Reaction.Count(reaction, n)
     }
 
-    // Stays as the officer left it for every item: turning it on once is enough for the whole session.
-    var showVictimSkeleton by StageSkeleton.on
+    // One switch with the officer's menu, kept for every item of the session.
+    var showVictimSkeleton by SkeletonOverlay.on
 
     // Left alone, the hint under the caption lights up, then a reassurance takes its place, each spoken and signed once;
     // once per quiet spell, and a touch or a signed answer starts the wait again. No yes or no signs: they read as answers.
@@ -178,26 +175,16 @@ fun VideoCallStage(
     val idleLine = idleStep?.line?.takeIf { it != "hint_answer" }?.let { content.subjectText(it, lang) }
     val hintLit = idleStep?.line == "hint_answer"
 
-    // The card a gesture proposed and the cue it came from; the cue is logged only if the subject taps it.
-    var proposal by remember { mutableStateOf<Pair<String, String?>?>(null) }
-    LaunchedEffect(pending) { proposal = null }
-    // A courtesy the camera read — hands joined, a wave, a hand on the chest, a bow — waits here as a word the
-    // subject can accept. It is never logged until they tap it, and it is forgotten if they ignore it.
-    var courtesy by remember { mutableStateOf<Pair<String, String?>?>(null) }
-    LaunchedEffect(courtesy) { if (courtesy != null) { delay(COURTESY_MS); courtesy = null } }
+    // What the camera reads goes to the officer, never to the person: they may not read, so nothing is asked of them.
     var lastRead by remember { mutableStateOf("" to 0L) }
     fun propose(card: String, cue: String?) {
         if (statement && card != "stop") return
+        // One nod fires several head events; the same read within a few seconds is the same answer.
+        val now = SystemClock.elapsedRealtime()
+        if (card == lastRead.first && now - lastRead.second < SAME_READ_MS) return
+        lastRead = card to now
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        onCameraRead?.let { send ->
-            // One nod fires several head events; the same read within a few seconds is the same answer.
-            val now = SystemClock.elapsedRealtime()
-            if (card == lastRead.first && now - lastRead.second < SAME_READ_MS) return
-            lastRead = card to now
-            send(card, cue)
-            return
-        }
-        proposal = card to cue
+        onCameraRead(card, cue)
     }
     fun answer(card: String, cue: String? = null) {
         cue?.let(onCue)
@@ -216,8 +203,9 @@ fun VideoCallStage(
             card.matches(FINGERS) -> reactCount(R.plurals.call_r_fingers, card.drop(1).toInt())
             else -> react(R.string.call_r_point, cardLabel(content, card, lang), HapticFeedbackType.TextHandleMove)
         }
-        proposal = null
     }
+
+    fun courtesyRead(seen: Everyday) = if (seen == Everyday.THANKS) propose("thank_you", "thanks") else propose("namaste", seen.name.lowercase())
 
     val hint = content.subjectText("hint_answer", lang)
     // Their language is not known yet, so the prompt is in several scripts at once.
@@ -250,12 +238,18 @@ fun VideoCallStage(
         val handsVisible = frame.leftHand != null || frame.rightHand != null
         val clock = SystemClock.elapsedRealtime()
         if (!handsVisible) { handsDown.value = true; handsSince.longValue = 0L } else if (handsSince.longValue == 0L) handsSince.longValue = clock
-        // The camera analyses every frame here, so its own head proposals never fire: outside a sign window a nod or
-        // shake is offered from the frame itself. Inside one it is part of the answer (SessionViewModel's head margin).
-        if (!signing) when (frame.head) {
-            Head.Nod -> propose("yes", "nod")
-            Head.Shake -> propose("no", "shake")
-            null -> Unit
+        // The camera analyses every frame here, so its own proposal callbacks never fire: outside a sign window each
+        // reading is taken from the frame itself. Inside one, head movement is part of the answer (SessionViewModel).
+        if (!signing) {
+            when (frame.head) {
+                Head.Nod -> propose("yes", "nod")
+                Head.Shake -> propose("no", "shake")
+                null -> Unit
+            }
+            frame.pointsAt?.let { propose(it, "point") }
+            if (frame.stopPalm) propose("stop", "palm")
+            if (frame.shrug) propose("dont_know", "shrug")
+            frame.everyday?.let(::courtesyRead)
         }
         val held = handsVisible && clock - handsSince.longValue >= HANDS_HOLD_MS
         // Picture tiles are the answer while they are up: a hand seen then must not cover them with a reading window.
@@ -320,13 +314,7 @@ fun VideoCallStage(
                     onPoint = { pointId -> propose(pointId, "point") },
                     onStopPalm = { propose("stop", "palm") },
                     onShrug = { propose("dont_know", "shrug") },
-                    onEveryday = { seen ->
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        courtesy = when (seen) {
-                            Everyday.THANKS -> "thank_you" to "thanks"
-                            else -> "namaste" to seen.name.lowercase()
-                        }
-                    },
+                    onEveryday = ::courtesyRead,
                 ) {
                     Box(
                         modifier = Modifier
@@ -435,33 +423,6 @@ fun VideoCallStage(
             SeenSigns(ui.reading.orEmpty(), Modifier)
             SignSlowerCue(ui.reading?.lastOrNull()?.takeIf { it.slower }, content, lang, Modifier)
 
-            courtesy?.let { (card, cue) ->
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = LocalCall.current.accentDeep,
-                    border = BorderStroke(1.5.dp, LocalCall.current.accentSoft),
-                    modifier = Modifier.padding(horizontal = 8.dp).clickable {
-                        answer(card, cue)
-                        courtesy = null
-                    },
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text("🙏", fontSize = 16.sp)
-                        Text(
-                            text = stringResource(R.string.call_courtesy, cardLabel(content, card, lang)),
-                            fontFamily = Baloo,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = LocalCall.current.accentSoft,
-                        )
-                    }
-                }
-            }
-
             AnimatedVisibility(visible = recentReaction != null) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
@@ -536,32 +497,6 @@ fun VideoCallStage(
             }
         }
 
-        proposal?.let { (card, cue) ->
-            val label = cardLabel(content, card, lang)
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = LocalCall.current.accentDeep,
-                border = BorderStroke(2.dp, LocalCall.current.accent),
-                shadowElevation = 12.dp,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(bottom = 184.dp)
-                    .clickable { answer(card, cue) }
-                    .semantics { role = Role.Button; contentDescription = label },
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (content.hasCardImage(card)) CardImage(card, Modifier.size(36.dp))
-                    Text(label, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                    content.subjectText("is_this_it", lang)?.let { Text(it, fontSize = 14.sp, color = LocalCall.current.accentSoft) }
-                }
-            }
-        }
-
         Surface(
             shape = RoundedCornerShape(32.dp),
             color = LocalCall.current.surface.copy(alpha = 0.93f),
@@ -602,10 +537,6 @@ fun VideoCallStage(
 
 /** Whether the subject's own camera picture shows the traced skeleton; kept outside the screen so it survives the
  * handover between items, where the stage is built again. */
-internal object StageSkeleton {
-    val on = mutableStateOf(false)
-}
-
 /** One idle beat: the subject line shown ("hint_answer" lights the hint) and for how long. */
 private class IdleStep(val line: String, val ms: Long)
 // Long enough for each line to be spoken and signed in full.
@@ -617,8 +548,6 @@ private const val REASSURE_IDLE_MS = 15_000L
 /** A repeat of the same camera read within this is not sent again. */
 private const val SAME_READ_MS = 3_000L
 
-/** How long a read courtesy waits for the subject's tap before it is dropped. */
-private const val COURTESY_MS = 6_000L
 
 private val FINGERS = Regex("n\\d+")
 

@@ -549,7 +549,6 @@
     <string name="downgrade_reset_body">ऐप डाउनग्रेड होने के कारण सत्र तालिकाएँ फिर से बनाई गई हैं। पहले के अनएक्सपोर्टेड रिकॉर्ड सुरक्षित रूप से हटा दिए गए हैं। नए सत्र सामान्य रूप से चलेंगे।</string>
     <string name="call_signing">इशारा हो रहा है…</string>
     <string name="call_you">आप</string>
-    <string name="call_courtesy">कहने के लिए दबाएँ: %1$s</string>
     <string name="call_with_you">हम आपके साथ हैं।</string>
     <plurals name="call_r_fingers">
         <item quantity="one">%1$d उँगली दिखाई</item>
@@ -656,4 +655,9 @@
     <string name="settings_sentence_import">वाक्य सहायक फ़ाइल इंपोर्ट करें</string>
     <string name="settings_sentence_remove">वाक्य सहायक हटाएँ</string>
     <string name="reading_helper_pick">सहायक की पसंद: %1$s</string>
+    <string name="start_gender">उनका लिंग (हिंदी शब्दों के लिए)</string>
+    <string name="gender_male">पुरुष</string>
+    <string name="gender_female">महिला</string>
+    <string name="gender_unknown">तय नहीं</string>
+    <string name="log_speaker_gender">हिंदी शब्दों के लिए लिंग: %1$s</string>
 </resources>

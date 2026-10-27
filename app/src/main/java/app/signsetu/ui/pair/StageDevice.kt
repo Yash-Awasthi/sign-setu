@@ -329,6 +329,7 @@ private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkSt
                     onCard = onCard,
                     onYesNo = { answeredYes = it; answeredCard = null; send(AnswerBody.YesNo(it, cue.also { cue = null })) },
                     onCue = { cue = it },
+                    onCameraRead = { card, read -> send(AnswerBody.CameraRead(card, read)) },
                     onLanguage = { chosenLanguage = it; send(AnswerBody.Language(it)) },
                     onDrawing = { png -> scope.launch { withContext(Dispatchers.Default) { fitDrawing(png) }?.let { send(AnswerBody.Drawing(it.b64())) } } },
                     onWritten = { send(AnswerBody.Text(it.trim())) },

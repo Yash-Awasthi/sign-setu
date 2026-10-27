@@ -14,9 +14,10 @@ import pathlib
 OUT = pathlib.Path(__file__).resolve().parents[2] / "app" / "src" / "main" / "assets" / "content" / "intents.json"
 
 
-def person(en, hi_my, hai="है", ref=None):
-    """hi_my is "my X" with Hindi agreement; hai agrees with it (respect plural for elders); ref is the English reference."""
-    return {"en": en, "hi_my": hi_my, "hai": hai, "ref": ref or f"my {en}"}
+def person(en, hi_my, hai="है", ref=None, hi_ne=None):
+    """hi_my is "my X" with Hindi agreement; hai agrees with it (respect plural for elders); ref is the English
+    reference; hi_ne is the doer with ने ("उसने" for he, not "वह ने")."""
+    return {"en": en, "hi_my": hi_my, "hai": hai, "ref": ref or f"my {en}", "hi_ne": hi_ne or f"{hi_my} ने"}
 
 
 SLOTS = {
@@ -31,6 +32,8 @@ SLOTS = {
         "man": person("man", "एक आदमी", ref="a man"), "woman": person("woman", "एक औरत", ref="a woman"),
         "boy": person("boy", "एक लड़का", ref="a boy"), "girl": person("girl", "एक लड़की", ref="a girl"),
         "police": person("police", "पुलिस", ref="the police"), "soldier": person("soldier", "एक सैनिक", ref="a soldier"),
+        # From a sideways point (POINT tokens): who it was is shown, not named.
+        "he": person("he", "वह", ref="he", hi_ne="उसने"), "she": person("she", "वह", ref="she", hi_ne="उसने"),
     },
     "PLACE": {k: {"en": e, "hi": h} for k, e, h in [
         ("house", "home", "घर"), ("school", "school", "स्कूल"), ("hospital", "hospital", "अस्पताल"),
@@ -68,6 +71,9 @@ SLOTS = {
         ("yesterday", "Yesterday", "कल"), ("today", "Today", "आज"), ("morning", "In the morning", "सुबह"),
         ("evening", "In the evening", "शाम को"), ("night", "At night", "रात को"), ("afternoon", "In the afternoon", "दोपहर में")]},
     "SUBJECT": {k: {"en": e, "hi": h} for k, e, h in [("maths", "maths", "गणित"), ("science", "science", "विज्ञान"), ("computer", "computers", "कंप्यूटर")]},
+    "SCHOOL_LIKE": {k: {"en": e, "hi": h} for k, e, h in [
+        ("sport", "playing sports", "खेल"), ("friend", "my friends", "मेरे दोस्त"), ("book", "reading", "पढ़ाई"),
+        ("paint", "drawing", "चित्र बनाना"), ("teacher", "my teacher", "मेरे शिक्षक")]},
 }
 
 YES_NO = ["s2", "s4", "h2", "h3", "h4", "n1", "n2", "n3", "n4", "n5", "i3", "f2", "f3", "l3", "k1", "k3", "x2", "x3", "c2"]
@@ -97,8 +103,8 @@ INTENTS = [
     intent("wearing", ["$CLOTHES"], ["d1"], "They were wearing {CLOTHES}.", "उन्होंने {CLOTHES.hi} पहना था।"),
     intent("colour", ["$COLOUR"], ["d2"], "It was {COLOUR}.", "वह {COLOUR.hi} था।"),
     intent("held", ["$OBJECT"], ["d3"], "They had {OBJECT} in their hands.", "उनके हाथ में {OBJECT.hi} था।"),
-    intent("attacked_by", ["$TIME?", "$PERSON", "attack"], ["x1", "x2", "c2", "x3"], "{TIME, }{PERSON.ref.cap} attacked me.", "{TIME }{PERSON.hi_my} ने मुझ पर हमला किया।", True),
-    intent("attacked_with", ["$TIME?", "$PERSON", "$OBJECT", "attack"], ["x1", "x2", "c2", "x3", "d3"], "{TIME, }{PERSON.ref.cap} attacked me with {OBJECT}.", "{TIME }{PERSON.hi_my} ने मुझ पर {OBJECT.hi} से हमला किया।", True),
+    intent("attacked_by", ["$TIME?", "$PERSON", "attack"], ["x1", "x2", "c2", "x3"], "{TIME, }{PERSON.ref.cap} attacked me.", "{TIME }{PERSON.hi_ne} मुझ पर हमला किया।", True),
+    intent("attacked_with", ["$TIME?", "$PERSON", "$OBJECT", "attack"], ["x1", "x2", "c2", "x3", "d3"], "{TIME, }{PERSON.ref.cap} attacked me with {OBJECT}.", "{TIME }{PERSON.hi_ne} मुझ पर {OBJECT.hi} से हमला किया।", True),
     intent("person_came", ["$TIME?", "$PERSON", "come"], ["x1", "x2", "c2"], "{TIME, }{PERSON.ref.cap} came.", "{TIME }{PERSON.hi_my} आए।"),
     intent("feel", ["i?", "$FEELING"], ["e2", "x3", "h3", "s4", "n4"], "{FEELING}", "{FEELING.hi}"),
     intent("not_feel", ["i?", "$FEELING", "@shake"], ["e2", "x3", "h3", "s4", "n4"], "{FEELING.en_not}", "{FEELING.hi_not}"),
@@ -113,6 +119,11 @@ INTENTS = [
     intent("go_to_school", ["i?", "school"], ["i3"], "Yes, I go to school.", "हाँ, मैं स्कूल जाता/जाती हूँ।"),
     intent("subject", ["$SUBJECT"], ["sc4"], "My favourite subject is {SUBJECT}.", "मेरा पसंदीदा विषय {SUBJECT.hi} है।"),
     intent("deaf", ["i?", "deaf"], [], "I am deaf.", "मैं सुन नहीं सकता/सकती।"),
+    intent("phone_number", ["telephone|cell phone|phone?", "$NUM"], ["p2", "f4"], "The phone number is {NUM}.", "फ़ोन नंबर {NUM} है।"),
+    intent("brothers", ["i?", "brother", "$NUM"], ["f8"], "I have {NUM} brothers.", "मेरे {NUM} भाई हैं।"),
+    intent("sisters", ["i?", "sister", "$NUM"], ["f8"], "I have {NUM} sisters.", "मेरी {NUM} बहनें हैं।"),
+    intent("school_name", ["school", "$NAME"], ["sc1"], "My school's name is {NAME}.", "मेरे स्कूल का नाम {NAME} है।"),
+    intent("like_at_school", ["i?", "$SCHOOL_LIKE"], ["sc5"], "I like {SCHOOL_LIKE} at school.", "मुझे स्कूल में {SCHOOL_LIKE.hi} पसंद है।"),
     intent("yes", ["@nod"], YES_NO, "Yes.", "हाँ।"),
     intent("no", ["@shake"], YES_NO, "No.", "नहीं।"),
     intent("thank_you", ["thank you"], [], "Thank you.", "धन्यवाद।"),

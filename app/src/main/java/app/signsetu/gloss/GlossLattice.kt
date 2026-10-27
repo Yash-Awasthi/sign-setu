@@ -4,6 +4,7 @@ import app.signsetu.camera.Head
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.sign.CANDIDATES
 import app.signsetu.sign.SignSegment
+import app.signsetu.sign.pointing
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.math.abs
@@ -52,9 +53,12 @@ data class GlossLattice(val tokens: List<GlossToken>, val signerMeta: String? = 
         fun of(segments: List<SignSegment>, appVersion: String = ""): GlossLattice = GlossLattice(segments.mapIndexed(::token), appVersion = appVersion)
 
         internal fun token(id: Int, s: SignSegment): GlossToken {
-            val pool = s.candidates.ifEmpty { s.guesses.orEmpty() }
+            // A clear sideways point stands in for a sign the reader could not narrow down.
+            val point = if (s.unsure || (s.candidates.firstOrNull()?.score ?: 0f) < POINT_OVER) pointing(s.frames) else null
+            val pool = point ?: s.candidates.ifEmpty { s.guesses.orEmpty() }
             val first = pool.firstOrNull()
             val type = when {
+                point != null -> TokenType.POINT
                 first == null || s.unsure -> TokenType.UNKNOWN
                 first.spelled && first.word.all { it.isDigit() || it == ' ' } -> TokenType.NUM
                 first.spelled -> TokenType.SPELL
@@ -68,10 +72,15 @@ data class GlossLattice(val tokens: List<GlossToken>, val signerMeta: String? = 
                     // The window's head movement belongs to the whole answer, so every token carries it.
                     nm.copy(headShake = maxOf(nm.headShake, if (Head.Shake in s.windowHead) 1f else 0f), headNod = maxOf(nm.headNod, if (Head.Nod in s.windowHead) 1f else 0f))
                 },
-                rejectScore = if (s.unsure || first == null) 1f else ((set.size - 1).toFloat() / (CANDIDATES - 1)).coerceIn(0f, 1f),
+                rejectScore = if (point != null) POINT_DOUBT else if (s.unsure || first == null) 1f else ((set.size - 1).toFloat() / (CANDIDATES - 1)).coerceIn(0f, 1f),
                 verified = first?.name?.verified ?: true,
             )
         }
+
+        /** A sign the reader is less sure of than this may be read as a point instead. */
+        private const val POINT_OVER = 0.3f
+        /** A point says who only by direction, never surely: it always asks to be checked. */
+        private const val POINT_DOUBT = 0.5f
 
         /** Brows: share of face frames with raised brows. Shake and nod: whether the head gesture reader saw one.
          * Tilt: mean roll of the line between the outer eye corners (face mesh 33 and 263), 30 degrees as full. */

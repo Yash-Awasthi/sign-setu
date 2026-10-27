@@ -220,3 +220,16 @@ spelled tokens with a third unverified, 5% missed and 10% extra segments. Develo
 - Rung 1 takes only signs whose 50% conformal set is one word (`RUNG1_DOUBT`); the table above is with that rule.
   Small samples: about 130 rung-1 sentences per new-signer row, so 0.000 means under about 3% at 95% confidence.
   `tools/eval/run_eval.py` reruns all of it and writes `tools/eval/report.html`.
+
+### 44 intents (2026-10-28, after covering every asking question)
+
+| source, question on screen | n | top-1 / top-2 | rungs 1 / 2 / 3 / 4 | wrong at rung 1 | right at rung 1 or 2 |
+|---|---|---|---|---|---|
+| ISLRTC, yes | 980 | 0.578 / 0.597 | 0.16 / 0.56 / 0.12 / 0.16 | 0.000 | 0.472 |
+| ISLRTC, no | 980 | 0.295 / 0.407 | 0.06 / 0.33 / 0.32 / 0.29 | 0.036 | 0.209 |
+| Kaggle, yes | 1354 | 0.945 / 0.958 | 0.65 / 0.20 / 0.15 / 0.00 | 0.022 | 0.810 |
+| Kaggle, no | 1354 | 0.757 / 0.901 | 0.42 / 0.22 / 0.35 / 0.00 | 0.042 | 0.606 |
+
+More intents help when the question is known and cost a little when it is not (more ways to be wrong); typed or
+unknown questions are where rung 1 is least safe, so those answers lean on rungs 2 and 3.
+

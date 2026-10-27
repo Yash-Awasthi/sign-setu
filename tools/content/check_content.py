@@ -116,6 +116,10 @@ def check(assets: pathlib.Path = ASSETS) -> list[str]:
                 elif not item.startswith(("$", "@")):
                     errors += [f"intent {intent['id']}: the reader cannot sign {w!r}" for w in item.rstrip("?").split("|") if w not in readable]
             errors += [f"intent {intent['id']}: unknown question {q}" for q in intent["questions"] if q not in questions]
+        # Every question that asks for an answer has at least one intent to read the answer with (docs/10, Phase 4).
+        answered = {q for intent in intents["intents"] for q in intent["questions"]}
+        errors += [f"question {q['id']}: no intent answers it" for q in triage["questions"]
+                   if q.get("kind", "QUESTION") != "STATEMENT" and q["id"] not in answered]
         for slot, entries in intents["slots"].items():
             errors += [f"slot {slot}: the reader cannot sign {w!r}" for w in entries if w not in readable]
     return errors

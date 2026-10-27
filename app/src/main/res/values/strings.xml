@@ -556,7 +556,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="downgrade_reset_body">A software downgrade occurred, causing Room to recreate session tables. Earlier unexported session records were safely purged. New sessions work as normal.</string>
     <string name="call_signing">Signing…</string>
     <string name="call_you">You</string>
-    <string name="call_courtesy">Tap to say: %1$s</string>
     <string name="call_with_you">We are here with you.</string>
     <plurals name="call_r_fingers">
         <item quantity="one">%1$d finger shown</item>
@@ -663,4 +662,9 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_sentence_import">Import sentence helper file</string>
     <string name="settings_sentence_remove">Remove the sentence helper</string>
     <string name="reading_helper_pick">Helper\'s pick: %1$s</string>
+    <string name="start_gender">Their gender (for Hindi wording)</string>
+    <string name="gender_male">Male</string>
+    <string name="gender_female">Female</string>
+    <string name="gender_unknown">Not set</string>
+    <string name="log_speaker_gender">Gender for Hindi wording: %1$s</string>
 </resources>

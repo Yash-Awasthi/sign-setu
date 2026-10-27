@@ -36,6 +36,7 @@ import app.signsetu.BuildConfig
 import app.signsetu.R
 import app.signsetu.camera.verifiedAsset
 import app.signsetu.gloss.DebugRecorder
+import app.signsetu.gloss.Gender
 import app.signsetu.gloss.GlossLattice
 import app.signsetu.gloss.IntentMatch
 import app.signsetu.gloss.Phrasebook
@@ -83,21 +84,24 @@ internal fun rememberReading(
     content: ContentBundle,
     names: Collection<String>,
     details: Collection<String>,
+    gender: Gender = Gender.UNKNOWN,
 ): Reading {
     val context = LocalContext.current
     val book by produceState<Phrasebook?>(null) { value = withContext(Dispatchers.IO) { loadPhrasebook(context) } }
     val question = (pending as? Pending.Ask)?.question?.id
     // Keyed on the head movement too: a nod or shake just after the window updates the reading.
     val alternatives = remember { mutableListOf<SentenceGuess>() }
-    val rung = remember(eventId, book, segments.firstOrNull()?.windowHead) {
+    val rung = remember(eventId, book, segments.firstOrNull()?.windowHead, gender) {
         book?.let { b ->
             GlossLattice.of(segments, BuildConfig.VERSION_NAME).let { l ->
                 val matches = b.match(l, question)
-                // The next intents that also pass the check, for the officer to pick when the first is not it (docs/10, 5.4).
-                alternatives.clear()
-                alternatives += matches.filter { faithful(it, l) && it.posterior >= ALTERNATIVE_FLOOR }.drop(1).take(2)
-                    .map { m -> SentenceGuess(segments.mapIndexed { i, s -> m.fills.firstOrNull { it.token == i }?.label ?: s.word ?: "?" }, b.english(m)) }
-                ladder(l, matches, b).also { r ->
+                ladder(l, matches, b, gender).also { r ->
+                    // The other intents that pass the check, for the officer to pick when the rung's is not it (docs/10, 5.4).
+                    // Under the word strip no sentence is shown, so the best of them is offered too.
+                    val shown = (r as? Rung.Sentence)?.match ?: (r as? Rung.FixWords)?.match
+                    alternatives.clear()
+                    alternatives += matches.filter { it != shown && faithful(it, l) && it.posterior >= ALTERNATIVE_FLOOR }.take(2)
+                        .map { m -> SentenceGuess(segments.mapIndexed { i, s -> m.fills.firstOrNull { it.token == i }?.label ?: s.word ?: "?" }, b.english(m)) }
                     // Debug builds only: the lattice and the rung, the start of docs/10's decision log.
                     if (BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "q=$question rung=${r::class.simpleName} lattice=${l.toJson()}")
                     DebugRecorder.decision(eventId, "rung", "${r::class.simpleName}: ${(r as? Rung.Sentence)?.en ?: (r as? Rung.FixWords)?.en ?: ""}")

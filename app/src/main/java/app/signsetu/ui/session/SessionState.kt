@@ -11,6 +11,7 @@ import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionEvent
+import app.signsetu.gloss.Gender
 import app.signsetu.sign.SignConfirm
 import app.signsetu.sign.SignSegment
 import app.signsetu.sign.SignWindow
@@ -79,11 +80,18 @@ const val SYSTEM_JJ_NOTICE = "jj_notice"
 /** The officer marked, or unmarked, an accused person as possibly under 18. */
 const val SYSTEM_JUVENILE = "juvenile"
 const val SYSTEM_JUVENILE_OFF = "juvenile_off"
+/** Followed by a [Gender] name: the person's gender as the officer set it, for Hindi first-person wording. */
+const val SYSTEM_SPEAKER_GENDER = "speaker_gender:"
 /** Rows a session may start with before anything is shown. */
 val StartRows = setOf(SYSTEM_JJ_NOTICE, SYSTEM_JUVENILE)
 /** Followed by "<shown>/<total>" when a question run ends before its last question. */
 const val SYSTEM_RUN_ENDED = "run_ended:"
 const val RUN_MAX = 5
+
+/** The person's gender for Hindi verb forms ("आया" or "आई"); unknown keeps both forms. */
+val SessionUi.speakerGender: Gender
+    get() = events.lastOrNull { it.type == EventType.SYSTEM && it.text?.startsWith(SYSTEM_SPEAKER_GENDER) == true }
+        ?.text?.removePrefix(SYSTEM_SPEAKER_GENDER)?.let { n -> Gender.entries.firstOrNull { it.name == n } } ?: Gender.UNKNOWN
 
 /** A young child, or an accused the officer marked as possibly under 18: no adult arrest rights are offered. */
 val SessionUi.juvenile: Boolean
