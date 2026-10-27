@@ -28,18 +28,21 @@ class NameResolver(
     private val alphabet: String,
 ) {
     private val index = alphabet.lowercase().withIndex().associate { (i, c) -> c to i + 1 }
+    /** This session's confirmed names (docs/10, step 3.6), on top of [lexicon] at weight 1. */
+    @Volatile var session: Set<String> = emptySet()
+    private fun prior(name: String) = if (name in session) 1f else lexicon[name]
 
     fun resolve(logits: Array<FloatArray>): ResolvedName? {
         val logp = logSoftmax(logits)
         val beams = prefixBeam(logp, BEAM).filter { it.first.isNotEmpty() }
         val raw = beams.firstOrNull()?.first ?: return null
-        val near = lexicon.keys.filter { name -> beams.any { (b, _) -> kotlin.math.abs(name.length - b.length) <= 2 && editDistance(name, b) <= 2 } }
+        val near = (lexicon.keys + session).filter { name -> beams.any { (b, _) -> kotlin.math.abs(name.length - b.length) <= 2 && editDistance(name, b) <= 2 } }
         val scored = (beams.map { it.first } + near).distinct().mapNotNull { c ->
-            ctcLogProb(logp, c)?.let { lp -> c to lp + LAMBDA * ln(lexicon[c] ?: UNLISTED) }
+            ctcLogProb(logp, c)?.let { lp -> c to lp + LAMBDA * ln(prior(c) ?: UNLISTED) }
         }.sortedByDescending { it.second }
         val best = scored.first()
         val margin = (best.second - (scored.getOrNull(1)?.second ?: Float.NEGATIVE_INFINITY)).coerceAtMost(99f)
-        val sure = best.first in lexicon && margin >= MARGIN
+        val sure = prior(best.first) != null && margin >= MARGIN
         val text = if (sure) best.first else raw
         return ResolvedName(
             text.replaceFirstChar(Char::uppercase), raw, sure,

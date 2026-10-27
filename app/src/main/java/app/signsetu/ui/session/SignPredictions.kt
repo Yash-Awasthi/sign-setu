@@ -35,10 +35,12 @@ import app.signsetu.data.session.SessionEvent
 import app.signsetu.BuildConfig
 import app.signsetu.R
 import app.signsetu.camera.verifiedAsset
+import app.signsetu.gloss.DebugRecorder
 import app.signsetu.gloss.GlossLattice
 import app.signsetu.gloss.IntentMatch
 import app.signsetu.gloss.Phrasebook
 import app.signsetu.gloss.Rung
+import app.signsetu.gloss.faithful
 import app.signsetu.gloss.ladder
 import app.signsetu.sign.SENTENCE_SYSTEM
 import app.signsetu.sign.SentenceGuess
@@ -60,7 +62,7 @@ internal fun pendingReading(events: List<SessionEvent>): SessionEvent? {
 /** What the app may say about a reading (docs/10-gloss-to-text.md): the phrasebook's rung for the lattice, with the
  * question on screen as evidence, and the online assistant's sentences when it is switched on, each one checked so it
  * holds no word that was not signed. */
-internal class Reading(val rung: Rung?, val online: List<SentenceGuess>)
+internal class Reading(val rung: Rung?, val online: List<SentenceGuess>, val alternatives: List<SentenceGuess> = emptyList())
 
 @Composable
 internal fun rememberReading(
@@ -75,12 +77,19 @@ internal fun rememberReading(
     val book by produceState<Phrasebook?>(null) { value = withContext(Dispatchers.IO) { loadPhrasebook(context) } }
     val question = (pending as? Pending.Ask)?.question?.id
     // Keyed on the head movement too: a nod or shake just after the window updates the reading.
+    val alternatives = remember { mutableListOf<SentenceGuess>() }
     val rung = remember(eventId, book, segments.firstOrNull()?.windowHead) {
         book?.let { b ->
             GlossLattice.of(segments, BuildConfig.VERSION_NAME).let { l ->
-                ladder(l, b.match(l, question), b).also { r ->
+                val matches = b.match(l, question)
+                // The next intents that also pass the check, for the officer to pick when the first is not it (docs/10, 5.4).
+                alternatives.clear()
+                alternatives += matches.filter { faithful(it, l) && it.posterior >= ALTERNATIVE_FLOOR }.drop(1).take(2)
+                    .map { m -> SentenceGuess(segments.mapIndexed { i, s -> m.fills.firstOrNull { it.token == i }?.label ?: s.word ?: "?" }, b.english(m)) }
+                ladder(l, matches, b).also { r ->
                     // Debug builds only: the lattice and the rung, the start of docs/10's decision log.
                     if (BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "q=$question rung=${r::class.simpleName} lattice=${l.toJson()}")
+                    DebugRecorder.decision(eventId, "rung", "${r::class.simpleName}: ${(r as? Rung.Sentence)?.en ?: (r as? Rung.FixWords)?.en ?: ""}")
                 }
             }
         }
@@ -94,7 +103,7 @@ internal fun rememberReading(
             value = cloud.ask(SENTENCE_SYSTEM, sentencePrompt(caption, guesses), names, 250, details)?.let { parseSentences(it, guesses) }.orEmpty()
         }
     }
-    return Reading(rung, online)
+    return Reading(rung, online, alternatives.toList())
 }
 
 /** The bundled phrasebook, memory-mapped once its file matches the manifest (it is stored uncompressed, like every
@@ -104,6 +113,9 @@ private fun loadPhrasebook(context: android.content.Context): Phrasebook? = runC
 }.onFailure { if (BuildConfig.DEBUG) android.util.Log.w("SignSetuGloss", "phrasebook not loaded", it) }.getOrNull()
 
 private const val PHRASEBOOK = "intents.json"
+
+/** An intent below this share of the posterior is not worth offering as an alternative. */
+private const val ALTERNATIVE_FLOOR = 0.1f
 
 /** Guesses per sign sent online: enough to recover a misread, few enough to keep the prompt short. */
 private const val ONLINE_GUESSES = 6
@@ -141,6 +153,9 @@ internal fun SignPredictions(
             is Rung.FixWords -> SentenceCard(rung.en, rung.hi, rung.doubtful.mapNotNull { segments.getOrNull(it)?.word }, rung.confirm) { onPick(wordsOf(rung.match), rung.en) }
             Rung.SignAgain -> Text(stringResource(R.string.reading_sign_again), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
             else -> Unit
+        }
+        if (picked.isEmpty() && rung !is Rung.Sentence) reading.alternatives.forEach { g ->
+            SuggestionChip(onClick = { onPick(g.words, g.text) }, label = { Text(g.text, style = MaterialTheme.typography.bodyMedium) })
         }
         if (picked.isEmpty()) reading.online.forEach { g ->
             SuggestionChip(onClick = { onPick(g.words, g.text) }, label = { Text(g.text, style = MaterialTheme.typography.bodyMedium) })

@@ -71,4 +71,15 @@ class NameResolverTest {
         val parsed = parseSentences("2,2 :: My father hit me.\nnonsense\n1,9 :: bad index\n1,1 :: I need water and I cried.", g)
         assertEquals(listOf("My father hit me."), parsed.map { it.text })
     }
+
+    /** A name the officer confirmed this session is resolved with the highest prior, and forgotten afterwards. */
+    @Test
+    fun aConfirmedNameWinsUntilTheSessionEnds() {
+        val r = NameResolver(mapOf("bam" to 0.9f), alphabet)
+        assertFalse(r.resolve(spell("amar"))!!.verified)
+        r.session = setOf("amar")
+        assertTrue(r.resolve(spell("amar"))!!.verified)
+        r.session = emptySet()
+        assertFalse(r.resolve(spell("amar"))!!.verified)
+    }
 }

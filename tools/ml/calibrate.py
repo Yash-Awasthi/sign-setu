@@ -99,6 +99,34 @@ def risk_coverage(probs, labels):
     return " ".join(out)
 
 
+def risk_curve(probs, labels, score):
+    """Error rate of the most confident share of signs, for every share, ranked by [score] (higher is surer)."""
+    order = score.argsort(descending=True)
+    right = (probs.argmax(1) == labels)[order].double()
+    n = len(right)
+    return [(k / n, 1 - right[:k].mean().item()) for k in range(max(1, n // 50), n + 1, max(1, n // 50))]
+
+
+def svg_plot(curves, path, title):
+    """Risk against coverage as a small standalone SVG (no plotting library on the machine)."""
+    w, h, m = 520, 340, 46
+    colours = ["#2a6fdb", "#d1495b", "#3c9d5d"]
+    x = lambda c: m + c * (w - 2 * m)  # noqa: E731
+    y = lambda r: h - m - r * (h - 2 * m)  # noqa: E731
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" font-family="sans-serif" font-size="12">',
+             f'<rect width="{w}" height="{h}" fill="white"/><text x="{w / 2}" y="20" text-anchor="middle" font-size="14">{title}</text>',
+             f'<line x1="{m}" y1="{h - m}" x2="{w - m}" y2="{h - m}" stroke="#444"/><line x1="{m}" y1="{m}" x2="{m}" y2="{h - m}" stroke="#444"/>',
+             f'<text x="{w / 2}" y="{h - 10}" text-anchor="middle">coverage (share of signs answered)</text>',
+             f'<text x="14" y="{h / 2}" transform="rotate(-90 14 {h / 2})" text-anchor="middle">error rate</text>']
+    for t in (0, 0.25, 0.5, 0.75, 1):
+        parts.append(f'<text x="{x(t)}" y="{h - m + 16}" text-anchor="middle">{t:.0%}</text><text x="{m - 6}" y="{y(t) + 4}" text-anchor="end">{t:.0%}</text>')
+    for i, (name, pts) in enumerate(curves):
+        d = " ".join(f"{x(c):.1f},{y(r):.1f}" for c, r in pts)
+        parts.append(f'<polyline fill="none" stroke="{colours[i % 3]}" stroke-width="2" points="{d}"/>')
+        parts.append(f'<text x="{w - m - 4}" y="{m + 16 * i}" text-anchor="end" fill="{colours[i % 3]}">{name}</text>')
+    path.write_text("".join(parts) + "</svg>\n", encoding="utf-8")
+
+
 def main() -> None:
     torch.manual_seed(7)
     random.seed(7)
@@ -135,6 +163,14 @@ def main() -> None:
                             ("Kaggle held-out signer, T", lk / t, yk)):
             report(name, lg.softmax(1), y, qhat)
     print("  risk at coverage (ISLRTC report, T):", risk_coverage((lr / t).softmax(1), yr))
+    pr = (lr / t).softmax(1)
+    sizes = torch.tensor([len(x) for x in raps_sets(pr, qhats[COVERAGES[0]])], dtype=torch.float64)
+    plots = pathlib.Path(__file__).resolve().parent / "plots"
+    plots.mkdir(exist_ok=True)
+    svg_plot([("top probability", risk_curve(pr, yr, pr.max(1).values)),
+              ("small 50% conformal set", risk_curve(pr, yr, -sizes + pr.max(1).values * 1e-3))],
+             plots / "risk_coverage.svg", "Sign reader on a new signer (ISLRTC report half)")
+    print(f"  wrote {plots / 'risk_coverage.svg'}")
 
     # The confusion table: every held-out reading, true word to what was read first, with counts.
     allp = torch.cat([(lf / t).softmax(1), (lr / t).softmax(1), (lk / t).softmax(1)])

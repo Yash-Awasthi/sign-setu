@@ -18,6 +18,9 @@ interface SignReader : AutoCloseable {
     fun embed(frames: List<LandmarkFrame>): FloatArray? = null
     /** Split-conformal sets fitted on held-out signers (tools/ml/calibrate.py); null when the model has none. */
     val conformal: Conformal? get() = null
+    /** Names the officer confirmed in this session, given the highest prior for spelled names; [names] empty forgets
+     * them. Session only: names of the people interviewed are never kept between sessions. */
+    fun sessionNames(names: Set<String>) {}
     override fun close() {}
 }
 

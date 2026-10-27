@@ -206,10 +206,10 @@ spelled tokens with a third unverified, 5% missed and 10% extra segments. Develo
 
 | source, question on screen | n | intent sentence top-1 / top-2 | rungs 1 / 2 / 3 / 4 | wrong at rung 1 | right at rung 1 or 2 |
 |---|---|---|---|---|---|
-| ISLRTC, yes | 889 | 0.535 / 0.556 | 0.16 / 0.61 / 0.06 / 0.17 | 0.007 | 0.474 |
-| ISLRTC, no | 889 | 0.336 / 0.445 | 0.07 / 0.39 / 0.25 / 0.29 | 0.032 | 0.242 |
-| Kaggle, yes | 1151 | 0.945 / 0.953 | 0.69 / 0.16 / 0.16 / 0.00 | 0.029 | 0.809 |
-| Kaggle, no | 1151 | 0.761 / 0.915 | 0.50 / 0.15 / 0.35 / 0.00 | 0.054 | 0.604 |
+| ISLRTC, yes | 889 | 0.535 / 0.556 | 0.15 / 0.62 / 0.06 / 0.17 | 0.000 | 0.474 |
+| ISLRTC, no | 889 | 0.336 / 0.445 | 0.06 / 0.39 / 0.25 / 0.29 | 0.018 | 0.242 |
+| Kaggle, yes | 1151 | 0.945 / 0.953 | 0.64 / 0.20 / 0.16 / 0.00 | 0.019 | 0.809 |
+| Kaggle, no | 1151 | 0.761 / 0.915 | 0.47 / 0.18 / 0.35 / 0.00 | 0.044 | 0.604 |
 
 - The question on screen is the largest single gain: new-signer top-1 0.336 to 0.535.
 - Before the "no sign vanishes" rule, rung 1 was wrong 5.7% of the time on the new signer: an unreadable sign was
@@ -217,3 +217,6 @@ spelled tokens with a third unverified, 5% missed and 10% extra segments. Develo
   now hold a sentence at rung 2.
 - Remaining rung-1 errors are signs the segmenter missed outright, which no lattice evidence shows; the segmentation
   sanity term (docs/10, 2.5 and 5.2) needs recorded sentences.
+- Rung 1 takes only signs whose 50% conformal set is one word (`RUNG1_DOUBT`); the table above is with that rule.
+  Small samples: about 130 rung-1 sentences per new-signer row, so 0.000 means under about 3% at 95% confidence.
+  `tools/eval/run_eval.py` reruns all of it and writes `tools/eval/report.html`.

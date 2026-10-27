@@ -136,4 +136,27 @@ class SentenceEvalTest {
         val pick = grid.filter { (h, d) -> stats(tune, h, d).second <= 0.02f }.maxByOrNull { (h, d) -> stats(tune, h, d).first } ?: grid.last()
         stats(test, pick.first, pick.second).let { (cov, wrong) -> println("  chosen high %.2f set<=%d on held-out half: rung-1 share %.3f wrong %.3f".format(pick.first, (pick.second * 9).toInt() + 1, cov, wrong)) }
     }
+
+    /** Writes docs/review/intents_review.csv (docs/10, step 4.8): every intent with its questions and templates and up
+     * to 8 example sentences in English and Hindi, rendered by the engine itself, with columns for a Hindi speaker's
+     * and a Deaf ISL reviewer's verdict (correct, awkward or wrong). Re-run after any change to the phrasebook. */
+    @Test
+    fun writeTheReviewSheet() {
+        val questions = shipped.questions.associate { it.id to (it.text["en"] ?: it.id) }
+        val examples = cases(readings.getValue("kaggle"), Random(5)).groupBy { it.truth.intent.id }
+        fun cell(v: String) = "\"" + v.replace("\"", "\"\"") + "\""
+        val rows = mutableListOf(listOf("intent", "answers questions", "pattern", "english template", "hindi template", "example gloss", "example english", "example hindi", "hindi verdict", "isl verdict", "reviewer", "date"))
+        for (intent in book.intents) {
+            val ex = examples[intent.id].orEmpty().distinctBy { book.english(it.truth) }.take(8)
+            val q = intent.questions.joinToString(" | ") { questions[it] ?: it }
+            if (ex.isEmpty()) rows += listOf(intent.id, q, intent.pattern.joinToString(" "), intent.en, intent.hi, "", "", "", "", "", "", "")
+            for (c in ex) rows += listOf(intent.id, q, intent.pattern.joinToString(" "), intent.en, intent.hi,
+                c.truth.fills.joinToString(" ") { it.label }, book.english(c.truth), book.hindi(c.truth), "", "", "", "")
+        }
+        val out = File("../docs/review/intents_review.csv")
+        out.parentFile.mkdirs()
+        // A byte-order mark so spreadsheet programs read the Hindi as UTF-8.
+        out.writeText("﻿" + rows.joinToString("\n") { r -> r.joinToString(",", transform = ::cell) } + "\n")
+        assertTrue(rows.size > book.intents.size)
+    }
 }

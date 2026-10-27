@@ -90,6 +90,7 @@ internal fun wristReach(frames: List<LandmarkFrame>): Float? {
 /** The format 2 CTC reader as a [SignReader]: the letters read, scored by its least sure letter. With [names], the
  * reading is resolved against known names and the alternatives follow it as further guesses. */
 private class CtcSpell(private val ctc: CtcSpellReader, private val names: NameResolver? = null) : SignReader {
+    override fun sessionNames(names: Set<String>) { this.names?.session = names }
     override val labels = ctc.alphabet.map { it.lowercaseChar().toString() }
     override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
         val logits = ctc.logits(frames) ?: return emptyList()
@@ -126,6 +127,7 @@ internal class CombinedReader(private val signs: SignReader, private val spell: 
     override val words = signs.words
     override val cards = signs.cards
     override val conformal = signs.conformal
+    override fun sessionNames(names: Set<String>) { signs.sessionNames(names); spell.sessionNames(names) }
     override fun embed(frames: List<LandmarkFrame>) = signs.embed(frames)
     override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
         val w = signs.read(frames)

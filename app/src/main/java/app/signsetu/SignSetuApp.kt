@@ -59,6 +59,8 @@ class SignSetuApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Debug builds record sign windows for the evaluation set (docs/10, step 0.2); release builds never do.
+        if (BuildConfig.DEBUG) app.signsetu.gloss.DebugRecorder.dir = getExternalFilesDir("recordings")
         container = AppContainer(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(container)
         RetentionJob.schedule(this)

@@ -14,6 +14,7 @@ import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.camera.Head
+import app.signsetu.gloss.DebugRecorder
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.sign.HomeSigns
 import app.signsetu.sign.SignCapture
@@ -95,6 +96,7 @@ class SessionViewModel(
 
     /** Set once the reader is built off the main thread; reads before then get no machine guesses. */
     @Volatile var reader: SignReader? = reader
+    private val confirmedNames: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
     private val homeSigns = HomeSigns { frames -> reader?.let { r -> runCatching { r.embed(frames) }.getOrNull() } }
 
     private val local = MutableStateFlow(Local())
@@ -294,6 +296,7 @@ class SessionViewModel(
             if (segments.isEmpty()) return@launch
             val words = segments.map { it.word ?: "?" }
             val id = logSigned(segments, words, EventSource.MACHINE, "en")
+            DebugRecorder.window(id, (local.value.pending as? Pending.Ask)?.question?.id, segments, app.signsetu.BuildConfig.VERSION_NAME)
             // A nod or shake just after the hands drop still belongs to this answer: look again once the margin has passed.
             viewModelScope.launch {
                 delay(HEAD_MARGIN_MS)
@@ -323,6 +326,10 @@ class SessionViewModel(
     }
 
     fun acceptSigned(eventId: Long, words: List<String>, sentence: String? = null) {
+        DebugRecorder.decision(eventId, "accepted", sentence ?: words.joinToString(" "))
+        // A spelled name the officer accepted is this person's: it ranks first the next time it is spelled.
+        local.value.signed[eventId]?.zip(words)?.filter { (s, w) -> s.guesses?.firstOrNull()?.spelled == true && w.isNotBlank() && w != "?" }
+            ?.forEach { (_, w) -> confirmedNames += w.lowercase(); reader?.sessionNames(confirmedNames.toSet()) }
         val segments = local.value.signed[eventId] ?: return
         segments.zip(words).forEach { (s, w) -> if (w.isNotBlank() && w != "?" && w != s.word) homeSigns.teach(s.frames, w) }
         val shownId = ui.value?.events?.firstOrNull { it.id == eventId }?.shownId
@@ -408,6 +415,8 @@ class SessionViewModel(
     }
 
     override fun onCleared() {
+        // The reader outlives the session; the names learned in it must not.
+        reader?.sessionNames(emptySet())
         wipeSigns()
         EvidenceMode.autoCapture.value = false
     }
