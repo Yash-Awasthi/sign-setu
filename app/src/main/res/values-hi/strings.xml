@@ -21,16 +21,13 @@
     <string name="start_who">आप किसकी मदद कर रहे हैं?</string>
     <string name="start_language">उनकी भाषा</string>
     <string name="start_language_finder">अगली स्क्रीन पर उनकी भाषा पता करें।</string>
+    <string name="start_language_unknown">पता नहीं · उनकी भाषा खोजें</string>
     <string name="start_button">सत्र शुरू करें</string>
 
     <string name="profile_child">छोटा बच्चा</string>
-    <string name="profile_child_desc">चित्र, इशारे और बोली गई आवाज़</string>
     <string name="profile_isl">सांकेतिक भाषा जानते हैं</string>
-    <string name="profile_isl_desc">चित्र, कैप्शन, ISL वीडियो और दुभाषिया कॉल</string>
     <string name="profile_other">दूसरी भाषा बोलते हैं</string>
-    <string name="profile_other_desc">पहले भाषा पता करें, फिर चित्र और आवाज़</string>
     <string name="profile_unsure">पता नहीं</string>
-    <string name="profile_unsure_desc">चित्र, हाँ और नहीं, और चित्र बनाना</string>
 
     <string name="officer_show">उन्हें दिखाएँ</string>
     <string name="officer_add_pictures">चित्र जोड़ें</string>
@@ -219,9 +216,6 @@
     <string name="settings_stage">स्टेज</string>
     <string name="settings_camera">स्टेज पर कैमरा</string>
     <string name="settings_camera_summary">सत्र में कैमरा चालू करता है: व्यक्ति को अपने हाथ दिखते हैं और साइन पढ़े जा सकते हैं। कुछ भी रिकॉर्ड या सेव नहीं होता।</string>
-    <string name="home_greeting_hint">चुनिए कि आप किसकी मदद कर रहे हैं, फिर शुरू करें।</string>
-    <string name="profile_isl_short">संकेत भाषा</string>
-    <string name="profile_other_short">दूसरी भाषा</string>
     <string name="auto_next_in">अगला %1$d सेकंड में</string>
     <string name="settings_interpreter_test">अभी दुभाषिया को बुलाएँ</string>
     <string name="settings_interpreter_test_summary">सहेजे गए संपर्क के साथ मैसेजिंग ऐप खुलता है। यही बटन होम स्क्रीन और सत्र में भी है।</string>

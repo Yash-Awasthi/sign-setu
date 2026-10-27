@@ -57,6 +57,11 @@ class SignSegment(
     val guesses: List<SignGuess>? = null,
     val slower: Boolean = false,
     val context: Set<String> = emptySet(),
+    /** Deeper than [guesses], for ranking whole sentences: a new signer's word is in the top 3 for 44% of signs
+     * and in the top 10 for 52% (tools/ml/EVAL.md). */
+    val candidates: List<SignGuess> = emptyList(),
+    /** The reader's conformal set for this sign is too large to trust any one word (ReadPolicy.kt). */
+    val unsure: Boolean = false,
 ) {
     val word: String? get() = guesses?.let { it.firstOrNull()?.word ?: "?" }
     /** Brows raised over most of the sign's face frames. */

@@ -15,10 +15,17 @@ class LandmarkSignReader(spec: String, weights: ByteArray, override val words: M
     override val cards: Map<String, List<String>> = emptyMap(),
 ) : SignReader {
     @Serializable
-    private class Spec(val frames: Int, val features: Int, val hidden: Int, val kernel: Int, val labels: List<String>, val norm: String = "shoulders", val dtype: String = "float32")
+    private class Spec(
+        val frames: Int, val features: Int, val hidden: Int, val kernel: Int, val labels: List<String>, val norm: String = "shoulders",
+        val dtype: String = "float32",
+        /** Fitted on held-out signers (tools/ml/calibrate.py), so a probability means what it says. */
+        val temperature: Float = 1f,
+        val conformal: Conformal? = null,
+    )
 
     private val s = SPEC_JSON.decodeFromString<Spec>(spec)
     override val labels: List<String> = s.labels
+    override val conformal: Conformal? = s.conformal
     private val t = s.frames
     private val h = s.hidden
     private val k = s.kernel
@@ -46,7 +53,7 @@ class LandmarkSignReader(spec: String, weights: ByteArray, override val words: M
     override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
         val z = logits(frames) ?: return emptyList()
         val top = z.max()
-        val e = FloatArray(z.size) { exp(z[it] - top) }
+        val e = FloatArray(z.size) { exp((z[it] - top) / s.temperature) }
         val sum = e.sum()
         return e.indices.sortedByDescending { e[it] }.map { SignGuess(labels[it], e[it] / sum) }
     }

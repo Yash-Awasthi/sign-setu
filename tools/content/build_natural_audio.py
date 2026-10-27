@@ -17,7 +17,7 @@ import numpy as np
 import soundfile as sf
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from build_audio import ASSETS, NATURAL_ONLY, OUT_RATE, jobs, trim  # noqa: E402
+from build_audio import ASSETS, NATURAL_ONLY, OUT_RATE, cut_off, finish, jobs, loud_end, trim  # noqa: E402
 
 ELEVENLABS = {"en", "hi"}
 ELEVENLABS_VOICE = "EXAVITQu4vr4xnSDxMaL"
@@ -55,9 +55,10 @@ def post(url: str, headers: dict, body: dict) -> bytes:
 def speak(code: str, text: str) -> np.ndarray:
     """Mono 16-bit PCM at OUT_RATE."""
     if provider(code) == "elevenlabs":
+        # Without a closing pause tag v3 often stops inside the last syllable; trim() drops the silence it adds.
         raw = post(f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE}?output_format=pcm_{OUT_RATE}",
                    {"xi-api-key": os.environ["ELEVENLABS_API_KEY"]},
-                   {"text": text, "model_id": "eleven_v3", "language_code": code})
+                   {"text": f"{text} [pause]", "model_id": "eleven_v3", "language_code": code})
     else:
         raw = post("https://api.cartesia.ai/tts/bytes",
                    {"X-API-Key": os.environ["CARTESIA_API_KEY"], "Cartesia-Version": "2025-04-16"},
@@ -72,21 +73,25 @@ def main() -> None:
     made = 0
     for code, text, out in jobs():
         name = provider(code)
-        if name is None or name in spent or out.exists():
+        if name is None or name in spent or (out.exists() and not cut_off(out)):
             continue
         try:
-            wav = trim(speak(code, text), OUT_RATE)
+            # A take that still ends mid-word gets one more try; the old file stays until a new one is made.
+            raw = speak(code, text)
+            if loud_end(raw, OUT_RATE):
+                raw = speak(code, text)
+            wav = trim(raw, OUT_RATE)
         except QuotaSpent as e:
             print(f"{name} stopped: {e}")
             spent.add(name)
             continue
-        wav = 0.89 * wav / max(1e-6, float(np.max(np.abs(wav))))
+        wav = finish(wav, OUT_RATE)
         out.parent.mkdir(parents=True, exist_ok=True)
         buf = io.BytesIO()
         sf.write(buf, wav, OUT_RATE, format="OGG", subtype="OPUS")
         out.write_bytes(buf.getvalue())
         made += 1
-        print(f"{out.relative_to(ASSETS)}  {len(wav) / OUT_RATE:.1f}s  {name}")
+        print(f"{out.relative_to(ASSETS)}  {len(wav) / OUT_RATE:.1f}s  {name}{'  still cut' if loud_end(raw, OUT_RATE) else ''}")
     print(f"{made} recordings written")
 
 

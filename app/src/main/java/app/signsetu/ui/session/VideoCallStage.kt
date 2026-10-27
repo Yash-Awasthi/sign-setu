@@ -79,7 +79,6 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
-import app.signsetu.data.content.Gesture
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
@@ -98,8 +97,8 @@ fun VideoCallStage(
     ui: SessionUi,
     content: ContentBundle,
     tracker: LandmarkTracker?,
-    /** The character as the stage builds it, given the sign the call is pointing out (if any) and its play key. */
-    avatar: @Composable (Gesture?, Any?) -> Unit,
+    /** The character as the stage builds it, given the subject line the call has lit while it waits, if any. */
+    avatar: @Composable (String?) -> Unit,
     caption: String?,
     captionHighlight: IntRange?,
     /** Tapping the caption replays it, or one word of typed text. */
@@ -157,8 +156,8 @@ fun VideoCallStage(
     // Stays as the officer left it for every item: turning it on once is enough for the whole session.
     var showVictimSkeleton by StageSkeleton.on
 
-    // Left alone, the character first shows how to answer (sign to the camera, nod, shake), then reassures; once per
-    // quiet spell, and a touch or a signed answer starts the wait again. It never walks through the buttons.
+    // Left alone, the hint under the caption lights up, then a reassurance takes its place, each spoken and signed once;
+    // once per quiet spell, and a touch or a signed answer starts the wait again. No yes or no signs: they read as answers.
     var guideStep by remember { mutableIntStateOf(-1) }
     var touches by remember { mutableIntStateOf(0) }
     LaunchedEffect(touches, signing, pending) {
@@ -173,7 +172,6 @@ fun VideoCallStage(
         guideStep = -1
     }
     val idleStep = IdleSteps.getOrNull(guideStep)
-    val guided = idleStep?.let { it.line to it.gesture }
     val idleLine = idleStep?.line?.takeIf { it != "hint_answer" }?.let { content.subjectText(it, lang) }
     val hintLit = idleStep?.line == "hint_answer"
 
@@ -281,7 +279,7 @@ fun VideoCallStage(
                         .fillMaxSize()
                         .background(Brush.radialGradient(listOf(LocalCall.current.surface, LocalCall.current.bg))),
                 )
-                avatar(guided?.let { content.gestures[it.second] }, guided?.let { "guide:$guideStep" })
+                avatar(idleStep?.line)
 
         }
 
@@ -589,14 +587,12 @@ internal object StageSkeleton {
     val on = mutableStateOf(false)
 }
 
-/** One idle beat: the gesture the character makes and the subject line it goes with ("hint_answer" lights the hint). */
-private class IdleStep(val gesture: String, val line: String, val ms: Long)
-private val IdleSteps = listOf(
-    IdleStep("show_me", "hint_answer", 3_000), IdleStep("yes.nod", "hint_answer", 2_500), IdleStep("no.shake", "hint_answer", 2_500),
-    IdleStep("okay", "watching", 5_000), IdleStep("okay", "rule_dont_know", 5_000),
-)
-/** The first three steps act out the hint; the rest reassure after a longer wait. */
-private const val HintSteps = 3
+/** One idle beat: the subject line shown ("hint_answer" lights the hint) and for how long. */
+private class IdleStep(val line: String, val ms: Long)
+// Long enough for each line to be spoken and signed in full.
+private val IdleSteps = listOf(IdleStep("hint_answer", 10_000), IdleStep("watching", 7_000), IdleStep("rule_dont_know", 7_000))
+/** The first step lights the hint; the rest reassure after a longer wait. */
+private const val HintSteps = 1
 private const val HINT_IDLE_MS = 8_000L
 private const val REASSURE_IDLE_MS = 15_000L
 /** How long a read courtesy waits for the subject's tap before it is dropped. */

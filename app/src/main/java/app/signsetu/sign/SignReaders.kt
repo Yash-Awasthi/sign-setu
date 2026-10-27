@@ -114,6 +114,7 @@ internal class CombinedReader(private val signs: SignReader, private val spell: 
     override val labels = signs.labels + spell.labels
     override val words = signs.words
     override val cards = signs.cards
+    override val conformal = signs.conformal
     override fun embed(frames: List<LandmarkFrame>) = signs.embed(frames)
     override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
         val w = signs.read(frames)

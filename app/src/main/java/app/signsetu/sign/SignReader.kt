@@ -16,7 +16,26 @@ interface SignReader : AutoCloseable {
     fun read(frames: List<LandmarkFrame>): List<SignGuess>
     /** The word reader's pooled features for comparing two signs, or null when it has none or cannot read the frames. */
     fun embed(frames: List<LandmarkFrame>): FloatArray? = null
+    /** Split-conformal sets fitted on held-out signers (tools/ml/calibrate.py); null when the model has none. */
+    val conformal: Conformal? get() = null
     override fun close() {}
+}
+
+/** RAPS prediction sets: [thresholds] by target coverage ("0.50"), with the set-size penalty [lambda] past [kReg]. */
+@kotlinx.serialization.Serializable
+data class Conformal(val thresholds: Map<String, Float>, @kotlinx.serialization.SerialName("k_reg") val kReg: Int, val lambda: Float) {
+    /** How many of [guesses] (best first, probabilities) the set at [coverage] holds; at least one. */
+    fun size(guesses: List<SignGuess>, coverage: String = "0.50"): Int {
+        val q = thresholds[coverage] ?: return guesses.size
+        var above = 0f
+        var n = 0
+        for ((i, g) in guesses.withIndex()) {
+            if (i > 0 && above + lambda * maxOf(0, i + 1 - kReg) > q) break
+            above += g.score
+            n++
+        }
+        return n
+    }
 }
 
 /** One candidate word with the model's probability, highest first. */

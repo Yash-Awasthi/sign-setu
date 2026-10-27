@@ -251,7 +251,7 @@ class SessionViewModel(
         local.update { it.copy(reading = it.reading?.plus(segment)) }
         reads += viewModelScope.launch(readDispatcher) {
             val all = reader?.let { r -> runCatching { r.read(frames) }.getOrNull() }.orEmpty().sortedByDescending { it.score }
-            val read = decideRead(frames, all, homeSigns.match(frames), cards, reader?.words.orEmpty(), content.words, reader?.cards.orEmpty())
+            val read = decideRead(frames, all, homeSigns.match(frames), cards, reader?.words.orEmpty(), content.words, reader?.cards.orEmpty(), reader?.conformal)
             local.update { l -> l.copy(reading = l.reading?.map { if (it === segment) read else it }) }
         }
     }
@@ -282,15 +282,15 @@ class SessionViewModel(
     }
 
     /** The officer's reading of a signed answer, logged beside the app's so the record shows both. */
-    fun acceptSigned(eventId: Long, words: List<String>) {
+    fun acceptSigned(eventId: Long, words: List<String>, sentence: String? = null) {
         val segments = local.value.signed[eventId] ?: return
         segments.zip(words).forEach { (s, w) -> if (w.isNotBlank() && w != "?" && w != s.word) homeSigns.teach(s.frames, w) }
         val shownId = ui.value?.events?.firstOrNull { it.id == eventId }?.shownId
-        viewModelScope.launch { logSigned(segments, words, EventSource.OFFICER, officerLang, shownId) }
+        viewModelScope.launch { logSigned(segments, words, EventSource.OFFICER, officerLang, shownId, sentence) }
     }
 
-    private suspend fun logSigned(segments: List<SignSegment>, words: List<String>, source: EventSource, lang: String, shownId: Long? = local.value.itemId): Long {
-        val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = words.joinToString(" "), shownId = shownId)
+    private suspend fun logSigned(segments: List<SignSegment>, words: List<String>, source: EventSource, lang: String, shownId: Long? = local.value.itemId, sentence: String? = null): Long {
+        val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = sentence ?: words.joinToString(" "), shownId = shownId)
         local.update { it.copy(signed = it.signed + (id to segments)) }
         if (EvidenceMode.autoCapture.value) {
             val keyFrame = segments.flatMap { it.frames }.firstOrNull { it.pose != null || it.leftHand != null || it.rightHand != null }
@@ -609,7 +609,7 @@ class SessionViewModel(
         return true
     }
 
-    /** The subject moves the opening on; after the practice round the stage waits for the officer. */
+    /** The subject moves the opening on; after the last rule the stage waits for the officer. */
     fun nextRule() {
         val step = ((if (paired) local.value.onStage else local.value.pending) as? Pending.GroundRules)?.step ?: return
         val lang = ui.value?.session?.subjectLang ?: return
@@ -707,7 +707,7 @@ class SessionViewModel(
         if (pending is Pending.ShowBack && l.answeredYes == null && l.answeredCard == null) {
             repo.log(sessionId, EventType.ANSWER_UNCLEAR, EventSource.OFFICER, officerLang, text = pending.entry.label.get(officerLang), cardId = pending.entry.card, lexiconId = pending.entry.id, shownId = l.itemId)
         }
-        if (pending is Pending.GroundRules && !isPractice(pending)) repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_RULES_SKIPPED)
+        if (pending is Pending.GroundRules && !isLastRule(pending)) repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_RULES_SKIPPED)
         if (pending is Pending.FreeText && pending.ref != null && l.answeredYes == null && l.answeredCard == null) {
             repo.log(sessionId, EventType.ANSWER_UNCLEAR, EventSource.OFFICER, officerLang, text = pending.text, lexiconId = REF_PREFIX + pending.ref, shownId = l.itemId)
         }

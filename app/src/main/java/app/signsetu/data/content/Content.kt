@@ -192,9 +192,14 @@ data class ContentBundle(
     fun question(id: String): Question? = questions.firstOrNull { it.id == id }
     fun isRights(q: Question) = group(q.group)?.rights == true
 
-    /** A question with no gesture of its own is signed from its English wording through the lexicon. */
-    fun gestureFor(q: Question): Gesture? =
-        (q.gesture ?: q.lexicon)?.let { gestures[it] } ?: q.text["en"]?.let { planText(it, setOf(SignMode.SIGNS)).gesture }
+    /** Every question is signed word by word from its English wording, fingerspelling a word with no sign, so every
+     * word of the caption is performed; its own gesture plays only when the wording gives nothing. */
+    fun gestureFor(q: Question): Gesture? = questionSigns.getOrPut(q.id) {
+        listOfNotNull(q.text["en"]?.let { planText(it, CAPTION_MODES).gesture } ?: (q.gesture ?: q.lexicon)?.let { gestures[it] })
+    }.firstOrNull()
+
+    // Planned once per question: the stage asks again on every recomposition.
+    private val questionSigns = java.util.concurrent.ConcurrentHashMap<String, List<Gesture>>()
 
     /** The phrase's signs as one gesture; a sign with no reviewed animation is left out. */
     fun gestureFor(phrase: Phrase, slot: PhraseSlot): Gesture? =
@@ -346,3 +351,6 @@ private val PRELOADED_CARDS = listOf(
     "yes", "no", "stop", "dont_know", "unclear", "wrong", "water", "food", "help", "pain_arm", "pain_head", "pain_chest",
     "pain_stomach", "safe", "hurt",
 )
+
+/** How the character performs a fixed caption: signs, and fingerspelling for any word without one. */
+val CAPTION_MODES = setOf(SignMode.SIGNS, SignMode.SPELL)

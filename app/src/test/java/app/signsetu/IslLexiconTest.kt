@@ -1,6 +1,7 @@
 package app.signsetu
 
 import app.signsetu.data.content.ALPHABET
+import app.signsetu.data.content.CAPTION_MODES
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.DRAFT_CATEGORY
 import app.signsetu.data.content.IslSign
@@ -189,7 +190,7 @@ class IslLexiconTest {
         for (q in signed) {
             val plan = asl.planText(q.text["en"]!!, signs)
             assertTrue("${q.id}: ${plan.motions}", plan.motions.none { it.startsWith("sign.") || it.startsWith("isl.") })
-            assertEquals(q.id, plan.gesture?.keys, asl.gestureFor(q)?.keys)
+            assertEquals(q.id, asl.planText(q.text["en"]!!, CAPTION_MODES).gesture?.keys, asl.gestureFor(q)?.keys)
         }
         assertTrue(signed.any { q -> asl.planText(q.text["en"]!!, signs).motions.any { it.startsWith("asl.") } })
     }
@@ -217,10 +218,12 @@ class IslLexiconTest {
     }
 
     @Test
-    fun aQuestionWithoutAGestureIsSignedThroughTheLexicon() {
-        val q = Question("p1", "identity", mapOf("en" to "What is your name?"))
-        assertEquals(bundle.planText("What is your name?", setOf(SignMode.SIGNS)).gesture, bundle.gestureFor(q))
-        assertEquals("namaste", bundle.gestureFor(q.copy(gesture = "namaste"))?.id)
+    fun aQuestionIsSignedWordByWordAndItsGestureOnlyFillsAGap() {
+        val q = Question("p1", "identity", mapOf("en" to "What is your name, Shalini?"), gesture = "namaste")
+        val plan = bundle.planText("What is your name, Shalini?", CAPTION_MODES)
+        assertTrue("an unsigned name is spelled", plan.motions.any { "letter" in it })
+        assertEquals(plan.gesture, bundle.gestureFor(q))
+        assertEquals("namaste", bundle.gestureFor(Question("p2", "identity", mapOf("en" to "the"), gesture = "namaste"))?.id)
     }
 
 }

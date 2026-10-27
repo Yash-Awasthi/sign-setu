@@ -21,16 +21,13 @@
     <string name="start_who">Who are you helping?</string>
     <string name="start_language">Their language</string>
     <string name="start_language_finder">You will find their language on the next screen.</string>
+    <string name="start_language_unknown">Do not know · find their language</string>
     <string name="start_button">Start session</string>
 
     <string name="profile_child">Young child</string>
-    <string name="profile_child_desc">Pictures, gestures and spoken audio</string>
     <string name="profile_isl">Uses sign language</string>
-    <string name="profile_isl_desc">Pictures, captions, ISL clips and interpreter call</string>
     <string name="profile_other">Speaks another language</string>
-    <string name="profile_other_desc">Find their language first, then pictures and audio</string>
     <string name="profile_unsure">Not sure</string>
-    <string name="profile_unsure_desc">Pictures, Yes and No, and drawing</string>
 
     <!-- Officer state -->
     <string name="officer_show">Show to them</string>
@@ -226,9 +223,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_stage">Stage</string>
     <string name="settings_camera">Camera on the stage</string>
     <string name="settings_camera_summary">Turns the camera on during a session: the person sees their own hands, and signs can be read. Nothing is recorded or saved.</string>
-    <string name="home_greeting_hint">Choose who you are helping, then start.</string>
-    <string name="profile_isl_short">Signs</string>
-    <string name="profile_other_short">Other language</string>
     <string name="auto_next_in">Next in %1$ds</string>
     <string name="settings_interpreter_test">Call interpreter now</string>
     <string name="settings_interpreter_test_summary">Opens the messaging app with the saved contact. The same button is on the home screen and in a session.</string>

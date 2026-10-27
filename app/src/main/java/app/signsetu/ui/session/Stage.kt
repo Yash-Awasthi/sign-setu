@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.camera.LandmarkTracker
+import app.signsetu.data.content.CAPTION_MODES
 import app.signsetu.data.content.ContentBundle
-import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.Given
 import app.signsetu.data.content.WordBeat
 import app.signsetu.data.content.chain
@@ -115,12 +115,12 @@ fun Stage(
     var writing by remember(pending) { mutableStateOf(false) }
     val drawn = remember(pending) { mutableStateListOf<DrawStroke>() }
     // A young child is not asked to write; anyone else, signers above all, can answer in their own words.
-    // A ground rule asks for no answer, so only the practice round opens the other ways to answer.
-    val canWrite = pending != null && profile != Profile.YOUNG_CHILD && (rule == null || isPractice(pending))
+    // A ground rule asks for no answer, so it opens no other way to answer.
+    val canWrite = pending != null && profile != Profile.YOUNG_CHILD && rule == null
     // A Yes under a right would read as the person accepting or waiving it; it is only shown.
     val rightsNotice = (pending as? Pending.Ask)?.question?.takeIf(content::isRights)?.let { content.subjectText("rights_interpreter", lang) }
     // The introduction, ground rules and rights only tell; Yes and No under them would ask for an answer nobody asked for.
-    val statement = (rule != null && !isPractice(pending)) || rightsNotice != null
+    val statement = rule != null || rightsNotice != null
     val signing = ui.reading != null
     val narrative = ui.signWindow == SignWindow.NARRATIVE
     val choices = ui.confirm?.queue?.firstOrNull()
@@ -176,8 +176,8 @@ fun Stage(
         choices != null -> "ask"
         // A question or typed text is still shown while they sign; otherwise the character invites them to.
         signing && pending !is Pending.Ask && pending !is Pending.FreeText && pending !is Pending.PhraseAsk -> "show_me"
-        rule != null -> rule.gesture
-        pending is Pending.Ask -> pending.question.gesture ?: pending.question.lexicon
+        // Signed word by word below, from the English wording.
+        rule != null || pending is Pending.Ask -> null
         checking -> "ask"
         pending is Pending.ShowBack -> pending.entry.id
         pending is Pending.Cards -> "ask"
@@ -197,6 +197,10 @@ fun Stage(
     val focusGesture = remember(focus) {
         focus?.let { f -> (pending as? Pending.FreeText)?.let { content.planText(it.text.substring(f.range), it.modes).gesture } }
     }
+    // Every word of the opening is signed or spelled from its English wording; the step's gesture only covers a gap.
+    val ruleSigns = remember(rule, content) {
+        rule?.let { r -> ruleText(content, r.key, "en")?.let { content.planText(it, CAPTION_MODES).gesture } ?: content.gestures[r.gesture] }
+    }
     val gesture = when {
         focusGesture != null -> focusGesture
         readBack != null && (gestureId == null || gestureId == "ask") -> readBack
@@ -204,6 +208,7 @@ fun Stage(
         pending is Pending.PhraseAsk -> content.gestureFor(pending.phrase, pending.slot)
         pending is Pending.FreeText -> plan?.gesture ?: content.gestures["ask"]
         pending is Pending.Ask -> content.gestureFor(pending.question)
+        rule != null -> ruleSigns
         else -> null
     }
     // Follows the character through typed text, so the word being signed is lit and its picture or letters shown.
@@ -251,13 +256,16 @@ fun Stage(
         else -> null
     }
 
-    val avatar: @Composable (Gesture?, Any?) -> Unit = { guide, guideKey ->
+    val avatar: @Composable (String?) -> Unit = { line ->
+        // A subject line the call lights while it waits is spoken and signed once, like every other caption.
+        val lineSigns = remember(line, content) { line?.let { content.subjectText(it, "en") }?.let { content.planText(it, CAPTION_MODES).gesture } }
+        LaunchedEffect(line, lang) { line?.let { content.subjectAudio(it, lang) }?.let { speech.play(it, audioRate(pace)) } }
         Box(Modifier.fillMaxSize()) {
             Avatar(
-                gesture = guide ?: gesture,
+                gesture = lineSigns ?: gesture,
                 // A typed sentence or asked question with a recorded clip plays the recording instead of word-by-word signs.
-                clip = if (guide == null && focus == null && !reacting) recordedClip(pending, content) else null,
-                playKey = guideKey ?: when {
+                clip = if (lineSigns == null && focus == null && !reacting) recordedClip(pending, content) else null,
+                playKey = if (lineSigns != null) "line:$line" else when {
                     reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
                     focus != null -> "word:$wordTaps"
                     // Each sign being confirmed plays its own read-back.
@@ -457,8 +465,7 @@ internal fun describeItem(pending: Pending?, content: ContentBundle, lang: Strin
         is Pending.Cards -> null to pending.cardIds
         is Pending.ShowBack -> content.subjectText("is_this_it", lang) to pending.choices.takeIf { pending.asksChoice }.orEmpty()
         is Pending.PhraseAsk -> pending.slot.text.get(lang) to listOf(pending.slot.card)
-        is Pending.GroundRules -> ruleStep(pending)?.let { ruleText(content, it.key, lang) } to
-            if (isPractice(pending)) listOf("draw") else listOfNotNull(ruleStep(pending)?.card)
+        is Pending.GroundRules -> ruleStep(pending)?.let { ruleText(content, it.key, lang) } to listOfNotNull(ruleStep(pending)?.card)
         else -> null to emptyList()
     }
     val pictures = cards.filter { it != "draw" && it in content.cards }
@@ -476,6 +483,7 @@ internal fun describeItem(pending: Pending?, content: ContentBundle, lang: Strin
 private fun recordedClip(pending: Pending?, content: ContentBundle) = when (pending) {
     is Pending.FreeText -> content.clipFor(pending.text)
     is Pending.Ask -> pending.question.text["en"]?.let(content::clipFor)
+    is Pending.GroundRules -> ruleStep(pending)?.let { ruleText(content, it.key, "en") }?.let(content::clipFor)
     else -> null
 }
 

@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -37,6 +38,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size as Extent
+import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -103,6 +105,10 @@ fun CameraMirror(
     var request by remember { mutableStateOf<SurfaceRequest?>(null) }
     var analysis by remember { mutableStateOf<ImageAnalysis?>(null) }
     var shown by remember { mutableStateOf<LandmarkFrame?>(null) }
+    // The previous frame and when the latest arrived: the overlay eases between them at screen rate, since the tracker
+    // runs at about 9 frames a second on a CPU.
+    var traced by remember { mutableStateOf<Traced?>(null) }
+    var screenTick by remember { mutableLongStateOf(0L) }
     val frameSink by rememberUpdatedState(onFrame)
     val headSink by rememberUpdatedState(onHead)
     val pointSink by rememberUpdatedState(onPoint)
@@ -162,7 +168,7 @@ fun CameraMirror(
     val analysing = onFrame != null
     DisposableEffect(analysis, tracker, analysing) {
         val a = analysis
-        if (a == null || tracker == null) return@DisposableEffect onDispose { shown = null }
+        if (a == null || tracker == null) return@DisposableEffect onDispose { shown = null; traced = null }
         var lastPerson: Long? = null
         val pipeline = FramePipeline()
         val blur = BlurMeter()
@@ -198,6 +204,7 @@ fun CameraMirror(
                 if (!packed) bitmap.recycle()
                 if (frame?.pose != null) lastPerson = ms
                 shown = frame
+                traced = frame?.let { f -> traced.next(f, System.nanoTime()) }
                 frame?.let { f -> frameSink?.invoke(f) }
                 // Inside a sign window open hands and pointing are signs, not answers.
                 if (!analysing) {
@@ -215,6 +222,7 @@ fun CameraMirror(
             executor.execute { reused?.recycle() }
             executor.shutdown()
             shown = null
+            traced = null
         }
     }
 
@@ -224,6 +232,8 @@ fun CameraMirror(
         return
     }
     val labels = rememberTextMeasurer()
+    val skeletonOn = showSkeleton && SkeletonOverlay.on.value
+    LaunchedEffect(skeletonOn) { while (skeletonOn) withFrameNanos { screenTick = it } }
     Box(modifier) {
         // TextureView-backed, so the rounded window around it clips the picture. Fit: the subject sees all the camera sees.
         CameraXViewfinder(surface, Modifier.fillMaxSize(), implementationMode = ImplementationMode.EMBEDDED, contentScale = if (fill) ContentScale.Crop else ContentScale.Fit)
@@ -243,11 +253,33 @@ fun CameraMirror(
                     quadraticTo(c.x + r * 2.4f, c.y + r * 1.6f, c.x + r * 2.6f, size.height * 0.85f)
                 }, guide, style = line)
             }
-            val seen = shown ?: return@Canvas
+            screenTick
+            val seen = traced?.at(System.nanoTime()) ?: return@Canvas
             drawLandmarks(seen, front, analysing, showFace, handColor, labels, fill)
         }
     }
 }
+
+/** The last two tracked frames, the newest arriving at [atNs] after a gap of [gapNs]. */
+internal class Traced(val before: LandmarkFrame?, val latest: LandmarkFrame, val atNs: Long, val gapNs: Long) {
+    /** The overlay one tracker step behind, eased so it moves every screen frame instead of jumping. */
+    fun at(nowNs: Long): LandmarkFrame {
+        val b = before ?: return latest
+        val t = ((nowNs - atNs).toFloat() / gapNs).coerceIn(0f, 1f)
+        return latest.copy(leftHand = mix(b.leftHand, latest.leftHand, t), rightHand = mix(b.rightHand, latest.rightHand, t), face = mix(b.face, latest.face, t), pose = mix(b.pose, latest.pose, t))
+    }
+}
+
+/** A gap longer than this is a person stepping in or out: no easing across it. */
+private const val MAX_EASE_NS = 300_000_000L
+
+internal fun Traced?.next(frame: LandmarkFrame, nowNs: Long): Traced {
+    val gap = this?.let { nowNs - it.atNs } ?: 0L
+    return Traced(this?.latest?.takeIf { gap in 1..MAX_EASE_NS }, frame, nowNs, gap.coerceAtLeast(1))
+}
+
+private fun mix(a: List<Offset>?, b: List<Offset>?, t: Float): List<Offset>? =
+    if (a == null || b == null || a.size != b.size) b else List(b.size) { i -> lerp(a[i], b[i], t) }
 
 /** The traced skeleton, brows and lips of [seen] over a frame drawn Fit and centred; the camera overlay and its device test both draw this. */
 internal fun DrawScope.drawLandmarks(seen: LandmarkFrame, front: Boolean, analysing: Boolean, showFace: Boolean, handColor: Color, labels: TextMeasurer, fill: Boolean = false) {

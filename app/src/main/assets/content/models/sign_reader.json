@@ -376,5 +376,16 @@
   "you",
   "you (plural)",
   "young"
- ]
+ ],
+ "temperature": 0.8575,
+ "conformal": {
+  "method": "RAPS",
+  "k_reg": 3,
+  "lambda": 0.02,
+  "thresholds": {
+   "0.50": 0.8152,
+   "0.80": 3.1515
+  },
+  "fit": "ISLRTC dictionary signer, 100 of 200 words"
+ }
 }

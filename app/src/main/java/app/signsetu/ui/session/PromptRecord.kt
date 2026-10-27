@@ -1,5 +1,6 @@
 package app.signsetu.ui.session
 
+import app.signsetu.data.content.CAPTION_MODES
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.planText
@@ -27,7 +28,7 @@ fun decodePrompt(text: String?): PromptRecord? = text?.let { runCatching { json.
 /** Mirrors what the stage plays for each item (Stage.kt), so the record names what the subject actually saw. */
 fun ContentBundle.promptFor(pending: Pending, lang: String): PromptRecord {
     val (caption, motions, cards) = when (pending) {
-        is Pending.Ask -> Triple(pending.question.text.get(lang), listOfNotNull(pending.question.gesture ?: pending.question.lexicon), pending.question.cards)
+        is Pending.Ask -> Triple(pending.question.text.get(lang), captionMotions(pending.question.text["en"], pending.question.gesture ?: pending.question.lexicon), pending.question.cards)
         is Pending.FreeText -> Triple(
             pending.caption ?: pending.text,
             if (pending.asksChoice) listOf("ask") else planText(pending.text, pending.modes).motions,
@@ -46,7 +47,7 @@ fun ContentBundle.promptFor(pending: Pending, lang: String): PromptRecord {
         )
         Pending.LanguageFinder -> Triple(null, listOf("wave"), emptyList())
         Pending.Drawing -> Triple(subjectText("draw", lang), emptyList(), emptyList())
-        is Pending.GroundRules -> ruleStep(pending).let { r -> Triple(r?.let { ruleText(this, it.key, lang) }, listOfNotNull(r?.gesture), listOfNotNull(r?.card)) }
+        is Pending.GroundRules -> ruleStep(pending).let { r -> Triple(r?.let { ruleText(this, it.key, lang) }, captionMotions(r?.let { ruleText(this, it.key, "en") }, r?.gesture), listOfNotNull(r?.card)) }
     }
     return PromptRecord(caption, motions.filter { it in gestures }, cards, version)
 }
@@ -64,3 +65,7 @@ fun prompts(events: List<SessionEvent>): Map<Long, PromptRecord> {
     }
     return out
 }
+
+/** The motions a fixed caption plays: its English words signed or spelled, else its own gesture (Stage.kt). */
+private fun ContentBundle.captionMotions(en: String?, fallback: String?): List<String> =
+    en?.let { planText(it, CAPTION_MODES).motions }?.takeIf { it.isNotEmpty() } ?: listOfNotNull(fallback)

@@ -368,7 +368,10 @@ fun OfficerPane(
 
         if (counsel != Counsel.Off) CounsellorPanel(counsel, vm.counsellor, onResume = startCounsel)
         else if (autoConv != Conv.Off && ownText.isEmpty()) AutoPanel(vm.auto, ui, content, officerLang)
-        pendingReading(ui.events)?.let { ev -> ui.signed[ev.id]?.let { segs -> SignPredictions(ev.id, segs, onPick = { words -> vm.acceptSigned(ev.id, words) }) } }
+        pendingReading(ui.events)?.let { ev -> ui.signed[ev.id]?.let { segs ->
+            val sentences = rememberSentences(ev.id, segs, ui.pending, content, subjectNames(ui.events, content, officerLang), subjectDetails(ui.events, content, officerLang))
+            SignPredictions(ev.id, segs, onPick = { words, sentence -> vm.acceptSigned(ev.id, words, sentence) }, sentences = sentences)
+        } }
         Dock(
             ui = ui,
             content = content,

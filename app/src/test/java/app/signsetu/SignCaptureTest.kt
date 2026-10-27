@@ -3,6 +3,7 @@ package app.signsetu
 import androidx.compose.ui.geometry.Offset
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.camera.analysisDue
+import app.signsetu.camera.next
 import app.signsetu.sign.SignCapture
 import app.signsetu.sign.SignQuiet
 import app.signsetu.sign.STILL_SPEED
@@ -158,6 +159,17 @@ class SignCaptureTest {
         assertFalse(analysisDue(1_000L, 1_029L))
         assertTrue("the first frame is analysed whatever its timestamp", analysisDue(null, 23_277_574L))
         assertTrue(analysisDue(null, 0L))
+    }
+
+    @Test
+    fun overlayEasesBetweenTrackedFramesAndNotAcrossLongGaps() {
+        val first = null.next(LandmarkFrame(0, rightHand = hand(0.2f)), 0L)
+        val second = first.next(LandmarkFrame(100, rightHand = hand(0.4f)), 100_000_000L)
+        assertEquals(0.2f, second.at(100_000_000L).rightHand!![0].x, 1e-4f)
+        assertEquals(0.3f, second.at(150_000_000L).rightHand!![0].x, 1e-4f)
+        assertEquals(0.4f, second.at(400_000_000L).rightHand!![0].x, 1e-4f)
+        val late = second.next(LandmarkFrame(900, rightHand = hand(0.8f)), 900_000_000L)
+        assertEquals("a person stepping in jumps, not glides", 0.8f, late.at(900_000_000L).rightHand!![0].x, 1e-4f)
     }
 
 

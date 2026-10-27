@@ -171,3 +171,29 @@ Text to sign, 2026-10-27:
   517 ISL signs in all.
 - Negation: a typed sentence with no, not, never, nahi, mat or a negated auxiliary now shakes the character's head
   (turn 0.2 at 1.6 Hz) with slightly lowered brows through the sentence, beside the existing question brows.
+
+## Sentence ranker (2026-10-28)
+
+- Shipped word reader on 269 new-signer ISLRTC clips: top-1 0.342, top-3 0.442, top-5 0.480, top-10 0.524, top-20 0.595;
+  mean top probability 0.20 (0.12 when wrong).
+- `SentenceEvalTest`: 152 app sentences glossed in ISL order, each sign read by a simulated reader with that rank curve,
+  ranked by `rankSentences` with a trigram model built without the sentence (written and ISL-ordered forms).
+  Exact whole-sentence match, top-1 / top-5: 3 candidates, no model 0.026 / 0.033; 3 with model 0.020 / 0.053;
+  10 candidates, no model 0.026 / 0.033; 10 with model 0.033 / 0.059. Shipped: 10 candidates with the model.
+- The ceiling is the reader: with the right word in the top 10 for half the signs, a 3-sign sentence has every word on
+  offer about 14% of the time. Ranking cannot pass that; reader recall on new signers and the question's own answer
+  words (lifted by `expectedWords`, not in this simulation) are what move it.
+
+## Calibration and conformal sets (2026-10-28, `calibrate.py`)
+
+The only new signer on disk is the ISLRTC dictionary signer, so its 269 clips are split by word: 100 words fit, the
+other 126 clips report. The held-out Kaggle signer is reported too.
+- Temperature 0.857 (the reader is underconfident on a new signer). ECE on the report half 0.199 to 0.134, NLL 3.72 to
+  3.64; Kaggle signer ECE 0.100 to 0.036, NLL 0.19 to 0.12. Ranking unchanged.
+- RAPS sets (k_reg 3, lambda 0.02), coverage on the report half for each target: 50% gives 0.62 with a median of 17
+  words; 60% 0.68 / 36; 70% 0.73 / 66; 80% 0.83 / 119; 90% 0.93 / 206. Coverage holds at every level. On the Kaggle
+  signer the 50% set is one word (coverage 0.994): sets adapt to how sure the reader is.
+- Risk at coverage (report half, error rate of the most confident share): 10% 0.17, 20% 0.20, 30% 0.24, 50% 0.37,
+  100% 0.60. Even the surest tenth of a new signer's signs is wrong one time in six.
+- Shipped: the temperature, and the 50% set as each sign's candidates; a set over 10 words marks the sign unsure.
+  For a new signer no vocabulary-wide set is both small and safe; the question's answer words have to narrow it first.

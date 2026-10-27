@@ -47,7 +47,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -68,6 +67,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -143,8 +143,10 @@ fun StartScreen(
     }
     var refresh by remember { mutableIntStateOf(0) }
     val open by produceState<Session?>(null, refresh) { value = repo.openSession() }
-    var profile by rememberSaveable { mutableStateOf<Profile?>(null) }
     var lang by rememberSaveable { mutableStateOf("hi") }
+    // The officer does not know the language: the session opens on the language finder.
+    var langUnknown by rememberSaveable { mutableStateOf(false) }
+    var signer by rememberSaveable { mutableStateOf(false) }
     var role by rememberSaveable { mutableStateOf(SessionRole.NOT_KNOWN) }
     var underAge by rememberSaveable { mutableStateOf(false) }
     var signLang by rememberSaveable { mutableStateOf(SignLanguage.ISL) }
@@ -160,21 +162,23 @@ fun StartScreen(
             val id = repo.start(p, lang, role)
             if (p == Profile.ISL_USER && signLang != SignLanguage.ISL) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_SIGN_LANGUAGE + signLang.name)
             // The record shows the officer saw the Juvenile Justice notice, and whether they marked the person a child.
-            if (role == SessionRole.ACCUSED) {
-                repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JJ_NOTICE)
-                if (underAge && p != Profile.YOUNG_CHILD) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JUVENILE)
-            }
+            if (role == SessionRole.ACCUSED) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JJ_NOTICE)
+            if (underAge && p != Profile.YOUNG_CHILD) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JUVENILE)
             onOpenSession(id)
         }
         Unit
     }
     // The camera permission is asked of the officer here, never of the subject on the stage.
-    val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { profile?.let(begin) }
+    // ponytail: one profile per session, so a signing child gets the signer's stage; split Profile if that matters.
+    val profile = when {
+        langUnknown -> Profile.OTHER_LANGUAGE
+        signer -> Profile.ISL_USER
+        underAge -> Profile.YOUNG_CHILD
+        else -> Profile.NOT_SURE
+    }
+    val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { begin(profile) }
     val onStart = {
-        profile?.let { p ->
-            if (cameraWanted && !hasCameraPermission(context)) askCamera.launch(Manifest.permission.CAMERA) else begin(p)
-        }
-        Unit
+        if (cameraWanted && !hasCameraPermission(context)) askCamera.launch(Manifest.permission.CAMERA) else begin(profile)
     }
 
     val header = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
@@ -184,7 +188,7 @@ fun StartScreen(
                 // Shown head and shoulders only: the officer's screen, where the character just says hello.
                 Avatar(
                     gesture = content.gestures["namaste"],
-                    playKey = profile,
+                    playKey = Unit,
                     modifier = Modifier.align(Alignment.BottomCenter).requiredSize(243.dp, 277.dp).offset(y = 27.dp),
                 )
                 Column {
@@ -228,23 +232,26 @@ fun StartScreen(
                             onEnd = { scope.launch { repo.end(session.id, defaultTitle(res, session.startedAt)); refresh++ } },
                         )
                     }
-                    // Profile, language and role are one decision, so they share one card.
+                    // Role, language and how they answer are one decision, so they share one card.
                     OfficerCard {
                         Text(stringResource(R.string.start_who), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-                        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                            Profile.entries.chunked(2).forEach { pair ->
-                                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                                    pair.forEach { p -> ProfileTile(p, content, selected = profile == p, onSelect = { profile = p }, Modifier.weight(1f).fillMaxHeight()) }
-                                }
-                            }
-                        }
-                        Text(
-                            profile?.let { stringResource(profileDescription(it)) } ?: stringResource(R.string.home_greeting_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        RoleChoice(role, onRole = { role = it })
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        LanguagePicker(
+                            content, lang,
+                            onPick = { lang = it; langUnknown = false },
+                            label = stringResource(R.string.start_language),
+                            unknown = langUnknown,
+                            onUnknown = { langUnknown = true },
                         )
-                        if (profile == Profile.ISL_USER && !content.aslDisabled) {
-                            Text(stringResource(R.string.officer_sign_language), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+                        if (langUnknown) {
+                            Text(stringResource(R.string.start_language_finder), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                        } else content.language(lang)?.takeIf { content.subjectText("yes", lang) == null }?.let {
+                            Notice(null, stringResource(R.string.start_pictures_only, it.name), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        SwitchRow(stringResource(R.string.profile_isl), signer, onChecked = { signer = it })
+                        if (signer && !content.aslDisabled) {
                             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                                 SignLanguage.entries.forEach { s ->
                                     ChoiceTile(s == signLang, onClick = { signLang = s }, modifier = Modifier.weight(1f).fillMaxHeight()) {
@@ -253,20 +260,11 @@ fun StartScreen(
                                 }
                             }
                         }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        if (profile == Profile.OTHER_LANGUAGE) {
-                            Text(stringResource(R.string.start_language_finder), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                        } else {
-                            LanguagePicker(content, lang, onPick = { lang = it }, label = stringResource(R.string.start_language))
-                        }
-                        content.language(lang)?.takeIf { profile != Profile.OTHER_LANGUAGE && content.subjectText("yes", lang) == null }?.let {
-                            Notice(null, stringResource(R.string.start_pictures_only, it.name), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
-                        }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        RoleChoice(role, onRole = { role = it })
+                        // An accused person's notice below carries this same mark with the Juvenile Justice rules.
+                        if (role != SessionRole.ACCUSED) SwitchRow(stringResource(R.string.start_juvenile_mark), underAge, onChecked = { underAge = it })
                     }
                     if (role == SessionRole.ACCUSED) {
-                        JuvenileNotice(underAge || profile == Profile.YOUNG_CHILD, enabled = profile != Profile.YOUNG_CHILD, onChecked = { underAge = it })
+                        JuvenileNotice(underAge, enabled = true, onChecked = { underAge = it })
                     }
                     // Below the start card: starting a session is the main job of this screen. A rooted phone lists no history.
                     if (!rooted) SavedSessions(repo, onOpen = { id ->
@@ -276,7 +274,7 @@ fun StartScreen(
                 }
                 BrandButton(
                     onClick = onStart,
-                    enabled = profile != null && !expired && !content.damaged && !starting,
+                    enabled = !expired && !content.damaged && !starting,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md).height(56.dp),
                 ) {
                     Text(stringResource(R.string.start_button), style = MaterialTheme.typography.titleMedium)
@@ -285,40 +283,14 @@ fun StartScreen(
     }
 }
 
-/** One profile: the face the person will meet on the stage, and a short name. */
 @Composable
-private fun ProfileTile(profile: Profile, content: ContentBundle, selected: Boolean, onSelect: () -> Unit, modifier: Modifier) {
-    ChoiceTile(selected, onSelect, modifier.heightIn(min = 64.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box {
-                MiniFace(36.dp, LocalStageColors.current.skyTop)
-                ProfileBadge(profile, Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 4.dp))
-            }
-            Text(
-                stringResource(profileShort(profile)),
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = Spacing.md, end = Spacing.sm),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProfileBadge(profile: Profile, modifier: Modifier) {
-    val colors = MaterialTheme.colorScheme
-    val icon = when (profile) {
-        Profile.ISL_USER -> R.drawable.ic_hand
-        Profile.OTHER_LANGUAGE -> R.drawable.ic_translate
-        else -> null
-    }
-    if (icon == null && profile != Profile.NOT_SURE) return
-    Surface(shape = CircleShape, color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, border = BorderStroke(1.dp, colors.surfaceContainerLowest), modifier = modifier.size(22.dp)) {
-        Box(contentAlignment = Alignment.Center) {
-            if (icon != null) Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(14.dp))
-            else Text("?", fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-        }
+private fun SwitchRow(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(checked, role = Role.Switch, onValueChange = onChecked),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 
@@ -419,12 +391,21 @@ private fun SavedSessions(repo: SessionRepository, onOpen: (String) -> Unit) {
 }
 
 /** The subject's language: a field that opens a list. A dialog, not a dropdown menu, so seventeen languages
- * never open upward over the header or misplace inside a bottom sheet. */
+ * never open upward over the header or misplace inside a bottom sheet. With [onUnknown], "Do not know" heads the list. */
 @Composable
-fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) -> Unit, modifier: Modifier = Modifier, label: String? = null) {
+fun LanguagePicker(
+    content: ContentBundle,
+    selected: String,
+    onPick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    unknown: Boolean = false,
+    onUnknown: (() -> Unit)? = null,
+) {
     var open by remember { mutableStateOf(false) }
     val current = content.language(selected)
-    val text = current?.let { "${it.name}  ·  ${it.english}" } ?: selected
+    val unknownText = stringResource(R.string.start_language_unknown)
+    val text = if (unknown) unknownText else current?.let { "${it.name}  ·  ${it.english}" } ?: selected
     Surface(
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -447,15 +428,28 @@ fun LanguagePicker(content: ContentBundle, selected: String, onPick: (String) ->
             title = label?.let { { Text(it) } },
             text = {
                 LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                    onUnknown?.let { pick ->
+                        item(key = "unknown") {
+                            Row(
+                                Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(MaterialTheme.shapes.small)
+                                    .selectable(unknown, role = Role.RadioButton) { pick(); open = false }
+                                    .padding(horizontal = Spacing.sm),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(unknownText, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                                if (unknown) Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
                     items(content.languages, key = { it.code }) { l ->
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(MaterialTheme.shapes.small)
-                                .selectable(l.code == selected, role = Role.RadioButton) { onPick(l.code); open = false }
+                                .selectable(!unknown && l.code == selected, role = Role.RadioButton) { onPick(l.code); open = false }
                                 .padding(horizontal = Spacing.sm),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text("${l.name}  ·  ${l.english}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                            if (l.code == selected) Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            if (!unknown && l.code == selected) Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -510,16 +504,3 @@ fun profileTitle(p: Profile) = when (p) {
     Profile.NOT_SURE -> R.string.profile_unsure
 }
 
-private fun profileShort(p: Profile) = when (p) {
-    Profile.YOUNG_CHILD -> R.string.profile_child
-    Profile.ISL_USER -> R.string.profile_isl_short
-    Profile.OTHER_LANGUAGE -> R.string.profile_other_short
-    Profile.NOT_SURE -> R.string.profile_unsure
-}
-
-private fun profileDescription(p: Profile) = when (p) {
-    Profile.YOUNG_CHILD -> R.string.profile_child_desc
-    Profile.ISL_USER -> R.string.profile_isl_desc
-    Profile.OTHER_LANGUAGE -> R.string.profile_other_desc
-    Profile.NOT_SURE -> R.string.profile_unsure_desc
-}

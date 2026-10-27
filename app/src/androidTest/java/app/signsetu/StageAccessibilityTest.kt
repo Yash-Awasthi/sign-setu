@@ -125,7 +125,7 @@ class StageAccessibilityTest(private val dark: Boolean) {
 
     @Test fun groundRule() = stage(Pending.GroundRules(2))
 
-    @Test fun practiceRound() = stage(Pending.GroundRules(RuleSteps.lastIndex), Profile.ISL_USER)
+    @Test fun lastRule() = stage(Pending.GroundRules(RuleSteps.lastIndex), Profile.ISL_USER)
 
     @Test fun pauseAfterStop() = stage(ask("s2"), answeredCard = "stop")
 
