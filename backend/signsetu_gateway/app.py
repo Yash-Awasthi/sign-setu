@@ -21,6 +21,7 @@ from .security import DeviceDep, RateLimiter, admin_auth, audit, client_key, def
 
 log = logging.getLogger(__name__)
 type Assist = Callable[[str, str, int], Awaitable[str]]
+type Speak = Callable[[str, str], Awaitable[bytes]]
 NAME = re.compile(r"^[a-z0-9_.-]{1,64}$")
 # The largest legitimate body is an assist request with a 1,000,000-character user turn. Two megabytes leaves room
 # for JSON escaping without letting a caller make the gateway buffer an unbounded request before Pydantic sees it.
@@ -74,6 +75,11 @@ class AssistIn(BaseModel):
     # The runtime cap below is configurable and answers 413; this one only stops a megabyte body being parsed.
     user: str = Field(max_length=1_000_000)
     max_tokens: int = Field(default=800, ge=1, le=2000)
+
+
+class SpeakIn(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+    lang: str = Field(pattern=r"^[a-z]{2,3}$")
 
 
 class FeedbackIn(BaseModel):
@@ -181,9 +187,60 @@ def upstream_assist(s: Settings) -> Assist:
     return run
 
 
-def create_app(settings: Settings | None = None, assist: Assist | None = None, jwks=default_jwks) -> FastAPI:
+ELEVENLABS_LANGS = {"en", "hi"}
+ELEVENLABS_VOICE = "EXAVITQu4vr4xnSDxMaL"
+# The same voices as tools/content/build_natural_audio.py, so typed text sounds like the shipped recordings.
+CARTESIA_VOICES = {
+    "hi": "6b02ffe5-e3cb-48c0-a023-c72f85953375", "hne": "6b02ffe5-e3cb-48c0-a023-c72f85953375",
+    "ta": "d4470f50-295e-4e11-82a2-158d45bf6abc", "bn": "48b9e1de-e2fa-4914-8b32-31c437813548",
+    "gu": "4590a461-bc68-4a50-8d14-ac04f5923d22", "kn": "4c00ff98-199c-4967-99ae-7b69125edcff",
+    "ml": "b426013c-002b-4e89-8874-8cd20b68373a", "mr": "5c32dce6-936a-4892-b131-bafe474afe5f",
+    "pa": "9bf2ddcd-bb35-4e90-81b3-21c8183b24f4", "te": "4418bb06-8329-49a1-bb11-53bb64ca0547",
+}
+
+
+def speech_provider(lang: str) -> str | None:
+    if lang in ELEVENLABS_LANGS:
+        return "elevenlabs"
+    return "cartesia" if lang in CARTESIA_VOICES else None
+
+
+def upstream_speak(s: Settings) -> Speak:
+    async def run(text: str, lang: str) -> bytes:
+        name = speech_provider(lang)
+        if name is None:
+            raise HTTPException(422, "no voice for this language")
+        if name == "elevenlabs":
+            if not s.elevenlabs_key:
+                raise HTTPException(503, "speech not configured")
+            url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE}?output_format=mp3_22050_32"
+            headers = {"xi-api-key": s.elevenlabs_key}
+            body: dict = {"text": text, "model_id": "eleven_v3", "language_code": lang}
+        else:
+            if not s.cartesia_key:
+                raise HTTPException(503, "speech not configured")
+            url = "https://api.cartesia.ai/tts/bytes"
+            headers = {"X-API-Key": s.cartesia_key, "Cartesia-Version": "2025-04-16"}
+            body = {"model_id": "sonic-3", "transcript": text, "language": "hi" if lang == "hne" else lang,
+                    "voice": {"mode": "id", "id": CARTESIA_VOICES[lang]},
+                    "output_format": {"container": "mp3", "sample_rate": 22050, "bit_rate": 32000}}
+        try:
+            async with httpx2.AsyncClient(timeout=30) as c:
+                r = await c.post(url, json=body, headers={**headers, "User-Agent": GATEWAY_UA})
+        except httpx2.TimeoutException as e:
+            raise HTTPException(504, "speech timed out") from e
+        except httpx2.HTTPError as e:
+            raise HTTPException(502, "speech unreachable") from e
+        if r.status_code >= 300 or not r.content:
+            raise HTTPException(502, "speech failed")
+        return r.content
+    return run
+
+
+def create_app(settings: Settings | None = None, assist: Assist | None = None, jwks=default_jwks, speak: Speak | None = None) -> FastAPI:
     s = settings or Settings()
     run_assist = assist or upstream_assist(s)
+    run_speak = speak or upstream_speak(s)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -304,6 +361,14 @@ def create_app(settings: Settings | None = None, assist: Assist | None = None, j
             audit(db, "assist", dev.id)  # the text itself is never stored
             db.commit()
         return {"text": text}
+
+    @app.post("/v1/speak")
+    async def speak_route(body: SpeakIn, dev: DeviceDep):
+        audio = await run_speak(body.text, body.lang)
+        with app.state.sessions() as db:
+            audit(db, "speak", dev.id)  # the text itself is never stored
+            db.commit()
+        return Response(audio, media_type="audio/mpeg")
 
     @app.post("/v1/feedback", status_code=201)
     def feedback(body: FeedbackIn, dev: DeviceDep):

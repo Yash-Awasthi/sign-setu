@@ -11,7 +11,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 
 /** Plays recorded speech from the content bundle. One player per subject screen; never plays unless asked. */
-class SpeechPlayer(context: Context, private val intact: (String) -> Boolean = { true }) {
+class SpeechPlayer(private val context: Context, private val intact: (String) -> Boolean = { true }) {
     private val player = ExoPlayer.Builder(context).build().apply {
         setAudioAttributes(
             AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_SPEECH).build(),
@@ -29,9 +29,21 @@ class SpeechPlayer(context: Context, private val intact: (String) -> Boolean = {
         player.play()
     }
 
+    /** Speech made on the fly for typed text; held in one cache file that release() deletes. */
+    fun playBytes(audio: ByteArray, speed: Float = 1f) {
+        val file = java.io.File(context.cacheDir, SPOKEN).apply { writeBytes(audio) }
+        player.setPlaybackSpeed(speed)
+        player.setMediaItem(MediaItem.fromUri(android.net.Uri.fromFile(file)))
+        player.prepare()
+        player.play()
+    }
+
     fun stop() = player.stop()
 
-    fun release() = player.release()
+    fun release() {
+        player.release()
+        java.io.File(context.cacheDir, SPOKEN).delete()
+    }
 }
 
 @Composable
@@ -42,3 +54,5 @@ fun rememberSpeechPlayer(): SpeechPlayer {
     DisposableEffect(player) { onDispose { player.release() } }
     return player
 }
+
+private const val SPOKEN = "spoken.mp3"

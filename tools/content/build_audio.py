@@ -4,11 +4,6 @@ import pathlib
 import sys
 
 import numpy as np
-import soundfile as sf
-import torch
-from parler_tts import ParlerTTSForConditionalGeneration
-from scipy.signal import resample_poly
-from transformers import AutoTokenizer
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 ASSETS = ROOT / "app" / "src" / "main" / "assets" / "content"
@@ -21,6 +16,8 @@ VOICES = {
 }
 # Indic Parler-TTS has no Gondi or Halbi voice; those subjects get captions and pictures until volunteers record them.
 UNVOICED = {"gon", "hlb"}
+# One voice per language: these are voiced by build_natural_audio.py instead (its Hindi takes also came out male).
+NATURAL_ONLY = {"en", "hi", "hne", "bn", "ta", "te", "kn", "ml", "mr", "gu", "pa"}
 STYLE = "speaks in a calm, warm and slow voice, close to the microphone, with very clear audio and no background noise."
 
 
@@ -43,7 +40,14 @@ def jobs():
 
 
 def main(force: bool) -> None:
-    todo = [j for j in jobs() if j[0] not in UNVOICED and (force or not j[2].exists())]
+    # Imported here so build_natural_audio.py can reuse jobs() without the model's dependencies.
+    import soundfile as sf
+    import torch
+    from parler_tts import ParlerTTSForConditionalGeneration
+    from scipy.signal import resample_poly
+    from transformers import AutoTokenizer
+
+    todo = [j for j in jobs() if j[0] not in UNVOICED | NATURAL_ONLY and (force or not j[2].exists())]
     if not todo:
         print("nothing to generate")
         return

@@ -9,7 +9,8 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class Reply(val code: Int, val body: String) {
+/** [raw] is the body as received, for replies that are not text, such as speech. */
+class Reply(val code: Int, val body: String, val raw: ByteArray = body.toByteArray()) {
     val ok get() = code in 200..299
 }
 
@@ -53,7 +54,8 @@ class UrlHttp : Http {
             bytes?.let { conn.outputStream.use { o -> o.write(it) } }
             val stream = if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream
             // Replies are a line of text or a short JSON object; a larger body is cut rather than filling memory.
-            Reply(conn.responseCode, stream?.use { it.readCapped(MAX_REPLY_BYTES).decodeToString() }.orEmpty())
+            val raw = stream?.use { it.readCapped(MAX_REPLY_BYTES) } ?: ByteArray(0)
+            Reply(conn.responseCode, raw.decodeToString(), raw)
         } catch (e: java.io.IOException) {
             null
         } finally {

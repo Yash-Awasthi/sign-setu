@@ -17,6 +17,15 @@ class ExportClipsTest(unittest.TestCase):
         self.assertEqual([[0.123] * 144], clip["frames"])
         self.assertEqual(25, clip["fps"])  # every ISL-CSLTR video is 25 fps
 
+    def test_a_later_file_replaces_the_same_sentence(self):
+        d = Path(tempfile.mkdtemp())
+        for name, value in (("a.json", 0.1), ("b.json", 0.2)):
+            (d / name).write_text(json.dumps({"hi ": {"frames": [{"coordinates": [value] * 144}]}}), encoding="utf-8")
+        export_clips.OUT = d / "clips.json"
+        export_clips.main(str(d / "a.json"), str(d / "b.json"))
+        [clip] = json.loads(export_clips.OUT.read_text(encoding="utf-8"))["clips"]
+        self.assertEqual(("hi", [[0.2] * 144]), (clip["sentence"], clip["frames"]))
+
     def test_skips_a_clip_with_short_frames(self):
         self.assertEqual([], export_clips.clips({"x": {"frames": [{"coordinates": [0.0] * 10}]}}))
 

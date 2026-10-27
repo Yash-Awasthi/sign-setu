@@ -3,8 +3,10 @@
 Each clip keeps the 144 coordinates of every frame (48 points, x y z) at three decimals; blendshapes are dropped
 because the character takes its face from the rig. Run from the repository root, then refresh the manifest:
 
-    python tools/text2isl/export_clips.py prediction.js
+    python tools/text2isl/export_clips.py medoids.json more.js ...
     python tools/content/build_content.py --manifest-only
+
+With several files, a sentence in a later file replaces the same sentence from an earlier one.
 """
 import json
 import sys
@@ -12,7 +14,7 @@ from pathlib import Path
 
 OUT = Path("app/src/main/assets/content/clips.json")
 SOURCE = ("ISL-CSLTR sentence videos (Elakkiya R. and Natarajan B., Mendeley Data, doi:10.17632/kcmpdxky7p.1, "
-          "CC BY 4.0) through process_sign_videos.py")
+          "CC BY 4.0) through process_sign_videos.py, plus team recordings of the app's questions")
 
 
 def read_predictions(path: Path) -> dict:
@@ -32,12 +34,15 @@ def clips(predictions: dict) -> list:
     return out
 
 
-def main(path: str) -> None:
+def main(*paths: str) -> None:
+    merged = {}
+    for path in paths:
+        merged.update({k.strip(): v for k, v in read_predictions(Path(path)).items()})
     data = {"note": "Written by tools/text2isl/export_clips.py; edit the script, not this file. Draft until Deaf ISL review.",
-            "source": SOURCE, "clips": clips(read_predictions(Path(path)))}
+            "source": SOURCE, "clips": clips(merged)}
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"{OUT}: {len(data['clips'])} clips")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "prediction.js")
+    main(*(sys.argv[1:] or ["prediction.js"]))

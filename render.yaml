@@ -23,3 +23,7 @@ services:
         value: "90"
       - key: ASSIST_KEY
         sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: CARTESIA_API_KEY
+        sync: false

@@ -16,6 +16,8 @@ class Settings:
     assist_model: str = field(default_factory=lambda: os.environ.get("ASSIST_MODEL", ""))
     # Without it a reasoning model can spend its whole budget thinking.
     assist_reasoning_effort: str = field(default_factory=lambda: os.environ.get("ASSIST_REASONING_EFFORT", ""))
+    elevenlabs_key: str = field(default_factory=lambda: os.environ.get("ELEVENLABS_API_KEY", ""))
+    cartesia_key: str = field(default_factory=lambda: os.environ.get("CARTESIA_API_KEY", ""))
     oidc_issuer: str = field(default_factory=lambda: os.environ.get("OIDC_ISSUER", ""))
     oidc_audience: str = field(default_factory=lambda: os.environ.get("OIDC_AUDIENCE", "signsetu-portal"))
     reviewer_role: str = "reviewer"

@@ -48,6 +48,7 @@ import app.signsetu.sign.SignWindow
 import app.signsetu.ui.avatar.AVATAR_ASPECT
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.LEAD_IN
+import app.signsetu.ui.components.LocalCloudAi
 import app.signsetu.ui.components.rememberSpeechPlayer
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.Spacing
@@ -147,6 +148,12 @@ fun Stage(
     val audio = speechFor(pending, content, lang)
     // Speech plays by itself only for subjects who hear and may not read; ISL users never get sound.
     LaunchedEffect(pending, lang) { if (audio != null && profile in AutoSpeech) speech.play(audio) }
+    val cloud = LocalCloudAi.current
+    // Typed text has no recording; with online help allowed, the gateway speaks it in the subject's language.
+    LaunchedEffect(pending, lang) {
+        val typed = (pending as? Pending.FreeText)?.text
+        if (audio == null && typed != null && profile in AutoSpeech) cloud.speak(typed, lang)?.let(speech::playBytes)
+    }
     LaunchedEffect(pending) { withFrameNanos { }; ShowTiming.firstFrame() }
 
     val item = describeItem(pending, content, lang)
@@ -237,8 +244,8 @@ fun Stage(
         Box(Modifier.fillMaxSize()) {
             Avatar(
                 gesture = guide ?: gesture,
-                // A typed sentence with a recorded clip plays the recording instead of word-by-word signs.
-                clip = if (guide == null && focus == null && !reacting) (pending as? Pending.FreeText)?.let { content.clipFor(it.text) } else null,
+                // A typed sentence or asked question with a recorded clip plays the recording instead of word-by-word signs.
+                clip = if (guide == null && focus == null && !reacting) recordedClip(pending, content) else null,
                 playKey = guideKey ?: when {
                     reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
                     focus != null -> "word:$wordTaps"
@@ -435,6 +442,13 @@ internal fun describeItem(pending: Pending?, content: ContentBundle, lang: Strin
     }
     val choices = if (held != null) emptyList() else pictures.take(if (numbers) 10 else 6)
     return StageItem(caption, held, choices, numbers, "draw" in cards)
+}
+
+/** A recorded signer for typed text, or for a question whose English wording was recorded. */
+private fun recordedClip(pending: Pending?, content: ContentBundle) = when (pending) {
+    is Pending.FreeText -> content.clipFor(pending.text)
+    is Pending.Ask -> pending.question.text["en"]?.let(content::clipFor)
+    else -> null
 }
 
 private fun speechFor(pending: Pending?, content: ContentBundle, lang: String): String? = when (pending) {

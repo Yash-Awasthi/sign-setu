@@ -28,6 +28,8 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | `ISL Sample 1` VRM model by Leo | VRM Public License 1.0, credit required, redistribution and avatar use reserved | Ship only with the author's written licence | The character; clip kinematics in `avatar/src/clip.ts` from the SignSetu avatar module (Lilesh Lahre) |
 | | ISL-CSLTR sentence videos | CC BY 4.0 | Data | Recorded sentence clips (`clips.json`) through `tools/text2isl` |
 | | Media3 ExoPlayer | Apache-2.0 | Ship | Recorded speech |
+| | ElevenLabs, Cartesia | Service terms: free plans give no commercial licence and ElevenLabs' free plan requires credit; check the plan the keys are on before release | Data, and the gateway's `/v1/speak` | Placeholder speech (`tools/content/build_natural_audio.py`); keys stay on the gateway, never in the app |
+| | Indic Parler-TTS (AI4Bharat) | Apache-2.0 | Data | Placeholder speech for Assamese, Nepali, Odia and Urdu (`tools/content/build_audio.py`) |
 | Officer colour themes | Mihon colour schemes | Apache-2.0 | Ship (values) | Fourteen light and dark schemes copied into `ui/theme/MihonPalettes.kt` |
 | Sign recognition | MediaPipe Tasks Vision 1.1.1 with the Holistic landmarker model | Apache-2.0 | Ship | On-device hand, face and pose landmarks, GPU then CPU; 64-bit native library only; usage-statistics upload backend excluded |
 | | Protocol Buffers for Java 4.36.2 (`protobuf-javalite`) | BSD-3-Clause | Ship | Lite runtime MediaPipe 1.1.1 is built on, pinned past CVE-2024-7254 |

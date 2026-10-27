@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 
 @Serializable private data class AssistReq(val system: String, val user: String, val max_tokens: Int)
 @Serializable private data class AssistResp(val text: String = "")
+@Serializable private data class SpeakReq(val text: String, val lang: String)
 @Serializable private data class EnrollReq(val code: String)
 @Serializable private data class EnrollResp(val token: String = "")
 @Serializable private data class Msg(val role: String, val content: String)
@@ -117,6 +118,16 @@ class CloudAi(
     /** True when a request would actually leave the phone: the officer must have allowed that for the session. */
     suspend fun sendsSessionData(): Boolean = available && enabled() && withContext(Dispatchers.IO) { enrolled }
 
+    /** Typed text as speech from the gateway, under the same consent as the assistant; null when it cannot be had. */
+    suspend fun speak(text: String, lang: String): ByteArray? {
+        if (!viaGateway || !online() || !sendsSessionData()) return null
+        return withContext(Dispatchers.IO) {
+            val token = vault.get() ?: return@withContext null
+            http.call("POST", "$base/v1/speak", json.encodeToString(SpeakReq.serializer(), SpeakReq(text.take(500), lang)), token, SPEAK_TIMEOUT_MS)
+                ?.takeIf { it.ok && it.raw.isNotEmpty() }?.raw
+        }
+    }
+
     /** Trades the department's one-time code for this device's token; false when it was refused or unreachable. */
     suspend fun enroll(code: String): Boolean {
         if (!viaGateway) return false
@@ -219,6 +230,7 @@ class CloudAi(
 
     private companion object {
         const val ENROLL_TIMEOUT_MS = 15_000
+        const val SPEAK_TIMEOUT_MS = 20_000
         const val WARM_TIMEOUT_MS = 60_000
 
         /** Enough for a reasoning model's thinking plus the short answer the app asks for; the thinking grows with the

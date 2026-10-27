@@ -10,6 +10,7 @@ The department gateway the app uses while online. It is optional: a build withou
 | `POST /v1/enroll` | Phone | Trades a one-time enrolment code for a device token |
 | `GET /v1/models`, `GET /v1/models/{name}` | Not called by the app in any build: the app imports its model from a file (see [docs/10](../docs/10-on-device-assistant.md)). Kept for a later in-app download | Model manifest (`MODEL_DIR/manifest.json`); a file is served only if it matches its manifest hash. The file's ETag is that hash (a matching `If-None-Match` gets 304) and `Range` is supported, so a download resumes instead of starting again |
 | `POST /v1/assist` | Phone | Proxy to the AI service; the key stays here and no text is stored. The whole system prompt must match a template in `signsetu_gateway/app_prompts.json` (language names fill the marked slots, one line, up to 80 characters), so a caller cannot add instructions. The file is written by the app's `GatewayPromptContractTest` (`UPDATE_PROMPT_FIXTURE=1`) and that test fails when a prompt changes without it |
+| `POST /v1/speak` | Phone | Typed text (up to 500 characters) and a language code to MP3 speech: ElevenLabs for English and Hindi, Cartesia for the other languages it has; 422 for a language with no voice, 503 when the key for it is unset. Same device token, rate limit and consent switch as assist; the text is never stored |
 | `POST /v1/feedback` | Not called by the app today | Label outcome of a reading, with consent; any extra field is refused, and an `outcome` of `corrected` must carry the `confirmed` label it was corrected to |
 | `GET /v1/admin/feedback` | Reviewer (the portal does not call it today; `tools/export_feedback.py` reads the table) | Keycloak access token with the `reviewer` realm role. Newest first; `limit` is 1–1000, default 200. Each row carries its `id`; pass the oldest as `before` for the next page. `outcome` filters to `confirmed`, `corrected` or `rejected` |
 | `GET /v1/admin/devices`, `POST /v1/admin/devices/{id}/revoke` | Administrator | Keycloak access token with the `gateway-admin` realm role (`ADMIN_ROLE` to rename it). Lists device ids, whether each is revoked and when it was last seen (to the hour), never tokens; `limit` is 1–1000, default 200. A revoked device gets 401 and its app drops the token and falls back to the on-device assistant. Written to the audit table |
@@ -46,6 +47,7 @@ Phone routes need the device token and are rate limited to 30 requests a minute.
 | `ASSIST_KEY` | empty | Bearer key for the AI service |
 | `ASSIST_MODEL` | empty | Model name sent to the AI service |
 | `ASSIST_REASONING_EFFORT` | empty | `low` for gpt-oss models, so they answer instead of thinking past the budget |
+| `ELEVENLABS_API_KEY`, `CARTESIA_API_KEY` | empty | Keys for `/v1/speak`; keep them secrets |
 | `OIDC_ISSUER` | empty | Keycloak realm URL; empty disables the admin route |
 | `OIDC_AUDIENCE` | `signsetu-portal` | Expected audience of reviewer tokens |
 
