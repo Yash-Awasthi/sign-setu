@@ -40,14 +40,14 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | `OfficerAuth`: platform `BiometricPrompt` with `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` (API 30+), device credential on API 29, before the store opens, before a session is left, ended, exported or deleted, and before Clear all data. One confirmation covers the next 60 s; a lock forgets it. A phone with no secure lock skips the prompt. | MASVS-AUTH-2, AUTH-3 |
 | Relock after 5 minutes in the background, 30 inside a session; a relock, crash or restart always asks again. | MASVS-AUTH-2 |
 | The KEK needs no prompt but is created with `setUnlockedDeviceRequired(true)`; Android invalidating it (lock removed or reset) deletes the unreadable store and tells the officer once. | MASVS-AUTH-2 |
-| Gateway: one-time enrolment codes (stored as SHA-256 on the server), per-address and global wrong-code limits, a random 256-bit bearer token (stored as SHA-256 on the server), optional token life, admin revocation; admin and reviewer routes need an OIDC token with the right realm role. | MASVS-AUTH-1 |
+| Gateway: one-time enrolment codes (stored as SHA-256 on the server), per-address and global wrong-code limits, a random 256-bit bearer token (stored as SHA-256 on the server), optional token life (`TOKEN_TTL_DAYS`, 0 in production: tokens do not expire), admin revocation; admin and reviewer routes need an OIDC token with the right realm role. | MASVS-AUTH-1 |
 
 ### 2.4 Network
 
 | Control | Source |
 | --- | --- |
 | INTERNET is used only by the online assistant client (`UrlHttp`): HTTPS only, cleartext refused by the network security config and by `UrlHttp`, system trust anchors only, validated networks only. Nothing connects unless the build has a gateway, or the officer has saved their own service, and the officer has switched the assistant on. | MASVS-NETWORK-1 |
-| Session text goes only after the officer allows it once per session; names, details, emails, links, PAN-like ids and long numbers are masked first (`Pseudonymizer`). The gateway accepts only the app's own system prompts. | MASVS-NETWORK-1, PRIVACY-1 |
+| Session text goes only after the officer allows it once per session; names, details, emails, links, PAN-like ids and long numbers are masked first (`Pseudonymizer`). The gateway accepts only the app's own system prompts. Speaking typed text (`OnlineAssistant.speak`) sends the officer's own words, up to 500 characters and not masked, to the gateway's `/v1/speak` under the same switch and permission. | MASVS-NETWORK-1, PRIVACY-1 |
 | Certificate pinning is designed and waits on the production host and CA ([14](14-attestation-and-pinning.md)). | MASVS-NETWORK-2 (gap) |
 
 ### 2.5 Platform interaction
@@ -55,7 +55,8 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | Control | Source |
 | --- | --- |
 | `FLAG_SECURE` on the activity when the build switch `secureScreen` is true, as it must be for the final release APK; dialogs and sheets inherit it. Settings > Security has three switches, each needing the officer to turn it off: Pin the app, Block screenshots (default from `secureScreen`) and Ask for fingerprint. Testing builds allow screenshots; debug builds made with `-PtestUnlocked=true` also skip pinning and the fingerprint so the app can be driven over adb. | MASVS-PLATFORM-3 |
-| Exported components in the merged release manifest: the launcher activity. `RetentionJob` is not exported and is bound only by the platform scheduler (`BIND_JOB_SERVICE`). FileProvider not exported, one temporary read grant per share. Unused library receivers removed. No deep links, no PendingIntents, no WebView. | MASVS-PLATFORM-1, PLATFORM-2 |
+| Exported components in the merged release manifest: the launcher activity. `RetentionJob` is not exported and is bound only by the platform scheduler (`BIND_JOB_SERVICE`). FileProvider not exported, one temporary read grant per share. Unused library receivers removed. No deep links, no PendingIntents. | MASVS-PLATFORM-1 |
+| One WebView, the character's (`Avatar.kt`): it loads only the bundled avatar page, answers every other request with 404 and blocks navigation; file and content access are off; its JavaScript bridge exposes only `ready()` and `finished(token)`. | MASVS-PLATFORM-2 |
 | `filterTouchesWhenObscured` on the activity and every dialog window (`GuardedAlertDialog`). | MASVS-PLATFORM-3 |
 | Runtime permissions: CAMERA asked of the officer at session start, never on the stage; BLUETOOTH_CONNECT only when a second screen is set up. Build gates fail any variant with RECORD_AUDIO or background location, and `standard` with any discovery or location permission. | CERT-In 6.2.6 |
 | Camera: Preview and ImageAnalysis only; frames tracked in memory while the stage camera shows, at most one per 30 ms and down to one per 250 ms when idle or when the phone reports severe heat; landmarks kept only inside a sign window; the officer and the department can turn the mirror off. | MASVS-PRIVACY-1, DPDP s.8 |
@@ -77,7 +78,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | Control | Source |
 | --- | --- |
 | R8 shrinking and obfuscation in release; not debuggable; logs stripped. | MASVS-RESILIENCE-3 |
-| Release key generated offline, held by the release manager and a second custodian; APK Signature Scheme v3. | MASVS-RESILIENCE-2 |
+| Release key generated offline; CI signs with it from encrypted repository secrets, and the release manager and a second custodian hold offline copies; APK Signature Scheme v3. | MASVS-RESILIENCE-2 |
 | Rooted or test-key device: heuristic check (`Build.TAGS`, `su` paths), warn, keep no history, still usable in an emergency. | MASVS-RESILIENCE-1 (partial) |
 | No debugger, hook or repackaging detection; Play Integrity is unavailable in `standard` (NOTE E-5). | MASVS-RESILIENCE-2, -4 (gap) |
 
@@ -100,13 +101,13 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | STORAGE-2 No leakage | Implemented | Backup rules, Log stripping, no-learning keyboard | 0003, 0011, 0201, 0202 |
 | CRYPTO-1 Strong cryptography | Implemented | §2.2 inventory | 0013, 0208, 0221 |
 | CRYPTO-2 Key management | Implemented | §4 | 0015, 0212 |
-| AUTH-1 Remote authentication | Implemented on the gateway; pinning and attestation open | `backend/signsetu_gateway/security.py` | 0017 |
+| AUTH-1 Remote authentication | Implemented on the gateway; pinning and attestation open | `gateway/auth.go` | 0017 |
 | AUTH-2 Local authentication | Partial: the prompt gates actions; the DEK is not bound to the prompt by a CryptoObject (accepted: officers share no device credential, and the KEK still needs an unlocked phone) | `OfficerAuth`, `DatabaseKey` | 0018, 0326 |
 | AUTH-3 Step-up for sensitive actions | Implemented for leave, end, export, delete, clear; switching the online assistant on is gated by a notice, not the prompt | `OfficerAuth` call sites | 0327 |
 | NETWORK-1 Secure traffic | Implemented | `UrlHttp`, `network_security_config.xml` | 0019, 0217, 0233 |
 | NETWORK-2 Identity pinning | Gap until the production host is fixed | [14](14-attestation-and-pinning.md) | 0020, 0021 |
 | PLATFORM-1 IPC | Implemented | Merged manifest (§2.5) | 0007, 0250, 0251 |
-| PLATFORM-2 WebViews | Not applicable: no WebView | | 0028 |
+| PLATFORM-2 WebViews | Implemented: bundled page only, no network, no file access, two-method bridge | `ui/avatar/Avatar.kt` | 0028 |
 | PLATFORM-3 UI | Implemented in the final release build | FLAG_SECURE (`secureScreen`), overlay filter, pinning | 0035, 0289 |
 | CODE-1 Platform version | Implemented | minSdk 29, targetSdk 37 | 0272 |
 | CODE-2 Updates | Implemented by build expiry | `Policy.kt` | 0274 |
@@ -133,7 +134,7 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | Export passphrase | Shown once | Per export | Report unreadable; export again |
 | Link keys | ECDH and HKDF per link, memory only | Every link and resume | Link closes; pair again |
 | Resume secret | Memory only | Every new link; zeroed on Bye, expiry, lock, end | Reconnect needs the code |
-| Release signing key | Release manager and second custodian, offline | On compromise (v3 rotation) | Updates need the backup |
+| Release signing key | Repository secrets for CI; offline copies with the release manager and a second custodian | On compromise (v3 rotation) | Updates need the backup |
 
 ## 5. Threat model (STRIDE)
 
@@ -152,7 +153,7 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | Network | Traffic read or altered | I, T | TLS, validated networks, masking | User-installed CA until pinning |
 | Network | Stolen enrolment code or token used elsewhere | S | Single-use codes, rate limits, revocation, optional token life | Attestation not built |
 | Gateway | Prompt injection through the assist proxy | E | System prompts allow-listed; size limits | User text is still free text |
-| Build | Compromised dependency or signing key | T | Lockfile, verification, scans, SBOM, offline key | |
+| Build | Compromised dependency or signing key | T | Lockfile, verification, scans, SBOM, key only in repository secrets and offline copies | A compromised GitHub account could sign a release |
 | Library | Usage statistics sent by MediaPipe | I | Upload backend excluded and replaced by a stub | |
 | Device | Rooted phone, hooking, repackaging | T, E | Root heuristic, R8, signing | No anti-debug or integrity attestation |
 | Process | Denial of service by a hostile peer | D | Frame caps checked before allocation, timeouts | Bluetooth jamming |

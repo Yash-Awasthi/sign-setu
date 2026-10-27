@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
@@ -40,7 +43,8 @@ internal fun SignPredictions(eventId: Long, segments: List<SignSegment>, onPick:
     val picked = remember(eventId) { mutableStateMapOf<Int, String>() }
     val guesses = segments.map { s -> s.guesses.orEmpty().take(PREDICTIONS).map { it.word } }
     if (guesses.all { it.isEmpty() }) return
-    Column(modifier.fillMaxWidth().animateContentSize(motion(spring())).padding(horizontal = Spacing.lg, vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+    // A long account reads as many signs; the guesses scroll so the conversation above stays in view.
+    Column(modifier.fillMaxWidth().animateContentSize(motion(spring())).heightIn(max = 168.dp).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.lg, vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         guesses.forEachIndexed { i, words ->
             if (words.isEmpty()) return@forEachIndexed
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

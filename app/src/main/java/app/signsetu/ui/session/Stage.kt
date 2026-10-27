@@ -41,6 +41,7 @@ import app.signsetu.data.content.Given
 import app.signsetu.data.content.WordBeat
 import app.signsetu.data.content.chain
 import app.signsetu.data.content.planText
+import app.signsetu.data.content.negatedText
 import app.signsetu.data.content.questionKind
 import app.signsetu.data.content.signBack
 import app.signsetu.data.session.Profile
@@ -267,6 +268,7 @@ fun Stage(
                 idle = !signing,
                 glance = pending != null && !drawing && !reacting,
                 question = if (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) questionKind(item.caption.orEmpty()) else null,
+                negated = (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) && negatedText(item.caption.orEmpty()),
                 onFinished = { reacting = false; focus = null },
                 modifier = Modifier.fillMaxSize().padding(16.dp).aspectRatio(AVATAR_ASPECT).align(Alignment.Center),
             )

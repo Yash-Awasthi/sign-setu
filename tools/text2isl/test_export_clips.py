@@ -33,6 +33,12 @@ class ExportClipsTest(unittest.TestCase):
         [bare] = export_clips.clips({"x": {"frames": frames[1:]}})
         self.assertNotIn("face", bare)
 
+    def test_a_one_frame_tracking_slip_is_dropped(self):
+        frames = [{"coordinates": [0.1] * 144} for _ in range(9)]
+        frames[4] = {"coordinates": [0.9] * 144}
+        [clip] = export_clips.clips({"x": {"frames": frames}})
+        self.assertEqual([[0.1] * 144] * 9, clip["frames"])
+
     def test_skips_a_clip_with_short_frames(self):
         self.assertEqual([], export_clips.clips({"x": {"frames": [{"coordinates": [0.0] * 10}]}}))
 

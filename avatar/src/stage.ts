@@ -16,6 +16,8 @@ export interface Play {
   idle?: boolean;
   glance?: boolean;
   question?: QuestionKind | null;
+  /** The sentence says no or not: the head shakes while it signs. */
+  negated?: boolean;
   token?: number;
 }
 
@@ -161,7 +163,7 @@ export class AvatarStage {
       const seconds = p.at ?? this.elapsed() * (p.speed ?? 1);
       const gaze =
         p.glance && p.at == null && seconds >= this.timeline.duration ? Math.min(1, (seconds - this.timeline.duration - 0.3) / 0.5) : 0;
-      const still = livePose(this.timeline, seconds, p.question ?? null, Math.max(0, gaze), this.moving());
+      const still = livePose(this.timeline, seconds, p.question ?? null, Math.max(0, gaze), this.moving(), p.negated ?? false);
       this.pose(vrm, this.body, still, idle ? now : 0, idle || this.moving() ? blinkAt(now) : 1);
     }
     vrm.update(delta);

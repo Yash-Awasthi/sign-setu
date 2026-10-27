@@ -541,9 +541,13 @@ A report leaves the phone only when you export and share it, protected by a pass
     <!-- ASL Experimental Gating -->
     <string name="asl_experimental_badge">Experimental</string>
     <string name="asl_experimental_title">ASL Recognition is Experimental</string>
-    <string name="asl_experimental_advisory" formatted="false">ASL word recognition has ~40% accuracy and is provided for testing only. ISL is recommended for field investigations. ASL fingerspelling and character animation remain fully supported.</string>
-    <string name="settings_asl_advisory">ASL recognition status</string>
-    <string name="settings_asl_advisory_summary" formatted="false">ASL word recognition is experimental (40% accuracy). ISL is the primary field pipeline. ASL fingerspelling and gestures remain active.</string>
+    <string name="asl_experimental_advisory">The ASL reader gets about half of the words right for a signer it has not seen. Use ISL in the field unless the person signs ASL; the character still signs ASL.</string>
+    <string name="settings_sign_languages">Sign languages</string>
+    <string name="settings_isl_status">Indian Sign Language (ISL)</string>
+    <string name="settings_isl_status_summary">The main language. The phone reads 314 signed words, fingerspelled names, letters and digits; for a signer it has not seen, about one word in three is right first time, and the officer settles every reading. The character signs 517 recorded words, 156 drawn signs and 112 recorded sentences. Every sign is a draft until Deaf ISL review.</string>
+    <string name="settings_isl_badge">Main</string>
+    <string name="settings_asl_status">American Sign Language (ASL)</string>
+    <string name="settings_asl_status_summary">For people who sign ASL. The phone reads 250 signed words, about half right for a new signer, and fingerspelling, about one letter in three wrong. The character signs 286 recorded ASL signs and the ASL alphabet. Switch it from the officer menu during a session.</string>
 
     <!-- Sandes Interpreter Handoff -->
     <string name="sandes_handoff_title">Sandes Interpreter Contact</string>

@@ -69,6 +69,27 @@ private fun islRank(word: String, entry: WordEntry?) = when {
     else -> 1
 }
 
+/** A recorded sign's hands at the waist, before it starts or after it ends. */
+private fun HandKey?.resting() = this == null || at == "rest" || (at == "side" && dy > -15f)
+
+/** A recorded sign without its resting keys at the start ([lead]) and the end ([trail]), retimed to start at 0;
+ * unchanged when nothing but resting keys would be left (a sign made at the waist). */
+internal fun Gesture.trimmed(lead: Boolean = true, trail: Boolean = true): Gesture {
+    if (!id.startsWith("isl.")) return this  // authored motions start and end where their author put them
+    val sorted = keys.sortedBy { it.t }
+    val active = sorted.indices.filter { !(sorted[it].R.resting() && sorted[it].L.resting()) }
+    if (active.isEmpty()) return this
+    val from = if (lead) active.first() else 0
+    val to = if (trail) active.last() else sorted.lastIndex
+    if (from == 0 && to == sorted.lastIndex) return this
+    val t0 = sorted[from].t
+    return copy(keys = sorted.subList(from, to + 1).mapIndexed { i, k ->
+        // The new first key spells out what later keys leave to it.
+        if (i == 0 && from > 0) k.copy(t = 0f, face = k.face ?: sorted[0].face, head = k.head ?: sorted[0].head, body = k.body ?: sorted[0].body)
+        else k.copy(t = k.t - t0)
+    })
+}
+
 /** A still beat that keeps a picture on screen for a word with no sign. */
 private val PAUSE = Gesture("pause", listOf(Key(0f), Key(0.6f)))
 
@@ -78,9 +99,22 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
     val parts = mutableListOf<Gesture>()
     val beats = mutableListOf<WordBeat>()
     var t = 0f
+    // Inside a sentence the hands go straight from one sign to the next instead of dropping to the waist between:
+    // the sign before loses its resting end once another follows.
+    fun settle() {
+        val prev = parts.lastOrNull() ?: return
+        val cut = prev.trimmed(lead = false)
+        val saved = prev.keys.maxOf { it.t } - cut.keys.maxOf { it.t }
+        if (saved <= 0f) return
+        if (beats.lastOrNull()?.end == t) beats[beats.lastIndex] = beats.last().copy(end = t - saved)
+        parts[parts.lastIndex] = cut
+        t -= saved
+    }
     fun add(g: Gesture) {
-        parts += g
-        t += g.keys.maxOf { it.t } + GAP
+        settle()
+        val next = if (parts.isNotEmpty()) g.trimmed(trail = false) else g
+        parts += next
+        t += next.keys.maxOf { it.t } + GAP
     }
     // "Ravi's" plays as Ravi: a possessive or contraction keeps only its stem.
     val tokens = phrases(TOKEN.findAll(text).map { it.range to it.value.lowercase().let { w -> if (NEGATED.matches(w)) "not" else w.split('\'', '’').first() } }.toList(), modes)
@@ -98,6 +132,7 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
     for (i in order) {
         val (range, word) = tokens[i]
         val entry = entryOf(i)
+        if (!grammar(i)) settle()
         val start = t
         val card = if (SignMode.PICTURES in modes) entry?.card ?: word.toIntOrNull()?.takeIf { it in 1..10 }?.let { "n$it" } else null
         val motion = if (grammar(i)) null else motionFor(word, entry, modes)
@@ -251,6 +286,12 @@ private val WH_WORDS = setOf(
     "kya", "kahan", "kaun", "kab", "kyon", "kyun", "kaise", "kitna", "kitne", "kitni",
     "क्या", "कहाँ", "कहां", "कौन", "कब", "क्यों", "कैसे", "कितना", "कितने", "कितनी", "किसका", "किसने",
 )
+
+private val NEGATION = setOf("not", "no", "never", "nothing", "nobody", "nahi", "nahin", "mat", "नहीं", "नही", "मत", "कभी नहीं")
+
+/** True when typed text says no or not, so the character shakes its head through the sentence, as ISL marks negation. */
+fun negatedText(text: String): Boolean =
+    TOKEN.findAll(text.lowercase()).any { it.value in NEGATION || NEGATED.matches(it.value) }
 
 /** The question face for typed text: none unless it ends in a question mark, then wh- or yes-no. */
 fun questionKind(text: String): QuestionKind? {

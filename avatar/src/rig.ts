@@ -507,13 +507,31 @@ export function questionFace(p: Pose, kind: QuestionKind, e: number): Pose {
   };
 }
 
-/** The pose shown at [seconds]: the gesture with its question face, a lowered glance and the mouth moving while it signs. */
-export function livePose(timeline: Timeline, seconds: number, question: QuestionKind | null, gaze: number, moving: boolean): Pose {
+/** ISL negation: a side to side head shake with slightly lowered brows, over the whole sentence. */
+export function negationFace(p: Pose, seconds: number, e: number): Pose {
+  return {
+    ...p,
+    turn: p.turn + 0.2 * e * Math.sin(seconds * 2 * Math.PI * 1.6),
+    face: { ...p.face, browFrown: Math.max(p.face.browFrown, 0.35 * e) },
+  };
+}
+
+/** The pose shown at [seconds]: the gesture with its question and negation face, a lowered glance and the mouth
+ * moving while it signs. */
+export function livePose(
+  timeline: Timeline,
+  seconds: number,
+  question: QuestionKind | null,
+  gaze: number,
+  moving: boolean,
+  negated = false,
+): Pose {
   const d = timeline.duration;
   const e = d > 0 ? envelope(seconds, d) : 0;
   let p = timeline.pose(seconds);
   if (gaze > 0) p = { ...p, nod: p.nod + gaze * 0.5, gaze };
   if (question && e > 0) p = questionFace(p, question, e);
+  if (negated && e > 0) p = negationFace(p, seconds, e);
   const f = p.face;
   if (moving && d > 0 && seconds < d && f.mouthOpen < 0.2 && f.mouthRound < 0.5) {
     const talk = 0.07 * (0.5 + 0.5 * Math.sin(seconds * 2 * Math.PI * 2.3)) * e;

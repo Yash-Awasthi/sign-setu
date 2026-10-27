@@ -96,9 +96,11 @@ class SignReaderTest {
             assertTrue("$lang reads words and spelling", full !is LandmarkSignReader)
             for (ext in listOf("bin", "json")) {
                 assertTrue("${lang.reader}.$ext", load(lang, "${lang.reader}.$ext") == null)
-                // A tampered spelling model leaves the word reader alone.
-                val words = load(lang, "${lang.spell}.$ext")
-                assertTrue("${lang.spell}.$ext", words is LandmarkSignReader && words.labels.size < full.labels.size)
+                // A tampered spelling model drops only itself.
+                val words = load(lang, "${lang.spell}.$ext")!!
+                assertTrue("${lang.spell}.$ext", words.labels.size < full.labels.size)
+                if (lang.names == null) assertTrue("${lang.spell}.$ext", words is LandmarkSignReader)
+                lang.names?.let { assertTrue("$it.$ext", load(lang, "$it.$ext")!!.labels.size < full.labels.size) }
             }
         }
     }
@@ -184,5 +186,27 @@ class SignReaderTest {
     fun underFiveMegabytes() {
         assertTrue(File(models, "asl_spell.bin").length() < 5_000_000)
         assertEquals("", ctc.read(listOf(LandmarkFrame(0), LandmarkFrame(100))))
+    }
+
+    @Test
+    fun islNameSpellingMatchesPython() {
+        val isl = CtcSpellReader(File(models, "isl_spell_ctc.json").readText(), File(models, "isl_spell_ctc.bin").readBytes())
+        val cases = Json.parseToJsonElement(javaClass.getResource("/isl_spell_ctc_fixture.json")!!.readText()).jsonObject
+            .getValue("cases").jsonArray.map { it.jsonObject }
+        assertTrue(cases.isNotEmpty())
+        for (c in cases) {
+            val aspect = c.getValue("aspect").jsonPrimitive.float
+            val frames = c.getValue("frames").jsonArray.map { f ->
+                val o = f.jsonObject
+                LandmarkFrame(o.getValue("t").jsonPrimitive.long, leftHand = points(o["left"]), rightHand = points(o["right"]),
+                    pose = points(o["pose"]), aspect = aspect)
+            }
+            val expected = c.getValue("logits").jsonArray.map { row -> row.jsonArray.map { it.jsonPrimitive.float } }
+            val logits = isl.logits(frames)!!
+            assertEquals(expected.size, logits.size)
+            val worst = expected.indices.maxOf { t -> expected[t].indices.maxOf { abs(expected[t][it] - logits[t][it]) } }
+            assertTrue("max logit difference $worst", worst < 1e-3f)
+            assertEquals(c.getValue("decoded").jsonPrimitive.content, isl.decode(logits))
+        }
     }
 }

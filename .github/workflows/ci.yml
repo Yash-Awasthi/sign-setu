@@ -94,24 +94,35 @@ jobs:
       - name: Content references, ids and language coverage
         run: python tools/content/check_content.py
 
-  backend:
+  gateway:
     runs-on: ubuntu-24.04
-    # 3.13 is the floor in pyproject.toml; 3.15 is the version of the image in backend/Dockerfile.
-    strategy:
-      matrix:
-        python-version: ["3.13", "3.15"]
     defaults:
       run:
-        working-directory: backend
+        working-directory: gateway
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: test
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 2s --health-timeout 5s --health-retries 15
+    env:
+      TEST_DATABASE_URL: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-go@v5
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: backend/pyproject.toml
-      - run: pip install -e ".[test]"
-      - run: python -m pytest -q
+          go-version-file: gateway/go.mod
+          cache-dependency-path: gateway/go.sum
+      - name: Formatted
+        run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+      - name: Fuzz
+        run: |
+          for f in FuzzPromptAllowed FuzzClientKey FuzzEnrollBody; do go test -run '^$' -fuzz "^$f\$" -fuzztime 30s .; done
+      - run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
   semgrep:
     runs-on: ubuntu-24.04
@@ -190,7 +201,7 @@ jobs:
 
   # A green master push publishes v<versionName>: a new version gets a new release, the same version is replaced.
   release:
-    needs: [version, android, avatar, portal, tools, backend, semgrep, osv, instrumented, gitleaks]
+    needs: [version, android, avatar, portal, tools, gateway, semgrep, osv, instrumented, gitleaks]
     if: ${{ !failure() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-24.04
     concurrency: release

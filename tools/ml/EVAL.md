@@ -2,7 +2,7 @@
 
 Output of `eval_isl.py` and `eval_asl.py` on the shipped models.
 
-    ISL words    top-1 0.9792  top-3 0.9951  (n=816, sign_reader)
+    ISL words    top-1 0.9792  top-3 0.9951  (n=816, INCLUDE test, sign_reader)
     ISL letters  top-1 0.3538  top-3 0.4615  (n=65, isl_spell)
     ISL digits   top-1 0.5000  top-3 0.5227  (n=44, isl_spell)
     ISL combined words   top-1 0.9767  word-only 0.9767  (n=816, gate costs 0.0000)
@@ -13,8 +13,11 @@ Output of `eval_isl.py` and `eval_asl.py` on the shipped models.
     ISL real gate odds 2.0: spelled 0.4848, correctly 0.2424  (n=33); INCLUDE words lost 0.0000
     ISL real gate odds 3.0: spelled 0.3636, correctly 0.2121  (n=33); INCLUDE words lost 0.0000
     ISL real gate odds 4.0: spelled 0.2121, correctly 0.1212  (n=33); INCLUDE words lost 0.0000
-    ISL words, new signer  top-1 0.3266  top-3 0.4673  (n=199, ISLRTC dictionary clips, sign_reader; was 0.2864 / 0.4422)
-    ISL words, CISLR       top-1 0.2721  top-3 0.3770  (n=610, CISLR clips of INCLUDE words, sign_reader; was 0.2393 / 0.3459)
+    ISL words, new signer  top-1 0.3420  top-3 0.4424  (n=269, ISLRTC dictionary clips of the reader's words, sign_reader with Kaggle ISL; 314 words)
+    ISL words, Kaggle held-out signer  top-1 0.9733  top-3 0.9967  (n=300)
+    ISL spelled names, held-out signer  CER 0.1204, letters only 0.1108, exact 0.2892  (n=498, isl_spell_ctc)
+    ISL spelled names, ISLRTC acronyms  CER 0.75, letters found 8 of 20  (n=7, isl_spell_ctc)
+    ISL words, CISLR       top-1 0.2721  top-3 0.3770  (n=610, CISLR clips of INCLUDE words, the 262-word sign_reader; was 0.2393 / 0.3459)
     ASL words    top-1 0.4669  top-3 0.6329  (n=5385, PopSign test signers, asl_reader; was 0.4020 / 0.5428)
     ASL spelling CER 0.0418  (400 synthetic sequences, asl_spell)
     ASL spelling, real CER 0.3677  (413 sequences of 10 held-out Kaggle signers, asl_spell; synthetic-only was 0.6580 on all 2,892)
@@ -94,3 +97,77 @@ Notes:
   misses are male and female pairs (mother and father, grandmother and grandfather, wife and husband). Averaging over
   mirrored and rescaled copies at read time changed nothing (0.286 overall either way), so it is not used. More signers
   of the lesson words are what would raise the first number.
+- Kaggle ISL video set (prasadshet, 60 words plus "still", 4 signers, MIT; `prepare_isl_more.py`, `build_isl_more.py`)
+  added to INCLUDE (314 words, shipped settings, 400 epochs): INCLUDE test 0.979 (unchanged), ISLRTC 269 clips 0.342 /
+  0.442 against 0.312 / 0.428 for INCLUDE alone (within noise, no drop), held-out Kaggle signer 0.973 / 0.997 (n=300;
+  INCLUDE alone 0.42 / 0.44 on the 9 shared words, n=45). The set ships no signer ids: clips were grouped by face and
+  clothing per recording day and checked by eye (`ml-data/isl_more/kaggle_signers.json`). All four signers share one
+  room, camera and word list, so the held-out score is far easier than a new signer in the field. Shipped in 0.8.1.
+- ISL emergency words (Mendeley 2vfdm42337: accident, call, doctor, help, hot, lose, pain, thief; 26 signers) are
+  close-ups of the hands with no face or shoulders, so they cannot join the shoulder-centred word reader. A hand-only
+  reader (script since removed; Hand Landmarker, `norm: hands`) scores 1.00 on 5 held-out signers (n=80) but
+  0.30 / 0.70 on full-body ISLRTC dictionary clips of 6 of the words (n=10; chance 0.125 / 0.375; "call" has four
+  dictionary signs). Trimming idle frames changed nothing. Not shipped.
+- Kaggle asl-signs 1st place model ported to PyTorch (script since removed: x, y and 1 and 2 frame differences of hands
+  and arms after per-clip nan-aware normalisation, 2 x (3 depthwise convolution blocks with ECA plus a transformer
+  block), width 192, late dropout 0.8, its affine and time-mask augmentation plus ours; 64 resampled frames; AWP left
+  out; 1.8M parameters, 300 epochs, 12 min) on INCLUDE plus Kaggle: INCLUDE test 0.978, ISLRTC 0.316 / 0.442, held-out
+  Kaggle signer 1.000 / 1.000. Averaging its probabilities with the convolution reader gives ISLRTC 0.342 / 0.442 (the
+  convolution reader alone: 0.342 / 0.442) and Kaggle 0.993 / 1.000. Below the 0.05 bar, so neither is shipped; a
+  bigger model does not move the new-signer score either.
+- ISLRTC dictionary onto the character: 55 more words from the official dictionary clips (`retarget_islrtc.py`, now
+  keeping an unchanged clip's entry as it was), 208 ISLRTC signs in all. Includes yes, no, ok, pain, stop, wait,
+  sorry, toilet, hungry, phone, lost, scared and the digits 1 to 9. Drafts until ISL review.
+- The winner with AWP (weights perturbed by 0.2 x gradient / gradient norm from epoch 15, as in its source): INCLUDE
+  test 0.965, ISLRTC 0.275 / 0.398, Kaggle signer 0.993 / 1.000, worse on new signers than without it. SL-GCN
+  (SAM-SLR, script since removed, joint stream, 27 points, 120 epochs, 50 min): INCLUDE test 0.967, ISLRTC 0.253 / 0.383,
+  Kaggle signer 0.990 / 1.000. No average of SL-GCN, either winner and the convolution reader beats the convolution
+  reader alone on ISLRTC (best 0.342 / 0.446). None shipped; S2 closed.
+- Adding a sign from one video (`oneshot.py`): the reader retrained without 60 words that have ISLRTC dictionary
+  clips (shipped settings, 400 epochs); each held word then gets one reference clip, compared by cosine on the
+  reader's pooled features (before the classifier). On INCLUDE test signers (n=190 clips of the 60 words): among the
+  60 new words, one dictionary clip gives 0.332 / 0.484 and one INCLUDE signer's clip 0.711 / 0.889; among all 314
+  words (old words by the mean of their training clips) 0.074 / 0.226 and 0.421 / 0.705, old words staying at 0.99.
+  HomeSigns.kt's matcher (time warping on raw features) on the same clips, among the 60: 0.063 / 0.105 and 0.247 /
+  0.347. Averaging 20 augmented copies of the one clip changed nothing (within 0.04). The shipped reader, which saw
+  the words, gives the ceiling: 0.421 / 0.532 and 0.884 / 0.963 among the 60. So the reader's features are a far
+  better matcher for HomeSigns than raw time warping, but a dictionary clip alone does not teach a word to other
+  signers, and a new word seldom beats the old ones without a similarity bonus tuned on devices.
+- Continuous ISL fingerspelling (`prepare_isl_fingerspell.py`, `isl_spell_ctc.py`): ISL-Fingerspelling (ISH News,
+  1,308 segments, CC BY-NC 4.0, letter annotations as the transcription, a to z and space), its signer-independent
+  split (signers 00 and 01 train, 810 segments; signer 02 test, 498). CTC over both hands (each hand's shape from its
+  wrist, the right wrist from the left, both wrists from the chest, wrist steps; 96 features at 15 fps), the ASL
+  speller's network at width 256 with dilations 1, 2, 4, 8, 1, 2; mirror, rotation, speed and hand-loss augmentation;
+  200 epochs, 15 min. Held-out signer: CER 0.113 (letters only 0.108), whole segment exact 0.313 (best 0.109 at
+  epoch 180). Examples: "amit shah", "harsh vardhan", "nirav modi" exact; "islamabad" read "isamabald". Studio news
+  footage of trained interpreters, one test signer; phone video of untrained signers will score worse.
+- That reader, trained only on spelling, read 4.9% of INCLUDE test word signs as a confident spelling (3+ letters, each
+  at least 0.8 sure). Retrained with INCLUDE and Kaggle word clips as a quarter of each batch, taught as no letters
+  (`ISPELL_NEGATIVES`): held-out signer CER 0.120 (letters only 0.111, exact 0.289); word signs read as spelling, by the
+  least sure letter's floor: INCLUDE test 0.000 at every floor from 0.5 (n=816), unseen ISLRTC signers 0.034 at 0.5,
+  0.015 at 0.6, 0.004 at 0.7 (n=269); spelled segments passing 0.91, 0.75, 0.63. Shipped as `isl_spell_ctc` with a
+  floor of 0.7, beside `isl_spell` (kept for single letters and digits); a read that passes wins over the word reader.
+- On the ISLRTC dictionary's fingerspelled acronyms (`prepare_islrtc.py`, the 7 clips behind the 0.13 letter row
+  above): `isl_spell_ctc` reads "atm" exactly and finds 8 of 20 letters (CER 0.75; "bmw" read "b", "cd" and "url"
+  nothing). Dictionary signers spell slower and more deliberately than news interpreters; more varied spelling data is
+  what would close this.
+- Home signs (`HomeSigns.kt`) now compare the word reader's pooled features by cosine when the reader is loaded,
+  falling back to time warping without it. Threshold 0.65 from the held-out reader of `oneshot.py`: one clip of a new
+  word from another signer keeps 74% of that word's clips by other signers above it and lets 0.66% of pairs of
+  different words through (0.6: 83% and 1.7%; 0.7: 57% and 0.27%).
+
+Text to sign, 2026-10-27:
+- Sentence clips (`export_clips.py`) are now steadied: a point more than 0.05 and three deviations from its 7-frame
+  median is a tracking slip and takes the median; then a Gaussian of 1 frame on x and y and 2.5 frames on z. Mean hand
+  acceleration over the 112 clips: median 0.0127 to 0.0046. "where do you live" 0.021 to 0.006 (z step 0.052 to
+  0.014, largest step 0.54 to 0.19); "what is your father's name" 0.070 to 0.006 (largest step 1.74 to 0.32);
+  "who do you live with" 0.065 to 0.009; "how many brothers and sisters do you have" 0.058 to 0.004. Hand travel
+  shrinks by up to a half on the worst clips, as the slips had inflated it.
+- Joins between word signs: 378 of the then 470 `isl_signs.json` signs start and 404 end with both hands at the waist (rest,
+  or the side anchor less than 15 units up). Inside a sentence those keys are now dropped (`TextSigning.kt`
+  `trimmed`), so the hands go straight from one sign to the next: 0.55 s of the mean 1.39 s sign was waist time.
+- Every word the reader knows now signs back on the character: the 47 Kaggle words that neither INCLUDE nor the
+  ISLRTC dictionary covered are retargeted from the cleanest of 6 Kaggle takes each (`tools/isl/retarget_kaggle.py`),
+  517 ISL signs in all.
+- Negation: a typed sentence with no, not, never, nahi, mat or a negated auxiliary now shakes the character's head
+  (turn 0.2 at 1.6 Hz) with slightly lowered brows through the sentence, beside the existing question brows.

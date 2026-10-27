@@ -20,7 +20,7 @@ flowchart LR
         BUNDLE[("Content bundle<br/>SHA-256 manifest")]:::data
     end
     STAGE["Stage device<br/>bonded phone or tablet"]:::ext
-    GW["Department gateway<br/>FastAPI, optional"]:::ext
+    GW["Department gateway<br/>Go, optional"]:::ext
     DIRECT["Officer's own assistant service<br/>custom endpoint, optional"]:::ext
     UP["Upstream model service"]:::ext
     MSG["WhatsApp or Sandes"]:::ext
@@ -43,7 +43,7 @@ flowchart LR
 
 *Figure 1. System context and every path out of the phone.*
 
-The reviewer portal (`portal/`) and the gateway (`backend/`) are separate programs in the same repository; neither ships in the APK (§13).
+The reviewer portal (`portal/`) and the gateway (`gateway/`) are separate programs in the same repository; neither ships in the APK (§13).
 
 ## 2. Principles
 
@@ -64,7 +64,7 @@ Versions are pinned in `gradle/libs.versions.toml`, locked in `app/gradle.lockfi
 | Session store | Room 2.8.5 over SQLCipher for Android 4.19.1 (database version 5) |
 | Settings | DataStore Preferences 1.2.1 |
 | Camera, vision | CameraX 1.6.2 (Preview and ImageAnalysis only); MediaPipe Tasks Vision 1.1.1, Holistic landmarker; protobuf-javalite 4.36.2 |
-| Sign readers | Plain Kotlin forward passes (`LandmarkSignReader`, `CtcSpellReader`); float32 weights in the APK |
+| Sign readers | Plain Kotlin forward passes (`LandmarkSignReader`, `CtcSpellReader`); half-precision weights in the APK (`isl_spell` full precision) |
 | Speech | Media3 ExoPlayer 1.11.1 for recorded Opus; platform TextToSpeech for the express board |
 | Export | Android `PdfDocument` to draw, PdfBox-Android 2.0.27.0 to encrypt; BouncyCastle forced to 1.86 |
 | Assistant | llama.cpp (vendored in `app/src/main/cpp/third_party`) built by CMake 4.1.1 and NDK 30 into `libassistant.so`; `HttpURLConnection` for the online path |
@@ -72,7 +72,7 @@ Versions are pinned in `gradle/libs.versions.toml`, locked in `app/gradle.lockfi
 | Authentication | Platform `BiometricPrompt` and `KeyguardManager`; Android Keystore |
 | Serialization | kotlinx.serialization JSON 1.12.0; coroutines 1.11.0 |
 
-Not used: dependency injection frameworks, Firebase, analytics or crash SDKs, WebView, microphone APIs, camera capture or recording.
+Not used: dependency injection frameworks, Firebase, analytics or crash SDKs, microphone APIs, camera capture or recording. The only WebView is the character's (`ui/avatar/Avatar.kt`), which loads the bundled avatar page and blocks every network request.
 
 ## 4. Runtime structure
 
@@ -238,14 +238,15 @@ Everything a subject sees ships under `app/src/main/assets/content/` and is list
 | `lexicon.json` | 33 gesture-lookup entries (body location and hand action) |
 | `gestures.json` | 42 authored everyday gestures |
 | `signs.json` | 156 authored motions: 71 draft word signs, 26 Latin letters, 49 Hindi akshara and 10 digits |
-| `isl_signs.json` | 415 ISL signs in 17 categories: 262 retargeted from INCLUDE signers, 153 from the ISLRTC dictionary |
+| `isl_signs.json` | 517 ISL signs in 17 categories: 262 retargeted from INCLUDE signers, 208 from the ISLRTC dictionary, 47 from the Kaggle ISL videos |
 | `asl_signs.json` | 286 ASL motions: words retargeted from PopSign signers plus the one-hand alphabet and digits |
-| `words.json` | 226 vocabulary entries with 1,326 written forms, each to a sign, gesture or picture |
-| `sign_words.json`, `asl_words.json` | Reader labels to vocabulary words (71 ISL, 67 ASL) and extra cards each label answers |
-| `languages.json`, `subject_ui.json` | 17 languages; 46 stage words in each |
+| `words.json` | 228 vocabulary entries with 1,338 written forms, each to a sign, gesture or picture |
+| `sign_words.json`, `asl_words.json` | Reader labels to vocabulary words (79 ISL, 67 ASL) and extra cards each label answers (20 ISL) |
+| `languages.json`, `subject_ui.json` | 17 languages; 45 stage words in each |
 | `phrases.json`, `places.json` | 2 sentence patterns with 10 slots; 36 states and union territories, Chhattisgarh with 33 districts |
-| `audio/<lang>/*.ogg`, `audio/greet/*.ogg` | 1,350 Opus recordings: 89 per language for 15 languages plus 15 greetings; Gondi and Halbi have none |
-| `models/` | `holistic_landmarker.task` (13.7 MB) and its probe image; `sign_reader` (262 ISL words), `isl_spell` (36 letters and digits), `asl_reader` (250 ASL words), `asl_spell` (26 letters, CTC); each a `.bin` of float32 weights with a `.json` spec |
+| `audio/<lang>/*.ogg`, `audio/greet/*.ogg` | 1,372 Opus recordings: 91 per language for 11 languages, 89 for Assamese, Nepali, Odia and Urdu, plus 15 greetings; Gondi and Halbi have none |
+| `clips.json` | 112 recorded ISL sentences, 48 points a frame at 25 fps, steadied by `tools/text2isl/export_clips.py` |
+| `models/` | `holistic_landmarker.task` (13.7 MB) and its probe image; `sign_reader` (314 ISL words), `isl_spell` (36 letters and digits), `isl_spell_ctc` (ISL names, a to z and space, two hands, CTC), `asl_reader` (250 ASL words), `asl_spell` (26 letters, CTC); each a `.bin` of weights with a `.json` spec |
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "step"}}}%%
@@ -556,7 +557,7 @@ sequenceDiagram
 | `ANSWER` | Raised hands on the call stage, the camera button, or Read signs | 20 s, or quiet hands for 2 s | 0.4 s | Kept |
 | `NARRATIVE` | Tell me | 3 minutes, or quiet hands for 5 s | 0.7 s | Dropped |
 
-`HolisticTracker` runs MediaPipe Holistic in video mode, GPU first and kept only if it finds the person in a bundled probe image, otherwise CPU. Readers: `sign_reader` (262 ISL words), `isl_spell` (letters and digits), `asl_reader` and the CTC `asl_spell`; a spelled read wins over the word reader only with steady wrists. Guesses that answer the item on screen rank first (`decideRead`). Signs the officer reads as a word the reader did not offer are matched for the rest of the session by dynamic time warping (`HomeSigns`).
+`HolisticTracker` runs MediaPipe Holistic in video mode, GPU first and kept only if it finds the person in a bundled probe image, otherwise CPU. Readers (`SignReaders.load`): ISL has `sign_reader` (314 words), `isl_spell` (single letters and digits) and the CTC `isl_spell_ctc` (spelled names, both hands); ASL has `asl_reader` (250 words) and the CTC `asl_spell`. A single letter or digit wins over the word reader only at twice its score and with steady wrists; a CTC read wins with at least 3 letters, each at least as sure as its model's floor (0.7 for ISL names, 0.8 for ASL). Guesses that answer the item on screen rank first (`decideRead`). Signs the officer reads as a word the reader did not offer are matched for the rest of the session (`HomeSigns`) by cosine on the word reader's pooled features, at 0.65 or above.
 
 ## 12. Export
 
@@ -564,7 +565,7 @@ sequenceDiagram
 
 ## 13. Build and delivery
 
-- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.8.0, code 16. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
-- Release builds: R8 with resource shrinking, `android.util.Log` calls stripped, native libraries and models stored uncompressed. Default ABIs arm64-v8a and x86_64 (universal); `-Pabi=arm64-v8a` builds the phone APK. APKs are unsigned; signing is a manual offline step.
+- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.8.1, code 17. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
+- Release builds: R8 with resource shrinking, `android.util.Log` calls stripped, native libraries and models stored uncompressed. Default ABIs arm64-v8a and x86_64 (universal); `-Pabi=arm64-v8a` builds the phone APK. Gradle builds unsigned APKs; CI aligns and signs them with the release key from repository secrets and publishes them ([README](README.md#5-build-release-and-operation), section 5).
 - Build gates on every variant before packaging: `check<Variant>Permissions` fails on RECORD_AUDIO or background location in any build and on discovery and location permissions in `standard`.
-- The gateway (`backend/`, FastAPI and SQLAlchemy, SQLite or PostgreSQL) enrols devices, serves the model manifest, proxies assistant calls, and has a `/v1/feedback` endpoint for consented reader labels that the app does not call yet. The avatar module (`avatar/`, TypeScript, three.js 0.160 and three-vrm 3.0) plays motions on the VRM character; it builds to `app/src/main/assets/avatar/avatar.js`, which CI checks is current. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) renders every motion with that same module.
+- The gateway (`gateway/`, Go and PostgreSQL) enrols devices, proxies assistant and speech calls, and gives the administrator the device list, revocation and the audit trail. The avatar module (`avatar/`, TypeScript, three.js 0.160 and three-vrm 3.0) plays motions on the VRM character; it builds to `app/src/main/assets/avatar/avatar.js`, which CI checks is current. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) renders every motion with that same module.

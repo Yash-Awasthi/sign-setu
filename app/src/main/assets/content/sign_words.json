@@ -72,7 +72,15 @@
     "family": "family",
     "teacher": "teacher",
     "student": "student",
-    "city": "city"
+    "city": "city",
+    "come": "come",
+    "cry": "cry",
+    "give": "give",
+    "knife": "knife",
+    "uncle": "uncle",
+    "drink": "water",
+    "fever": "sick",
+    "injury": "pain"
   },
   "cards": {
     "child": [

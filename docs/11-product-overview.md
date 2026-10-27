@@ -42,7 +42,7 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Phrase bank | 10 reviewed sentences built from two patterns, "Do you want [water]?" and "Are you [cold]?" |
 | Type anything | Typed text is shown at once; the character plays it word by word under four toggles: Signs, Gestures, Spell, Pictures. With Signs on, the order is draft ISL order (§4.1) |
 | Word completions | Above the keyboard; each typed word is tinted by what the character will do with it: green for a sign, teal for a gesture, amber for a picture, no tint when it will be spelled. Reviewed phrase templates about the word prepare a phrase in one tap |
-| Vocabulary | 226 entries covering 1,326 written forms in English, Hindi, Hindi in Latin letters and local words |
+| Vocabulary | 228 entries covering 1,338 written forms in English, Hindi, Hindi in Latin letters and local words |
 | Answer trail | Under each answer: time taken, every answer in the order given if the person changed it, and the length of a pause after Stop. A changed answer, or one slower than 20 s, gets an amber outline, which means "look again", never deceit |
 | Evidence grades | Said (the person tapped, wrote or drew it), Confirmed (the person picked this meaning from two or three choices shown back), Officer's reading, App's reading, Said no, Unclear |
 | Say it back | Shows the officer's reading, edited if needed, to the person among the item's other pictures; only their pick makes it Confirmed; No marks the line "Said no" |
@@ -54,26 +54,26 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Assistant (optional) | Translates typed text into the subject's language and back into English, on the phone or through the gateway; the officer sees both before sending ([assistant](10-on-device-assistant.md)) |
 | They gestured | The officer marks where the subject's hand went and what it did; matching entries from the 33-entry gesture lexicon are shown back to the subject, who confirms the meaning |
 | Picture board | 117 picture cards in 12 categories (including clothes and colours for describing someone), with search and favourites |
-| ISL dictionary | Every recorded and draft sign by category (415 signs in 17 categories: 262 retargeted from INCLUDE and 153 from the ISLRTC dictionary, plus the authored word signs), searched in English, Hindi or any written form; a tap plays the sign for the officer, Show prepares it for the stage |
+| ISL dictionary | Every recorded and draft sign by category (517 signs in 17 categories: 262 retargeted from INCLUDE, 208 from the ISLRTC dictionary and 47 from the Kaggle ISL videos, plus the authored word signs); an ASL dictionary does the same for ASL, searched in English, Hindi or any written form; a tap plays the sign for the officer, Show prepares it for the stage |
 | Draw, language finder | A drawing pad for the subject; a grid of greetings in every language |
 | Interpreter call | Opens the department's Sandes or WhatsApp contact; no session data is passed |
 | Second screen | Pairs a department phone or tablet as the subject's screen (§3.3) |
 | Notes and log | Officer notes and the full session record |
 | Export | A PDF communication note encrypted with AES-256 under a one-time 16-character password shown once |
-| Settings | Interpreter app and contact, camera mirror, signing speed, ISL word order, online assistant and its enrolment, assistant model, retention period (4 to 72 hours or keep), appearance and colour theme, reduce motion, app language, licences, delete all data |
+| Settings | Interpreter app and contact; Pin the app, Block screenshots and Ask for fingerprint (each turned off only with the officer's credential); camera mirror, signing speed, ISL word order; the two sign languages with what each reads and signs and how accurately; online assistant and its enrolment, assistant model; retention period (4 to 72 hours or keep), delete all data; appearance and colour theme, app language, licences |
 | Practice | Type to sign: any English or Hindi sentence played by the character outside a session, with nothing recorded |
 
 ### 3.2 Subject side (the stage)
 
 | Feature | Description |
 | --- | --- |
-| Character | A 3D character framed to the hips, with jointed fingers and facial expressions; motions cover 415 ISL signs retargeted from recorded Deaf signers, 42 everyday gestures, the 26-letter two-handed ISL alphabet, 10 digits and the authored word signs |
+| Character | A 3D character framed to the hips, with jointed fingers and facial expressions; motions cover 517 ISL signs retargeted from recorded signers and the ISLRTC dictionary, 112 recorded ISL sentences, 42 everyday gestures, the 26-letter two-handed ISL alphabet, 10 digits and the authored word signs |
 | Opening | The officer's introduction (s1), then four pictured and signed ground rules ("you can stop or take a break whenever you want", "it is okay to say I don't know", "tell me if I get something wrong", "I did not see what happened, tell me in your own way") and a neutral practice round, "Show me something you did this morning", answered by drawing, writing or signing. The subject moves on with Next; each step is logged as shown. If the officer takes the phone back before the practice round, the log records "Officer skipped the rest of the ground rules" |
 | Caption | The question in the subject's language in large type; during typed text the current word is lit, a spelled word shows its current letter, and a word's picture is held up. Tapping a word replays it alone at half speed; tapping the question replays it |
-| Speech | Placeholder recordings until re-recorded, one female voice per language: the greeting plus about 90 clips in each of 15 languages, from ElevenLabs (English, Hindi), Cartesia (Chhattisgarhi, Bengali, Tamil, Telugu, Kannada, Malayalam, Marathi, Gujarati, Punjabi) and Indic Parler-TTS (Assamese, Nepali, Odia, Urdu); typed text is spoken through the gateway when online help is on; the rest show captions and pictures; Gondi and Halbi have no voice yet; plays once by itself for every subject, then on request |
+| Speech | One female voice per language, until native speakers re-record: the greeting plus about 90 clips in each of 15 languages, from ElevenLabs (English, Hindi), Cartesia (Chhattisgarhi, Bengali, Tamil, Telugu, Kannada, Malayalam, Marathi, Gujarati, Punjabi) and Indic Parler-TTS (Assamese, Nepali, Odia, Urdu); typed text is spoken through the gateway when online help is on; the rest show captions and pictures; Gondi and Halbi have no voice yet; plays once by itself for every subject, then on request |
 | Layout | One video call for every item: the character full height, the subject's own camera in a movable window, the caption, and an answer bar (Water and Food as requests, Yes, No, Help for the full picture board) under Stop, Next on the opening, "I don't know", "I don't understand" and "That's wrong". The opening shows no Yes or No; a rights item shows only "I don't understand" and Stop. Pictures, drawing, writing, lesson inputs, the language finder and choices open in the lower part of the call with Stop beneath. Stop is an octagonal sign, never an open palm, and stays on every screen. Every tap is logged right after the prompt that was on screen |
 | Gesture proposals | A nod, head shake, thumb, raised palm, shrug or a finger held on a body part lights the matching answer; namaste, a wave, a hand on the chest or a bow offers a courtesy word. Only the subject's tap answers |
-| Picture choices | Shuffled every time and capped at four pictures, plus "Something else" (which opens the drawing pad) and "I don't understand". Yes/no, number and single-picture questions are not shuffled |
+| Picture choices | Shuffled every time and capped at four pictures, plus "Something else" (the pictures not yet seen, four at a time, then the drawing pad) and "I don't understand". Yes/no, number and single-picture questions are not shuffled |
 | Answer inputs | For a lesson-sheet question the panel under the character becomes its input: a number pad with large digits (age 0 to 120, counts, brothers then sisters), a 10-digit mobile pad grouped 5 and 5 with "No phone", a written name or place, a class grid (1 to 12, college, not in school), a state list (Chhattisgarh first, all states and union territories) then its district or a written one, and several pictures with Done. A written or typed answer is read back large and becomes the subject's own only on their Yes; one left unconfirmed is logged as unconfirmed. "I don't know", "I don't understand", "That's wrong" and Stop stay under every input |
 | Phrase board | A button by the character opens the eight everyday phrases as pictures with words; a tap logs the phrase as the subject's own |
 | Draw and Write | A drawing pad with five ink colours and Undo; a drawing that answers a question returns to it, a requested drawing ends on a thank-you and hand-back screen; Write opens the keyboard for every profile except a young child; written answers are capped at 2,000 characters |
@@ -83,7 +83,7 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Camera mirror | The subject sees the whole camera frame, uncropped at 9:16, with hands, arms, brows and lips traced, never the face oval or eyes; nothing is captured or stored |
 | Replay and speed | The subject sets the signing speed (½×, ¾×, 1×), kept for the session in memory only; a young child starts at ¾× at most |
 | Requests | Water and Food sit on the call's answer bar whenever no panel is open; a tap is logged as the subject's request ("Asked for"), not as an answer to what is on screen, and does not move a question run on |
-| Pause | After Stop, on either layout, a calm night-sky layer with a breathing circle and bubbles to pop covers the whole stage, with no score, sound or timer. Only the subject's "I'm ready" ends it; the officer's lock stays reachable. The log records "Pause ended after N s".Stop is also the way to ask for a breather |
+| Pause | After Stop a calm night-sky layer with a breathing circle and bubbles to pop covers the whole stage, with no score, sound or timer. Only the subject's "I'm ready" ends it; the officer's lock stays reachable. The log records "Pause ended after N s". Stop is also the way to ask for a breather |
 | Vibration codes | Felt by whoever holds the phone: Yes one long buzz; No two buzzes; Stop, Break, "I don't know", "I don't understand" or "That's wrong" three short pulses; a picture a tick. Never for the young-child profile |
 | Rotate | The stage turns 180 degrees for a subject sitting opposite |
 | Staying on the stage | The app is pinned for the session (lifted only for the interpreter call or a share, and set again on return); Back does nothing; the small handle held for 1/3 s returns to the officer |
@@ -151,7 +151,7 @@ Each frame: the clock time selects two keyframes, which are blended with easing 
 
 | Strengths | Limits |
 | --- | --- |
-| Offline; a motion is corrected by editing numbers; motions chain smoothly; faces carry ISL facial grammar; 415 signs follow real signers; one module for app and portal | Depth is a heuristic, so contact with the face or body is approximate; the 12 MB model needs a licence from its author before release; a WebView with WebGL costs memory beside the camera; the alphabet, authored and recorded signs await ISL review; no mouthing |
+| Offline; a motion is corrected by editing numbers; motions chain smoothly; faces carry ISL facial grammar (question brows, negation head shake); 517 signs follow real signers; one module for app and portal | Depth is a heuristic, so contact with the face or body is approximate; the 12 MB model needs a licence from its author before release; a WebView with WebGL costs memory beside the camera; the alphabet, authored and recorded signs await ISL review; no mouthing |
 
 ## 6. Camera and sign reading
 
@@ -164,9 +164,10 @@ Windows, frame rates, segmentation and the slower cue are in [hand model integra
 
 ### 6.2 Context-limited vocabulary
 
-- `assets/content/sign_words.json` (draft, needs ISL review) maps the reader's INCLUDE labels to the app's vocabulary concepts, for example house to home and bathroom to toilet.
+- `assets/content/sign_words.json` (draft, needs ISL review) maps the reader's labels to the app's vocabulary concepts, for example house to home and bathroom to toilet.
 - While a question with two or more answer pictures is on screen, every guess whose concept is one of those pictures ranks first, at any score; with one illustrative picture only the top three are reordered. A label can stand for several cards (`cards` in `sign_words.json`, for example police for a police station). On an unseen signer this puts the right lesson answer first 73% of the time and among the three shown 88% (`tools/ml/EVAL.md`).
-- Core answer words the bundled reader cannot read: yes, no, water, pain, help, stop, don't know. Mother, father, police, home (house) and toilet (bathroom) are covered.
+- Core answer words the bundled reader cannot read: yes, no, water, pain, help, stop, don't know (yes and no come from nods, shakes and the buttons). Mother, father, police, home (house), toilet (bathroom), drink (water), come and give are covered.
+- Fingerspelled names are read on the phone by a separate two-hand reader and win only when every letter is read with confidence; signs the officer reads as a word the reader did not offer are recognised for the rest of the session.
 
 ## 7. Exporting and the network
 

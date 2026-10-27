@@ -94,7 +94,7 @@ class SessionViewModel(
 
     /** Set once the reader is built off the main thread; reads before then get no machine guesses. */
     @Volatile var reader: SignReader? = reader
-    private val homeSigns = HomeSigns()
+    private val homeSigns = HomeSigns { frames -> reader?.let { r -> runCatching { r.embed(frames) }.getOrNull() } }
 
     private val local = MutableStateFlow(Local())
     @Volatile private var capture: SignCapture? = null

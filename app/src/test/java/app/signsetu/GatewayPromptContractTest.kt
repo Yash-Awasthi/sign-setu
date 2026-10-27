@@ -21,7 +21,7 @@ import org.junit.Test
 /** The gateway answers only system prompts that match a template in app_prompts.json. The templates are
  * rendered here from the prompt code itself, so editing a prompt without updating the gateway fails this test. */
 class GatewayPromptContractTest {
-    private val fixture = File("../backend/signsetu_gateway/app_prompts.json")
+    private val fixture = File("../gateway/app_prompts.json")
     private val lang = "§LANG§"
 
     private fun rendered(): List<String> = listOf(

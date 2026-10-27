@@ -534,9 +534,13 @@
     <!-- ASL Experimental Gating -->
     <string name="asl_experimental_badge">प्रायोगिक</string>
     <string name="asl_experimental_title">ASL पहचान अभी प्रायोगिक है</string>
-    <string name="asl_experimental_advisory" formatted="false">ASL शब्द पहचान की सटीकता लगभग 40% है और यह केवल परीक्षण के लिए है। फ़ील्ड जाँच के लिए ISL की सिफ़ारिश की जाती है। ASL फ़िंगरस्पेलिंग और एनीमेशन चालू हैं।</string>
-    <string name="settings_asl_advisory">ASL पहचान स्थिति</string>
-    <string name="settings_asl_advisory_summary" formatted="false">ASL शब्द पहचान प्रायोगिक है (40% सटीकता)। फ़ील्ड के लिए ISL मुख्य माध्यम है। ASL फ़िंगरस्पेलिंग और इशारे पूरी तरह समर्थित हैं।</string>
+    <string name="asl_experimental_advisory">नए साइन करने वाले के लिए ASL रीडर लगभग आधे शब्द सही पढ़ता है। जब तक व्यक्ति ASL में साइन न करे, फ़ील्ड में ISL इस्तेमाल करें; कैरेक्टर ASL में साइन करता रहता है।</string>
+    <string name="settings_sign_languages">साइन भाषाएँ</string>
+    <string name="settings_isl_status">भारतीय सांकेतिक भाषा (ISL)</string>
+    <string name="settings_isl_status_summary">मुख्य भाषा। फ़ोन 314 साइन किए गए शब्द, फ़िंगरस्पेल किए नाम, अक्षर और अंक पढ़ता है; नए साइन करने वाले के लिए लगभग तीन में से एक शब्द पहली बार में सही होता है, और हर पढ़ाई अधिकारी तय करता है। कैरेक्टर 517 रिकॉर्ड किए शब्द, 156 बनाए गए साइन और 112 रिकॉर्ड किए वाक्य साइन करता है। बधिर ISL समीक्षा तक हर साइन मसौदा है।</string>
+    <string name="settings_isl_badge">मुख्य</string>
+    <string name="settings_asl_status">अमेरिकी सांकेतिक भाषा (ASL)</string>
+    <string name="settings_asl_status_summary">ASL में साइन करने वालों के लिए। फ़ोन 250 साइन किए गए शब्द पढ़ता है, नए साइन करने वाले के लिए लगभग आधे सही, और फ़िंगरस्पेलिंग, लगभग तीन में से एक अक्षर गलत। कैरेक्टर 286 रिकॉर्ड किए ASL साइन और ASL वर्णमाला साइन करता है। सत्र के दौरान अधिकारी मेनू से बदलें।</string>
 
     <!-- Sandes Interpreter Handoff -->
     <string name="sandes_handoff_title">संदेश दुभाषिया संपर्क</string>

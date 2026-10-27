@@ -325,10 +325,10 @@ def main(data: pathlib.Path) -> None:
     note = ("Retargeted by tools/isl/retarget.py from INCLUDE signers' landmarks; edit the script, not this file. "
             "Draft: every sign needs Deaf ISL review on the character.")
     source = "INCLUDE (AI4Bharat, Sridhar et al. 2020), OpenHands pose release, CC BY 4.0"
-    # Words added by retarget_islrtc.py survive a rebuild unless INCLUDE now has them.
+    # Words added by retarget_islrtc.py and retarget_kaggle.py survive a rebuild unless INCLUDE now has them.
     old = json.loads(OUT.read_text(encoding="utf-8")) if OUT.exists() else {}
     words = {g["word"] for g in made}
-    kept = [g for g in old.get("gestures", []) if g.get("rec", "").startswith("ISLRTC/") and g["word"] not in words]
+    kept = [g for g in old.get("gestures", []) if g.get("rec", "").startswith(("ISLRTC/", "Kaggle/")) and g["word"] not in words]
     if kept:
         source = old["source"]
         cats.update({k: v for k, v in old["categories"].items() if k not in cats})

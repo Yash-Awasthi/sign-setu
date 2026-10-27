@@ -8,7 +8,8 @@ The built vision engine and sign reader, and the contract by which the partner t
 | --- | --- | --- | --- |
 | Landmark tracking | `camera/LandmarkTracker` | `HolisticTracker`: MediaPipe Holistic, `tasks-vision` 1.1.1, video mode, GPU delegate kept only if it finds the person in a bundled probe image, otherwise CPU | Yes, a tracker with the same output |
 | Segmentation | `sign/SignCapture`, `segmentSigns` | Pause segmenter, thresholds per `SignWindow` | No; tune the constants |
-| Sign reading | `sign/SignReader` | `LandmarkSignReader` (262 ISL words, 250 ASL words, ISL letters and digits) and `CtcSpellReader` (ASL fingerspelling), combined per language by `SignReaders` | Yes, the main replacement path |
+| Sign reading | `sign/SignReader` | `LandmarkSignReader` (314 ISL words, 250 ASL words, ISL letters and digits) and `CtcSpellReader` (ISL spelled names on both hands, ASL fingerspelling), combined per language by `SignReaders` | Yes, the main replacement path |
+| Home signs | `sign/HomeSigns` | Signs taught during the session, matched by cosine on the word reader's pooled features (`SignReader.embed`) | Follows the reader |
 | Context and choices | `sign/ReadPolicy`, `sign/SignChoices` | `sign_words.json` map, context ranking (`decideRead`, `inContext`), alternatives (`signChoices`), slower cue (`needsSlower`) | No; the map is content |
 
 ## 2. Sign windows
@@ -63,12 +64,13 @@ interface SignReader : AutoCloseable {
     val words: Map<String, String>                // labels to the app's vocabulary (sign_words.json)
     val cards: Map<String, List<String>>          // labels to further picture cards they answer
     fun read(frames: List<LandmarkFrame>): List<SignGuess> // every label, highest first
+    fun embed(frames: List<LandmarkFrame>): FloatArray?    // pooled features for home signs; null if none
 }
 
 data class SignGuess(val word: String, val score: Float, val spelled: Boolean = false)
 ```
 
-The built reader takes the frames of one chunk, resampled to 32, with per frame both hands (21 points each), shoulders, elbows and wrists, normalised to the mean shoulder midpoint and width, and presence flags (98 features). It runs a per-frame linear layer, two 1-D convolutions and pooling to 262 logits. Weights: `models/sign_reader.bin` (4.9 MB, float32) with its spec in `sign_reader.json`; both are checked against the manifest by `SignReaders` before use. On the INCLUDE test split it scores top-1 97.9% and top-3 99.5%, and a new ISLRTC signer 28.6% and 44.2% (`tools/ml/EVAL.md`); with children on phone cameras it is unmeasured. One read takes about 18 ms on a desktop JVM. Reads run one at a time on a background dispatcher.
+The built reader takes the frames of one chunk, resampled to 32, with per frame both hands (21 points each), shoulders, elbows and wrists, normalised to the mean shoulder midpoint and width, and presence flags (98 features). It runs a per-frame linear layer, two 1-D convolutions and average and max pooling (the features `embed` returns) to 314 logits. Weights: `models/sign_reader.bin` (2.5 MB, float16) with its spec in `sign_reader.json`; both are checked against the manifest by `SignReaders` before use. On the INCLUDE test split it scores top-1 97.9% and top-3 99.5%, and new ISLRTC dictionary signers 34.2% and 44.2% (`tools/ml/EVAL.md`); with children on phone cameras it is unmeasured. One read takes about 18 ms on a desktop JVM. Reads run one at a time on a background dispatcher.
 
 Retraining: `tools/ml` (prepare, train, export), then `python tools/content/build_content.py --manifest-only`.
 
@@ -80,7 +82,9 @@ Retraining: `tools/ml` (prepare, train, export), then `python tools/content/buil
 4. The subject is asked only when the officer taps Ask them to choose: two or three picture cards per sign and "None of these". Only the subject's tap records a meaning; until then the line stays a reading.
 5. The reader's words are never shown to the subject (the stage shows one dot per sign). A stage device reads signs itself and sends only the words, one per sign, logged on the officer phone as the app's reading.
 
-Core answer words that INCLUDE does not cover (yes, no, water, pain, help, stop, don't know) cannot be read; mother, father, police, home (house) and toilet (bathroom) are covered.
+Core answer words outside the reader's training data (yes, no, water, pain, help, stop, don't know) cannot be read; mother, father, police, home (house), toilet (bathroom), drink (water), come and give are covered. Yes and no come from the nod and shake proposals and the Yes and No buttons.
+
+The ISL name speller (`isl_spell_ctc`) reads both hands at 15 frames a second and decodes letters and spaces by CTC; a read wins over the word reader only with at least 3 letters, each at least 0.7 sure at its best frame, which kept 0.4% of new signers' word signs from reading as a name while passing 63% of spelled names. Signs the officer reads as a word the reader did not offer are taught to `HomeSigns` and offered first when the pooled features of a later sign are within cosine 0.65 (`tools/ml/oneshot.py`).
 
 ## 6. Replacing the reader or tracker
 
@@ -97,7 +101,7 @@ Core answer words that INCLUDE does not cover (yes, no, water, pain, help, stop,
 | Time per tracked frame | 33 ms on the oldest supported 64-bit phone | About 110 ms on the CPU of a mid-range phone (9 frames per second); the GPU rate is to be measured |
 | Time per read | Under 100 ms | About 18 ms on a desktop JVM |
 | Memory | Session under 300 MB | Narrative landmarks about 20 MB for 3 minutes; model mapped, not copied |
-| APK | Distribution target under 100 MB | The arm64-v8a phone APK meets the target (82.7 MB); the multi-architecture universal APK is unconstrained |
+| APK | Distribution target under 100 MB | The arm64-v8a phone APK meets the target (about 89 MB); the multi-architecture universal APK is unconstrained |
 
 ## 8. Privacy and safety
 

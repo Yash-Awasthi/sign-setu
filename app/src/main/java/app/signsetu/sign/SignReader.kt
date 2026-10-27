@@ -14,6 +14,8 @@ interface SignReader : AutoCloseable {
     val cards: Map<String, List<String>> get() = emptyMap()
     /** Every label with its probability, highest first; empty when the frames cannot be read. */
     fun read(frames: List<LandmarkFrame>): List<SignGuess>
+    /** The word reader's pooled features for comparing two signs, or null when it has none or cannot read the frames. */
+    fun embed(frames: List<LandmarkFrame>): FloatArray? = null
     override fun close() {}
 }
 

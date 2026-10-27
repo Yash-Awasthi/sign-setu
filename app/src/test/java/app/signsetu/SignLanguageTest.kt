@@ -69,7 +69,7 @@ class SignLanguageTest {
         // isl_spell missing: the word reader alone still reads.
         val isl = SignReaders.load(SignLanguage.ISL) { p -> if (p.startsWith("models/isl_spell")) null else open(p) }
         assertTrue(isl is LandmarkSignReader)
-        assertEquals(262, isl!!.labels.size)
+        assertEquals(314, isl!!.labels.size)
     }
 
     @Test

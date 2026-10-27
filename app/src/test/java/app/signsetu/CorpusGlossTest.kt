@@ -15,20 +15,23 @@ class CorpusGlossTest {
         .map { Regex("^\"?([^\"]*?)\"?,\"?([^\"]*?)\"?$").find(it)!!.groupValues.let { it[1] to it[2] } }
 
     private fun motions(text: String) = shipped.planText(text, SIGNS).motions
+    // The recorded ISL "no" where it exists, else the head shake; the character also shakes its head over the sentence.
+    private fun gives(text: String) = motions(text).any { it == "isl.give" || it == "sign.give" }
+    private fun negates(text: String) = motions(text).any { it == "isl.no" || it == "no.shake" }
 
     @Test
     fun everyNegatedGlossShakesTheHead() {
         val missed = corpus.filter { (_, g) -> Regex("\\b(DO ?NOT|DONT|NOT)\\b").containsMatchIn(g) }
-            .filter { (s, _) -> "no.shake" !in motions(s) }
+            .filter { (s, _) -> !negates(s) }
         assertEquals("negated without a shake", emptyList<Pair<String, String>>(), missed)
     }
 
     @Test
     fun englishDoIsNeverGive() {
-        val gives = corpus.filter { (s, _) -> "sign.give" in motions(s) }
+        val gives = corpus.filter { (s, _) -> gives(s) }
         assertEquals(emptyList<Pair<String, String>>(), gives)
         // Hindi "do" at the end of its sentence is still give.
-        assertTrue(motions("pani do").contains("sign.give"))
+        assertTrue(gives("pani do"))
     }
 
     @Test
@@ -41,7 +44,7 @@ class CorpusGlossTest {
 
     @Test
     fun contractionsKeepTheirNegation() {
-        for (s in listOf("I don't agree", "I can’t help", "he doesnt know")) assertTrue(s, "no.shake" in motions(s))
-        assertTrue("no.shake" !in motions("I want water"))
+        for (s in listOf("I don't agree", "I can’t help", "he doesnt know")) assertTrue(s, negates(s))
+        assertTrue(!negates("I want water"))
     }
 }

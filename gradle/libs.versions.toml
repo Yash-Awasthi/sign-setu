@@ -18,6 +18,7 @@ coroutines = "1.11.0"
 pdfbox = "2.0.27.0"
 camerax = "1.6.2"
 bouncycastle = "1.86"
+guava = "33.7.2-android"
 junit = "4.13.2"
 playServicesNearby = "19.5.1"
 mediapipe = "1.1.1"
@@ -56,6 +57,7 @@ play-services-nearby = { module = "com.google.android.gms:play-services-nearby",
 bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk15to18", version.ref = "bouncycastle" }
 bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk15to18", version.ref = "bouncycastle" }
 bouncycastle-util = { module = "org.bouncycastle:bcutil-jdk15to18", version.ref = "bouncycastle" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camera-compose = { module = "androidx.camera:camera-compose", version.ref = "camerax" }

@@ -1,79 +1,74 @@
 # 12. Screen Catalogue
 
-Every screen of the application, captured from the `standard` debug build on an Android 14 emulator (1080 by 2400 pixels) in a session for a victim who signs, with Hindi as the subject language unless stated. The final release build blocks screenshots (`secureScreen`, [security](04-security.md) §2.5), so the catalogue is taken from a debug build. The pictures were captured on version 0.7.2; where the app has changed since, the note says what is different now. The emulator's camera shows a synthetic scene in place of a person; for the sign-reading screens the debug build's stand-in tracker supplies a moving hand.
+Every screen of the application, captured from the 0.8.1 `standard` debug build on an Android 14 emulator (Pixel 9 profile, 1080 by 2424 pixels, scaled to 720 wide) in a session for a victim who signs, with Hindi as the subject language unless stated. The emulator camera shows its test scene. The final release build blocks screenshots (`secureScreen`, [security](04-security.md) §2.5).
 
-## 1. Notation
-
-| Prefix | State |
-| --- | --- |
-| H | Officer, before a session (first run, Home) |
-| S | Show state: the stage, phone facing the subject |
-| O | Officer state: the session panel |
-| C | Settings |
-
-## 2. Before a session
+## 1. Before a session
 
 | Screen | File | Notes |
 | --- | --- | --- |
 | First run, step 1 | [01-first-run-1.png](screens/01-first-run-1.png) | Aid, not an interpreter; app language |
-| First run, step 2 | [02-first-run-2.png](screens/02-first-run-2.png) | Now: sessions are deleted after the retention time |
-| First run, step 3 | [03-first-run-3.png](screens/03-first-run-3.png) | Now: records stay on this phone, what goes online |
-| Home | [04-home.png](screens/04-home.png) | Profile, subject language, role |
+| First run, step 2 | [02-first-run-2.png](screens/02-first-run-2.png) | Sessions are deleted after the retention time |
+| First run, step 3 | [03-first-run-3.png](screens/03-first-run-3.png) | Records stay on this phone; what goes online |
+| Home | [04-home.png](screens/04-home.png) | Who you are helping, their language, role |
 | Home, Signs profile | [05-home-signs.png](screens/05-home-signs.png) | Indian (ISL) or American (ASL) chosen before start |
-| Practice, type and sign | [39-practice-type-and-sign.png](screens/39-practice-type-and-sign.png) | Reached from Settings, Practice, outside a session: the same planner and character, with nothing recorded |
+| Home, saved sessions | [06-home-saved-sessions.png](screens/06-home-saved-sessions.png) | A finished session listed to open again or delete |
+| Practice | [07-practice-type-and-sign.png](screens/07-practice-type-and-sign.png) | Settings, Type and sign: any sentence signed outside a session, nothing recorded |
 
-## 3. The stage
-
-| Screen | File | Notes |
-| --- | --- | --- |
-| Introduction | [06-stage-introduction.png](screens/06-stage-introduction.png) | A statement: only Next and Stop, with the hint "Tap Next when you are ready" |
-| Ground rule | [07-stage-ground-rule.png](screens/07-stage-ground-rule.png) | Same layout as the introduction |
-| Practice round | [08-stage-practice.png](screens/08-stage-practice.png) | Open question: no Yes, No or "That's wrong"; Draw, Write and Sign offered |
-| Question | [09-stage-question.png](screens/09-stage-question.png) | Captured before the stage became a single video call (03-ux §2); to be captured again |
-| Writing | [10-stage-writing.png](screens/10-stage-writing.png) | The stage makes room for the keyboard; the character stays in view |
-| Drawing | [11-stage-drawing.png](screens/11-stage-drawing.png) | Five ink colours, Undo, Start again, Done |
-| Drawing hand-back | [12-stage-drawing-hand-back.png](screens/12-stage-drawing-hand-back.png) | After a requested drawing: thanks, give the phone back, Draw more |
-| Drawing in Chhattisgarhi | [13-stage-drawing-chhattisgarhi.png](screens/13-stage-drawing-chhattisgarhi.png) | Every stage word in the chosen language |
-| Phrase board | [14-stage-phrase-board.png](screens/14-stage-phrase-board.png) | Eight everyday phrases the subject can say |
-| Number pad | [15-stage-number-pad.png](screens/15-stage-number-pad.png) | Lesson-sheet answer input; the Sign button carries a word and a tool colour |
-| Sign window | [16-stage-signing.png](screens/16-stage-signing.png) | Time bar, body guide, live hand skeleton, one dot per sign seen; quiet hands also end the window |
-| After signing | [17-stage-after-signing.png](screens/17-stage-after-signing.png) | "Is this it?": two or three pictures per sign read and "None of these"; now shown only when the officer taps Ask them to choose; only the person's tap records a meaning |
-| Pause | [18-stage-pause.png](screens/18-stage-pause.png) | Breathing circle and bubbles; only "I'm ready" ends it |
-| Language finder | [19-stage-language-finder.png](screens/19-stage-language-finder.png) | Seventeen languages in their own scripts; the tapped one greets back |
-
-## 4. The officer panel
+## 2. The stage
 
 | Screen | File | Notes |
 | --- | --- | --- |
-| Transcribe | [20-officer-transcribe.png](screens/20-officer-transcribe.png) | Conversation with grades, trails and how each answer was given |
-| Ready to show | [21-officer-ready-to-show.png](screens/21-officer-ready-to-show.png) | A prepared question and its media marks |
-| Typed text with Hindi | [22-officer-typed-hindi.png](screens/22-officer-typed-hindi.png) | Instant on-phone English to Hindi caption, marked unchecked |
-| More | [23-officer-more.png](screens/23-officer-more.png) | Search, category browse, other ways to ask, session tools |
-| Question groups | [24-officer-question-groups.png](screens/24-officer-question-groups.png) | Personal details questions |
-| They gestured | [25-officer-they-gestured.png](screens/25-officer-they-gestured.png) | Where the hand went and what it did |
-| Picture board | [26-officer-picture-board.png](screens/26-officer-picture-board.png) | Categories, search and favourites |
-| ISL dictionary | [27-officer-isl-dictionary.png](screens/27-officer-isl-dictionary.png) | Recorded and drawn signs, searchable in English and Hindi |
-| ASL dictionary | [28-officer-asl-dictionary.png](screens/28-officer-asl-dictionary.png) | Shown when the session signs in ASL |
-| Session log | [29-officer-session-log.png](screens/29-officer-session-log.png) | Every row with time and kind; notes |
-| Session menu | [30-officer-menu.png](screens/30-officer-menu.png) | Sign language, sitting opposite, skeleton only, camera |
-| Change profile | [31-officer-change-profile.png](screens/31-officer-change-profile.png) | Role, profile, language |
-| Second screen | [32-officer-second-screen.png](screens/32-officer-second-screen.png) | Pairing a department device |
-| End session | [33-officer-end-session.png](screens/33-officer-end-session.png) | Export, end without export, cancel |
-| Report ready | [34-officer-export.png](screens/34-officer-export.png) | One-time password, share, done; the session stays saved |
-| A signed answer | [38-officer-signed-answer.png](screens/38-officer-signed-answer.png) | The app's reading with replay, the choices shown, and the person's confirmed pick as separate rows; the reader's guesses now also appear as chips above the composer |
+| Introduction | [08-stage-introduction.png](screens/08-stage-introduction.png) | The video call: character, camera window, caption, Stop and Next, Water, Food and Help |
+| Ground rule | [09-stage-ground-rule.png](screens/09-stage-ground-rule.png) | Pictured and signed; only Next and Stop |
+| Practice round | [10-stage-practice.png](screens/10-stage-practice.png) | Honest answers, Draw and Write offered |
+| Question | [11-stage-question.png](screens/11-stage-question.png) | Picture held up beside the character; answer by tap, nod, shake or signing |
+| Typed text | [12-stage-typed-text.png](screens/12-stage-typed-text.png) | "I am not hungry" signed word by word, the head shaking for the negation |
+| Drawing | [13-stage-drawing.png](screens/13-stage-drawing.png) | Five ink colours, Undo, Start again, Done, under the character |
+| Writing | [14-stage-writing.png](screens/14-stage-writing.png) | The keyboard opens under the caption |
+| Number pad | [15-stage-number-pad.png](screens/15-stage-number-pad.png) | Lesson-sheet input with finger-count shortcuts and the camera button |
+| Read back | [16-stage-read-back.png](screens/16-stage-read-back.png) | "Is this right?": the answer becomes the person's own only on their Yes |
+| Phrase board | [17-stage-phrase-board.png](screens/17-stage-phrase-board.png) | Eight everyday phrases the person can say |
+| Help | [18-stage-help-board.png](screens/18-stage-help-board.png) | The full picture board by category |
+| Pause | [19-stage-pause.png](screens/19-stage-pause.png) | Breathing circle and bubbles; only "I'm ready" ends it |
+| Sign window | [20-stage-signing.png](screens/20-stage-signing.png) | "Signing…", one dot per sign seen, Done; the character is still loading in this capture |
+| Language finder | [21-stage-language-finder.png](screens/21-stage-language-finder.png) | Seventeen languages in their own scripts |
 
-## 5. Settings
+## 3. The officer page
 
 | Screen | File | Notes |
 | --- | --- | --- |
-| Settings, interpreter and stage | [35-settings-1.png](screens/35-settings-1.png) | |
-| Settings, shortcuts and assistant | [36-settings-2.png](screens/36-settings-2.png) | Tilt to show, volume keys, large captions and the Auto switch shown here have since been removed; signing speed, reduce motion and colour theme were added |
-| Settings, records and about | [37-settings-3.png](screens/37-settings-3.png) | Retention, delete all data, version |
+| Transcribe | [22-officer-transcribe.png](screens/22-officer-transcribe.png) | Conversation with grades and trails; Ask next, quick questions, follow-ups, composer |
+| Ready to show | [23-officer-ready-to-show.png](screens/23-officer-ready-to-show.png) | A prepared question with its media marks; the Stop banner |
+| Typed text with Hindi | [24-officer-typed-hindi.png](screens/24-officer-typed-hindi.png) | Instant on-phone Hindi caption, marked unchecked; Signs, Gestures, Spell and Pictures toggles |
+| A signed answer | [25-officer-signed-answer.png](screens/25-officer-signed-answer.png) | The app's reading with its draft sentence, logged apart from the person's answers |
+| More | [26-officer-more.png](screens/26-officer-more.png) | Manual or Auto, search, categories, other ways to ask, session tools |
+| Question group | [27-officer-question-groups.png](screens/27-officer-question-groups.png) | Personal details questions in English and Hindi |
+| They gestured | [28-officer-they-gestured.png](screens/28-officer-they-gestured.png) | Where the hand went and what it did |
+| Picture board | [29-officer-picture-board.png](screens/29-officer-picture-board.png) | Categories, search and favourites |
+| ISL dictionary | [30-officer-isl-dictionary.png](screens/30-officer-isl-dictionary.png) | Recorded and drawn signs, searchable in English and Hindi |
+| ASL dictionary | [31-officer-asl-dictionary.png](screens/31-officer-asl-dictionary.png) | Shown when the session signs in ASL |
+| ASL notice | [32-officer-asl-advisory.png](screens/32-officer-asl-advisory.png) | The officer is told how well ASL is read |
+| Session log | [33-officer-session-log.png](screens/33-officer-session-log.png) | Every row with time and kind; notes |
+| Session menu | [34-officer-menu.png](screens/34-officer-menu.png) | Sign language, sitting opposite, skeleton on camera, skeleton snapshot, Finish |
+| Change profile | [35-officer-change-profile.png](screens/35-officer-change-profile.png) | Role and profile |
+| Second screen | [36-officer-second-screen.png](screens/36-officer-second-screen.png) | Pairing a department device |
+| Finish | [37-officer-finish.png](screens/37-officer-finish.png) | Summary, name, Save, Export, Delete without saving |
+| Report ready | [38-officer-export.png](screens/38-officer-export.png) | One-time password, Share, Done |
 
-## 6. Not captured
+## 4. Settings
+
+| Screen | File | Notes |
+| --- | --- | --- |
+| Settings, top | [39-settings-1.png](screens/39-settings-1.png) | Type and sign, interpreter call, security switches |
+| Settings, stage and sign languages | [40-settings-2.png](screens/40-settings-2.png) | Camera, signing speed, ISL order; what ISL and ASL read and sign, and how well |
+| Settings, assistants | [41-settings-3.png](screens/41-settings-3.png) | Online assistant, on-device assistant, records |
+| Settings, records and about | [42-settings-4.png](screens/42-settings-4.png) | Retention, delete all data, appearance, language, licences, version |
+| Appearance | [43-settings-appearance.png](screens/43-settings-appearance.png) | Light or dark and the ten colour themes |
+
+## 5. Not captured
 
 | Screen | Reason |
 | --- | --- |
 | Unlock prompt | The system credential window is secure and captures blank |
-| Second-screen stage device | Needs two devices |
-| Call view, picture board (Help), AI counsellor panel | Added after this catalogue was captured; to be captured on the next debug build |
+| Stage device, pairing code | Needs two devices |
+| AI counsellor | Needs the online assistant enrolled with a department code |

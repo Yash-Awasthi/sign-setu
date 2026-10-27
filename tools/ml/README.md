@@ -1,7 +1,7 @@
 # Sign reader training
 
-Trains the on-device sign readers: the isolated sign classifiers `LandmarkSignReader` runs (format 1) and the ASL
-fingerspelling reader `CtcSpellReader` runs (format 2).
+Trains the on-device sign readers: the isolated sign classifiers `LandmarkSignReader` runs (format 1) and the
+fingerspelling readers `CtcSpellReader` runs (format 2: ASL on one hand, ISL names on both).
 
 ## Data
 
@@ -24,8 +24,9 @@ A Python 3.12 virtual environment with PyTorch (CUDA build) and NumPy:
 Run from `tools/ml`:
 
     python prepare.py   # download, unzip, cache normalised landmarks in include.pkl
-    python train.py     # train on the GPU, print test-split top-1 and top-3, save sign_reader.pt
-    python export.py    # write assets/content/models/sign_reader.{bin,json} and the parity fixture
+    signsetu-mp/python -s prepare_isl_more.py && python build_isl_more.py   # add the Kaggle ISL set: include_kaggle.pkl
+    SIGN_HIDDEN=320 SIGN_AUG=strong SIGN_HAND_DROP=0.3 python train.py <include_kaggle.pkl> <sign_reader.pt> 400
+    SIGN_HIDDEN=320 python export.py sign_reader <sign_reader.pt> <include_kaggle.pkl>
     python ../content/build_content.py --manifest-only
 
 The app loads the model only when both files match the content manifest. `SignReaderTest` checks that the
@@ -35,13 +36,14 @@ Kotlin forward pass reproduces the Python logits on the fixture.
 
 | Model | Format | Data | Licence |
 |---|---|---|---|
-| `sign_reader` | 1 | INCLUDE, 262 ISL words | CC BY 4.0 |
+| `sign_reader` | 1 | INCLUDE (262 words) plus the Kaggle ISL video set (60 words, 4 signers), 314 ISL words (`prepare_isl_more.py`, `build_isl_more.py`) | CC BY 4.0, MIT |
 | `isl_spell` | 1 | ISL letters and digits: Multimodal ISL alphabet photographs (four signers) plus the app's keyframes (`signs.json`) posed on a copy of the rig, jittered; tested on ISLAN signers | CC BY 4.0, Project |
-| `asl_reader` | 1 | PopSign ASL v1.0, 250 signs, frames from `sign/popsign-images`, landmarks by the app's Holistic model | CC BY 4.0 |
-| `asl_spell` | 2 (CTC) | Synthetic sequences of real static ASLNow! letters (`synthetic` in its json) | MIT |
+| `isl_spell_ctc` | 2 (CTC, two hands) | ISL-Fingerspelling, 1,308 segments by 3 signers, word clips as non-spelling (`isl_spell_ctc.py`) | CC BY-NC 4.0 |
+| `asl_reader` | 1 | PopSign ASL v1.0, 250 signs, frames from `sign/popsign-images`, landmarks by the app's Holistic model, plus Google's Kaggle `asl-signs` (`prepare_asl_signs.py`) | CC BY 4.0 |
+| `asl_spell` | 2 (CTC) | Synthetic sequences of real static ASLNow! letters plus Google's Kaggle ASL Fingerspelling phrases (`prepare_asl_spell.py`) | MIT, CC BY 4.0 |
 
-No redistributable ISL fingerspelling landmark set was found (public ones are CC BY-NC). Google's Kaggle ASL sets are
-CC BY 4.0 but need Kaggle credentials; PopSign is the same isolated-sign corpus. `prepare_asl.py` needs a second venv
+The only continuous ISL fingerspelling set (ISL-Fingerspelling) is CC BY-NC, so `isl_spell_ctc` must be retrained or
+licensed for a commercial release. Google's Kaggle ASL sets are CC BY 4.0 but need Kaggle credentials. `prepare_asl.py` needs a second venv
 (`signsetu-mp`: mediapipe, opencv-python, pyarrow, pillow) and reads the PopSign train and validation signers for training and test signers for
 testing (about 19 GB streamed, one 500 MB shard on disk at a time). The non-game split
 holds 216 of the 250 signs; the rest, and test clips for signs its test signers lack, come from the game split by HTTP
@@ -56,6 +58,9 @@ range reads of only the row groups that hold them (`popsign_labels.json` lists t
     python train_asl.py <asl.pkl> <out.pt> <epochs> [teacher.pt ...]   # asl_reader, augmentation on the GPU
     signsetu-mp/python -I prepare_islrtc.py           # islrtc.pkl: real ISL signers for eval_isl.py only
     python spell_ctc.py prepare | train | export      # asl_spell, format 2
+    signsetu-mp/python -s prepare_isl_fingerspell.py  # isl_fingerspell.pkl from ISL-Fingerspelling
+    ISPELL_NEGATIVES=<include_kaggle.pkl> python isl_spell_ctc.py train <isl_fingerspell.pkl> <out.pt>
+    python isl_spell_ctc.py export <isl_fingerspell.pkl> <out.pt> 0.7   # isl_spell_ctc, format 2, two hands
     signsetu-mp/python -s prepare_islrtc_words.py     # islrtc_words.pkl: ISLRTC clips of INCLUDE words, eval only
     python eval_isl.py                                # top-1/top-3: ISL words, letters, digits; sentence demo
     python eval_asl.py                                # top-1/top-3: ASL words; fingerspelling CER
@@ -108,8 +113,8 @@ recording session. Run it before starting a run so the classes and the questions
 
     python tools/content/coverage.py
 
-A class can only be added by finding recordings of it. INCLUDE is fixed at 262 words, so a word outside it needs
-either a new recorded source in the same landmark format (see `prepare_isl_real.py`) or a sign composed by hand in
+A class can only be added by finding recordings of it, so a word outside the reader's 314 needs either a new recorded
+source in the same landmark format (as `prepare_isl_more.py` added the Kaggle set) or a sign composed by hand in
 `tools/content/build_signs.py`; both are drafts until a Deaf ISL reviewer signs them off. Retraining on the GPU after
 either change is the same `prepare.py` → `train.py` → `export.py` sequence, with `SIGN_CLASSES` narrowed or widened to
 the words actually shipped.

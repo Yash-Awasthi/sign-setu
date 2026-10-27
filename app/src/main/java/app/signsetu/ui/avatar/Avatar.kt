@@ -47,6 +47,7 @@ fun Avatar(
     glance: Boolean = false,
     view: AvatarView = AvatarView.Body,
     question: QuestionKind? = null,
+    negated: Boolean = false,
     clip: Clip? = null,
     onFinished: () -> Unit = {},
 ) {
@@ -55,7 +56,7 @@ fun Avatar(
     val finished by rememberUpdatedState(onFinished)
     DisposableEffect(web) { onDispose { web.destroy() } }
     LaunchedEffect(view) { web.run("signsetu.view('${view.js}')") }
-    LaunchedEffect(playKey, gesture, clip, speed, atSeconds, idle, glance, question) {
+    LaunchedEffect(playKey, gesture, clip, speed, atSeconds, idle, glance, question, negated) {
         val token = web.nextToken { finished() }
         web.run(
             if (clip != null) {
@@ -73,6 +74,7 @@ fun Avatar(
                     put("idle", idle)
                     put("glance", glance)
                     question?.let { put("question", it.name) }
+                    if (negated) put("negated", true)
                     put("token", token)
                 }})"
             },

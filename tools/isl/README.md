@@ -9,6 +9,7 @@ script takes its data folder as an argument (the defaults below are one develope
 | --- | --- | --- |
 | `retarget.py [data_dir]` | INCLUDE pose release | `isl_signs.json` (keeps ISLRTC entries) |
 | `retarget_islrtc.py <targets.json> [data_dir]` | ISLRTC dictionary clips | ISLRTC entries in `isl_signs.json` |
+| `retarget_kaggle.py [data_dir]` | Kaggle ISL video set (Prasad Shet, MIT), the word reader's own training videos | Signs for reader words neither INCLUDE nor ISLRTC has, `rec: "Kaggle/..."` |
 | `retarget_asl.py` | PopSign landmark cache | `asl_signs.json`, `asl_words.json` |
 | `test_retarget.py` | Synthetic landmarks | Unit tests of the retarget maths |
 

@@ -53,6 +53,16 @@ class LandmarkSignReader(spec: String, weights: ByteArray, override val words: M
 
     /** Raw class scores, or null when no frame shows the shoulders. */
     fun logits(frames: List<LandmarkFrame>): FloatArray? {
+        val pooled = embed(frames) ?: return null
+        return FloatArray(labels.size) { o ->
+            var v = headB[o]
+            for (i in 0 until 2 * h) v += headW[o * 2 * h + i] * pooled[i]
+            v
+        }
+    }
+
+    /** Average and max over time of the last convolution, the classifier's input. */
+    override fun embed(frames: List<LandmarkFrame>): FloatArray? {
         val x = features(frames) ?: return null
         var a = FloatArray(h * t)
         embed(x, embedW, embedB, a, h, t)
@@ -66,11 +76,7 @@ class LandmarkSignReader(spec: String, weights: ByteArray, override val words: M
             pooled[c] = sum / t
             pooled[h + c] = top
         }
-        return FloatArray(labels.size) { o ->
-            var v = headB[o]
-            for (i in 0 until 2 * h) v += headW[o * 2 * h + i] * pooled[i]
-            v
-        }
+        return pooled
     }
 
     private fun conv(input: FloatArray, w: FloatArray, b: FloatArray) = convRelu(input, w, b, h, t, k, 1)

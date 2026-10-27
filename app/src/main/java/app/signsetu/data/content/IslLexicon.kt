@@ -110,9 +110,10 @@ fun List<DictionaryEntry>.search(query: String, category: String? = null): List<
 }
 
 /** The sign language a session is held in: which reader reads the subject, which signs the character makes.
- * Paths are under assets/content/; [spell] is the fingerspelling reader, if one of the same format exists. */
-enum class SignLanguage(val reader: String, val spell: String?, val words: String, val signs: String, val title: String) {
-    ISL("models/sign_reader", "models/isl_spell", "sign_words.json", "signs.json", "Indian Sign Language (ISL)"),
+ * Paths are under assets/content/; [spell] is the fingerspelling reader, if one of the same format exists, and
+ * [names] a continuous spelling reader beside it. */
+enum class SignLanguage(val reader: String, val spell: String?, val words: String, val signs: String, val title: String, val names: String? = null) {
+    ISL("models/sign_reader", "models/isl_spell", "sign_words.json", "signs.json", "Indian Sign Language (ISL)", "models/isl_spell_ctc"),
     ASL("models/asl_reader", "models/asl_spell", "asl_words.json", "asl_signs.json", "American Sign Language (ASL)"),
 }
 

@@ -4,20 +4,18 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Field | Value |
 | --- | --- |
-| Version | 0.8.0 (version code 16), applicationId `in.signsetu` |
+| Version | 0.8.1 (version code 17), applicationId `in.signsetu` |
 | Classification | Internal |
 | Source of truth | This repository; the code wins over any document, and documents are corrected when they drift |
 
-## MVP — Live links
+## Links
 
-| Resource | URL | Notes |
+| Resource | Link | Notes |
 | --- | --- | --- |
-| 📱 Phone APK (arm64, ~83 MB) | [sign-setu-0.7.2-arm64-v8a-gateway.apk](https://github.com/Yash-Awasthi/sign-setu/releases/download/v0.7.2/sign-setu-0.7.2-arm64-v8a-gateway.apk) | Signed; calls the department gateway |
-| 📦 Universal APK (arm64 + x86\_64, ~109 MB) | [sign-setu-0.7.2-universal-gateway.apk](https://github.com/Yash-Awasthi/sign-setu/releases/download/v0.7.2/sign-setu-0.7.2-universal-gateway.apk) | Signed; phones, tablets and emulators; calls the department gateway |
-| 🏷️ GitHub release | [v0.7.2](https://github.com/Yash-Awasthi/sign-setu/releases/tag/v0.7.2) | All APKs |
-| 🌐 Department gateway (API) | [signsetu-gateway.onrender.com](https://signsetu-gateway.onrender.com/healthz) | FastAPI; Neon Postgres; cold-start ~30 s on free tier |
-| 🖥️ Reviewer portal | [signsetu-portal.pages.dev](https://signsetu-portal.pages.dev) | Vite + React; Cloudflare Pages |
-| 🤖 On-device model | [gemma-3-1b-it-Q4\_K\_M.gguf on Hugging Face](https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf) | ~806 MB; import via Settings → On-device assistant |
+| Android APKs | [Latest release](https://github.com/Yash-Awasthi/sign-setu/releases/latest) | Signed phone (arm64) and universal (arm64 and x86_64) APKs, SHA-256 sums and an SBOM |
+| Department gateway | [signsetu-gateway.onrender.com](https://signsetu-gateway.onrender.com/healthz) | Go, Neon PostgreSQL; the free tier sleeps, so the first call can take about 30 s |
+| Reviewer portal | [signsetu-portal.pages.dev](https://signsetu-portal.pages.dev) | Vite+ and React on Cloudflare Pages |
+| On-device model | [gemma-3-1b-it-Q4_K_M.gguf](https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf) | About 806 MB; Settings, On-device assistant |
 
 ## Contents
 
@@ -48,7 +46,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | [13-dpia.md](13-dpia.md) | Data protection impact assessment |
 | [14-attestation-and-pinning.md](14-attestation-and-pinning.md) | Certificate pinning and Key Attestation design for the gateway |
 | [../portal/README.md](../portal/README.md) | Reviewer portal for content sign-off |
-| [../backend/README.md](../backend/README.md) | Department gateway |
+| [../gateway/README.md](../gateway/README.md) | Department gateway |
 | [../tools/ml/README.md](../tools/ml/README.md), [../tools/isl/README.md](../tools/isl/README.md) | Sign reader training and sign retargeting |
 
 Conventions: **[confirm]** marks anything that depends on a person or body outside the team; legal summaries come from public sources and are not legal advice; MiB is binary and MB decimal; diagrams are Mermaid source.
@@ -95,7 +93,7 @@ flowchart LR
 | --- | --- |
 | Devices | Android 10 (API 29) or later, 64-bit, 3 GB RAM or more, 5 to 6.9 inch portrait |
 | Flavors | `standard` (reference, Bluetooth RFCOMM) and `nearby` (adds Google Nearby Connections) |
-| Release packages | Universal (arm64-v8a and x86_64) and arm64-v8a phone APKs, unsigned until the release step; native libraries and models stored uncompressed |
+| Release packages | Universal (arm64-v8a and x86_64) and arm64-v8a phone APKs, signed by CI; native libraries and models stored uncompressed |
 | Permissions (standard) | `CAMERA`, `BLUETOOTH_CONNECT` (`BLUETOOTH` up to API 30), `USE_BIOMETRIC`, `VIBRATE`, `INTERNET` (online assistant only), `RECEIVE_BOOT_COMPLETED` (keeps the hourly retention job scheduled). No microphone and no location: a build gate fails the build otherwise |
 | Languages (17) | English, Hindi, Chhattisgarhi, Gondi, Halbi, Bengali, Nepali, Assamese, Odia, Tamil, Telugu, Kannada, Malayalam, Marathi, Gujarati, Punjabi, Urdu |
 
@@ -125,8 +123,8 @@ flowchart LR
     P0 -- "F7 stage view" --> E5
     E5 -- "F8 answers, words read" --> P0
     E6 -- "F9 settings, model file, enrolment code" --> P0
-    P0 -- "F10 masked text, consented" --> E7
-    E7 -- "F11 caption, counsellor line, draft" --> P0
+    P0 -- "F10 masked text, typed text to speak,<br/>consented" --> E7
+    E7 -- "F11 caption, counsellor line,<br/>draft, speech audio" --> P0
     classDef ent fill:#ffffff,stroke:#16202e,stroke-width:2px,color:#16202e
     classDef proc fill:#e8eef7,stroke:#1f3a5f,stroke-width:2px,color:#16202e
 ```
@@ -174,7 +172,7 @@ flowchart LR
     P2 <-- "text, caption" --> P6
     D5 -- "GGUF" --> P6
     D9 -- "token" --> P6
-    P6 <-- "masked text, reply" --> E7
+    P6 <-- "masked text, typed text, reply, audio" --> E7
     P3 <-- "snapshot, remote answers" --> P7
     P7 <-- "AES-256-GCM frames" --> E5
     P2 -- "export request" --> P5
@@ -216,7 +214,7 @@ flowchart LR
 | Instrumented | Stage accessibility, overlay touch filter, database migrations, report export on an emulator; the camera and MediaPipe tests on a phone |
 | Avatar | Formatting, lint, type checks, rig and retarget tests, and the built bundle matching the source |
 | Portal | Formatting, lint, type checks and tests |
-| Gateway | pytest suite for enrolment, limits, assist proxy, feedback, admin and database tools |
+| Gateway | Go tests for enrolment, limits, assist and speech proxies, admin and the PostgreSQL store, run with the race detector, plus fuzz tests |
 | Tools | Python unit tests; content manifest and reference checks |
 | Security | Release lint, semgrep, OSV-Scanner on the shipped runtime lockfile, gitleaks |
 | Release record | Each push to `master` keeps the release APK, bundle, CycloneDX SBOM and SHA-256 checksums; the OSV report is kept on every run |
@@ -225,10 +223,13 @@ Sign reader accuracy, measured, not targets:
 
 | Reader | Data | Top-1 | Top-3 |
 | --- | --- | --- | --- |
-| ISL words (262) | Signers seen in training (n=816) | 0.979 | 0.995 |
-| ISL words | A new signer, ISLRTC dictionary clips (n=199) | 0.286 | 0.442 |
-| ASL words | Held-out PopSign signers (n=5385) | 0.402 | 0.543 |
-| ISL letters, digits | Real signers, small samples (23 letters, 10 digits) | 0.13 letters, 0.80 digits | 0.30, 1.00 |
+| ISL words (314) | INCLUDE test signers (n=816) | 0.979 | 0.995 |
+| ISL words | New signers, ISLRTC dictionary clips (n=269) | 0.342 | 0.442 |
+| ISL words | A held-out signer of the Kaggle ISL set (n=300) | 0.973 | 0.997 |
+| ISL letters, digits | ISLRTC signers, small samples (23 letters, 10 digits) | 0.13 letters, 0.80 digits | 0.30, 1.00 |
+| ISL spelled names | A held-out news interpreter (n=498 names) | Character error rate 0.120 | |
+| ASL words (250) | Held-out PopSign signers (n=5385) | 0.467 | 0.633 |
+| ASL fingerspelling | 10 held-out Kaggle signers (n=413 phrases) | Character error rate 0.368 | |
 
 The readers generalise poorly to people they have not seen, so a reading is never recorded as an answer: it is logged as the app's reading, the officer can set their own reading beside it, and only the subject's pick among pictures (Ask them to choose) makes a meaning theirs. Details are in [tools/ml/EVAL.md](../tools/ml/EVAL.md).
 
@@ -248,10 +249,10 @@ The readers generalise poorly to people they have not seen, so a reading is neve
 
 | Item | Impact | Handling |
 | --- | --- | --- |
-| Sign reading on unseen signers | Wrong proposals | Readings are never answers; the subject can be asked to pick the meaning from pictures; every line carries its grade |
+| Sign reading on unseen signers | About one ISL word in three right first time; spelled names from slow, deliberate spellers are often wrong | Readings are never answers; the subject can be asked to pick the meaning from pictures; every line carries its grade |
 | Translations beyond English and Hindi are drafts | Wording may be wrong | Draft label for the officer |
 | Gondi and Halbi have no voice | Captions and pictures only | Every question has both |
-| Placeholder speech is synthetic | Unnatural voice | Speech is optional |
+| Assamese, Nepali, Odia and Urdu speech is Indic Parler-TTS | Less natural than the other languages' voices | No provider offered these voices; captions and pictures carry every question |
 | Hindi caption is rule-based | Odd sentences for unusual input | No caption when a word is unknown; captions marked unchecked |
 | Android 64-bit only | No iOS or 32-bit phones | Distribution is the arm64 phone APK |
 | Assistant model licence | Gemma terms are not OSI open source | A fully open model can replace it by adding its hash |

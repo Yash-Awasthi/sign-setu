@@ -578,7 +578,11 @@
         "bachao",
         "मदद",
         "सहायता",
-        "बचाओ"
+        "बचाओ",
+        "protect",
+        "protection",
+        "raksha",
+        "रक्षा"
       ],
       "sign": "sign.help",
       "gesture": "sign.help"
@@ -1235,7 +1239,8 @@
         "लो",
         "ले",
         "लेना",
-        "लिया"
+        "लिया",
+        "taken"
       ],
       "sign": "sign.take"
     },
@@ -2068,7 +2073,11 @@
       "w": [
         "parents",
         "mata-pita",
-        "माता-पिता"
+        "माता-पिता",
+        "guardian",
+        "parent",
+        "abhibhavak",
+        "अभिभावक"
       ],
       "sign": "isl.parents"
     },
@@ -2078,7 +2087,10 @@
         "jaj",
         "nyayadhish",
         "जज",
-        "न्यायाधीश"
+        "न्यायाधीश",
+        "magistrate",
+        "majistret",
+        "मजिस्ट्रेट"
       ],
       "sign": "isl.judge"
     },

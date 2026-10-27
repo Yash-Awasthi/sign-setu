@@ -162,7 +162,7 @@ class SignIngestionTest {
         val known = signWords.values.mapNotNull { words[it] }.toSet()
         val core = listOf("yes", "no", "water", "pain", "toilet", "home", "mother", "father", "police", "help", "stop", "don't know")
         val missing = core.filter { w -> words[w]?.let { it !in known } ?: (w !in labels) }
-        assertEquals(listOf("yes", "no", "water", "pain", "help", "stop", "don't know"), missing)
+        assertEquals(listOf("yes", "no", "help", "stop", "don't know"), missing)
     }
 
     private val hand = List(21) { androidx.compose.ui.geometry.Offset(0.5f, 0.5f) }

@@ -59,4 +59,4 @@ The Gemma licence is free for government use but is not an OSI open-source licen
 | Masking | `Pseudonymizer` replaces the subject's names and written details from the session, and email addresses, links, PAN-like ids and long numbers, with stand-ins before sending, and restores them in the reply |
 | Consent | Session text (counsellor history, draft report) goes only after the officer allows it once for the session |
 | Failure | One retry when the service is unreachable, rate-limited (429) or failing (5xx), except a typed-text caption, which waits at most 3 s once so the officer can send their own words; a session start pings a gateway's `/healthz` to wake it; a 401 clears the token; the officer is told once per change (offline, error, revoked, back online) |
-| Prompts | The gateway accepts only the app's own system prompts, listed in `backend/signsetu_gateway/app_prompts.json` and written by `GatewayPromptContractTest` |
+| Prompts | The gateway accepts only the app's own system prompts, listed in `gateway/app_prompts.json` and written by `GatewayPromptContractTest` |

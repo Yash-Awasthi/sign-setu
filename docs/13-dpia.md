@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Document | Sign Setu data protection impact assessment |
-| Scope | The Android app (both flavors), the optional department gateway (`backend/`) and the reviewer portal (`portal/`) |
+| Scope | The Android app (both flavors), the optional department gateway (`gateway/`) and the reviewer portal (`portal/`) |
 | Controller | The police department that deploys the app **[confirm]** |
 | Audience | Department legal officer and Data Protection Officer; not legal advice |
 
@@ -23,7 +23,7 @@ The app helps an officer communicate with a person who is Deaf, hard of hearing,
 | Skeleton snapshot | A drawing of the pose for one answer, when the officer turns it on | Encrypted session database | As answers |
 | Officer settings | Language, interpreter contact | DataStore | Until cleared |
 | Device enrolment | Device token (hashed on the gateway), audit rows without subject data | Gateway database | Until revoked **[confirm]** |
-| Label feedback | A corrected sign label with explicit consent; no landmarks, pictures or statements. The gateway accepts it at `/v1/feedback`; the app has no code that sends it | Gateway database | **[confirm]** |
+| Label feedback | A corrected sign label with explicit consent; no landmarks, pictures or statements. Not collected today: the gateway has no route for it and the app has no code that sends it | Gateway database | **[confirm]** |
 
 Children, victims of sexual offences and persons with disabilities are expected data subjects. Landmarks and camera frames are biometric in nature, even though they are never stored or used for identification.
 
@@ -33,6 +33,7 @@ Camera, then MediaPipe Holistic on the phone, then the on-device sign reader, th
 
 - The second screen over bonded Bluetooth. It is encrypted (P-256 ECDH, AES-GCM) and carries no landmarks.
 - The online assistant through the department gateway, or a custom API endpoint the officer sets up instead. It carries masked text only, and session text only after the officer allows it for the session.
+- Speech of the officer's typed text through the gateway (`/v1/speak`), under the same switch and session permission: up to 500 characters of the officer's own words, unmasked, go through the gateway to the speech provider (ElevenLabs or Cartesia) and come back as audio. Nothing the person said or signed is sent.
 - The encrypted PDF export, on an officer's action only.
 
 ## 2. Lawful basis

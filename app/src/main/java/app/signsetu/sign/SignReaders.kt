@@ -38,7 +38,12 @@ object SignReaders {
             } else model(base, emptyMap())?.let(::SpellReader)
         }
         // The CTC reader gates itself and has no softmax over words to weigh against, so any read it gives wins.
-        if (spell != null) CombinedReader(words, spell, if (spell is CtcSpell) 0f else SPELL_ODDS) else words
+        val read = if (spell != null) CombinedReader(words, spell, if (spell is CtcSpell) 0f else SPELL_ODDS) else words
+        // ISL keeps its letter and digit reader for single signs and adds the continuous one for spelled names.
+        val names = lang.names?.let { base ->
+            runCatching { CtcSpell(CtcSpellReader(verified("$base.json")!!.decodeToString(), verified("$base.bin")!!)) }.getOrNull()
+        }
+        if (names != null) CombinedReader(read, names, 0f) else read
     }.getOrNull()
 }
 
@@ -89,15 +94,15 @@ private class CtcSpell(private val ctc: CtcSpellReader) : SignReader {
             if (best != 0 && best != last) peaks += p else if (best != 0) peaks[peaks.lastIndex] = maxOf(peaks.last(), p)
             last = best
         }
-        if (peaks.size < SPELL_MIN_LETTERS || peaks.min() < SPELL_MIN_PEAK) return emptyList()
-        return listOf(SignGuess(ctc.decode(logits).lowercase(), peaks.min(), spelled = true))
+        if (peaks.size < SPELL_MIN_LETTERS || peaks.min() < (ctc.minPeak ?: SPELL_MIN_PEAK)) return emptyList()
+        return listOf(SignGuess(ctc.decode(logits).trim().lowercase(), peaks.min(), spelled = true))
     }
 }
 
 /** A guess as the gloss for [glossToText]: a spelled guess is its letters, so it renders as a name. */
 fun glossOf(guess: SignGuess?, signWords: Map<String, String>): List<String> = when {
     guess == null -> listOf("?")
-    guess.spelled -> guess.word.map { it.toString() }
+    guess.spelled -> guess.word.filter { !it.isWhitespace() }.map { it.toString() }
     else -> listOf(signWords[guess.word] ?: guess.word)
 }
 
@@ -109,6 +114,7 @@ internal class CombinedReader(private val signs: SignReader, private val spell: 
     override val labels = signs.labels + spell.labels
     override val words = signs.words
     override val cards = signs.cards
+    override fun embed(frames: List<LandmarkFrame>) = signs.embed(frames)
     override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
         val w = signs.read(frames)
         val s = spell.read(frames)

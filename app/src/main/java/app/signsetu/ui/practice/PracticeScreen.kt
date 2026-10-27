@@ -47,6 +47,7 @@ import app.signsetu.data.content.SignMode
 import app.signsetu.data.content.planText
 import app.signsetu.ui.avatar.AVATAR_ASPECT
 import app.signsetu.ui.avatar.Avatar
+import app.signsetu.data.content.negatedText
 import app.signsetu.data.content.questionKind
 import app.signsetu.ui.theme.Spacing
 
@@ -62,6 +63,7 @@ fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
     val plan = remember(text, content) { content.takeIf { it.gestures.isNotEmpty() }?.planText(text, modes) }
     val gesture = plan?.gesture
     val question = remember(text) { questionKind(text) }
+    val negated = remember(text) { negatedText(text) }
     val spoken = remember(text) { text.trim().isNotEmpty() }
 
     Scaffold(
@@ -95,6 +97,7 @@ fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
                     clip = content.clipFor(text),
                     idle = !spoken,
                     question = question,
+                    negated = negated,
                     // Beside the word list rather than filling the panel: the character reads better at stage size.
                     modifier = Modifier.heightIn(max = 520.dp).aspectRatio(AVATAR_ASPECT),
                 )

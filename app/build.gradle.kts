@@ -33,8 +33,8 @@ android {
         applicationId = "in.signsetu"
         minSdk = 29
         targetSdk = 37
-        versionCode = 16
-        versionName = "0.8.0"
+        versionCode = 17
+        versionName = "0.8.1"
         buildConfigField("long", "BUILD_EPOCH_DAY", "${providers.of(EpochDay::class.java) {}.get()}L")
         buildConfigField("boolean", "SECURE_SCREEN", "$secureScreen")
         buildConfigField("boolean", "TEST_UNLOCKED", "false")
@@ -187,6 +187,8 @@ dependencies {
         implementation(libs.bouncycastle.prov)
         implementation(libs.bouncycastle.pkix)
         implementation(libs.bouncycastle.util)
+        // CameraX brings Guava 33.3.1, whose deserialization can allocate without bound (GHSA-xxph-c9ww-hj94).
+        implementation(libs.guava)
     }
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)

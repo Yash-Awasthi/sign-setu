@@ -19,7 +19,7 @@ See [isl/README.md](isl/README.md): `retarget.py` (INCLUDE to `isl_signs.json`),
 
 ## Text to ISL (`tools/text2isl`)
 
-See [text2isl/README.md](text2isl/README.md): the sentence-to-motion model, its video processing and training, and `export_clips.py`, which writes the recorded sentence clips the app plays (`content/clips.json`). `get-data.ps1` downloads the corpus and MediaPipe models into `$SIGNSETU_DATA\text2isl`.
+See [text2isl/README.md](text2isl/README.md): corpus video processing, clip picking and `export_clips.py`, which writes the recorded sentence clips the app plays (`content/clips.json`). `get-data.ps1` downloads the corpus and MediaPipe models into `$SIGNSETU_DATA\text2isl`.
 
 ## Clip viewer (`tools/avatar-viewer`)
 
@@ -40,6 +40,10 @@ See [ml/README.md](ml/README.md) for data, environments and the training order. 
 | `train.py` | Trains a format 1 reader and reports test accuracy; `SIGN_HIDDEN` and `SIGN_DROPOUT` set width and dropout (export needs the same width) | `train.py [cache.pkl] [out.pt] [epochs]` |
 | `train_asl.py` | ASL reader trainer with GPU augmentation; teacher checkpoints add distillation | `train_asl.py [asl.pkl] [out.pt] [epochs] [teachers...]` |
 | `spell_ctc.py` | ASL fingerspelling CTC reader from synthetic sequences of real ASLNow! letters (MIT) | `spell_ctc.py prepare [data_dir] [per_letter]`, `train [data_dir] [epochs]`, `export [data_dir]` |
+| `isl_spell_ctc.py` | ISL name spelling: a two-hand CTC reader on ISL-Fingerspelling (CC BY-NC), word clips as non-spelling (`ISPELL_NEGATIVES`), held-out signer scores, the spelling gate's floor, export with its fixture | `isl_spell_ctc.py train <isl_fingerspell.pkl> <out.pt> [epochs]`, `eval`, `gate <isl_fingerspell.pkl> <words.pkl> <model.pt>`, `export <isl_fingerspell.pkl> <model.pt> <min_peak>` |
+| `prepare_isl_fingerspell.py` | ISL-Fingerspelling segments through the app's Holistic model, with letter annotations and the signer split (mp environment) | `prepare_isl_fingerspell.py [workers]` |
+| `prepare_isl_more.py`, `build_isl_more.py` | Kaggle ISL 60-word videos through Holistic, joined to INCLUDE with rebuilt signer ids, one signer held out (the shipped word reader's training cache) | `prepare_isl_more.py [workers]`, `build_isl_more.py` |
+| `oneshot.py` | Adding a word from one clip: held-out training split and nearest-prototype scores on the reader's pooled features, against time warping | `oneshot.py split ...`, `eval ...` |
 | `export.py` | Exports a format 1 reader to the content bundle with its Kotlin parity fixture | `export.py [sign_reader or isl_spell or asl_reader] [checkpoint.pt] [cache.pkl]`, then `build_content.py --manifest-only` |
 | `eval_isl.py` | Top-1 and top-3 of the shipped ISL readers, the sign-or-spell gate, a sentence demo through `glossToText`'s rules, and ISLRTC real signers | `eval_isl.py [include.pkl] [isl_spell.pkl] [islrtc.pkl]` |
 | `eval_asl.py` | ASL word top-1 and top-3, fingerspelling character error rate (synthetic, so flattering) and the gate | `eval_asl.py [asl.pkl] [asl_spell_dir]` |

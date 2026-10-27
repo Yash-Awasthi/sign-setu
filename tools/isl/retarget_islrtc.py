@@ -20,7 +20,8 @@ MODEL = rt.ROOT / "app" / "src" / "main" / "assets" / "content" / "models" / "ho
 CATEGORY = "ISLRTC"
 MIN_S, MAX_S = 0.3, 6.0
 SOURCE = ("INCLUDE (AI4Bharat, Sridhar et al. 2020), OpenHands pose release, CC BY 4.0; ISLRTC Indian Sign Language "
-          "Dictionary (Government of India), Government Open Data License - India")
+          "Dictionary (Government of India), Government Open Data License - India; Indian Sign Language video dataset "
+          "(Prasad Shet, Kaggle), MIT")
 
 
 def landmarks(path: pathlib.Path) -> tuple[dict, float]:
@@ -60,12 +61,16 @@ def main(targets: pathlib.Path, data: pathlib.Path) -> None:
     clips = data / "words"
     clips.mkdir(parents=True, exist_ok=True)
     signs = json.loads(rt.OUT.read_text(encoding="utf-8"))
-    have = {g["word"] for g in signs["gestures"] if not g.get("rec", "").startswith("ISLRTC/")}
+    have = {g["word"] for g in signs["gestures"] if not g.get("rec", "").startswith("ISLRTC/")}  # INCLUDE and Kaggle win
     words = json.loads((rt.OUT.parent / "words.json").read_text(encoding="utf-8"))["words"]
     hindi = {e["w"][0]: next((w for w in e["w"] if any("ऀ" <= c <= "ॿ" for c in w)), "") for e in words}
+    prior = {g["word"]: g for g in signs["gestures"] if g.get("rec", "").startswith("ISLRTC/")}
     made = {}
     for word, clip in sorted(json.loads(targets.read_text(encoding="utf-8")).items()):
         if word in have:
+            continue
+        if prior.get(word, {}).get("rec") == f"ISLRTC/{clip}":
+            made[word] = prior[word]
             continue
         path = clips / clip.replace("/", "__")
         if not path.exists():

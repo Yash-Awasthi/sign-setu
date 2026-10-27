@@ -169,24 +169,10 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                 SwitchItem(R.string.settings_camera, R.string.settings_camera_summary, s.cameraEnabled) { on -> scope.launch { store.setCameraEnabled(on) } }
                 SpeedItem(s.gestureSpeed) { v -> scope.launch { store.setGestureSpeed(v) } }
                 SwitchItem(R.string.settings_isl_reorder, R.string.settings_isl_reorder_summary, s.islReorder) { on -> scope.launch { store.setIslReorder(on) } }
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_asl_advisory)) },
-                    supportingContent = { Text(stringResource(R.string.settings_asl_advisory_summary)) },
-                    colors = ItemColors,
-                    trailingContent = {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        ) {
-                            Text(
-                                stringResource(R.string.asl_experimental_badge),
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
-                        }
-                    },
-                )
+            }
+            Group(R.string.settings_sign_languages) {
+                LanguageItem(R.string.settings_isl_status, R.string.settings_isl_status_summary, R.string.settings_isl_badge, warn = false)
+                LanguageItem(R.string.settings_asl_status, R.string.settings_asl_status_summary, R.string.asl_experimental_badge, warn = true)
             }
             Group(R.string.settings_assistant) {
                 if (available) ListItem(
@@ -430,6 +416,25 @@ internal fun SwitchItem(@StringRes title: Int, @StringRes summary: Int, checked:
     )
 }
 
+@Composable
+private fun LanguageItem(@StringRes title: Int, @StringRes summary: Int, @StringRes badge: Int, warn: Boolean) {
+    val colors = MaterialTheme.colorScheme
+    ListItem(
+        headlineContent = { Text(stringResource(title)) },
+        supportingContent = { Text(stringResource(summary)) },
+        colors = ItemColors,
+        trailingContent = {
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = if (warn) colors.errorContainer else colors.primaryContainer,
+                contentColor = if (warn) colors.onErrorContainer else colors.onPrimaryContainer,
+            ) {
+                Text(stringResource(badge), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+            }
+        },
+    )
+}
+
 internal val ItemColors @Composable get() = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
 
 @Composable
@@ -548,6 +553,12 @@ private val LICENCES = listOf(
     "INCLUDE sign retargeting" to "CC BY 4.0. Motions retargeted from the INCLUDE landmark samples; see INCLUDE above.",
     "ISLRTC Indian Sign Language Dictionary" to "Government Open Data License - India. Indian Sign Language Research and Training Centre, " +
         "Government of India, data.gov.in. Changed: motions of words missing from INCLUDE retargeted onto the app's characters; no video is included.",
+    "Indian Sign Language video dataset (sign reader training data)" to "MIT. Prasad Shet, kaggle.com/datasets/prasadshet/indian-sign-language-video-dataset. " +
+        "Changed: landmarks extracted from the videos to train the reader; no video is included.",
+    "ISL-Fingerspelling (ISL name spelling reader training data)" to "CC BY-NC 4.0. \"Continuous Fingerspelling Dataset for Indian Sign Language\", " +
+        "WSLP at AACL-IJCNLP 2025. Changed: landmarks extracted from the videos to train the reader; no video is included. Non-commercial use only.",
+    "Google Isolated Sign Language Recognition (ASL reader training data)" to "CC BY 4.0. Google, kaggle.com/competitions/asl-signs.",
+    "Google ASL Fingerspelling (ASL spelling reader training data)" to "CC BY 4.0. Google, kaggle.com/competitions/asl-fingerspelling.",
 )
 
 @Composable

@@ -96,7 +96,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Requirement | Priority |
 | --- | --- |
 | First run sets the officer language and explains the app in three screens: an aid, not an interpreter; sessions are deleted after the retention time; records stay on the phone. On a phone with no secure lock screen the app warns once at unlock and keeps records under a key not tied to unlocking until a lock is set. | MUST |
-| Settings: officer language, signing speed, reduce motion, retention period, clear all data, about and open-source licences. | MUST |
+| Settings: interpreter contact, security switches (pin the app, block screenshots, ask for fingerprint), stage camera, signing speed, ISL word order, what each sign language reads and signs, the assistants, retention period, clear all data, appearance, officer language, about and open-source licences. | MUST |
 | The "aid, not an interpreter" notice appears on first run and in About. | MUST |
 | A build stops starting new sessions 180 days after its build date and shows "Update required"; existing sessions can still be exported and cleared. | MUST |
 
@@ -173,6 +173,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Raised brows over most signs of an answer make its written draft a question. | SHOULD |
 | A victim or witness can describe someone with pictures: clothes, colours and what was in their hands, offered only as follow-up after free recall. | SHOULD |
 | When a sign reads as a letter, the word reader's top guess is still offered among the three guesses. | SHOULD |
+| A fingerspelled ISL name is read on the phone as one word, and wins over the word reader only when every letter is read with confidence. | SHOULD |
 | The officer sets the sign language of a session, ISL or ASL, and can change it during the session; each change is logged. The setting selects the sign reader, the dictionary, the fingerspelling alphabet and numbers, and the character's signs for typed text. ASL text keeps the order typed; the ISL reordering of time, negation and question words applies to ISL only. Every ASL sign and pairing is a draft until reviewed by Deaf ASL signers. | SHOULD |
 
 ### 4.13 Online assistant and AI counsellor (optional)
@@ -199,7 +200,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Cold start to usable Officer state under 2 seconds on the oldest test device. | MUST |
 | A preset question appears in the Show state within 300 ms of confirmation. | MUST |
 | Clips play at their source frame rate without visible stutter on the oldest test device. | MUST |
-| Phone distribution APK (arm64-v8a) under 100 MB for the base content set, including vision and sign-reader models at full precision; universal builds bundle all architectures and are not subject to the 100 MB ceiling. | MUST |
+| Phone distribution APK (arm64-v8a) under 100 MB for the base content set, including the vision and sign-reader models; universal builds bundle all architectures and are not subject to the 100 MB ceiling. | MUST |
 | Memory under 300 MB during a session. | SHOULD |
 | Android 10 (API 29) and later, 3 GB RAM or more. | MUST |
 | Portrait, screens 5 to 6.9 inches. | MUST |

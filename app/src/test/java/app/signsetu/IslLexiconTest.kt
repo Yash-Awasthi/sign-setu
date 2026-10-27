@@ -109,9 +109,13 @@ class IslLexiconTest {
     fun everyIncludeWordIsRetargetedWithAttribution() {
         val labels = json.parseToJsonElement(File(content, "models/sign_reader.json").readText()).jsonObject["labels"]!!.jsonArray.map { it.jsonPrimitive.content }
         assertTrue(islFile.source.contains("CC BY 4.0"))
-        // Words INCLUDE lacks come from the ISLRTC dictionary (retarget_islrtc.py) and are credited there.
-        val (dictionary, include) = islFile.gestures.partition { it.rec.startsWith("ISLRTC/") }
-        assertEquals(labels.toSet(), include.map { it.word }.toSet())
+        // Words INCLUDE lacks come from the reader's Kaggle videos (retarget_kaggle.py) or the ISLRTC dictionary
+        // (retarget_islrtc.py), each credited in the source line.
+        val (dictionary, recorded) = islFile.gestures.partition { it.rec.startsWith("ISLRTC/") }
+        val include = recorded.filterNot { it.rec.startsWith("Kaggle/") }
+        assertTrue(labels.toSet().containsAll(include.map { it.word }))
+        assertEquals(emptySet<String>(), labels.toSet() - islFile.gestures.map { it.word }.toSet())
+        assertTrue(islFile.source.contains("Kaggle"))
         for (s in include) {
             assertTrue("${s.id}: no recording", s.rec.count { it == '/' } == 2)
             assertTrue("${s.id}: no category name", s.category in islFile.categories)
