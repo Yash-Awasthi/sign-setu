@@ -47,7 +47,8 @@
   function parse(text) {
     const data = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
     if (Array.isArray(data.clips)) return data.clips;
-    return Object.entries(data).map(([sentence, e]) => ({ sentence: sentence.trim(), fps: 25, frames: e.frames.map((f) => f.coordinates.slice(0, 144)) }));
+    return Object.entries(data).map(([sentence, e]) => ({ sentence: sentence.trim(), fps: 25, frames: e.frames.map((f) => f.coordinates.slice(0, 144)),
+      face: e.frames.map((f) => (f.blendshapes?.some((v) => v > 0) ? f.blendshapes : [])) }));
   }
 
   function play() {
@@ -62,7 +63,7 @@
     const i = Number($("frame").value);
     $("frameText").textContent = `${i}/${c.frames.length - 1}`;
     // The stage returns to rest when a clip ends, so the pose is held as a minute-long clip of one frame.
-    stage().clip({ sentence: c.sentence, fps: 25, frames: Array(1500).fill(c.frames[i]) });
+    stage().clip({ sentence: c.sentence, fps: 25, frames: Array(1500).fill(c.frames[i]), face: Array(1500).fill(c.face?.[i] ?? []) });
   }
 
   $("list").onchange = () => {

@@ -28,8 +28,10 @@
     <string name="run_full">A run holds up to 5 questions</string>
     <string name="run_remove">Remove from run</string>
     <string name="run_add">Add to run</string>
+    <string name="ask_again">Ask again</string>
+    <string name="ask_next">Ask next: %1$s</string>
     <string name="run_basics">Safety basics</string>
-    <string name="run_title">Run of %1$d</string>
+    <string name="run_title">%1$d questions ready. Send asks them one after another, each after the last is answered. Tap one to ask only that one.</string>
 
     <string name="log_prompt">Shown as</string>
     <string name="prompt_detail">Caption: %1$s. Motions: %2$s. Pictures in order: %3$s. Content %4$s.</string>

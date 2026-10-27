@@ -261,9 +261,11 @@ internal fun ChoiceGrid(
     lang: String,
     onCard: (String) -> Unit,
     modifier: Modifier,
+    picked: Set<String> = emptySet(),
 ) {
     key(choices) {
-        Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically)) {
+        // Tiles sit right under the question; the spare room goes below them, not in a gap above.
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.Top)) {
             if (numbers) {
                 choices.chunked(4).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
@@ -277,7 +279,7 @@ internal fun ChoiceGrid(
                 choices.chunked(3).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
                         row.forEach { id ->
-                            ChoiceTile(id, content.cards[id]?.label?.get(lang), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(70 * choices.indexOf(id))), name = content.cards[id]?.label?.get("en"))
+                            ChoiceTile(id, content.cards[id]?.label?.get(lang), chosenCard == id || id in picked, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(70 * choices.indexOf(id))), name = content.cards[id]?.label?.get("en"))
                         }
                         repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                     }

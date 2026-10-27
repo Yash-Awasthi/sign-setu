@@ -120,6 +120,8 @@ internal fun Dock(
     onRead: () -> Unit,
     run: List<Question> = emptyList(),
     onRunRemove: (Question) -> Unit = {},
+    onRunAsk: (Question) -> Unit = {},
+    onAskNow: (Question) -> Unit = {},
     onAddToRun: (Question) -> Unit = {},
     onRunBasics: () -> Unit = {},
     onTemplate: (Phrase, PhraseSlot) -> Unit = { _, _ -> },
@@ -135,8 +137,19 @@ internal fun Dock(
         (if (noLanguage) (NoLanguageQuestions + QuickQuestions).distinct() else QuickQuestions).mapNotNull { id -> content.questions.firstOrNull { it.id == id } }
             .filter { q -> q.text.get(officerLang) !in asked || (pending as? Pending.Ask)?.question?.id == q.id }
     }
+    // Once the subject has answered and nothing is prepared, the next unasked question is one tap away.
+    val answeredLast = remember(ui.events) { ui.events.lastOrNull { it.type in AnswerEvents || it.type == EventType.QUESTION_SHOWN }?.type in AnswerEvents }
+    val next = quick.firstOrNull()?.takeIf { answeredLast && pending == null && run.isEmpty() && !typing }
     Surface(color = colors.surfaceContainerLowest, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), shadowElevation = 8.dp) {
         Column(Modifier.navigationBarsPadding().padding(top = Spacing.md)) {
+            next?.let { q ->
+                Button(
+                    onClick = { onAskNow(q) },
+                    modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm).fillMaxWidth().heightIn(min = 52.dp),
+                ) {
+                    Text(stringResource(R.string.ask_next, q.text.get(officerLang) ?: q.id), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
             AnimatedVisibility(!typing && quick.isNotEmpty(), enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(horizontal = Spacing.lg), modifier = Modifier.padding(bottom = Spacing.sm)) {
                     if (noLanguage) item(key = "translate") {
@@ -237,7 +250,7 @@ internal fun Dock(
                     }
                 }
             } else if (run.isNotEmpty()) {
-                RunTray(run, officerLang, onRunRemove)
+                RunTray(run, officerLang, onRunRemove, onRunAsk)
             } else if (pending != null) {
                 Ready(pending, content, officerLang, subjectLang, ui.session.profile, onClear)
             }

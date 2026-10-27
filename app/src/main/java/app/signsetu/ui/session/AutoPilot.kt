@@ -45,7 +45,7 @@ class AutoPilot(
     private val signing: () -> Boolean = { false },
     /** True: each proposal goes on the stage by itself on a timer. False: the officer approves each one. */
     private val handsOff: Boolean = false,
-    private val present: suspend (Question, String) -> Unit,
+    private val present: suspend (Question, String, String?) -> Unit,
 ) {
     private val state = MutableStateFlow<Conv>(Conv.Off)
     val conv: StateFlow<Conv> = state.asStateFlow()
@@ -180,7 +180,7 @@ class AutoPilot(
     private suspend fun show(q: Question) {
         val session = repo.session(sessionId).filterNotNull().first()
         state.value = Conv.Waiting
-        present(q, session.subjectLang)
+        present(q, session.subjectLang, null)
         // A statement asks for no answer, so the next item follows after time to read it; a question waits for its answer.
         if (q.kind == Kind.STATEMENT) propose(STATEMENT_GAP_MS) else if (running) watchForAnswer(q, session.subjectLang)
     }
@@ -221,22 +221,24 @@ class AutoPilot(
         }
     }
 
-    /** No sign or answer for [NO_ANSWER_MS]: the item is shown again once; after the same wait again it is skipped. */
+    /** No sign or answer for [NO_ANSWER_MS] after the character finishes signing: the item is shown again once; after
+     * the same wait again it is skipped. The wait starts after the signing so the answer tiles stay up the full time. */
     private fun watchForAnswer(q: Question, lang: String) {
         val token = ++pace
+        val lead = signingMs(q)
         scope.launch {
-            var quiet = 0L
+            var quiet = -lead
             var repeated = false
             while (true) {
                 delay(TICK_MS)
                 if (token != pace || !running) return@launch
-                if (signing()) { quiet = 0; continue }
+                if (signing()) { quiet = minOf(quiet, 0); continue }
                 quiet += TICK_MS
                 if (quiet < NO_ANSWER_MS) continue
-                quiet = 0
+                quiet = -lead
                 if (!repeated) {
                     repeated = true
-                    act { if (token == pace && running) present(q, lang) }
+                    act { if (token == pace && running) present(q, lang, againLine(repo.eventsNow(sessionId), q)) }
                 } else {
                     act {
                         if (token != pace || !running) return@act
@@ -247,6 +249,13 @@ class AutoPilot(
                 }
             }
         }
+    }
+
+    /** How long the character takes to sign [q]: its recorded clip, else its gesture, plus a second to settle. */
+    private fun signingMs(q: Question): Long {
+        val clip = q.text["en"]?.let(content::clipFor)
+        val seconds = clip?.let { it.frames.size / it.fps } ?: content.gestureFor(q)?.keys?.maxOfOrNull { it.t } ?: 0f
+        return (seconds * 1000).toLong() + 1_000L
     }
 
     private suspend fun skipProposed(reason: String): Boolean {
@@ -295,3 +304,12 @@ private const val STATEMENT_GAP_MS = 10_000L
 private const val NO_ANSWER_MS = 10_000L
 private const val TICK_MS = 250L
 private const val SKIP_NO_ANSWER = "no_answer"
+
+/** Why [q] is asked again: something was signed or given since it was shown but not a clear answer ("again_unclear"),
+ * or nothing came at all ("again_no_answer"). */
+internal fun againLine(events: List<SessionEvent>, q: Question): String {
+    val shown = events.indexOfLast { it.type == EventType.QUESTION_SHOWN && it.itemId == q.id }
+    val since = if (shown < 0) emptyList() else events.drop(shown + 1)
+    val tried = since.any { it.type == EventType.ANSWER_SIGNED || it.type == EventType.ANSWER_UNCLEAR || it.type == EventType.ANSWER_GESTURE }
+    return if (tried) "again_unclear" else "again_no_answer"
+}

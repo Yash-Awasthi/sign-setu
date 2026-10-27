@@ -18,7 +18,8 @@ import app.signsetu.sign.SignWindow
 /** What the officer has prepared but not yet shown. */
 @Immutable
 sealed interface Pending {
-    data class Ask(val question: Question) : Pending
+    /** [again] is a subject_ui line shown above a repeated question: why it is asked again. */
+    data class Ask(val question: Question, val again: String? = null) : Pending
     /** [caption] is the assistant's translation the officer accepted; the character still signs [text]. */
     data class FreeText(
         val text: String,

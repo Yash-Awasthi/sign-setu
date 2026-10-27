@@ -26,6 +26,13 @@ class ExportClipsTest(unittest.TestCase):
         [clip] = json.loads(export_clips.OUT.read_text(encoding="utf-8"))["clips"]
         self.assertEqual(("hi", [[0.2] * 144]), (clip["sentence"], clip["frames"]))
 
+    def test_keeps_the_face_only_where_one_was_tracked(self):
+        frames = [{"coordinates": [0.0] * 144, "blendshapes": [0.5] * 52}, {"coordinates": [0.0] * 144, "blendshapes": [0.0] * 52}]
+        [clip] = export_clips.clips({"x": {"frames": frames}})
+        self.assertEqual([[0.5] * 52, []], clip["face"])
+        [bare] = export_clips.clips({"x": {"frames": frames[1:]}})
+        self.assertNotIn("face", bare)
+
     def test_skips_a_clip_with_short_frames(self):
         self.assertEqual([], export_clips.clips({"x": {"frames": [{"coordinates": [0.0] * 10}]}}))
 

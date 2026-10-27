@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import android.os.SystemClock
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -124,6 +125,8 @@ fun VideoCallStage(
     onWrite: (() -> Unit)? = null,
     /** Drawing, writing, pictures and the other answer panels take the lower part of the call. */
     panel: (@Composable (Modifier) -> Unit)? = null,
+    /** The share of the height the panel takes; the character gets the rest. */
+    panelShare: Float = 0.6f,
 ) {
     val lang = ui.session.subjectLang
     val pending = ui.pending
@@ -154,23 +157,25 @@ fun VideoCallStage(
     // Stays as the officer left it for every item: turning it on once is enough for the whole session.
     var showVictimSkeleton by StageSkeleton.on
 
-    // Left alone, the stage signs its own buttons one by one; a touch pauses it and the next quiet spell resumes there.
-    var guideStep by rememberSaveable { mutableIntStateOf(0) }
-    var guiding by remember { mutableStateOf(false) }
+    // Left alone, the character first shows how to answer (sign to the camera, nod, shake), then reassures; once per
+    // quiet spell, and a touch or a signed answer starts the wait again. It never walks through the buttons.
+    var guideStep by remember { mutableIntStateOf(-1) }
     var touches by remember { mutableIntStateOf(0) }
-    LaunchedEffect(touches, signing) {
-        guiding = false
-        if (signing) return@LaunchedEffect
-        delay(GUIDE_IDLE_MS)
-        guiding = true
-        while (guideStep < GuideSteps.size) {
-            delay(GUIDE_STEP_MS)
-            guideStep++
+    LaunchedEffect(touches, signing, pending) {
+        guideStep = -1
+        if (signing || pending == null) return@LaunchedEffect
+        delay(HINT_IDLE_MS)
+        for (i in IdleSteps.indices) {
+            if (i == HintSteps) delay(REASSURE_IDLE_MS)
+            guideStep = i
+            delay(IdleSteps[i].ms)
         }
-        guideStep = 0
-        guiding = false
+        guideStep = -1
     }
-    val guided = GuideSteps.getOrNull(guideStep)?.takeIf { guiding }
+    val idleStep = IdleSteps.getOrNull(guideStep)
+    val guided = idleStep?.let { it.line to it.gesture }
+    val idleLine = idleStep?.line?.takeIf { it != "hint_answer" }?.let { content.subjectText(it, lang) }
+    val hintLit = idleStep?.line == "hint_answer"
 
     // The card a gesture proposed and the cue it came from; the cue is logged only if the subject taps it.
     var proposal by remember { mutableStateOf<Pair<String, String?>?>(null) }
@@ -205,7 +210,8 @@ fun VideoCallStage(
     }
 
     val hint = content.subjectText("hint_answer", lang)
-    val promptText = caption ?: hint ?: stringResource(R.string.call_with_you)
+    // Their language is not known yet, so the prompt is in several scripts at once.
+    val promptText = if (pending == Pending.LanguageFinder) LANGUAGE_PROMPT else caption ?: hint ?: stringResource(R.string.call_with_you)
 
     // Held-up fingers answer an age or count question without opening a keypad.
     val isNumberOrAgeQuestion = remember(pending) {
@@ -218,9 +224,13 @@ fun VideoCallStage(
     // Hands raised when a window closes on its own must come down once before they open the next one, or the answer
     // just ingested would be read again straight away.
     val handsDown = remember { mutableStateOf(true) }
+    // A stray detection must not open a window: hands stay in view for HANDS_HOLD_MS, and after a window closes the
+    // answer row holds still for REOPEN_MS, so the tiles never flip back and forth while the subject decides.
+    val handsSince = remember { mutableLongStateOf(0L) }
+    val closedAt = remember { mutableLongStateOf(0L) }
     var wasSigning by remember { mutableStateOf(signing) }
     LaunchedEffect(signing) {
-        if (wasSigning && !signing) handsDown.value = false
+        if (wasSigning && !signing) { handsDown.value = false; closedAt.longValue = SystemClock.elapsedRealtime() }
         wasSigning = signing
     }
 
@@ -228,8 +238,11 @@ fun VideoCallStage(
         onSignFrame(frame)
         val now = frame.timestampMs
         val handsVisible = frame.leftHand != null || frame.rightHand != null
-        if (!handsVisible) handsDown.value = true
-        if (handsVisible && !signing && !statement && handsDown.value) onStartSigning()
+        val clock = SystemClock.elapsedRealtime()
+        if (!handsVisible) { handsDown.value = true; handsSince.longValue = 0L } else if (handsSince.longValue == 0L) handsSince.longValue = clock
+        val held = handsVisible && clock - handsSince.longValue >= HANDS_HOLD_MS
+        // Picture tiles are the answer while they are up: a hand seen then must not cover them with a reading window.
+        if (held && panel == null && !signing && !statement && handsDown.value && clock - closedAt.longValue >= REOPEN_MS) onStartSigning()
         if (isNumberOrAgeQuestion && handsVisible) {
             val fingers = countOpenFingers(frame)
             if (fingers != null) {
@@ -269,6 +282,7 @@ fun VideoCallStage(
                         .background(Brush.radialGradient(listOf(LocalCall.current.surface, LocalCall.current.bg))),
                 )
                 avatar(guided?.let { content.gestures[it.second] }, guided?.let { "guide:$guideStep" })
+
         }
 
         val cameraView: @Composable () -> Unit = {
@@ -345,12 +359,12 @@ fun VideoCallStage(
 
         if (panel != null) {
             Column(Modifier.fillMaxSize().imePadding()) {
-                Box(Modifier.weight(0.4f).fillMaxWidth()) { avatarView() }
+                Box(Modifier.weight(1f - panelShare).fillMaxWidth()) { avatarView() }
                 Text(
                     promptText, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                 )
-                panel(Modifier.weight(0.6f).fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
+                panel(Modifier.weight(panelShare).fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
             }
         } else Box(
             modifier = Modifier.fillMaxSize().padding(bottom = if (swapped && cameraOn) 0.dp else 90.dp),
@@ -468,8 +482,10 @@ fun VideoCallStage(
                         Text(it, fontSize = 13.sp, color = LocalCall.current.accentSoft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
                     }
                     // A young child is not made to read instructions; the character and the guide show them.
-                    if (!ui.child && !statement && caption != null) hint?.let {
-                        Text(it, fontSize = 11.sp, color = LocalCall.current.muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
+                    if (!ui.child && !statement && caption != null) (idleLine ?: hint)?.let {
+                        // Lit and larger while the character acts it out, and the reassurance takes its place when idle.
+                        val lit = hintLit || idleLine != null
+                        Text(it, fontSize = if (lit) 15.sp else 11.sp, color = if (lit) Color.White else LocalCall.current.muted, fontWeight = if (lit) FontWeight.Bold else null, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
                     }
                 }
             }
@@ -487,11 +503,12 @@ fun VideoCallStage(
                 if (onNext != null) {
                     SmallAnswer("next", content.subjectText("next", lang), stringResource(R.string.stage_next), answers.yes, answers.onYes, false, onNext, Modifier.weight(1.6f), height = 48.dp, icon = rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowForward))
                 }
-                if (pending != null && !signing && !statement) {
-                    SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = 48.dp)
-                    SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = 48.dp)
-                    SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = 48.dp)
-                }
+            }
+            // Their own row, so Stop and Next never change size or place between items.
+            if (pending != null && !signing && !statement) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know))
+                SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand))
+                SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong))
             }
             if (!signing && (onDraw != null || onWrite != null)) {
                 val stage = LocalStageColors.current
@@ -543,21 +560,21 @@ fun VideoCallStage(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CallActionButton("water", cardLabel(content, "water", lang), Color(0xFF0369A1), highlight = guided?.first == "water") {
+                CallActionButton("water", cardLabel(content, "water", lang), Color(0xFF0369A1), highlight = false) {
                     answer("water")
                 }
-                CallActionButton("food", cardLabel(content, "food", lang), Color(0xFFD97706), highlight = guided?.first == "food") {
+                CallActionButton("food", cardLabel(content, "food", lang), Color(0xFFD97706), highlight = false) {
                     answer("food")
                 }
                 if (!statement) {
-                    CallActionButton("yes", cardLabel(content, "yes", lang), Color(0xFF15803D), highlight = guided?.first == "yes") {
+                    CallActionButton("yes", cardLabel(content, "yes", lang), Color(0xFF15803D), highlight = false) {
                         answer("yes")
                     }
-                    CallActionButton("no", cardLabel(content, "no", lang), Color(0xFFB91C1C), highlight = guided?.first == "no") {
+                    CallActionButton("no", cardLabel(content, "no", lang), Color(0xFFB91C1C), highlight = false) {
                         answer("no")
                     }
                 }
-                CallActionButton("express", cardLabel(content, "help", lang), Color(0xFF7C3AED), highlight = guided?.first == "express") {
+                CallActionButton("express", cardLabel(content, "help", lang), Color(0xFF7C3AED), highlight = false) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onOpenExpressBoard()
                 }
@@ -572,12 +589,18 @@ internal object StageSkeleton {
     val on = mutableStateOf(false)
 }
 
-/** Each stage button with the sign the character makes while it is pointed out. */
-private val GuideSteps = listOf("yes" to "yes.nod", "no" to "no.shake", "water" to "water.cup", "food" to "eat.fingers", "express" to "show_me")
-private const val GUIDE_IDLE_MS = 20_000L
+/** One idle beat: the gesture the character makes and the subject line it goes with ("hint_answer" lights the hint). */
+private class IdleStep(val gesture: String, val line: String, val ms: Long)
+private val IdleSteps = listOf(
+    IdleStep("show_me", "hint_answer", 3_000), IdleStep("yes.nod", "hint_answer", 2_500), IdleStep("no.shake", "hint_answer", 2_500),
+    IdleStep("okay", "watching", 5_000), IdleStep("okay", "rule_dont_know", 5_000),
+)
+/** The first three steps act out the hint; the rest reassure after a longer wait. */
+private const val HintSteps = 3
+private const val HINT_IDLE_MS = 8_000L
+private const val REASSURE_IDLE_MS = 15_000L
 /** How long a read courtesy waits for the subject's tap before it is dropped. */
 private const val COURTESY_MS = 6_000L
-private const val GUIDE_STEP_MS = 3_000L
 
 private val FINGERS = Regex("n\\d+")
 
@@ -605,3 +628,8 @@ private fun CallCaption(text: String, highlight: IntRange?, onWordTap: ((Int) ->
         onTextLayout = { layout = it }, modifier = tap,
     )
 }
+
+private const val HANDS_HOLD_MS = 800L
+private const val REOPEN_MS = 10_000L
+
+private const val LANGUAGE_PROMPT = "भाषा चुनें · ভাষা বাছুন · மொழி · Choose your language"

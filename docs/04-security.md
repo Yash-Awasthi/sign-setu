@@ -54,7 +54,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 
 | Control | Source |
 | --- | --- |
-| `FLAG_SECURE` on the activity when the build switch `secureScreen` is true, as it must be for the final release APK; dialogs and sheets inherit it. Testing builds allow screenshots. | MASVS-PLATFORM-3 |
+| `FLAG_SECURE` on the activity when the build switch `secureScreen` is true, as it must be for the final release APK; dialogs and sheets inherit it. Settings > Security has three switches, each needing the officer to turn it off: Pin the app, Block screenshots (default from `secureScreen`) and Ask for fingerprint. Testing builds allow screenshots; debug builds made with `-PtestUnlocked=true` also skip pinning and the fingerprint so the app can be driven over adb. | MASVS-PLATFORM-3 |
 | Exported components in the merged release manifest: the launcher activity. `RetentionJob` is not exported and is bound only by the platform scheduler (`BIND_JOB_SERVICE`). FileProvider not exported, one temporary read grant per share. Unused library receivers removed. No deep links, no PendingIntents, no WebView. | MASVS-PLATFORM-1, PLATFORM-2 |
 | `filterTouchesWhenObscured` on the activity and every dialog window (`GuardedAlertDialog`). | MASVS-PLATFORM-3 |
 | Runtime permissions: CAMERA asked of the officer at session start, never on the stage; BLUETOOTH_CONNECT only when a second screen is set up. Build gates fail any variant with RECORD_AUDIO or background location, and `standard` with any discovery or location permission. | CERT-In 6.2.6 |

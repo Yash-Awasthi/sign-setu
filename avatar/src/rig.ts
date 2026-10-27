@@ -270,6 +270,8 @@ const REST_KEY: FullHandKey = {
   prop: null,
 };
 const full = (k: HandKey): FullHandKey => ({ ...REST_KEY, ...k });
+// Resting arms hang with the elbows down and palms to the thighs; elbows out there reads as hands on hips.
+const RESTING: FullHandKey = { ...REST_KEY, elbow: "down", roll: 0 };
 export const OTHER_HAND = new Set(["wrist_opp", "palm_opp", "thumb_opp", "index_opp", "middle_opp", "ring_opp", "pinky_opp"]);
 export const LEAD_IN = 0.35;
 export const LEAD_OUT = 0.45;
@@ -285,7 +287,7 @@ interface Frame {
 }
 const head = (h: HeadKey = {}) => ({ tilt: 0, nod: 0, turn: 0, ...h });
 const body = (b: BodyKey = {}) => ({ lean: 0, shrug: 0, hunch: 0, shiver: 0, ...b });
-const restFrame = (t = 0): Frame => ({ t, r: REST_KEY, l: REST_KEY, face: FACES.neutral, head: head(), body: body() });
+const restFrame = (t = 0): Frame => ({ t, r: RESTING, l: RESTING, face: FACES.neutral, head: head(), body: body() });
 
 const ease = (f: number) => (f < 0.5 ? 4 * f * f * f : 1 - (-2 * f + 2) ** 3 / 2);
 const hermite = (p1: number, p2: number, m1: number, m2: number, u: number) =>
@@ -310,7 +312,7 @@ const blendShape = (a: HandShape, b: HandShape, f: number): HandShape =>
 export function restPose(b: Build): Pose {
   const hand = (side: Side): HandPose => {
     const [x, y] = rest(b, side);
-    return { x, y, shape: SHAPES.RELAX, roll: -1, angle: NaN, elbowOut: 1 };
+    return { x, y, shape: SHAPES.RELAX, roll: 0, angle: NaN, elbowOut: 0 };
   };
   return {
     r: hand(R),

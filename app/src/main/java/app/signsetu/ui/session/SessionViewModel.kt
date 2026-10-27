@@ -59,7 +59,9 @@ import app.signsetu.camera.EvidenceMode
 import app.signsetu.camera.renderSkeletonPng
 import kotlinx.coroutines.withContext
 
-private const val RUN_STEP_MS = 1_400L
+private const val RUN_STEP_MS = 3_000L
+private const val LANGUAGE_SETTLE_MS = 5_000L
+private const val OPENING_ID = "s1"
 
 private data class Local(
     val selectedGroup: String = "safety",
@@ -106,7 +108,7 @@ class SessionViewModel(
         sessionId, repo, content, officerLang, viewModelScope,
         signing = { local.value.reading != null },
         handsOff = true,
-        present = { q, lang -> present(Pending.Ask(q), lang) },
+        present = { q, lang, again -> present(Pending.Ask(q, again), lang) },
     )
 
     val ui: StateFlow<SessionUi?> = combine(repo.session(sessionId).filterNotNull(), repo.events(sessionId), local) { s, events, l ->
@@ -138,6 +140,13 @@ class SessionViewModel(
     fun selectGroup(id: String) = local.update { it.copy(selectedGroup = id) }
     fun unlockSensitive() = local.update { it.copy(sensitiveUnlocked = true) }
     fun prepare(pending: Pending?) = local.update { it.copy(pending = pending) }
+
+    /** One tap from the chat: the question goes up again, headed by why ("I didn't get your answer" or "I couldn't understand"). */
+    fun askAgain(shown: SessionEvent) {
+        val q = shown.itemId?.let(content::question) ?: return
+        prepare(Pending.Ask(q, againLine(ui.value?.events.orEmpty(), q)))
+        show()
+    }
     fun toggleRotation() = local.update { it.copy(rotated = !it.rotated) }
 
     fun setJuvenile(on: Boolean) = viewModelScope.launch {
@@ -618,10 +627,22 @@ class SessionViewModel(
         if (seconds != null) viewModelScope.launch { repo.log(sessionId, EventType.SYSTEM, EventSource.SUBJECT, text = "$SYSTEM_PAUSE_END$seconds") }
     }
 
+    private var languageSettle: Job? = null
+
+    /** A pick stands once no other follows for [LANGUAGE_SETTLE_MS]: the session switches to it and the opening comes
+     * up in it, so the subject is never left looking at the grid while the officer takes the phone back. */
     fun chooseLanguage(code: String) {
         local.update { it.copy(chosenLanguage = code) }
         viewModelScope.launch {
             repo.log(sessionId, EventType.LANGUAGE_CHOSEN, EventSource.SUBJECT, code, text = content.language(code)?.english, shownId = local.value.itemId)
+        }
+        languageSettle?.cancel()
+        languageSettle = viewModelScope.launch {
+            delay(LANGUAGE_SETTLE_MS)
+            val l = local.value
+            if (l.onStage != Pending.LanguageFinder || l.chosenLanguage != code) return@launch
+            repo.setSubjectLang(sessionId, code)
+            content.question(OPENING_ID)?.let { present(Pending.Ask(it), code) }
         }
     }
 

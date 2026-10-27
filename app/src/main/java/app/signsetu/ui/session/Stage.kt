@@ -2,6 +2,7 @@ package app.signsetu.ui.session
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,8 +65,6 @@ fun readBackLabels(ui: SessionUi): List<String> {
     }
 }
 
-/** Profiles whose subjects hear the questions without the officer pressing play. */
-private val AutoSpeech = setOf(Profile.YOUNG_CHILD, Profile.OTHER_LANGUAGE)
 
 /** A No to a reading of the subject's own answer gives them their own way to say it again, never a dead end. */
 internal fun reopensInput(pending: Pending?, yes: Boolean) =
@@ -146,17 +145,28 @@ fun Stage(
 
     val speech = rememberSpeechPlayer()
     val audio = speechFor(pending, content, lang)
-    // Speech plays by itself only for subjects who hear and may not read; ISL users never get sound.
-    LaunchedEffect(pending, lang) { if (audio != null && profile in AutoSpeech) speech.play(audio) }
+    // Every item speaks once by itself, signers included (many have some hearing, and a companion may hear); play replays it.
+    LaunchedEffect(pending, lang) { if (audio != null) speech.play(audio) }
     val cloud = LocalCloudAi.current
     // Typed text has no recording; with online help allowed, the gateway speaks it in the subject's language.
     LaunchedEffect(pending, lang) {
         val typed = (pending as? Pending.FreeText)?.text
-        if (audio == null && typed != null && profile in AutoSpeech) cloud.speak(typed, lang)?.let(speech::playBytes)
+        if (audio == null && typed != null) cloud.speak(typed, lang)?.let(speech::playBytes)
     }
     LaunchedEffect(pending) { withFrameNanos { }; ShowTiming.firstFrame() }
 
     val item = describeItem(pending, content, lang)
+    // Several pictures may be true (a mother and a brother both came): each tap is ticked and logged, the tiles stay,
+    // and 5 s after the last tap the call comes back by itself. Nothing to confirm.
+    var picked by remember(pending) { mutableStateOf(setOf<String>()) }
+    var settled by remember(pending) { mutableStateOf(false) }
+    val pick: (String) -> Unit = { card ->
+        if (card !in picked) {
+            onCard(card)
+            if (card != SOMETHING_ELSE && card != "stop") picked = picked + card
+        }
+    }
+    LaunchedEffect(picked) { if (picked.isNotEmpty()) { delay(PICK_SETTLE_MS); settled = true } }
     // A show-back or say-back with pictures asks which one; the character must not act out the officer's reading.
     val checking = pending.asksChoice
     val gestureId = when {
@@ -342,17 +352,31 @@ fun Stage(
             AnswerPanel(lesson, content, lang, ui.answeredCard, onCard, { onGiven(it); if (it?.confirmed == true) reacting = true }, onStartSigning.takeIf { tracker != null }, m)
         }
         pending == Pending.LanguageFinder -> { m ->
+            // Nobody can read a prompt yet: each language greets once in turn with its tile lit, until one is tapped.
+            var hearing by remember { mutableStateOf<String?>(null) }
+            LaunchedEffect(ui.chosenLanguage) {
+                hearing = null
+                if (ui.chosenLanguage != null) return@LaunchedEffect
+                delay(1_500)
+                for (l in content.languages) {
+                    val audio = content.greetingAudio(l.code) ?: continue
+                    hearing = l.code
+                    speech.play(audio)
+                    delay(GREETING_STEP_MS)
+                }
+                hearing = null
+            }
             Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                LanguageGrid(content, ui.chosenLanguage, Modifier.weight(1f)) { code ->
+                LanguageGrid(content, ui.chosenLanguage ?: hearing, Modifier.weight(1f)) { code ->
                     onLanguage(code)
                     content.greetingAudio(code)?.let { speech.play(it) }
                 }
                 pauseRow()
             }
         }
-        item.choices.isNotEmpty() && !signing -> { m ->
+        item.choices.isNotEmpty() && !signing && !settled -> { m ->
             Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                ChoiceGrid(item.choices, item.numbers, ui.answeredCard, content, lang, onCard, Modifier.weight(1f))
+                ChoiceGrid(item.choices, item.numbers, ui.answeredCard, content, lang, pick, Modifier.weight(1f), picked)
                 pauseRow()
             }
         }
@@ -386,6 +410,8 @@ fun Stage(
             onDraw = { drawing = true }.takeIf { item.canDraw && panel == null },
             onWrite = { writing = true }.takeIf { canWrite && panel == null },
             panel = panel,
+            // Picture tiles need little height; the character keeps the rest instead of an empty gap.
+            panelShare = if (item.choices.isNotEmpty() && !signing && !settled && panel != null && pending != Pending.LanguageFinder) 0.45f else 0.6f,
             modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
                 // Covered by the pause layer: screen readers must not reach answers that cannot be tapped.
                 .then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),
@@ -424,7 +450,7 @@ internal class StageItem(
 
 internal fun describeItem(pending: Pending?, content: ContentBundle, lang: String): StageItem {
     val (caption, cards) = when (pending) {
-        is Pending.Ask -> pending.question.text.get(lang) to pending.question.cards
+        is Pending.Ask -> listOfNotNull(pending.again?.let { content.subjectText(it, lang) }, pending.question.text.get(lang)).joinToString(" ") to pending.question.cards
         is Pending.FreeText -> (pending.caption ?: pending.text) to pending.cardIds
         is Pending.Cards -> null to pending.cardIds
         is Pending.ShowBack -> content.subjectText("is_this_it", lang) to pending.choices.takeIf { pending.asksChoice }.orEmpty()
@@ -472,3 +498,9 @@ internal fun spelledIndex(beat: WordBeat, t: Float): Int {
     val progress = ((t - beat.start) / (beat.end - beat.start)).coerceIn(0f, 1f)
     return (progress * n).toInt().coerceIn(0, n - 1)
 }
+
+/** After the last picture tapped, how long the tiles wait for another before the call comes back. */
+private const val PICK_SETTLE_MS = 5_000L
+
+/** Long enough for one recorded greeting before the next language's. */
+private const val GREETING_STEP_MS = 4_500L

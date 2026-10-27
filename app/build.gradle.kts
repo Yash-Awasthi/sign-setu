@@ -9,6 +9,8 @@ val gatewayUrl: String = providers.gradleProperty("gatewayUrl").orNull ?: local.
 val assistUserAgent: String = local.getProperty("assistUserAgent", "SignSetu")
 // The one switch for screenshots and screen recording: false while testing, true for the final release APK.
 val secureScreen: Boolean = (providers.gradleProperty("secureScreen").orNull ?: local.getProperty("secureScreen", "false")).toBoolean()
+// Debug builds only, for driving the app over adb: no app pinning and no officer fingerprint. Release ignores it.
+val testUnlocked: Boolean = (providers.gradleProperty("testUnlocked").orNull ?: local.getProperty("testUnlocked", "false")).toBoolean()
 
 // Read on every build, so a configuration cached on an earlier day does not carry that day's build date.
 abstract class EpochDay : ValueSource<Long, ValueSourceParameters.None> {
@@ -35,6 +37,7 @@ android {
         versionName = "0.7.5"
         buildConfigField("long", "BUILD_EPOCH_DAY", "${providers.of(EpochDay::class.java) {}.get()}L")
         buildConfigField("boolean", "SECURE_SCREEN", "$secureScreen")
+        buildConfigField("boolean", "TEST_UNLOCKED", "false")
         // The department's gateway: -PgatewayUrl=https://... or gatewayUrl in local.properties.
         buildConfigField("String", "GATEWAY_URL", "\"$gatewayUrl\"")
         buildConfigField("String", "ASSIST_URL", "\"https://api.groq.com/openai/v1/chat/completions\"")
@@ -57,6 +60,7 @@ android {
     bundle { language { enableSplit = false } }
 
     buildTypes {
+        debug { buildConfigField("boolean", "TEST_UNLOCKED", "$testUnlocked") }
         release {
             // Universal 64-bit build by default (ARM phones, x86_64 emulators and tablets); -Pabi=arm64-v8a for phones only.
             ndk { abiFilters += (providers.gradleProperty("abi").orNull?.split(",") ?: listOf("arm64-v8a", "x86_64")) }

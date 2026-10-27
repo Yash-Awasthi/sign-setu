@@ -55,6 +55,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
+import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.SessionEvent
@@ -71,7 +72,7 @@ import app.signsetu.ui.pair.linkText
 
 /** The conversation so far: what was shown on the right, the subject's answers on the left, newest at the bottom. */
 @Composable
-internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map<Long, List<SignSegment>>, onReplay: (Long) -> Unit, modifier: Modifier, onSayBack: (SessionEvent) -> Unit = {}, drawing: suspend (Long) -> ByteArray? = { null }) {
+internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map<Long, List<SignSegment>>, onReplay: (Long) -> Unit, modifier: Modifier, onSayBack: (SessionEvent) -> Unit = {}, drawing: suspend (Long) -> ByteArray? = { null }, onAskAgain: ((SessionEvent) -> Unit)? = null) {
     if (events.isEmpty()) {
         Column(modifier.padding(Spacing.xxl), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             MiniFace(72.dp, Color(0xFFFFDDBE))
@@ -91,8 +92,13 @@ internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Ma
         }
         return
     }
-    // Suggestions and their outcomes belong in the log, not the conversation.
-    val newestFirst = remember(events) { events.filter { it.type != EventType.PROMPT && it.type !in AutoRows }.asReversed() }
+    // Suggestions, their outcomes and the Read signs step belong in the log, not the conversation; the app's reading
+    // of a signed answer is shown inside that answer instead of as a row of its own.
+    val readings = remember(events) { readingNotes(events) }
+    val newestFirst = remember(events) {
+        events.filter { it.type != EventType.PROMPT && it.type !in AutoRows && it.id !in readings.values && !(it.type == EventType.SYSTEM && it.text == SYSTEM_READ_SIGNS) }.asReversed()
+    }
+    val notes = remember(events) { readings.mapValues { (_, id) -> events.first { it.id == id }.text } }
     val by = remember(events) { shownBy(events) }
     val grades = remember(events) { grades(events) }
     val trails = remember(events) { answerTrails(events) }
@@ -106,7 +112,7 @@ internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Ma
         items(newestFirst, key = { it.id }) { e ->
             Box(Modifier.animateItem()) {
                 when (e.type) {
-                    EventType.QUESTION_SHOWN -> Shown(e, by[e.id])
+                    EventType.QUESTION_SHOWN -> Shown(e, by[e.id], onAskAgain?.takeIf { e.itemId != null }?.let { ask -> { ask(e) } })
                     EventType.NOTE -> Aside(e.text.orEmpty(), note = true)
                     EventType.SYSTEM -> Aside(systemText(e.text), note = false)
                     EventType.LINK -> Aside(linkText(e).orEmpty(), note = false)
@@ -115,6 +121,7 @@ internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Ma
                         grade = grades[e.id], trail = trails[e.id], position = positions[e.id],
                         onSayBack = if (canSayBack(e, grades[e.id])) ({ onSayBack(e) }) else null,
                         drawing = drawing,
+                        reading = notes[e.id],
                     )
                 }
             }
@@ -127,10 +134,22 @@ internal fun systemText(text: String?) = systemText(LocalResources.current, text
 
 private val AutoRows = setOf(EventType.SUGGESTED, EventType.APPROVED, EventType.SKIPPED, EventType.AUTO_ADVANCED)
 
+/** Signed answer id to the id of the app's reading note logged right after it (finishReading). */
+internal fun readingNotes(events: List<SessionEvent>): Map<Long, Long> {
+    val out = mutableMapOf<Long, Long>()
+    var answer: SessionEvent? = null
+    for (e in events) {
+        if (e.type in AutoRows || e.type == EventType.PROMPT) continue
+        if (e.type == EventType.NOTE && e.source == EventSource.MACHINE && answer != null) out[answer.id] = e.id
+        answer = e.takeIf { it.type == EventType.ANSWER_SIGNED }
+    }
+    return out
+}
+
 private fun timeOf(e: SessionEvent) = clockTime(e.ts)
 
 @Composable
-internal fun Shown(e: SessionEvent, by: ShownBy? = null) {
+internal fun Shown(e: SessionEvent, by: ShownBy? = null, onAskAgain: (() -> Unit)? = null) {
     val ink = LocalInk.current
     Column(Modifier.fillMaxWidth().padding(start = 48.dp), horizontalAlignment = Alignment.End) {
         Box(
@@ -153,6 +172,7 @@ internal fun Shown(e: SessionEvent, by: ShownBy? = null) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp, end = 4.dp),
         )
+        onAskAgain?.let { TextButton(onClick = it, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(stringResource(R.string.ask_again), style = MaterialTheme.typography.labelMedium) } }
     }
 }
 
@@ -166,6 +186,7 @@ private fun Answered(
     position: Pair<Int, Int>? = null,
     onSayBack: (() -> Unit)? = null,
     drawing: suspend (Long) -> ByteArray? = { null },
+    reading: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val answer = LocalAnswerColors.current
@@ -196,12 +217,14 @@ private fun Answered(
                         }
                     }
                     val signed = e.type == EventType.ANSWER_SIGNED
-                    Text(
-                        if (signed) signedDisplay(LocalResources.current, e.text) else e.text ?: stringResource(e.type.label()),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = if (signed && signedWords(e.text) == null) colors.onSurfaceVariant else colors.onSurface,
-                        modifier = Modifier.padding(start = 10.dp).weight(1f, fill = false),
-                    )
+                    Column(Modifier.padding(start = 10.dp).weight(1f, fill = false)) {
+                        Text(
+                            if (signed) signedDisplay(LocalResources.current, e.text) else e.text ?: stringResource(e.type.label()),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (signed && signedWords(e.text) == null) colors.onSurfaceVariant else colors.onSurface,
+                        )
+                        reading?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
+                    }
                     onReplay?.let { play ->
                         IconButton(onClick = play, modifier = Modifier.padding(start = 4.dp)) {
                             Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.signed_replay), tint = colors.primary)
@@ -210,15 +233,11 @@ private fun Answered(
                 }
             }
             e.drawingId?.let { DrawingThumb(it, drawing) }
-            val mark = if (e.type == EventType.ANSWER_SIGNED) " · ${stringResource(signedMark(e))}" else ""
+            // A graded answer's chip already says whose reading it is; one line carries the time and actions.
             val kind = given?.let { stringResource(it.first.label()).replaceFirstChar(Char::uppercase) } ?: stringResource(e.type.label())
-            Text(
-                "$kind$mark · ${timeOf(e)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = colors.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp, start = 4.dp),
-            )
-            AnswerMeta(grade, trail, position, onSayBack, cueText(LocalResources.current, e))
+            val mark = if (e.type == EventType.ANSWER_SIGNED) " · ${stringResource(signedMark(e))}" else ""
+            val stamp = if (grade != null) timeOf(e) else "$kind$mark · ${timeOf(e)}"
+            AnswerMeta(grade, trail, position, onSayBack, listOfNotNull(stamp, cueText(LocalResources.current, e)).joinToString(" · "))
         }
     }
 }

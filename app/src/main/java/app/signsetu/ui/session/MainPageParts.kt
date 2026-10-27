@@ -214,7 +214,7 @@ fun SayBackDialog(e: SessionEvent, draft: String, onDraft: (String) -> Unit, onS
 /** Questions queued for one handover, numbered in the order they will be asked. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun RunTray(run: List<Question>, officerLang: String, onRemove: (Question) -> Unit) {
+fun RunTray(run: List<Question>, officerLang: String, onRemove: (Question) -> Unit, onAsk: (Question) -> Unit) {
     val colors = MaterialTheme.colorScheme
     val remove = stringResource(R.string.run_remove)
     Surface(
@@ -224,10 +224,10 @@ fun RunTray(run: List<Question>, officerLang: String, onRemove: (Question) -> Un
         modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm).fillMaxWidth(),
     ) {
         Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(R.string.run_title, run.size), style = MaterialTheme.typography.labelSmall, color = colors.primary)
+            Text(stringResource(R.string.run_title, run.size), style = MaterialTheme.typography.labelMedium, color = colors.primary)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 run.forEachIndexed { i, q ->
-                    Surface(shape = RoundedCornerShape(50), color = colors.surfaceContainerLowest, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Surface(onClick = { onAsk(q) }, shape = RoundedCornerShape(50), color = colors.surfaceContainerLowest, modifier = Modifier.heightIn(min = 48.dp)) {
                         Row(Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             // Ellipsised so a long question never pushes its remove button out of the chip.
                             Text("${i + 1}  ${q.text.get(officerLang) ?: q.id}", style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))

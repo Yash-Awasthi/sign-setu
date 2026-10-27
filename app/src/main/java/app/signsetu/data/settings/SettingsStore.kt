@@ -54,6 +54,12 @@ data class AppSettings(
     val colorTheme: ColorTheme = ColorTheme.EMERALD,
     /** Pure black backgrounds in dark mode, for OLED screens. */
     val amoled: Boolean = false,
+    /** Pins the app while a subject holds the phone. */
+    val pinApp: Boolean = !app.signsetu.BuildConfig.TEST_UNLOCKED,
+    /** Blocks screenshots and screen recording; the build switch sets the default. */
+    val blockScreenshots: Boolean = app.signsetu.BuildConfig.SECURE_SCREEN,
+    /** The officer's fingerprint or screen lock before unlocking, leaving a session or deleting. */
+    val appLock: Boolean = !app.signsetu.BuildConfig.TEST_UNLOCKED,
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -91,6 +97,9 @@ class SettingsStore(private val context: Context) {
         val themeMode = stringPreferencesKey("theme_mode")
         val colorTheme = stringPreferencesKey("color_theme")
         val amoled = booleanPreferencesKey("amoled")
+        val pinApp = booleanPreferencesKey("pin_app")
+        val blockScreenshots = booleanPreferencesKey("block_screenshots")
+        val appLock = booleanPreferencesKey("app_lock")
     }
 
     val settings: Flow<AppSettings> = context.store.data.map { it.toSettings() }
@@ -116,6 +125,9 @@ class SettingsStore(private val context: Context) {
     suspend fun setThemeMode(mode: ThemeMode) = context.store.edit { it[Keys.themeMode] = mode.name }
     suspend fun setColorTheme(theme: ColorTheme) = context.store.edit { it[Keys.colorTheme] = theme.name }
     suspend fun setAmoled(on: Boolean) = context.store.edit { it[Keys.amoled] = on }
+    suspend fun setPinApp(on: Boolean) = context.store.edit { it[Keys.pinApp] = on }
+    suspend fun setBlockScreenshots(on: Boolean) = context.store.edit { it[Keys.blockScreenshots] = on }
+    suspend fun setAppLock(on: Boolean) = context.store.edit { it[Keys.appLock] = on }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -139,6 +151,9 @@ class SettingsStore(private val context: Context) {
         colorTheme = this[Keys.colorTheme]?.let { runCatching { ColorTheme.valueOf(it) }.getOrNull() } ?: ColorTheme.EMERALD,
         // The AMOLED colour theme became this switch; a phone that had it picked keeps black.
         amoled = this[Keys.amoled] ?: (this[Keys.colorTheme] == "AMOLED"),
+        pinApp = this[Keys.pinApp] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
+        blockScreenshots = this[Keys.blockScreenshots] ?: app.signsetu.BuildConfig.SECURE_SCREEN,
+        appLock = this[Keys.appLock] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
     )
 }
 

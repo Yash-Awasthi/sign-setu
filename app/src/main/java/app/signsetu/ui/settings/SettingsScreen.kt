@@ -1,6 +1,7 @@
 package app.signsetu.ui.settings
 
 import androidx.compose.runtime.remember
+import app.signsetu.ui.components.OfficerAuth
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import app.signsetu.assistant.ModelStore
@@ -93,6 +94,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
+    val activity = androidx.activity.compose.LocalActivity.current
     val context = LocalContext.current
     var dialog by rememberSaveable { mutableStateOf<Dialog?>(null) }
     val scroll = TopAppBarDefaults.pinnedScrollBehavior()
@@ -155,6 +157,13 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, onBack: () -> Unit,
                     Item(stringResource(R.string.settings_interpreter_contact), s.interpreterContact.ifBlank { notSet }) { dialog = Dialog.CONTACT }
                     onCallInterpreter?.let { call -> Item(stringResource(R.string.settings_interpreter_test), stringResource(R.string.settings_interpreter_test_summary), onClick = call) }
                 }
+            }
+            Group(R.string.settings_security) {
+                // Turning a protection off needs the officer, so a subject holding the phone cannot.
+                val guard = { on: Boolean, set: suspend (Boolean) -> Any -> if (on) scope.launch { set(true) } else OfficerAuth.confirm(activity, { scope.launch { set(false) } }) }
+                SwitchItem(R.string.settings_pin_app, R.string.settings_pin_app_summary, s.pinApp) { guard(it, store::setPinApp) }
+                SwitchItem(R.string.settings_block_screenshots, R.string.settings_block_screenshots_summary, s.blockScreenshots) { guard(it, store::setBlockScreenshots) }
+                SwitchItem(R.string.settings_app_lock, R.string.settings_app_lock_summary, s.appLock) { guard(it, store::setAppLock) }
             }
             Group(R.string.settings_stage) {
                 SwitchItem(R.string.settings_camera, R.string.settings_camera_summary, s.cameraEnabled) { on -> scope.launch { store.setCameraEnabled(on) } }

@@ -158,6 +158,12 @@ fun AppRoot(container: AppContainer) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val activity = LocalActivity.current
+    LaunchedEffect(settings?.appLock) { OfficerAuth.required = settings?.appLock != false }
+    LaunchedEffect(settings?.blockScreenshots) {
+        val block = settings?.blockScreenshots ?: return@LaunchedEffect
+        val flag = android.view.WindowManager.LayoutParams.FLAG_SECURE
+        if (block) activity?.window?.addFlags(flag) else activity?.window?.clearFlags(flag)
+    }
     DisposableEffect(container) {
         container.cloudAi.onNotice = { n ->
             context.mainExecutor.execute { Toast.makeText(context, noticeText(context, n), Toast.LENGTH_LONG).show() }
@@ -399,7 +405,7 @@ internal fun SessionRoute(
     val localStage = state.mode == Mode.SHOW && !paired
     ImmersiveWhile(activity, localStage)
     // Pinned once for the whole session, so Back, Home and Recents stay out of reach and nothing re-pins between items.
-    PinWhile(activity, !paired)
+    PinWhile(activity, !paired && settings.pinApp)
     // The assistant's buffers would sit beside the camera and the landmark graph on a small phone.
     LaunchedEffect(localStage || state.signWindow != null) { if (localStage || state.signWindow != null) container.models.release() }
     // The app locking takes this screen away: landmarks go with it, though not on a mere configuration change.
@@ -577,7 +583,7 @@ private fun shareReport(activity: Activity, file: File) {
 @Composable
 internal fun PinWhile(activity: Activity?, enabled: Boolean) {
     DisposableEffect(activity, enabled) {
-        if (!enabled || activity == null) return@DisposableEffect onDispose { }
+        if (!enabled || activity == null || app.signsetu.BuildConfig.TEST_UNLOCKED) return@DisposableEffect onDispose { }
         var pinned = runCatching { activity.startLockTask() }.isSuccess
         val lifecycle = (activity as? LifecycleOwner)?.lifecycle
         val repin = LifecycleEventObserver { _, event ->

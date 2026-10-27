@@ -42,7 +42,7 @@ export function place(x: number, y: number, body: Body): Vector3 {
       [A.chin[1], chinY],
       [BUILD.shoulderY, body.right.y],
       [A.hip[1], body.hipsY],
-      [restY, body.right.y - (body.upper + body.fore) * 0.93],
+      [restY, body.right.y - (body.upper + body.fore) * 0.999],
     ],
     y,
   );
@@ -165,7 +165,8 @@ export function expressions(f: Face, blink: number): Record<string, number> {
     relaxed: c(0.3 + (f.smile - 0.35) * 0.5 + f.eyeSmile * 0.2),
     sad: c(f.browWorry * 0.7 + Math.max(0, -f.smile) * 0.6),
     angry: c(f.browFrown * 0.7),
-    surprised: c(f.browRaise * 0.5 + (f.eyeOpen - 1) * 2),
+    // The model's surprised preset also gapes the mouth, which reads as startled; browUp moves only the brows.
+    browUp: c(f.browRaise * 0.6),
     aa: f.mouthRound > 0.5 ? 0 : c(f.mouthOpen * 0.6),
     ou: c(f.mouthRound * 0.6),
     blink: c(1 - f.eyeOpen * blink),

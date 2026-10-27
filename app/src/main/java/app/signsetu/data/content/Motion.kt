@@ -48,7 +48,13 @@ data class Gesture(val id: String, val keys: List<Key>)
 /** A recorded sentence as 48 points a frame: shoulders, elbows and wrists, then 21 points per hand, x y z each,
  * in MediaPipe space (tools/text2isl). The character plays it in place of keyframes. */
 @Serializable
-class Clip(val sentence: String, val fps: Float = 30f, val frames: List<FloatArray>)
+class Clip(
+    val sentence: String,
+    val fps: Float = 30f,
+    val frames: List<FloatArray>,
+    /** MediaPipe's 52 face blendshapes per frame, empty where no face was tracked; absent when none ever was. */
+    val face: List<FloatArray> = emptyList(),
+)
 
 /** The form clips are looked up by: lower case words with punctuation dropped. */
 fun clipKey(text: String) = text.lowercase().replace(Regex("[^\\p{L}\\p{N}]+"), " ").trim()

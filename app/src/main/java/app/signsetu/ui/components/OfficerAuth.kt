@@ -15,6 +15,8 @@ object OfficerAuth {
     // One confirmation covers the next few gated steps, so "End" then "Export" asks once.
     private const val GRACE_MS = 60_000L
     @Volatile private var okAt = 0L
+    /** Off in Settings: nothing is asked. */
+    @Volatile var required = true
 
     /** Forget the last confirmation; the app locked. */
     fun reset() { okAt = 0L }
@@ -22,6 +24,7 @@ object OfficerAuth {
     /** Runs [onOk] once the officer confirms, or at once without a secure lock screen (nothing to ask for). */
     fun confirm(activity: Activity?, onOk: () -> Unit, onFail: () -> Unit = {}) {
         if (activity == null) { onFail(); return }
+        if (app.signsetu.BuildConfig.TEST_UNLOCKED || !required) { onOk(); return }
         if (okAt != 0L && SystemClock.elapsedRealtime() - okAt < GRACE_MS) { onOk(); return }
         if (!activity.getSystemService(KeyguardManager::class.java).isDeviceSecure) { onOk(); return }
         val builder = BiometricPrompt.Builder(activity).setTitle(activity.getString(R.string.auth_title))

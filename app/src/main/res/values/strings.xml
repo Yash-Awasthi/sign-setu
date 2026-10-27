@@ -255,6 +255,13 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="cloud_notice_custom">Custom API endpoint</string>
     <string name="settings_isl_reorder">Sign in ISL order</string>
     <string name="settings_isl_reorder_summary">Typed sentences are reordered into ISL grammar, time first and the question word last, before the character signs them. Off: words are signed exactly as typed.</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_pin_app">Pin the app during a session</string>
+    <string name="settings_pin_app_summary">The subject cannot leave the app while holding the phone.</string>
+    <string name="settings_block_screenshots">Block screenshots</string>
+    <string name="settings_block_screenshots_summary">Screenshots and screen recording show a blank screen.</string>
+    <string name="settings_app_lock">Ask for fingerprint</string>
+    <string name="settings_app_lock_summary">Your fingerprint or screen lock before opening the app, leaving a session or deleting.</string>
     <string name="settings_lang_system">Same as the phone</string>
     <string name="lang_english">English</string>
     <string name="lang_hindi">हिन्दी</string>

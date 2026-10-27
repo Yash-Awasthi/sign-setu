@@ -1,8 +1,8 @@
 // Renders the VRM character and plays content gestures or 48-point clips on it.
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { VRMLoaderPlugin, type VRM, type VRMHumanBoneName } from "@pixiv/three-vrm";
-import { applyClipFrame } from "./clip";
+import { VRMExpression, VRMExpressionMorphTargetBind, VRMLoaderPlugin, type VRM, type VRMHumanBoneName } from "@pixiv/three-vrm";
+import { applyClipFrame, clipFace } from "./clip";
 import { arm, expressions, fingerAngles, handTurn, solveArm, splitTwist, type Body } from "./retarget";
 import { FACES, L, R, Timeline, blinkAt, glanceAt, livePose, type Gesture, type Pose, type QuestionKind, type Side } from "./rig";
 
@@ -21,6 +21,8 @@ export interface Play {
 
 export interface Clip {
   frames: number[][];
+  /** MediaPipe's 52 face blendshapes per frame; an empty row where no face was tracked. */
+  face?: number[][];
   fps?: number;
   token?: number;
 }
@@ -69,6 +71,23 @@ export class AvatarStage {
     const springs = vrm.springBoneManager;
     for (const joint of springs?.joints ?? []) if (/Bust/i.test(joint.bone.name)) springs!.deleteJoint(joint);
     vrm.scene.traverse((o) => (o.frustumCulled = false));
+    const bind = (name: string, morphs: Record<string, number>) => {
+      const e = new VRMExpression(name);
+      vrm.scene.traverse((o) => {
+        const dict = (o as THREE.Mesh).morphTargetDictionary;
+        for (const [m, weight] of Object.entries(morphs))
+          if (dict?.[m] !== undefined) e.addBind(new VRMExpressionMorphTargetBind({ primitives: [o as THREE.Mesh], index: dict[m], weight }));
+      });
+      const old = vrm.expressionManager?.getExpression(name);
+      if (old) vrm.expressionManager!.unregisterExpression(old);
+      vrm.expressionManager?.registerExpression(e);
+    };
+    bind("browUp", { Fcl_BRW_Surprised: 1 });
+    // The model's Fun and Sorrow presets part the lips, so every resting smile showed an open mouth; these keep it
+    // shut, and only aa and ou (talking, a round mouth) open it.
+    bind("relaxed", { Fcl_MTH_Up: 1, Fcl_EYE_Fun: 0.4 });
+    bind("sad", { Fcl_BRW_Sorrow: 1, Fcl_EYE_Sorrow: 0.5, Fcl_MTH_Down: 0.6 });
+    bind("angry", { Fcl_BRW_Angry: 1, Fcl_EYE_Angry: 0.5 });
     this.scene.add(vrm.scene);
     this.vrm = vrm;
     this.body = measure(vrm);
@@ -132,7 +151,10 @@ export class AvatarStage {
       const c = this.clipData;
       const i = Math.min(c.frames.length - 1, Math.floor(this.elapsed() * (c.fps ?? 30)));
       if (i >= 0) applyClipFrame(vrm, c.frames[i], CLIP_SLERP);
-      setFace(vrm, null, blinkAt(now));
+      const tracked = clipFace(c.face?.[i]);
+      // The signer's own face, blinks included; a frame without one keeps the rig's resting face.
+      if (tracked) for (const [k, v] of Object.entries(expressions(tracked, 1))) vrm.expressionManager?.setValue(k, v);
+      else setFace(vrm, null, blinkAt(now));
     } else {
       const p = this.request;
       const seconds = p.at ?? this.elapsed() * (p.speed ?? 1);
@@ -208,7 +230,9 @@ export class AvatarStage {
     const b = this.body;
     if (!b) return;
     const mid = b.right.clone().add(b.left).multiplyScalar(0.5);
-    const [top, bottom] = this.view === "head" ? [b.eyeY + 0.16, b.head.y - 0.12] : [b.eyeY + 0.2, b.hipsY - 0.12];
+    // Headroom above the hair: in a short box (an answer panel open) the height decides the framing, and eye + 0.2
+    // cut the top of her head, so she seemed to jump up when the tiles appeared.
+    const [top, bottom] = this.view === "head" ? [b.eyeY + 0.16, b.head.y - 0.12] : [b.eyeY + 0.32, b.hipsY - 0.12];
     const width = this.view === "head" ? 0.4 : b.right.distanceTo(b.left) * 2.6;
     const half = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
     const distance = Math.max((top - bottom) / 2 / half, width / 2 / half / this.camera.aspect);

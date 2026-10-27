@@ -354,7 +354,7 @@ fun OfficerPane(
             )
         } else {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            Transcript(ui.events, ui.session.profile, ui.signed, onReplay = { replaying = it }, Modifier.fillMaxSize(), onSayBack = { sayingBackId = it.id }, drawing = vm::drawing)
+            Transcript(ui.events, ui.session.profile, ui.signed, onReplay = { replaying = it }, Modifier.fillMaxSize(), onSayBack = { sayingBackId = it.id }, drawing = vm::drawing, onAskAgain = { if (counsel != Counsel.Off) vm.counsellor.takeOver(); vm.askAgain(it) })
             // The scope-free overload: inside this Box the Column's AnimatedVisibility does not apply.
             androidx.compose.animation.AnimatedVisibility(
                 lastStop != null && lastStop.id != stopSeen && paired == null,
@@ -407,6 +407,12 @@ fun OfficerPane(
             onRead = read,
             run = runQuestions,
             onRunRemove = { q -> run = run - q.id },
+            onAskNow = { q -> vm.prepare(Pending.Ask(q)); send() },
+            onRunAsk = { q ->
+                if (counsel != Counsel.Off) vm.counsellor.takeOver()
+                run = run - q.id
+                vm.showRun(listOf(Pending.Ask(q)))
+            },
             onAddToRun = addToRun,
             onRunBasics = {
                 // The opening question has been shown already; the next three safety questions follow it.

@@ -248,6 +248,13 @@
     <string name="cloud_notice_custom">कस्टम API एंडपॉइंट</string>
     <string name="settings_isl_reorder">ISL क्रम में साइन करें</string>
     <string name="settings_isl_reorder_summary">लिखे वाक्य ISL व्याकरण में बदलकर साइन होते हैं: समय पहले, प्रश्न-शब्द अंत में। बंद होने पर शब्द जैसे लिखे वैसे साइन होते हैं।</string>
+    <string name="settings_security">सुरक्षा</string>
+    <string name="settings_pin_app">सत्र के दौरान ऐप पिन करें</string>
+    <string name="settings_pin_app_summary">फ़ोन पकड़े हुए व्यक्ति ऐप से बाहर नहीं जा सकता।</string>
+    <string name="settings_block_screenshots">स्क्रीनशॉट रोकें</string>
+    <string name="settings_block_screenshots_summary">स्क्रीनशॉट और स्क्रीन रिकॉर्डिंग में खाली स्क्रीन दिखती है।</string>
+    <string name="settings_app_lock">फ़िंगरप्रिंट माँगें</string>
+    <string name="settings_app_lock_summary">ऐप खोलने, सत्र छोड़ने या कुछ मिटाने से पहले आपका फ़िंगरप्रिंट या स्क्रीन लॉक।</string>
     <string name="settings_lang_system">फ़ोन जैसी</string>
     <string name="lang_english">English</string>
     <string name="lang_hindi">हिन्दी</string>

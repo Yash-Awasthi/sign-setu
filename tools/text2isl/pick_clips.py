@@ -45,7 +45,7 @@ def pick(data_dir: Path, labels: pd.DataFrame) -> dict:
         clips = [np.load(data_dir / f"{n}.npy") for n in names]
         best = medoid(clips)
         out[sentence.strip()] = {"source": names[best],
-                                 "frames": [{"coordinates": f[52:].tolist()} for f in clips[best]]}
+                                 "frames": [{"blendshapes": f[:52].tolist(), "coordinates": f[52:].tolist()} for f in clips[best]]}
         print(f"{sentence.strip()}: {names[best]} of {len(names)}")
     return out
 

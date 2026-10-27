@@ -34,7 +34,8 @@ describe("place", () => {
   it("hangs resting hands nearly straight at the sides", () => {
     const rest = restPose(BUILD);
     const wrist = place(rest.r.x, rest.r.y, body);
-    expect(wrist.distanceTo(body.right)).toBeGreaterThan((body.upper + body.fore) * 0.9);
+    expect(wrist.distanceTo(body.right)).toBeGreaterThan((body.upper + body.fore) * 0.98);
+    expect(rest.r.elbowOut).toBe(0);
     expect(wrist.z - body.right.z).toBeLessThan(0.06);
     expect(Math.abs(wrist.x)).toBeGreaterThan(Math.abs(body.right.x) + 0.06);
   });
@@ -154,6 +155,13 @@ describe("expressions", () => {
     expect(expressions(FACES.concern, 1).sad).toBeGreaterThan(0.5);
     expect(expressions(FACES.round, 1).ou).toBeGreaterThan(0.4);
     expect(expressions(FACES.neutral, 0).blink).toBe(1);
+  });
+
+  it("raises the brows for a question without opening the mouth", () => {
+    const ask = expressions(FACES.ask, 1);
+    expect(ask.browUp).toBeGreaterThan(0.4);
+    expect(ask.surprised ?? 0).toBe(0);
+    expect(ask.aa).toBeLessThan(0.1);
   });
 
   it("covers every rig shape name", () => {

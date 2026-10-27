@@ -28,8 +28,10 @@
     <string name="run_full">एक क्रम में अधिकतम 5 प्रश्न</string>
     <string name="run_remove">क्रम से हटाएँ</string>
     <string name="run_add">क्रम में जोड़ें</string>
+    <string name="ask_again">फिर से पूछें</string>
+    <string name="ask_next">अगला पूछें: %1$s</string>
     <string name="run_basics">सुरक्षा के मूल प्रश्न</string>
-    <string name="run_title">%1$d प्रश्नों का क्रम</string>
+    <string name="run_title">%1$d प्रश्न तैयार। भेजें दबाने पर एक के बाद एक पूछे जाएँगे, हर उत्तर के बाद अगला। केवल एक पूछने के लिए उस पर टैप करें।</string>
 
     <string name="log_prompt">ऐसे दिखाया गया</string>
     <string name="prompt_detail">कैप्शन: %1$s। हाव-भाव: %2$s। चित्र क्रम से: %3$s। सामग्री %4$s।</string>

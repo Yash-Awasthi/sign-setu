@@ -2,6 +2,7 @@
 // Kinematics from the SignSetu avatar module by Lilesh Lahre.
 import * as THREE from "three";
 import type { VRM, VRMHumanBoneName } from "@pixiv/three-vrm";
+import type { Face } from "./rig";
 
 const LEFT_REST = new THREE.Vector3(1, 0, 0);
 const RIGHT_REST = new THREE.Vector3(-1, 0, 0);
@@ -313,4 +314,29 @@ export function applyClipFrame(vrm: VRM, coords: number[], slerpAlpha: number) {
   const qRightLowerWorld = solveLimbBone(vrm, "rightLowerArm", avatar.rElbow, avatar.rWrist, RIGHT_REST, qRightUpperWorld, slerpAlpha);
   solveHandAndFingers(vrm, "left", coords, 6, qLeftLowerWorld, avatar.lActive, slerpAlpha);
   solveHandAndFingers(vrm, "right", coords, 27, qRightLowerWorld, avatar.rActive, slerpAlpha);
+}
+
+// MediaPipe's 52 face blendshapes, by the index of each name in its output.
+const B = {
+  browDownL: 1, browDownR: 2, browInnerUp: 3, browOuterUpL: 4, browOuterUpR: 5, cheekSquintL: 7, cheekSquintR: 8,
+  blinkL: 9, blinkR: 10, eyeSquintL: 19, eyeSquintR: 20, eyeWideL: 21, eyeWideR: 22, jawOpen: 25, frownL: 30,
+  frownR: 31, funnel: 32, pucker: 38, smileL: 44, smileR: 45,
+};
+
+/** A tracked face as the rig's face sliders; null when the frame has no face, so the rig keeps its own. */
+export function clipFace(b: number[] | undefined): Face | null {
+  if (!b || b.length !== 52 || !b.some((v) => v > 0)) return null;
+  const avg = (i: number, j: number) => (b[i] + b[j]) / 2;
+  const outerUp = avg(B.browOuterUpL, B.browOuterUpR);
+  return {
+    browRaise: Math.max(b[B.browInnerUp], outerUp),
+    // Inner brows up without the outer ones is the worried shape; with them it is surprise.
+    browWorry: Math.max(0, b[B.browInnerUp] - outerUp),
+    browFrown: avg(B.browDownL, B.browDownR),
+    eyeOpen: THREE.MathUtils.clamp(1 - avg(B.blinkL, B.blinkR) + 0.3 * avg(B.eyeWideL, B.eyeWideR), 0, 1.2),
+    eyeSmile: (avg(B.cheekSquintL, B.cheekSquintR) + avg(B.eyeSquintL, B.eyeSquintR)) / 2,
+    smile: avg(B.smileL, B.smileR) - avg(B.frownL, B.frownR),
+    mouthOpen: b[B.jawOpen],
+    mouthRound: Math.max(b[B.pucker], b[B.funnel]),
+  };
 }

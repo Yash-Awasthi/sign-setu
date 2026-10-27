@@ -1,5 +1,7 @@
 package app.signsetu.ui.session
 
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.onClick
@@ -72,10 +74,16 @@ internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick
             selected = chosen
         },
     ) {
-        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            // Without a word in their language the picture carries the meaning alone, so it gets the room.
-            CardImage(cardId, Modifier.size(if (label != null) 58.dp else 76.dp))
-            label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+        Box {
+            Column(Modifier.padding(8.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                // Without a word in their language the picture carries the meaning alone, so it gets the room.
+                CardImage(cardId, Modifier.size(if (label != null) 58.dp else 76.dp))
+                label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            }
+            // A tick a confused subject can see at a glance, not just a coloured edge.
+            if (chosen) Surface(shape = CircleShape, color = answer.selection, modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(30.dp)) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.padding(4.dp))
+            }
         }
     }
 }
@@ -136,6 +144,8 @@ internal fun StripAnswer(cardId: String, label: String?, name: String, chosen: B
 internal fun SmallAnswer(
     cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, height: Dp = 52.dp,
     icon: Painter? = null,
+    /** A short word under the picture, for buttons too narrow for a label beside it. */
+    caption: String? = null,
 ) {
     PressableSurface(
         onClick = onClick,
@@ -148,7 +158,10 @@ internal fun SmallAnswer(
             selected = chosen
         },
     ) {
-        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        if (caption != null) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            CardImage(cardId, Modifier.size(26.dp))
+            Text(caption, fontSize = 11.sp, lineHeight = 12.sp, color = onColor, textAlign = TextAlign.Center, maxLines = 2, modifier = Modifier.padding(horizontal = 4.dp))
+        } else Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) Icon(icon, null, tint = onColor, modifier = Modifier.size(30.dp))
             else CardImage(cardId, Modifier.size(if (label != null) 30.dp else 40.dp))
             label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = onColor, modifier = Modifier.padding(start = Spacing.sm)) }

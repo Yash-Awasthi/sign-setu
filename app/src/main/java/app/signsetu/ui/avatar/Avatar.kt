@@ -61,6 +61,7 @@ fun Avatar(
             if (clip != null) {
                 "signsetu.clip(${buildJsonObject {
                     put("frames", JsonArray(clip.frames.map { f -> JsonArray(f.map(::JsonPrimitive)) }))
+                    if (clip.face.isNotEmpty()) put("face", JsonArray(clip.face.map { f -> JsonArray(f.map(::JsonPrimitive)) }))
                     put("fps", clip.fps)
                     put("token", token)
                 }})"

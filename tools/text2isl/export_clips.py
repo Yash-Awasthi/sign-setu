@@ -1,7 +1,7 @@
 """Writes app/src/main/assets/content/clips.json from a prediction file (pick_clips.py, inspect_ground_truth.py or evaluate.py).
 
-Each clip keeps the 144 coordinates of every frame (48 points, x y z) at three decimals; blendshapes are dropped
-because the character takes its face from the rig. Run from the repository root, then refresh the manifest:
+Each clip keeps the 144 coordinates of every frame (48 points, x y z) at three decimals, and, when any frame has a
+tracked face, its 52 MediaPipe blendshapes at two decimals as "face" (an empty list for a frame with no face). Run from the repository root, then refresh the manifest:
 
     python tools/text2isl/export_clips.py medoids.json more.js ...
     python tools/content/build_content.py --manifest-only
@@ -29,8 +29,13 @@ def clips(predictions: dict) -> list:
     out = []
     for sentence, entry in sorted(predictions.items()):
         frames = [[round(v, 3) for v in f["coordinates"][:144]] for f in entry["frames"]]
-        if frames and all(len(f) == 144 for f in frames):
-            out.append({"sentence": sentence, "fps": 25, "frames": frames})
+        if not frames or any(len(f) != 144 for f in frames):
+            continue
+        clip = {"sentence": sentence, "fps": 25, "frames": frames}
+        face = [[round(v, 2) for v in b] if len(b := f.get("blendshapes", [])) == 52 and max(b) > 0 else [] for f in entry["frames"]]
+        if any(face):
+            clip["face"] = face
+        out.append(clip)
     return out
 
 
