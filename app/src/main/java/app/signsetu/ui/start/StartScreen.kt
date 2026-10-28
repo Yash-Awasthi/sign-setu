@@ -50,6 +50,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +62,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import app.signsetu.ui.theme.LocalMotion
+import app.signsetu.ui.theme.motion
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
@@ -102,6 +113,9 @@ import kotlinx.coroutines.launch
 
 /** Home: the character greets on top; below, one quick choice of who is being helped and in which language. The
  * session itself opens on the stage, with the camera mirror. */
+/** Once per process: coming back from a session the name is already in place. */
+private var introPlayed = false
+
 @Composable
 fun StartScreen(
     repo: SessionRepository,
@@ -119,6 +133,7 @@ fun StartScreen(
     val context = LocalContext.current
     val res = LocalResources.current
     val ink = LocalInk.current
+    val motionOn = LocalMotion.current
     // The ink header needs light status-bar icons in both themes.
     val barView = LocalView.current
     DisposableEffect(barView) {
@@ -156,16 +171,38 @@ fun StartScreen(
     val header = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding()) {
         Surface(color = Color.Transparent, contentColor = ink.onBand, shape = header, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
-            Box(Modifier.background(ink.brush).statusBarsPadding().height(230.dp).fillMaxWidth().clip(RectangleShape)) {
+            // On launch the name sits in the middle and settles into place while the character loads, then fades in.
+            val intro = remember { Animatable(if (introPlayed || !motionOn) 1f else 0f) }
+            LaunchedEffect(Unit) { introPlayed = true; intro.animateTo(1f, tween(1000, easing = FastOutSlowInEasing)) }
+            var centre by remember { mutableStateOf<Offset?>(null) }
+            var resting by remember { mutableStateOf<Offset?>(null) }
+            var avatarReady by remember { mutableStateOf(false) }
+            val avatarIn by animateFloatAsState(if (avatarReady) 1f else 0f, motion(tween(500)), label = "avatar")
+            Box(Modifier.background(ink.brush).statusBarsPadding().height(230.dp).fillMaxWidth().clip(RectangleShape).onGloballyPositioned { centre = it.boundsInRoot().center }) {
                 // Shown head and shoulders only: the officer's screen, where the character just says hello.
                 Avatar(
                     gesture = content.gestures["namaste"],
                     playKey = Unit,
-                    modifier = Modifier.align(Alignment.BottomCenter).requiredSize(243.dp, 277.dp).offset(y = 27.dp),
+                    onReady = { avatarReady = true },
+                    modifier = Modifier.align(Alignment.BottomCenter).requiredSize(243.dp, 277.dp).offset(y = 27.dp)
+                        .graphicsLayer { alpha = avatarIn; translationY = (1f - avatarIn) * 24.dp.toPx() },
                 )
                 Column {
                     Row(Modifier.fillMaxWidth().offset(y = (-10).dp).height(56.dp).padding(start = Spacing.lg, end = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.weight(1f).semantics { heading() })
+                        Box(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp,
+                                modifier = Modifier.semantics { heading() }
+                                    .onGloballyPositioned { resting = it.boundsInRoot().center }
+                                    .graphicsLayer {
+                                        val from = centre; val to = resting
+                                        val t = 1f - intro.value
+                                        alpha = if (t > 0f && (from == null || to == null)) 0f else 1f
+                                        if (from != null && to != null) { translationX = (from.x - to.x) * t; translationY = (from.y - to.y) * t }
+                                        scaleX = 1f + 0.6f * t; scaleY = scaleX
+                                    },
+                            )
+                        }
                         onSecondScreen?.let { IconButton(onClick = it) { Icon(Icons.Filled.Phone, contentDescription = stringResource(R.string.second_screen)) } }
                         IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title)) }
                     }

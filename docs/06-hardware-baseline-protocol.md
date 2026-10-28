@@ -10,7 +10,7 @@ How to measure the app on physical arm64 phones against the non-functional requi
 | 2, reference | Snapdragon 720G, Helio G95 | Redmi Note 9 Pro, Galaxy M21 | 4 GB, 64 GB | Android 11 or 12 | Typical officer phone |
 | 3, current | Snapdragon 695, Dimensity 6020 | Moto G62, Redmi 12 5G | 6 GB, 128 GB | Android 13 or 14 | Strong biometrics, GPU delegate |
 
-Install the arm64 release APK from the [latest release](https://github.com/Yash-Awasthi/sign-setu/releases/latest).
+Install the arm64 release APK from the [latest release](https://github.com/Yash-Awasthi/sign-setu-pvt/releases/latest).
 
 ## 2. Measurements
 

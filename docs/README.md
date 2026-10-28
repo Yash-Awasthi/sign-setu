@@ -12,7 +12,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Resource | Link | Notes |
 | --- | --- | --- |
-| Android APKs | [Latest release](https://github.com/Yash-Awasthi/sign-setu/releases/latest) | Signed phone (arm64) and universal (arm64 and x86_64) APKs, SHA-256 sums and an SBOM |
+| Android APKs | [Latest release](https://github.com/Yash-Awasthi/sign-setu-pvt/releases/latest) | Signed phone (arm64) and universal (arm64 and x86_64) APKs, SHA-256 sums and an SBOM |
 | Department gateway | [signsetu-gateway.onrender.com](https://signsetu-gateway.onrender.com/healthz) | Go, Neon PostgreSQL; the free tier sleeps, so the first call can take about 30 s |
 | Reviewer portal | [signsetu-portal.pages.dev](https://signsetu-portal.pages.dev) | Vite+ and React on Cloudflare Pages |
 | On-device model | [gemma-3-1b-it-Q4_K_M.gguf](https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf) | About 806 MB; Settings, On-device assistant |

@@ -50,10 +50,14 @@ fun Avatar(
     negated: Boolean = false,
     clip: Clip? = null,
     onFinished: () -> Unit = {},
+    /** Once the model has loaded and can be shown. */
+    onReady: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val web = remember { AvatarWebView(context) }
     val finished by rememberUpdatedState(onFinished)
+    val readySink by rememberUpdatedState(onReady)
+    DisposableEffect(web) { web.onReady = { readySink() }; onDispose { web.onReady = {} } }
     DisposableEffect(web) { onDispose { web.destroy() } }
     LaunchedEffect(view) { web.run("signsetu.view('${view.js}')") }
     // Breathing and glancing change as the person starts and stops signing; that must not restart the signs.
@@ -94,6 +98,8 @@ private class AvatarWebView(context: Context) : WebView(context) {
     private var pending = linkedMapOf<String, String>()
     private var token = 0
     private var onFinished: () -> Unit = {}
+    var onReady: () -> Unit = {}
+        set(value) { field = value; if (ready) value() }
 
     init {
         // Compose sizes the view; a wrap_content WebView lays its page out at zero height.
@@ -139,6 +145,7 @@ private class AvatarWebView(context: Context) : WebView(context) {
             ready = true
             pending.values.forEach { evaluateJavascript(it, null) }
             pending.clear()
+            onReady()
         }
 
         @JavascriptInterface

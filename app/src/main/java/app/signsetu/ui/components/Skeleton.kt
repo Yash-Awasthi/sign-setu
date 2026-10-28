@@ -21,8 +21,21 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.statusBarsPadding
+import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.LocalInk
+import app.signsetu.ui.theme.Baloo
+import app.signsetu.R
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.Arrangement
 
 /** A placeholder block with a moving highlight. The phase is read at draw time, so it never recomposes. */
 @Composable
@@ -44,16 +57,22 @@ fun SkeletonBlock(modifier: Modifier = Modifier, height: Int = 56) {
 
 private fun Modifier.clipRounded() = this.then(Modifier.clip(RoundedCornerShape(16.dp)))
 
-/** Shown while content or the database opens, in the shape of the start screen. */
+/** Shown while content or the database opens, laid out as the start screen so nothing jumps when it arrives:
+ * the ink header with the name in the middle, where the start screen's intro picks it up. */
 @Composable
 fun ScreenSkeleton() {
-    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding().padding(20.dp)) {
-        SkeletonBlock(Modifier.fillMaxWidth(0.5f), height = 32)
-        Spacer(Modifier.height(24.dp))
-        SkeletonBlock(height = 120)
-        repeat(3) {
-            Spacer(Modifier.height(12.dp))
-            SkeletonBlock(height = 72)
+    val ink = LocalInk.current
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding()) {
+        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp), shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
+            Box(Modifier.background(ink.brush).statusBarsPadding().height(230.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, modifier = Modifier.graphicsLayer { scaleX = 1.6f; scaleY = 1.6f })
+            }
         }
+        Column(Modifier.weight(1f).padding(horizontal = Spacing.lg).padding(top = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            SkeletonBlock(height = 88)
+            SkeletonBlock(Modifier.fillMaxWidth(0.4f), height = 24)
+            SkeletonBlock(height = 64)
+        }
+        SkeletonBlock(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md), height = 56)
     }
 }

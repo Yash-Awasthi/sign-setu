@@ -2,7 +2,7 @@
 
 Acceptance test for the second screen in the `standard` flavor. The officer phone keeps the encrypted store (`session.db`), the keys and the controls; the stage device shows the subject's stage and stores nothing about a session. The link is RFCOMM to a bonded device, P-256 ECDH with commit then reveal, and AES-256-GCM frames ([02-architecture.md](02-architecture.md#9-second-screen)).
 
-Preconditions: two phones with the same release APK from the [latest release](https://github.com/Yash-Awasthi/sign-setu/releases/latest), paired once in Android Bluetooth settings.
+Preconditions: two phones with the same release APK from the [latest release](https://github.com/Yash-Awasthi/sign-setu-pvt/releases/latest), paired once in Android Bluetooth settings.
 
 ## 1. Pairing without scan or location permissions
 
