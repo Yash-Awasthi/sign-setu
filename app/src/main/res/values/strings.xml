@@ -472,7 +472,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="word_replay">Replay this word</string>
     <string name="pause_ready">I\'m ready</string>
     <string name="pause_ended">Pause ended after %1$d s</string>
-    <string name="officer_rules">Ground rules and practice</string>
+    <string name="officer_rules">Replay intro</string>
     <string name="isl_dictionary">ISL dictionary</string>
     <string name="asl_dictionary">ASL dictionary</string>
     <string name="asl_dictionary_recorded">From recorded signers (PopSign). Draft until Deaf review.</string>
@@ -667,4 +667,26 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="gender_female">Female</string>
     <string name="gender_unknown">Not set</string>
     <string name="log_speaker_gender">Gender for Hindi wording: %1$s</string>
+    <string name="qn_title">Quick notes</string>
+    <string name="qn_under18">Looks under 18</string>
+    <string name="qn_role">Victim or accused</string>
+    <string name="qn_speak">Can speak</string>
+    <string name="qn_hear">Can hear</string>
+    <string name="qn_signs">Sign language seen</string>
+    <string name="qn_gender">Gender</string>
+    <string name="qn_home">Home</string>
+    <string name="qn_injuries">Injuries</string>
+    <string name="qn_yes">Yes</string>
+    <string name="qn_no">No</string>
+    <string name="qn_little">A little</string>
+    <string name="qn_near">Nearby</string>
+    <string name="qn_far">Far</string>
+    <string name="qn_unknown">Not known</string>
+    <string name="qn_none_seen">None seen</string>
+    <string name="qn_visible">Visible</string>
+    <string name="qn_says_hurt">Says it hurts</string>
+    <string name="qn_isl">ISL</string>
+    <string name="qn_asl">ASL</string>
+    <string name="qn_victim">Victim</string>
+    <string name="qn_accused">Accused</string>
 </resources>

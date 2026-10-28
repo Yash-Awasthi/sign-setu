@@ -24,11 +24,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.List
 import app.signsetu.ui.components.OfficerCard
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -66,7 +64,7 @@ import app.signsetu.data.session.Profile
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Phone
 import app.signsetu.data.session.EventType
 import androidx.compose.ui.semantics.stateDescription
@@ -91,19 +89,15 @@ internal fun MorePage(
     ui: SessionUi,
     content: ContentBundle,
     officerLang: String,
-    answers: Int,
     onGroup: (Group) -> Unit,
     onQuestion: (Question) -> Unit,
     onPhrase: (Phrase) -> Unit,
     onAddToRun: (Question) -> Unit,
     onTool: (Tool) -> Unit,
-    onLog: () -> Unit,
-    onChange: () -> Unit,
     onSecondScreen: (() -> Unit)?,
     onFinish: () -> Unit,
     onCounsel: (() -> Unit)?,
     modifier: Modifier,
-    onTell: (() -> Unit)? = null,
     auto: AutoPilot? = null,
 ) {
     val pending = ui.pending
@@ -201,14 +195,10 @@ internal fun MorePage(
         }
         SectionLabel(stringResource(R.string.more_session), Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.md))
         OfficerCard(Modifier.padding(horizontal = Spacing.lg), padding = 0.dp) {
-            // Up to three minutes of signing with nothing on screen to interrupt; replayed later with an interpreter.
             onCounsel?.let { MoreRow(rememberVectorPainter(Icons.Filled.Face), stringResource(R.string.ai_counsellor_start), null, first = true, onClick = it) }
-            onTell?.let { MoreRow(painterResource(R.drawable.ic_hand), stringResource(R.string.tell_me_long), null, first = onCounsel == null, onClick = it) }
-            MoreRow(rememberVectorPainter(Icons.Filled.Search), stringResource(if (ui.signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary), null, first = onTell == null && onCounsel == null) { onTool(Tool.DICTIONARY) }
-            MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.List), stringResource(R.string.officer_log), answers.takeIf { it > 0 }?.toString(), onClick = onLog)
-            MoreRow(rememberVectorPainter(Icons.Filled.Person), stringResource(R.string.officer_change), null, onClick = onChange)
+            MoreRow(rememberVectorPainter(Icons.Filled.Search), stringResource(if (ui.signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary), null, first = onCounsel == null) { onTool(Tool.DICTIONARY) }
             onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, onClick = it) }
-            MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
+            MoreRow(rememberVectorPainter(Icons.Filled.Refresh), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
         }
         OfficerCard(Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.sm), padding = 0.dp) {
             MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.ExitToApp), stringResource(R.string.officer_end), null, first = true, onClick = onFinish)

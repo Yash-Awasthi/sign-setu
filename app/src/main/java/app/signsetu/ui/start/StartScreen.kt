@@ -12,9 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,8 +27,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -45,12 +41,10 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -79,7 +73,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,25 +81,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.signsetu.R
 import app.signsetu.camera.hasCameraPermission
 import app.signsetu.data.content.ContentBundle
-import app.signsetu.data.content.SignLanguage
-import app.signsetu.data.session.EventSource
-import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Role as SessionRole
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionRepository
-import app.signsetu.gloss.Gender
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.MiniFace
 import app.signsetu.ui.components.BrandButton
-import app.signsetu.ui.components.ChoiceTile
 import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.components.OfficerAuth
 import app.signsetu.ui.components.OfficerCard
-import app.signsetu.ui.session.SYSTEM_JJ_NOTICE
-import app.signsetu.ui.session.SYSTEM_JUVENILE
-import app.signsetu.ui.session.SYSTEM_SIGN_LANGUAGE
-import app.signsetu.ui.session.SYSTEM_SPEAKER_GENDER
 import app.signsetu.ui.session.clockDate
 import app.signsetu.ui.session.clockTime
 import app.signsetu.ui.session.defaultTitle
@@ -148,12 +132,6 @@ fun StartScreen(
     var lang by rememberSaveable { mutableStateOf("hi") }
     // The officer does not know the language: the session opens on the language finder.
     var langUnknown by rememberSaveable { mutableStateOf(false) }
-    var signer by rememberSaveable { mutableStateOf(false) }
-    // Only Hindi first-person verbs need it ("आया" or "आई"); left unset, both forms are shown.
-    var gender by rememberSaveable { mutableStateOf(Gender.UNKNOWN) }
-    var role by rememberSaveable { mutableStateOf(SessionRole.NOT_KNOWN) }
-    var underAge by rememberSaveable { mutableStateOf(false) }
-    var signLang by rememberSaveable { mutableStateOf(SignLanguage.ISL) }
 
     // One session per Start: a second tap while the first is being created does nothing.
     var starting by remember { mutableStateOf(false) }
@@ -163,24 +141,13 @@ fun StartScreen(
         scope.launch {
             // An unfinished session joins the saved ones first; left open it would be hidden behind the new one.
             repo.openSession()?.let { repo.end(it.id, defaultTitle(res, it.startedAt)) }
-            val id = repo.start(p, lang, role)
-            if (p == Profile.ISL_USER && signLang != SignLanguage.ISL) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_SIGN_LANGUAGE + signLang.name)
-            // The record shows the officer saw the Juvenile Justice notice, and whether they marked the person a child.
-            if (role == SessionRole.ACCUSED) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JJ_NOTICE)
-            if (gender != Gender.UNKNOWN) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_SPEAKER_GENDER + gender.name)
-            if (underAge && p != Profile.YOUNG_CHILD) repo.log(id, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_JUVENILE)
-            onOpenSession(id)
+            // Role, age, signing and gender are the officer's quick notes inside the session.
+            onOpenSession(repo.start(p, lang, SessionRole.NOT_KNOWN))
         }
         Unit
     }
     // The camera permission is asked of the officer here, never of the subject on the stage.
-    // ponytail: one profile per session, so a signing child gets the signer's stage; split Profile if that matters.
-    val profile = when {
-        langUnknown -> Profile.OTHER_LANGUAGE
-        signer -> Profile.ISL_USER
-        underAge -> Profile.YOUNG_CHILD
-        else -> Profile.NOT_SURE
-    }
+    val profile = if (langUnknown) Profile.OTHER_LANGUAGE else Profile.NOT_SURE
     val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { begin(profile) }
     val onStart = {
         if (cameraWanted && !hasCameraPermission(context)) askCamera.launch(Manifest.permission.CAMERA) else begin(profile)
@@ -237,11 +204,7 @@ fun StartScreen(
                             onEnd = { scope.launch { repo.end(session.id, defaultTitle(res, session.startedAt)); refresh++ } },
                         )
                     }
-                    // Role, language and how they answer are one decision, so they share one card.
                     OfficerCard {
-                        Text(stringResource(R.string.start_who), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-                        RoleChoice(role, onRole = { role = it })
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         LanguagePicker(
                             content, lang,
                             onPick = { lang = it; langUnknown = false },
@@ -254,30 +217,6 @@ fun StartScreen(
                         } else content.language(lang)?.takeIf { content.subjectText("yes", lang) == null }?.let {
                             Notice(null, stringResource(R.string.start_pictures_only, it.name), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                         }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        SwitchRow(stringResource(R.string.profile_isl), signer, onChecked = { signer = it })
-                        if (signer && !content.aslDisabled) {
-                            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                                SignLanguage.entries.forEach { s ->
-                                    ChoiceTile(s == signLang, onClick = { signLang = s }, modifier = Modifier.weight(1f).fillMaxHeight()) {
-                                        Text(stringResource(if (s == SignLanguage.ASL) R.string.sign_asl else R.string.sign_isl), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
-                                    }
-                                }
-                            }
-                        }
-                        Text(stringResource(R.string.start_gender), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
-                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                            listOf(Gender.MASCULINE to R.string.gender_male, Gender.FEMININE to R.string.gender_female, Gender.UNKNOWN to R.string.gender_unknown).forEach { (g, label) ->
-                                ChoiceTile(g == gender, onClick = { gender = g }, modifier = Modifier.weight(1f).fillMaxHeight()) {
-                                    Text(stringResource(label), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
-                                }
-                            }
-                        }
-                        // An accused person's notice below carries this same mark with the Juvenile Justice rules.
-                        if (role != SessionRole.ACCUSED) SwitchRow(stringResource(R.string.start_juvenile_mark), underAge, onChecked = { underAge = it })
-                    }
-                    if (role == SessionRole.ACCUSED) {
-                        JuvenileNotice(underAge, enabled = true, onChecked = { underAge = it })
                     }
                     // Below the start card: starting a session is the main job of this screen. A rooted phone lists no history.
                     if (!rooted) SavedSessions(repo, onOpen = { id ->
@@ -293,17 +232,6 @@ fun StartScreen(
                     Text(stringResource(R.string.start_button), style = MaterialTheme.typography.titleMedium)
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.padding(start = Spacing.sm))
                 }
-    }
-}
-
-@Composable
-private fun SwitchRow(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(checked, role = Role.Switch, onValueChange = onChecked),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = null)
     }
 }
 
@@ -474,36 +402,6 @@ fun LanguagePicker(
 
 /** Shown for every accused person: the Juvenile Justice rules if they may be under 18, and the officer's mark
  * that they may be, which leaves out adult arrest rights. */
-@Composable
-fun JuvenileNotice(checked: Boolean, enabled: Boolean, onChecked: (Boolean) -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(horizontal = Spacing.md, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            Text(stringResource(R.string.start_juvenile_title), style = MaterialTheme.typography.titleSmall)
-            Text(stringResource(R.string.start_juvenile_body), style = MaterialTheme.typography.bodySmall)
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = onChecked),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(checked = checked, onCheckedChange = null, enabled = enabled)
-                Text(stringResource(R.string.start_juvenile_mark), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = Spacing.sm))
-            }
-        }
-    }
-}
-
-@Composable
-fun RoleChoice(role: SessionRole, onRole: (SessionRole) -> Unit, modifier: Modifier = Modifier) {
-    Text(stringResource(R.string.report_role), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
-    // Equal-height tiles: labels wrap in Hindi and at 360 dp, and a segmented row clips them.
-    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        SessionRole.entries.forEach { r ->
-            ChoiceTile(r == role, onClick = { onRole(r) }, modifier = Modifier.weight(1f).fillMaxHeight()) {
-                Text(stringResource(roleTitle(r)), style = MaterialTheme.typography.labelLarge, maxLines = 3, textAlign = TextAlign.Center)
-            }
-        }
-    }
-}
-
 fun roleTitle(r: SessionRole) = when (r) {
     SessionRole.NOT_KNOWN -> R.string.role_not_known
     SessionRole.VICTIM -> R.string.role_victim

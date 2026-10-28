@@ -33,15 +33,11 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ListItem
@@ -51,7 +47,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -66,7 +61,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -81,15 +75,10 @@ import app.signsetu.data.content.LexiconEntry
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.PhraseSlot
 import app.signsetu.data.session.EventType
-import app.signsetu.data.session.Profile
-import app.signsetu.data.session.Role as SessionRole
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.PictureCard
 import app.signsetu.ui.start.LanguagePicker
-import app.signsetu.ui.start.RoleChoice
-import app.signsetu.ui.start.JuvenileNotice
-import app.signsetu.ui.start.profileTitle
 import app.signsetu.ui.theme.PictureWell
 import app.signsetu.ui.theme.Spacing
 import app.signsetu.ui.components.FilterObscuredTouches
@@ -269,46 +258,6 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry, Li
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun LogSheet(events: List<SessionEvent>, note: String, onNote: (String) -> Unit, onAddNote: (String) -> Unit, onDismiss: () -> Unit) {
-    OfficerSheet(onDismiss) {
-        Column(Modifier.fillMaxHeight(0.92f).padding(horizontal = Spacing.lg).imePadding()) {
-            SheetTitle(stringResource(R.string.officer_log))
-            if (events.isEmpty()) {
-                Text(stringResource(R.string.log_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-            } else {
-                LazyColumn(Modifier.weight(1f), reverseLayout = true) {
-                    // Prompt rows are the machine layer of the record; the report prints them in full.
-                    items(events.withQuestions().filter { it.first.type != EventType.PROMPT }.asReversed(), key = { it.first.id }) { (e, question) ->
-                        EventRow(e, question = question)
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    }
-                }
-            }
-            Row(
-                Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = Spacing.md),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = onNote,
-                    placeholder = { Text(stringResource(R.string.log_note_hint)) },
-                    // the keyboard should not learn or suggest from what is noted about a subject.
-                    keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
-                    shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.weight(1f),
-                )
-                Button(
-                    onClick = { onAddNote(note); onNote("") },
-                    enabled = note.isNotBlank(),
-                    modifier = Modifier.padding(start = Spacing.sm),
-                ) { Text(stringResource(R.string.log_add)) }
-            }
-        }
-    }
-}
-
 /** Pairs each answer with its question, so the log reads "Water? Yes" rather than a bare "Yes": by the shown
  * item's id when the answer names it, otherwise the question shown before it. */
 fun List<SessionEvent>.withQuestions(): List<Pair<SessionEvent, String?>> {
@@ -371,41 +320,10 @@ fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChangeSheet(
-    content: ContentBundle,
-    profile: Profile,
-    subjectLang: String,
-    role: SessionRole,
-    juvenile: Boolean,
-    onProfile: (Profile) -> Unit,
-    onLanguage: (String) -> Unit,
-    onRole: (SessionRole) -> Unit,
-    onJuvenile: (Boolean) -> Unit,
-    onDismiss: () -> Unit,
-) {
+fun ChangeSheet(content: ContentBundle, subjectLang: String, onLanguage: (String) -> Unit, onDismiss: () -> Unit) {
     OfficerSheet(onDismiss, expanded = false) {
-        Column(
-            Modifier.padding(horizontal = Spacing.lg).navigationBarsPadding().padding(bottom = Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            SheetTitle(stringResource(R.string.officer_change))
-            RoleChoice(role, onRole, Modifier.padding(bottom = Spacing.sm))
-            if (role == SessionRole.ACCUSED) JuvenileNotice(juvenile, enabled = profile != Profile.YOUNG_CHILD, onJuvenile)
-            Column(Modifier.selectableGroup()) {
-                Profile.entries.forEach { p ->
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 52.dp)
-                            .selectable(selected = p == profile, onClick = { onProfile(p) }, role = Role.RadioButton),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = p == profile, onClick = null)
-                        Text(stringResource(profileTitle(p)), modifier = Modifier.padding(start = Spacing.md))
-                    }
-                }
-            }
-            SectionLabel(stringResource(R.string.start_language))
+        Column(Modifier.padding(horizontal = Spacing.lg).navigationBarsPadding().padding(bottom = Spacing.xl)) {
+            SheetTitle(stringResource(R.string.start_language))
             LanguagePicker(content, subjectLang, onPick = onLanguage)
         }
     }

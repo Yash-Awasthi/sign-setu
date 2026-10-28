@@ -465,7 +465,7 @@
     <string name="word_replay">यह शब्द दोबारा दिखाएँ</string>
     <string name="pause_ready">मैं तैयार हूँ</string>
     <string name="pause_ended">विराम %1$d सेकंड बाद ख़त्म हुआ</string>
-    <string name="officer_rules">शुरुआती नियम और अभ्यास</string>
+    <string name="officer_rules">परिचय फिर चलाएँ</string>
     <string name="isl_dictionary">ISL शब्दकोश</string>
     <string name="asl_dictionary">ASL शब्दकोश</string>
     <string name="asl_dictionary_recorded">रिकॉर्ड किए गए साइनर से (PopSign)। बधिर समीक्षा तक मसौदा।</string>
@@ -660,4 +660,26 @@
     <string name="gender_female">महिला</string>
     <string name="gender_unknown">तय नहीं</string>
     <string name="log_speaker_gender">हिंदी शब्दों के लिए लिंग: %1$s</string>
+    <string name="qn_title">झटपट नोट</string>
+    <string name="qn_under18">18 से कम लगते हैं</string>
+    <string name="qn_role">पीड़ित या आरोपी</string>
+    <string name="qn_speak">बोल सकते हैं</string>
+    <string name="qn_hear">सुन सकते हैं</string>
+    <string name="qn_signs">सांकेतिक भाषा दिखी</string>
+    <string name="qn_gender">लिंग</string>
+    <string name="qn_home">घर</string>
+    <string name="qn_injuries">चोटें</string>
+    <string name="qn_yes">हाँ</string>
+    <string name="qn_no">नहीं</string>
+    <string name="qn_little">थोड़ा</string>
+    <string name="qn_near">पास</string>
+    <string name="qn_far">दूर</string>
+    <string name="qn_unknown">पता नहीं</string>
+    <string name="qn_none_seen">कोई नहीं दिखी</string>
+    <string name="qn_visible">दिख रही हैं</string>
+    <string name="qn_says_hurt">दर्द बताते हैं</string>
+    <string name="qn_isl">ISL</string>
+    <string name="qn_asl">ASL</string>
+    <string name="qn_victim">पीड़ित</string>
+    <string name="qn_accused">आरोपी</string>
 </resources>

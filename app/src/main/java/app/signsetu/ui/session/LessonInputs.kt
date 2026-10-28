@@ -84,9 +84,6 @@ import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.Spacing
 
-/** The bank group whose phrases the subject can say from the stage. */
-const val EVERYDAY = "everyday"
-
 private val Soft = Color(0xFFFFE7BF)
 private val OnSoft = Color(0xFF3D2700)
 /** A Done that cannot be pressed yet. */
@@ -438,44 +435,6 @@ private fun RowScope.Way(cardId: String, label: String?, name: String, color: Co
         Column(Modifier.padding(2.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             CardImage(cardId, Modifier.size(if (label != null) 24.dp else 36.dp))
             label?.let { Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 12.sp, color = onColor, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis) }
-        }
-    }
-}
-
-/** Opens the phrase board, so the subject can start a conversation as well as answer one. */
-@Composable
-internal fun SayButton(content: ContentBundle, lang: String, onClick: () -> Unit, modifier: Modifier) {
-    val name = content.subjectText("say", lang) ?: stringResource(R.string.stage_say)
-    PressableSurface(onClick = onClick, shape = CircleShape, color = Color.White, shadowElevation = 2.dp, modifier = modifier.size(48.dp).semantics { contentDescription = name }) {
-        CardImage("namaste", Modifier.padding(8.dp))
-    }
-}
-
-/** The everyday phrases as pictures with words; a tap logs the phrase as the subject's own. */
-@Composable
-internal fun PhraseBoard(content: ContentBundle, lang: String, chosen: String?, onCard: (String) -> Unit, onSay: (Given) -> Unit, onBack: () -> Unit, modifier: Modifier) {
-    val phrases = remember(content) { content.questions.filter { it.group == EVERYDAY } }
-    val answer = LocalAnswerColors.current
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        LazyVerticalGrid(GridCells.Fixed(2), Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            items(phrases, key = { it.id }) { q ->
-                val label = q.text.get(lang)
-                PressableSurface(
-                    onClick = { onSay(Given(q.id, Method.BOARD, true)) },
-                    shape = RoundedCornerShape(18.dp),
-                    color = Color.White,
-                    modifier = Modifier.heightIn(min = 64.dp).semantics { contentDescription = label ?: q.text["en"].orEmpty() },
-                ) {
-                    Row(Modifier.padding(Spacing.sm), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        q.cards.firstOrNull()?.let { CardImage(it, Modifier.size(40.dp)) }
-                        label?.let { Text(it, style = MaterialTheme.typography.titleSmall, color = Ink, maxLines = 2, overflow = TextOverflow.Ellipsis) }
-                    }
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth().height(64.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-            Back(onBack)
-            Way("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosen == "stop") { onCard("stop") }
         }
     }
 }

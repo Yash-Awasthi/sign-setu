@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.SignLanguage
+import app.signsetu.gloss.Gender
 import app.signsetu.data.content.SignMode
 import app.signsetu.data.content.glossToText
 import app.signsetu.data.session.EventSource
@@ -155,6 +156,10 @@ class SessionViewModel(
     fun setJuvenile(on: Boolean) = viewModelScope.launch {
         local.update { it.copy(selectedGroup = Local().selectedGroup) }
         repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = if (on) SYSTEM_JUVENILE else SYSTEM_JUVENILE_OFF)
+    }
+
+    fun setGender(gender: Gender) = viewModelScope.launch {
+        if (ui.value?.speakerGender != gender) repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_SPEAKER_GENDER + gender.name)
     }
 
     fun setProfile(profile: Profile) = viewModelScope.launch { repo.setProfile(sessionId, profile) }

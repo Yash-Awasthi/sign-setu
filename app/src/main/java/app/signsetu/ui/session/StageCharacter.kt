@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,7 +68,6 @@ import app.signsetu.data.content.ContentBundle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
-import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Spacing
@@ -88,26 +86,8 @@ internal fun Backdrop(modifier: Modifier) {
     }
 }
 
-/** Each side of the character: the replay pill on the left, a held card or letter tile on the right. */
+/** Each side of the character: the replay pill on the left, a letter tile on the right. */
 internal val SideBand = 88.dp
-
-/** The picture the question is about, held up beside the character. */
-@Composable
-internal fun HeldCard(cardId: String, label: String?, modifier: Modifier) {
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = Color.White,
-        shadowElevation = 4.dp,
-        modifier = modifier.rotate(-4f).size(width = SideBand, height = if (label != null) 108.dp else SideBand),
-    ) {
-        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            CardImage(cardId, Modifier.fillMaxWidth().aspectRatio(1f))
-            label?.let {
-                Text(it, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Ink, modifier = Modifier.padding(top = 2.dp))
-            }
-        }
-    }
-}
 
 /** The word being fingerspelled, its current letter large, so a reader can follow the hands. */
 @Composable

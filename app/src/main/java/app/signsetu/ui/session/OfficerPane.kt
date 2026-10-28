@@ -28,13 +28,11 @@ import androidx.compose.material.icons.Icons
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import app.signsetu.ui.components.OfficerAuth
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -85,8 +83,6 @@ import app.signsetu.data.session.Profile
 import app.signsetu.ui.avatar.MiniFace
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.GuardedAlertDialog
-import app.signsetu.ui.start.profileTitle
-import app.signsetu.ui.start.roleTitle
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalInk
 import app.signsetu.ui.theme.Spacing
@@ -94,7 +90,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
-import app.signsetu.sign.SignWindow
 import app.signsetu.ui.pair.PairedPane
 import app.signsetu.ui.pair.PairedBar
 import android.widget.Toast
@@ -102,7 +97,7 @@ import androidx.compose.ui.platform.LocalContext
 
 private const val THANK_YOU = "e7"
 
-private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, LOG, CHANGE, DICTIONARY }
+private enum class Sheet { BOARD_SHOW, BOARD_ATTACH, GESTURE, NOTES, CHANGE, DICTIONARY }
 
 /** The phrase bank sits beside the triage groups as one more group. */
 private const val WORD_SEP = "\u0001"
@@ -189,7 +184,6 @@ fun OfficerPane(
     // Kept by the view model: this pane leaves the screen whenever the stage is shown.
     val modes = remember(ui.session.profile) { vm.modesFor(ui.session.profile, defaultModes(ui.session.profile)) }
 
-    val answers = ui.events.count { it.type in AnswerEvents }
     // A request to stop stays on screen until the officer acknowledges it or shows something new.
     val lastStop = ui.events.lastOrNull { it.type == EventType.QUESTION_SHOWN || it.cardId in PauseCards }?.takeIf { it.cardId in PauseCards }
 
@@ -267,7 +261,7 @@ fun OfficerPane(
             Tool.ATTACH -> sheet = Sheet.BOARD_ATTACH
             Tool.DRAW -> { vm.prepare(Pending.Drawing); page = 0 }
             Tool.LANGUAGE -> { vm.prepare(Pending.LanguageFinder); page = 0 }
-            Tool.RULES -> { vm.prepare(Pending.GroundRules()); page = 0 }
+            Tool.RULES -> { vm.prepare(Pending.GroundRules()); page = 0; if (paired?.allowShow?.invoke() != false) vm.show() }
             Tool.DICTIONARY -> sheet = Sheet.DICTIONARY
         }
     }
@@ -287,30 +281,18 @@ fun OfficerPane(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     MiniFace(40.dp, Color(0xFFFFDDBE))
-                    // Who the person is at a glance: profile, then language and role.
+                    // Only the language: who the person is goes in the officer's quick notes.
                     Column(Modifier.padding(start = Spacing.md)) {
-                        Text(stringResource(profileTitle(ui.session.profile)), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            listOfNotNull(
-                                if (signLanguage == SignLanguage.ASL) "ASL (${stringResource(R.string.asl_experimental_badge)})" else null,
-                                subjectLanguage?.let { "${it.name} · ${it.english}" } ?: subjectLang,
-                                stringResource(roleTitle(ui.session.role)),
-                            ).joinToString(" · "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = ink.onBandMuted,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Text(subjectLanguage?.let { "${it.name} · ${it.english}" } ?: subjectLang, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (signLanguage == SignLanguage.ASL) {
+                            Text("ASL (${stringResource(R.string.asl_experimental_badge)})", style = MaterialTheme.typography.bodySmall, color = ink.onBandMuted, maxLines = 1)
+                        }
                     }
                 }
                 onCallInterpreter?.let { call ->
                     IconButton(onClick = call) { Icon(Icons.Filled.Call, contentDescription = stringResource(R.string.officer_call)) }
                 }
-                IconButton(onClick = { sheet = Sheet.LOG }) {
-                    BadgedBox(badge = { if (answers > 0) Badge { Text("$answers") } }) {
-                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(R.string.officer_log))
-                    }
-                }
+                IconButton(onClick = { sheet = Sheet.NOTES }) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.qn_title)) }
                 OfficerMenu(
                     ui = ui,
                     vm = vm,
@@ -333,7 +315,6 @@ fun OfficerPane(
                 ui = ui,
                 content = content,
                 officerLang = officerLang,
-                answers = answers,
                 onGroup = { g -> if (g.sensitive && !ui.sensitiveUnlocked) askSensitive = true else vm.selectGroup(g.id) },
                 onQuestion = { q ->
                     val again = (ui.pending as? Pending.Ask)?.question?.id == q.id
@@ -343,13 +324,10 @@ fun OfficerPane(
                 onPhrase = { phrase = it },
                 onAddToRun = addToRun,
                 onTool = onTool,
-                onLog = { sheet = Sheet.LOG },
-                onChange = { sheet = Sheet.CHANGE },
                 onSecondScreen = onSecondScreen,
                 onFinish = { askEnd = true },
-                onCounsel = if (cloud.available) startCounsel else null,
+                onCounsel = if (cloud.available && cloud.enrolled) startCounsel else null,
                 auto = vm.auto,
-                onTell = if (canReadSigns) ({ prepareTyped(); vm.readSigns(SignWindow.NARRATIVE); page = 0 }) else null,
                 modifier = Modifier.weight(1f),
             )
         } else {
@@ -461,13 +439,10 @@ fun OfficerPane(
             onDismiss = { sheet = null }, onDraft = { boardDraft = it.joinToString(",") },
         )
         Sheet.GESTURE -> GestureSheet(content, officerLang, onPick = { entry, found -> vm.prepare(Pending.ShowBack(entry, checkChoices(entry.card, found.map { it.card }))); sheet = null; page = 0 }, onDismiss = { sheet = null })
-        Sheet.LOG -> LogSheet(ui.events, logNote, { logNote = it }, onAddNote = vm::addNote, onDismiss = { sheet = null })
+        Sheet.NOTES -> QuickNotesSheet(ui, vm, locked = paired != null && ui.onStage != null, logNote, { logNote = it }, onDismiss = { sheet = null })
         Sheet.DICTIONARY -> IslDictionarySheet(content, officerLang, signLanguage, onShow = { vm.prepare(Pending.Ask(it)); sheet = null; page = 0 }, onDismiss = { sheet = null })
-        // Profile and language stay fixed while an item is on a second screen.
-        Sheet.CHANGE -> if (paired == null || ui.onStage == null) ChangeSheet(
-            content, ui.session.profile, subjectLang, ui.session.role, ui.juvenile,
-            onProfile = vm::setProfile, onLanguage = vm::setSubjectLang, onRole = vm::setRole, onJuvenile = vm::setJuvenile, onDismiss = { sheet = null },
-        )
+        // The language stays fixed while an item is on a second screen.
+        Sheet.CHANGE -> if (paired == null || ui.onStage == null) ChangeSheet(content, subjectLang, onLanguage = vm::setSubjectLang, onDismiss = { sheet = null })
         null -> Unit
     }
 

@@ -127,7 +127,6 @@ fun Stage(
     val signing = ui.reading != null
     val narrative = ui.signWindow == SignWindow.NARRATIVE
     val choices = ui.confirm?.queue?.firstOrNull()
-    var saying by remember(pending) { mutableStateOf(false) }
     val lesson = lessonQuestion(pending)?.takeIf { onGiven != null && !signing }
     var replays by remember(pending) { mutableIntStateOf(0) }
     // Each time the character finishes an item it waits, then signs it again, a few times at most.
@@ -304,16 +303,9 @@ fun Stage(
                 modifier = Modifier.fillMaxSize().padding(16.dp).aspectRatio(AVATAR_ASPECT).align(Alignment.Center),
             )
             val spelled = if (focus == null) beat?.letters else null
-            val shownCard = focus?.card ?: beat?.card ?: item.held
-            if (spelled != null) {
-                LetterTile(spelled, letter, Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg))
-            } else if (shownCard != null) {
-                key(shownCard) {
-                    HeldCard(shownCard, content.cards[shownCard]?.label?.get(lang), Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg).popIn(rememberPopIn(150)))
-                }
-            }
+            if (spelled != null) LetterTile(spelled, letter, Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg))
             val replayable = gesture != null || (audio != null && profile != Profile.ISL_USER)
-            // Replay and the phrase board sit together left of the character, clear of Stop and the answer bar.
+            // Replay sits left of the character, clear of Stop and the answer bar.
             Column(Modifier.align(Alignment.CenterStart).padding(start = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 if (pending != null && !drawing && replayable) {
                     ReplayControls(
@@ -329,7 +321,6 @@ fun Stage(
                         modifier = Modifier,
                     )
                 }
-                if (onGiven != null && !signing && !saying) SayButton(content, lang, { saying = true }, Modifier)
             }
         }
     }
@@ -380,7 +371,6 @@ fun Stage(
                 modifier = m,
             )
         }
-        saying && onGiven != null -> { m -> PhraseBoard(content, lang, ui.answeredCard, onCard, { onGiven(it); saying = false; reacting = true }, { saying = false }, m) }
         lesson != null && onGiven != null -> { m ->
             AnswerPanel(lesson, content, lang, ui.answeredCard, onCard, { onGiven(it); if (it?.confirmed == true) reacting = true }, onStartSigning.takeIf { tracker != null }, m)
         }
