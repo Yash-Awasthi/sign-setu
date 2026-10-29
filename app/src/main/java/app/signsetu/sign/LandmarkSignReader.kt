@@ -21,11 +21,13 @@ class LandmarkSignReader(spec: String, weights: ByteArray, override val words: M
         /** Fitted on held-out signers (tools/ml/calibrate.py), so a probability means what it says. */
         val temperature: Float = 1f,
         val conformal: Conformal? = null,
+        @kotlinx.serialization.SerialName("spell_odds") val spellOdds: Float? = null,
     )
 
     private val s = SPEC_JSON.decodeFromString<Spec>(spec)
     override val labels: List<String> = s.labels
     override val conformal: Conformal? = s.conformal
+    override val spellOdds: Float? = s.spellOdds
     private val t = s.frames
     private val h = s.hidden
     private val k = s.kernel

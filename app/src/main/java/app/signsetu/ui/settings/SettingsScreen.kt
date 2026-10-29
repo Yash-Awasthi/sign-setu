@@ -78,7 +78,7 @@ import app.signsetu.data.settings.InterpreterApp
 import app.signsetu.data.settings.SettingsStore
 import app.signsetu.data.settings.ThemeMode
 import app.signsetu.data.settings.ColorTheme
-import app.signsetu.data.settings.whatsappNumber
+import app.signsetu.data.settings.interpreterUrl
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -90,7 +90,7 @@ private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?) {
+fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?, onRecordSigns: (() -> Unit)? = null) {
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
@@ -135,6 +135,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
         ) {
             Group(R.string.practice_title) {
                 Item(stringResource(R.string.practice_title), stringResource(R.string.practice_settings_summary), onClick = onPractice)
+                onRecordSigns?.let { Item(stringResource(R.string.record_title), stringResource(R.string.record_settings_summary), onClick = it) }
             }
             Group(R.string.settings_interpreter) {
                 Item(stringResource(R.string.settings_interpreter_app), stringResource(appName(s.interpreterApp))) { dialog = Dialog.APP }
@@ -158,6 +159,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
             Group(R.string.settings_sign_languages) {
                 LanguageItem(R.string.settings_isl_status, R.string.settings_isl_status_summary, R.string.settings_isl_badge, warn = false)
                 LanguageItem(R.string.settings_asl_status, R.string.settings_asl_status_summary, R.string.asl_experimental_badge, warn = true)
+                SwitchItem(R.string.settings_reader_format3, R.string.settings_reader_format3_summary, s.readerFormat3) { on -> scope.launch { store.setReaderFormat3(on) } }
             }
             Group(R.string.settings_assistant) {
                 if (available) ListItem(
@@ -450,7 +452,8 @@ private fun <T> ChoiceDialog(
 private fun ContactDialog(app: InterpreterApp, initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
     var value by rememberSaveable { mutableStateOf(initial) }
     val phone = app == InterpreterApp.WHATSAPP
-    val valid = if (phone) whatsappNumber(value) != null else value.isNotBlank()
+    // A WhatsApp entry may also be an https link, which opens as given; nothing else is saved.
+    val valid = if (phone) interpreterUrl(value) != null else value.isNotBlank()
     GuardedAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_interpreter_contact)) },
@@ -468,7 +471,7 @@ private fun ContactDialog(app: InterpreterApp, initial: String, onSave: (String)
                 } else {
                     null
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = if (phone) KeyboardType.Phone else KeyboardType.Text),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth(),
             )
         },

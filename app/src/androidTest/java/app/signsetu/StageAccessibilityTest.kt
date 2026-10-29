@@ -27,7 +27,6 @@ import app.signsetu.ui.components.LocalContentRepository
 import app.signsetu.ui.session.BoardSheet
 import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.Pending
-import app.signsetu.ui.session.PhraseBoard
 import app.signsetu.ui.session.RuleSteps
 import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.Stage
@@ -159,8 +158,6 @@ class StageAccessibilityTest(private val dark: Boolean) {
     @Test fun manyPictures() = stage(ask("f1"), Profile.YOUNG_CHILD, lesson = true)
 
     @Test fun inputsWithoutWordsInTheSubjectsLanguage() = stage(ask("a5"), Profile.NOT_SURE, lang = "bn", lesson = true)
-
-    @Test fun phraseBoard() = show { SubjectTheme { PhraseBoard(content, "hi", null, {}, {}, {}, Modifier) } }
 
     @Test fun nameEntry() = stage(ask("p1"), Profile.ISL_USER, lesson = true)
 }

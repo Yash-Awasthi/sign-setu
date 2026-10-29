@@ -45,7 +45,8 @@ fun landmarkTracker(context: Context): LandmarkTracker? {
  * head angles, so nods and shakes are read from rotation, and mouth blendshapes. Same topology as Holistic, so the
  * readers see the same features. */
 class SplitTracker(private val context: Context, private val fallback: () -> LandmarkTracker?) : LandmarkTracker {
-    /** Holistic, used for every frame if the hand task cannot open on this phone at all. */
+    /** Holistic, used for every frame if the hand or body task cannot open on this phone at all: the readers need
+     * both (the body sets each sign's centre and scale). */
     private val instead: LandmarkTracker? by lazy { fallback() }
     private val lock = Any()
     private var hands: HandLandmarker? = null
@@ -62,7 +63,7 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
 
     override fun warm() {
         open()
-        if (hands == null) instead?.warm()
+        if (hands == null || pose == null) instead?.warm()
     }
 
     private fun open() = synchronized(lock) {
@@ -112,7 +113,7 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
         // Video mode rejects a timestamp that does not move forward.
         if (timestampMs <= last) return null
         open()
-        val h = hands ?: return instead?.track(frame, timestampMs)
+        val h = hands?.takeIf { pose != null } ?: return instead?.track(frame, timestampMs)
         last = timestampMs
         val image = BitmapImageBuilder(frame).build()
         frameNo++
@@ -157,7 +158,7 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
 
     override fun close() = synchronized(lock) {
         hands?.close(); pose?.close(); face?.close()
-        if (opened && hands == null) instead?.close()
+        if (opened && (hands == null || pose == null)) instead?.close()
         hands = null; pose = null; face = null
         opened = false
         last = Long.MIN_VALUE

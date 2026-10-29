@@ -24,6 +24,9 @@ Z_SCALE = 1920.0  # MediaPipe hand z is in the same normalised units as x
 # The rig's anchors (BUILD in avatar/src/rig.ts); right-side values, mirrored for the left.
 CENTER = 100.0
 SHOULDER_Y, SHOULDER_HALF = 136.0, 44.0
+# The rig's torso is half as tall as its shoulder width says (chest 18 units below the shoulders, belly 52, where a
+# signer's are about 0.4 and 1.15 widths): without this, chest-height hands landed on the bottom clamp, at the waist.
+TORSO_Y = 0.5
 UPPER_ARM = 41.0
 REACH = UPPER_ARM + 38.0 - 3.0
 ANCHORS = {
@@ -128,6 +131,8 @@ def to_rig(p: np.ndarray, body: tuple, face: tuple) -> np.ndarray:
     """A source pixel point in adult rig units: shoulder-scaled on the body, face-scaled near the face, blended."""
     (mid, width), (eyes, eye_mouth) = body, face
     on_body = np.array([CENTER, SHOULDER_Y]) + (p - mid) * (2 * SHOULDER_HALF / width)
+    if on_body[1] > SHOULDER_Y:
+        on_body[1] = SHOULDER_Y + (on_body[1] - SHOULDER_Y) * TORSO_Y
     on_face = RIG_EYES_MID + (p - eyes) * (np.linalg.norm(RIG_MOUTH - RIG_EYES_MID) / max(eye_mouth, 1e-6))
     near = np.linalg.norm(p - (eyes + np.array([0.0, eye_mouth]))) / width
     w = float(np.clip((0.8 - near) / 0.35, 0.0, 1.0))
@@ -268,14 +273,15 @@ def prepare(rec: dict, hands: list[str], fps: float = FPS, first: bool = False, 
     # The rig eases in from its own rest, so the signer's raising and lowering of the hands is cut. Dictionary signers
     # rest out of frame and sign low, so for them a visible hand marks the signing.
     up = (np.logical_or.reduce([rec[f"has_{h}"][lo:hi] for h in hands]) if visible
-          else np.logical_or.reduce([rig[h][:, 1] < SHOULDER_Y + RAISED * 2 * SHOULDER_HALF for h in hands]))
+          else np.logical_or.reduce([rig[h][:, 1] < SHOULDER_Y + RAISED * 2 * SHOULDER_HALF * TORSO_Y for h in hands]))
     raised = np.flatnonzero(up)
     a, b = (raised[0], raised[-1] + 1) if len(raised) else (0, len(up))
     if first and len(raised):
         # Dictionary clips may go on to an example or a repeat: keep the first raise, up to a drop of over half a second.
-        gaps = np.flatnonzero(np.diff(raised) > fps / 2)
-        if len(gaps):
-            b = raised[gaps[0]] + 1
+        # A raise under 0.3 s is a blip before the sign ("law"), not the sign.
+        runs = np.split(raised, np.flatnonzero(np.diff(raised) > fps / 2) + 1)
+        run = next((r for r in runs if len(r) >= 0.3 * fps), runs[0])
+        a, b = run[0], run[-1] + 1
     path = np.concatenate([rig[h][a:b] for h in hands], axis=1)
     frames = [a + i for i in key_frames(path, fps)]
     return {"tracks": tracks, "rig": rig, "elbows": elbows, "frames": frames, "start": a, "pose": pose, "body": body, "face": face}

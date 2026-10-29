@@ -32,6 +32,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | Indic Parler-TTS (AI4Bharat) | Apache-2.0 | Data | Recorded speech for Assamese, Nepali, Odia and Urdu (`tools/content/build_audio.py`) |
 | Officer colour themes | Mihon colour schemes | Apache-2.0 | Ship (values) | Five light and dark schemes copied into `ui/theme/MihonPalettes.kt` |
 | Sign recognition | MediaPipe Tasks Vision 1.1.1 with the Holistic landmarker model | Apache-2.0 | Ship | On-device hand, face and pose landmarks, GPU then CPU; 64-bit native library only; usage-statistics upload backend excluded |
+| Sign recognition | LiteRT 1.4.2 (Google AI Edge; the 2.x line pulls in Play delivery libraries) | Apache-2.0 | Ship | Runs the format 3 sign reader (features inside the model graph) behind a setting, and in shadow beside format 1 in debug builds |
 | | Protocol Buffers for Java 4.36.2 (`protobuf-javalite`) | BSD-3-Clause | Ship | Lite runtime MediaPipe 1.1.1 is built on, pinned past CVE-2024-7254 |
 | | Sign reader (`LandmarkSignReader`), trained in `tools/ml` | Project code; weights derived from INCLUDE (CC BY 4.0) and the Indian Sign Language video dataset (Prasad Shet, Kaggle, MIT) | Ship | Plain Kotlin forward pass; no inference library |
 | | ISL name spelling reader (`isl_spell_ctc`, format 2, two hands, `CtcSpellReader`) | Project code; weights derived from ISL-Fingerspelling (ISH News, WSLP 2025, CC BY-NC 4.0) with INCLUDE and Kaggle word clips as non-spelling | Ship (non-commercial) | Held-out signer CER 0.12; a commercial or department release must retrain without it or get permission (P0-2) |
@@ -41,11 +42,12 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | ISLAN (doi:10.17632/rc349j45m5.1) | CC BY 4.0 | Test only | Two-handed letters and numbers by other signers; stored a quarter turn sideways and turned upright before extraction; some archive files are truncated at the source |
 | | ASL word reader (`asl_reader`, format 1) | Project code; weights derived from PopSign ASL v1.0 and Google Isolated Sign Language Recognition (both CC BY 4.0) | Ship | Landmarks extracted with the app's Holistic model from the `sign/popsign-images` frames, plus the Kaggle landmarks. Held-out PopSign signers: top-1 0.47, top-3 0.63 |
 | | ASL fingerspelling reader (`asl_spell`, format 2, `CtcSpellReader`) | Project code; weights derived from ASLNow! (MIT) and Google ASL Fingerspelling (CC BY 4.0) | Ship | Small CTC model under 5 MB; synthetic sequences of real static letters plus real phrases; character error rate 0.37 on 10 held-out signers |
-| | LiteRT | Apache-2.0 | Not chosen | The reader is small enough for plain Kotlin; LiteRT remains the path for a larger partner model |
+| | LiteRT | Apache-2.0 | Ship (format 3) | Format 1 stays plain Kotlin; LiteRT runs the format 3 reader so larger graph models need no Kotlin port |
 | | Kaggle Isolated Sign Language Recognition, first-place solution | MIT | Reference | Ported and trained on ISL; no gain on new signers, so not shipped (`tools/ml/EVAL.md`) |
 | | OpenHands (AI4Bharat) | Code Apache-2.0; pose releases CC BY 4.0 | Data | The INCLUDE MediaPipe pose release (zenodo.org/records/6674324) is the reader's training input; attribution required |
-| ISL and gesture data | ISLRTC dictionary | Not published | Data with written permission | 10,000 terms; the reference for the ISL lexicon |
-| | ISLRTC Indian Sign Language Dictionary, data.gov.in release (mirror `silentone0725/Indian_Sign_Language_Data.gov_Rencoded`) | Government Open Data Licence India; mirror tagged MIT | Evaluation only | 10 digit clips and 7 fingerspelled acronyms give `eval_isl.py` its real-signer rows (`tools/ml/prepare_islrtc.py`); never trained on or shipped |
+| ISL and gesture data | ISLRTC dictionary | Not published | Data, used for training in this non-commercial project; written permission to be sought before any commercial or department release | 10,000 terms; the reference for the ISL lexicon; dictionary clips fine-tune the word reader v3 (`docs/models/sign_reader_v3.md`) |
+| | ISLRTC Indian Sign Language Dictionary, data.gov.in release (mirror `silentone0725/Indian_Sign_Language_Data.gov_Rencoded`) | Government Open Data Licence India; mirror tagged MIT | Data, used for training in this non-commercial project; written permission to be sought before any commercial or department release | 10 digit clips and 7 fingerspelled acronyms give `eval_isl.py` its real-signer rows (`tools/ml/prepare_islrtc.py`) |
+| | RKMVU-CBE ISL YouTube channel | No licence stated | Data, used for training in this non-commercial project; written permission to be sought before any commercial or department release | Word clips (30 s or shorter) fine-tune the word reader v3; landmarks only, no video shipped |
 | | INCLUDE (AI4Bharat, IIT Madras) | CC BY 4.0 | Data | 262 isolated ISL words; the reader is trained on it and its signers are retargeted into `isl_signs.json`; attribution required (§3) |
 | | CISLR, iSign | Per dataset | Data | Evaluation candidates; CISLR download is gated |
 | ASL data | PopSign ASL v1.0 (Georgia Tech, NTID) | CC BY 4.0 | Data | 250 isolated ASL signs, 47 Deaf signers; frames via huggingface.co/datasets/sign/popsign-images; trains `asl_reader` and is retargeted into `asl_signs.json` (`tools/isl/retarget_asl.py`); attribution required (§3) |
@@ -90,6 +92,7 @@ The INCLUDE, OpenHands, PopSign ASL, ISL-CSLTR, ASLNow!, ISLRTC dictionary, Kagg
 - **Indian Sign Language video dataset**: Prasad Shet, kaggle.com/datasets/prasadshet/indian-sign-language-video-dataset, MIT licence. Changes: landmarks extracted to train the word reader; no video is included.
 - **ISL-Fingerspelling**: "Continuous Fingerspelling Dataset for Indian Sign Language", WSLP at AACL-IJCNLP 2025, licensed under CC BY-NC 4.0. Changes: landmarks extracted to train the name spelling reader; no video is included. Non-commercial use only.
 - **MediaPipe**: Google LLC, Apache License 2.0; the Holistic landmarker model is distributed under the same licence.
+- **LiteRT**: Google LLC, Apache License 2.0.
 - **Ping**: Yash Awasthi, MIT licence; the pairing design is adapted from its CryptoUtils and transport interface.
 
 ## Sources

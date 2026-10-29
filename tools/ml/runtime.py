@@ -1,5 +1,6 @@
 """NumPy forward passes over the exported assets, as the app runs them, so evaluation scores what ships."""
 import json
+import os
 import pathlib
 
 import numpy as np
@@ -8,8 +9,10 @@ MODELS = pathlib.Path(__file__).resolve().parents[2] / "app" / "src" / "main" / 
 
 
 def _tensors(name: str):
-    spec = json.loads((MODELS / f"{name}.json").read_text(encoding="utf-8"))
-    flat = np.frombuffer((MODELS / f"{name}.bin").read_bytes(), "<f2" if spec.get("dtype") == "float16" else "<f4")
+    # READER_DIR_SIGN_READER (and so on) scores another copy, e.g. a staged or the previous reader.
+    src = pathlib.Path(os.environ.get(f"READER_DIR_{name.upper()}", MODELS))
+    spec = json.loads((src / f"{name}.json").read_text(encoding="utf-8"))
+    flat = np.frombuffer((src / f"{name}.bin").read_bytes(), "<f2" if spec.get("dtype") == "float16" else "<f4")
     out, at = [], 0
     for t in spec["tensors"]:
         n = int(np.prod(t["shape"]))

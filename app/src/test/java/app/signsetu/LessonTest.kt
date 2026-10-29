@@ -18,7 +18,6 @@ import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Role
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.ui.session.Detail
-import app.signsetu.ui.session.EVERYDAY
 import app.signsetu.ui.session.REF_PREFIX
 import app.signsetu.ui.session.personalDetails
 import org.junit.Assert.assertEquals
@@ -48,7 +47,7 @@ class LessonTest {
         }
         assertEquals(content.questions.size, content.questions.map { it.id }.toSet().size)
         assertEquals(12, q("f1").cards.size)
-        assertEquals(8, content.questions.count { it.group == EVERYDAY })
+        assertEquals(8, content.questions.count { it.group == "everyday" })
     }
 
     @Test
@@ -91,7 +90,7 @@ class LessonTest {
 
     @Test
     fun theGroupCarouselReachesEveryLessonSheetQuestion() {
-        val lesson = content.questions.filter { it.answer != null || it.group == EVERYDAY || it.group in setOf("identity", "family", "location", "school") }.map { it.id }.toSet()
+        val lesson = content.questions.filter { it.answer != null || it.group == "everyday" || it.group in setOf("identity", "family", "location", "school") }.map { it.id }.toSet()
         val reached = Role.entries.flatMap { r -> Profile.entries.flatMap { p -> listOf(false, true).flatMap { c -> content.groupsFor(r, c).flatMap { g -> content.questionsIn(g.id, r, p) } } } }.map { it.id }.toSet()
         assertEquals(emptySet<String>(), lesson - reached)
     }

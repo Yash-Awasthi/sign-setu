@@ -183,6 +183,9 @@
     <string name="settings_licences_summary">Symbols, voices and libraries in this app</string>
 
     <string name="call_missing">%1$s is not installed on this phone.</string>
+    <string name="call_confirm_title">Call the interpreter?</string>
+    <string name="call_confirm_body">This opens %1$s at %2$s. Nothing from this session is sent.</string>
+    <string name="call_confirm_go">Open</string>
 
     <string name="start_expired_title">Update required</string>
     <string name="start_expired_body">This version is more than 180 days old and cannot start new sessions. Install the current version from your department. An unfinished session can still be continued, exported and ended.</string>
@@ -254,6 +257,8 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_pin_app_summary">The subject cannot leave the app while holding the phone.</string>
     <string name="settings_block_screenshots">Block screenshots</string>
     <string name="settings_block_screenshots_summary">Screenshots and screen recording show a blank screen.</string>
+    <string name="settings_reader_format3">New sign reader engine (test)</string>
+    <string name="settings_reader_format3_summary">Reads ISL signs with the newer model format. Same words, same model; takes effect when the app next starts.</string>
     <string name="settings_app_lock">Ask for fingerprint</string>
     <string name="settings_app_lock_summary">Your fingerprint or screen lock before opening the app, leaving a session or deleting.</string>
     <string name="settings_lang_system">Same as the phone</string>
@@ -654,6 +659,32 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="practice_spelled">spelled</string>
     <string name="reading_sign_again">Could not read that. Ask them to sign again, facing the camera in good light.</string>
     <string name="reading_check">Check: %1$s</string>
+    <string name="reading_correct">Type what was signed</string>
+    <string name="record_title">Record signs for training</string>
+    <string name="record_settings_summary">Sign 10 words and sentences to help the sign reader learn new signers</string>
+    <string name="record_consent_title">Share with the Sign Setu project?</string>
+    <string name="record_consent_en">Recordings stay on this phone. If you switch sharing on, we send only hand and arm points, head and mouth movements, the words you confirm and your corrections. Never video, never sound. We keep them for 2 years and delete them whenever you ask, using your private signer id.</string>
+    <string name="record_consent_hi">रिकॉर्डिंग इसी फ़ोन पर रहती है। साझा करना चालू करने पर हम केवल हाथ और बाँह के बिंदु, सिर और मुँह की हरकतें, आपके पुष्टि किए गए शब्द और आपके सुधार भेजते हैं। कभी वीडियो नहीं, कभी आवाज़ नहीं। हम इन्हें 2 साल तक रखते हैं और आपके निजी साइनर आईडी से कभी भी कहने पर मिटा देते हैं।</string>
+    <string name="record_consent_on">Sharing is on</string>
+    <string name="record_consent_off">Sharing is off: nothing leaves this phone</string>
+    <string name="record_delete_mine">Delete my shared recordings</string>
+    <string name="record_deleted">Deleted from the project server</string>
+    <string name="record_delete_failed">Could not reach the server; try again when online</string>
+    <string name="record_hand">Which hand do you sign with?</string>
+    <string name="record_hand_right">Right</string>
+    <string name="record_hand_left">Left</string>
+    <string name="record_light">Light</string>
+    <string name="record_light_bright">Bright</string>
+    <string name="record_light_dim">Dim</string>
+    <string name="record_light_backlit">Light behind me</string>
+    <string name="record_start">Start</string>
+    <string name="record_go">Ready: sign after the count</string>
+    <string name="record_stop">Done</string>
+    <string name="record_gloss">Signs you made, in order</string>
+    <string name="record_redo">Again</string>
+    <string name="record_save">Save</string>
+    <string name="record_done">Thank you: %1$d recorded</string>
+    <string name="record_queued">%1$d waiting to be shared</string>
     <string name="reading_confirm">Health or safety: confirm with them before acting on it.</string>
     <string name="reading_camera">Camera read: %1$s. Tap to accept.</string>
     <string name="settings_sentence_helper">Offline sentence helper</string>

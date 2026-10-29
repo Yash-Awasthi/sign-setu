@@ -1,0 +1,70 @@
+{
+ "sign_reader": {
+  "installed": {
+   "name": "WF soup5",
+   "file": "app/src/main/assets/content/models/sign_reader.bin",
+   "sha256": "f2aa1fdbc3486dcc3df872fd9d0128b861a0a577bb92640545964552d6394e83",
+   "format": 1,
+   "weights": "float16",
+   "int8_check": "top-1 agreement 0.950 on 200 val windows, under 0.99: float16 kept",
+   "recipe": "app reader fine-tuned (row WF), uniform soup of seeds 1 to 5",
+   "data": {
+    "cache": "cache_v5",
+    "sha256": "bc0347037f803841e71476766fcc0b7175e42f8810eda05fa48752786963509a",
+    "clips": 17597
+   },
+   "temperature": 2.2276,
+   "metrics": {
+    "val_new_signer_app_words_top1": 0.492,
+    "val_new_signer_app_words_n": 59,
+    "val_kaggle_c_top1": 0.983,
+    "include_test_floor": 0.982,
+    "test_app_words_top1": 0.387,
+    "test_app_words_n": 62,
+    "nonsign_false_accept_val": 0.0
+   },
+   "date": "2026-10-29",
+   "spell_odds": 1.5,
+   "format3": {
+    "file": "app/src/main/assets/content/models/sign_reader_v3.tflite",
+    "sha256": "e044e51fcea4a6dbae1719c37d72b5aa7e467942d8f87bc95a2fbbfe40bc93fe",
+    "weights": "float32",
+    "gate": "200 val windows, top-1 agreement with the float32 trunk 1.000, max logit difference 6.9e-05",
+    "default": "off (setting); shadow in debug builds"
+   }
+  },
+  "fallback": {
+   "name": "APP (pre-WF reader)",
+   "file": "ml-data/staging/APP_head/sign_reader.bin",
+   "sha256": "418a672cb78fcb41dd3777734f82f1373b2de5ac811aa91a6b47acbb1d952e34",
+   "format": 1,
+   "weights": "float16",
+   "data": {
+    "sources": "INCLUDE + Kaggle ISL 60"
+   },
+   "temperature": 0.8575,
+   "metrics": {
+    "val_new_signer_app_words_top1": 0.407,
+    "test_app_words_top1": 0.371,
+    "test_app_words_n": 62,
+    "nonsign_false_accept_val": 0.139
+   }
+  }
+ },
+ "isl_spell_ctc": {
+  "file": "app/src/main/assets/content/models/isl_spell_ctc.bin",
+  "sha256": "3656b5052310e9a475566ab8e1aaf5d09743cc64a3000bf4af39acd79b379669"
+ },
+ "isl_spell": {
+  "file": "app/src/main/assets/content/models/isl_spell.bin",
+  "sha256": "424b6430bd6b030b75c332ba5b673a1af9fa81bb87fb87d7397f3904d6f691e8"
+ },
+ "asl_reader": {
+  "file": "app/src/main/assets/content/models/asl_reader.bin",
+  "sha256": "839f758c2237f5ec78058cc476117ea02830d478f9dff00575413c77d0c71c83"
+ },
+ "asl_spell": {
+  "file": "app/src/main/assets/content/models/asl_spell.bin",
+  "sha256": "297beec313932c35c0d609639fc0fd235a34d1fd5672e3098ddcbd5677d6ef23"
+ }
+}

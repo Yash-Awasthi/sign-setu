@@ -31,7 +31,7 @@ type Gateway struct {
 	now    func() time.Time
 	log    *slog.Logger
 
-	limiter, enrollLimiter, enrollFailures, enrollFailuresAll *RateLimiter
+	limiter, enrollLimiter, enrollFailures, enrollFailuresAll, contribLimiter *RateLimiter
 }
 
 func newGateway(cfg Config, store Store, assist Assist, speak Speak, keys KeySource, now func() time.Time, log *slog.Logger) *Gateway {
@@ -41,6 +41,7 @@ func newGateway(cfg Config, store Store, assist Assist, speak Speak, keys KeySou
 		enrollLimiter:     newRateLimiter(cfg.EnrollPerMinute, now),
 		enrollFailures:    newRateLimiter(cfg.EnrollFailuresPerMinute, now),
 		enrollFailuresAll: newRateLimiter(cfg.EnrollFailuresGlobalPerMinute, now),
+		contribLimiter:    newRateLimiter(cfg.ContribPerMinute, now),
 	}
 }
 
@@ -51,6 +52,8 @@ func (g *Gateway) Handler() http.Handler {
 	mux.HandleFunc("POST /v1/enroll", g.enroll)
 	mux.HandleFunc("POST /v1/assist", g.device(g.assistRoute))
 	mux.HandleFunc("POST /v1/speak", g.device(g.speakRoute))
+	mux.HandleFunc("POST /v1/contrib", g.device(g.contribRoute))
+	mux.HandleFunc("DELETE /v1/contrib/{signer}", g.device(g.contribDelete))
 	mux.HandleFunc("GET /v1/admin/devices", g.admin(g.adminDevices))
 	mux.HandleFunc("POST /v1/admin/devices/{id}/revoke", g.admin(g.adminRevoke))
 	mux.HandleFunc("GET /v1/admin/audit", g.admin(g.adminAudit))
@@ -79,12 +82,16 @@ func refuse(w http.ResponseWriter, l *RateLimiter, key string) {
 
 func limitBody(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.ContentLength > maxBodyBytes {
+		limit := int64(maxBodyBytes)
+		if r.URL.Path == "/v1/contrib" {
+			limit = maxContribBytes
+		}
+		if r.ContentLength > limit {
 			fail(w, http.StatusRequestEntityTooLarge, "too large")
 			return
 		}
 		// A chunked body with no length is cut off at the cap while it is decoded.
-		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
 		next.ServeHTTP(w, r)
 	})
 }

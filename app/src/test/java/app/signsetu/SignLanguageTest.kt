@@ -65,7 +65,7 @@ class SignLanguageTest {
         assertNull(SignReaders.load(SignLanguage.ISL) { null })
         assertNull(SignReaders.load(SignLanguage.ISL) { p -> if (p.startsWith("models/")) null else open(p) })
         assertNull(SignReaders.load(SignLanguage.ASL) { p -> if (p.startsWith("models/asl_reader")) null else open(p) })
-        assertTrue(SignReaders.load(SignLanguage.ASL, ::open)!!.labels.containsAll(listOf("a", "z")))
+        assertTrue(SignReaders.load(SignLanguage.ASL, open = ::open)!!.labels.containsAll(listOf("a", "z")))
         // isl_spell missing: the word reader alone still reads.
         val isl = SignReaders.load(SignLanguage.ISL) { p -> if (p.startsWith("models/isl_spell")) null else open(p) }
         assertTrue(isl is LandmarkSignReader)

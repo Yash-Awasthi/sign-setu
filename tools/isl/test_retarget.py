@@ -61,9 +61,10 @@ class Placement(unittest.TestCase):
         self.body, self.face = rt.body_frame(p[None]), rt.face_frame(p[None])
 
     def test_body_points_scale_with_the_shoulders(self):
-        # Half a shoulder width below the shoulders, centre and right side.
-        np.testing.assert_allclose(rt.to_rig(np.array([200.0, 500.0]), self.body, self.face), [100, 180])
-        np.testing.assert_allclose(rt.to_rig(np.array([100.0, 500.0]), self.body, self.face), [56, 180])
+        # Half a shoulder width below the shoulders, centre and right side; the rig's torso takes depth at TORSO_Y.
+        y = rt.SHOULDER_Y + rt.SHOULDER_HALF * rt.TORSO_Y
+        np.testing.assert_allclose(rt.to_rig(np.array([200.0, 500.0]), self.body, self.face), [100, y])
+        np.testing.assert_allclose(rt.to_rig(np.array([100.0, 500.0]), self.body, self.face), [56, y])
 
     def test_face_points_map_onto_the_rig_face(self):
         np.testing.assert_allclose(rt.to_rig(np.array([200.0, 335.0]), self.body, self.face), rt.RIG_MOUTH, atol=1e-6)

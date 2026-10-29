@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.geometry.Offset
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.data.content.SignLanguage
+import app.signsetu.gloss.DebugRecorder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -16,11 +17,13 @@ private const val NAMES = "names.txt"
 
 /** Creates the bundled sign reader for a language, or none when its models are missing or fail their check. */
 object SignReaders {
-    fun create(context: Context, lang: SignLanguage = SignLanguage.ISL): SignReader? =
-        load(lang) { path -> runCatching { context.assets.open("content/$path").use { it.readBytes() } }.getOrNull() }
+    fun create(context: Context, lang: SignLanguage = SignLanguage.ISL, format3: Boolean = false, shadow: Boolean = false): SignReader? =
+        load(lang, format3, shadow) { path -> runCatching { context.assets.open("content/$path").use { it.readBytes() } }.getOrNull() }
 
-    /** [open] reads a file under assets/content/, null when it is missing. Words and fingerspelling read together. */
-    fun load(lang: SignLanguage, open: (String) -> ByteArray?): SignReader? = runCatching {
+    /** [open] reads a file under assets/content/, null when it is missing. Words and fingerspelling read together.
+     * [format3] shows the format 3 word reader where the language has one; [shadow] runs the other format silently
+     * beside the shown one and logs both to [DebugRecorder]. */
+    fun load(lang: SignLanguage, format3: Boolean = false, shadow: Boolean = false, open: (String) -> ByteArray?): SignReader? = runCatching {
         val files = Json.parseToJsonElement((open("manifest.json") ?: return null).decodeToString()).jsonObject.getValue("files").jsonObject
         fun verified(path: String): ByteArray? = open(path)?.takeIf { b ->
             MessageDigest.getInstance("SHA-256").digest(b).toHexString() == files[path]?.jsonPrimitive?.content
@@ -33,7 +36,14 @@ object SignReaders {
         val signWords = wordsJson?.let { runCatching { parseSignWords(it) }.getOrNull() }.orEmpty()
         val signCards = wordsJson?.let { runCatching { parseSignCards(it) }.getOrNull() }.orEmpty()
         // Spelling alone is not the language's reader: no word reader, no reader.
-        val words = model(lang.reader, signWords, signCards) ?: return null
+        val format1 = model(lang.reader, signWords, signCards)
+        // LiteRT is native: on the JVM, or with the file missing, there is no format 3 reader and format 1 stays.
+        val v3 = if (format3 || shadow) runCatching {
+            LiteRtSignReader(verified("${lang.reader}_v3.json")!!.decodeToString(), verified("${lang.reader}_v3.tflite")!!, signWords, signCards)
+        }.getOrNull() else null
+        val shown = (if (format3) v3 ?: format1 else format1) ?: return null
+        val other = if (shown === v3) format1 else v3
+        val words = if (shadow && other != null) ShadowReader(shown, other, if (shown === v3) 3 else 1) else shown.also { if (other !== shown) other?.close() }
         val spell = lang.spell?.let { base ->
             val spec = verified("$base.json")?.decodeToString()
             if (spec != null && Json.parseToJsonElement(spec).jsonObject["format"]?.jsonPrimitive?.content == "2") {
@@ -41,7 +51,7 @@ object SignReaders {
             } else model(base, emptyMap())?.let(::SpellReader)
         }
         // The CTC reader gates itself and has no softmax over words to weigh against, so any read it gives wins.
-        val read = if (spell != null) CombinedReader(words, spell, if (spell is CtcSpell) 0f else SPELL_ODDS) else words
+        val read = if (spell != null) CombinedReader(words, spell, if (spell is CtcSpell) 0f else words.spellOdds ?: SPELL_ODDS) else words
         // ISL keeps its letter and digit reader for single signs and adds the continuous one for spelled names.
         val lexicon = verified(NAMES)?.decodeToString()?.let(NameResolver::parseLexicon)
         val names = lang.names?.let { base ->
@@ -85,6 +95,21 @@ internal fun wristReach(frames: List<LandmarkFrame>): Float? {
         return w.maxOf { hypot(it.x - mx, (it.y - my) * ky) }
     }
     return maxOf(reach { it.leftHand }, reach { it.rightHand }) / sw
+}
+
+/** Shadow mode (debug builds): [other] reads every segment silently after [shown]; both top guesses and both times go
+ * to [DebugRecorder], and only [shown]'s guesses reach the officer. */
+private class ShadowReader(private val shown: SignReader, private val other: SignReader, private val shownFormat: Int) : SignReader by shown {
+    override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
+        val t0 = System.nanoTime()
+        val a = shown.read(frames)
+        val t1 = System.nanoTime()
+        val b = runCatching { other.read(frames) }.getOrDefault(emptyList())
+        DebugRecorder.shadow(shownFormat, a.firstOrNull(), b.firstOrNull(), (t1 - t0) / 1e6f, (System.nanoTime() - t1) / 1e6f)
+        return a
+    }
+
+    override fun close() { shown.close(); other.close() }
 }
 
 /** The format 2 CTC reader as a [SignReader]: the letters read, scored by its least sure letter. With [names], the

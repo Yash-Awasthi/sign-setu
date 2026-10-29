@@ -4,6 +4,7 @@ import app.signsetu.assistant.ModelStore
 import app.signsetu.assistant.Assistant
 import app.signsetu.assistant.OnlineAssistant
 import app.signsetu.assistant.Direct
+import app.signsetu.gloss.Contributions
 import app.signsetu.net.KeystoreVault
 import app.signsetu.net.UrlHttp
 import app.signsetu.net.isOnline
@@ -83,8 +84,14 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     val landmarkTracker: LandmarkTracker? by tracker
     private fun landmarkTrackerOrNull() = if (tracker.isInitialized()) tracker.value else null
 
-    /** Reads isolated signs from landmarks; none until its model is present. */
-    private val signReaders = SignLanguage.entries.associateWith { lang -> lazy { SignReaders.create(app, lang) } }
+    /** Reads isolated signs from landmarks; none until its model is present. First read on Dispatchers.IO, so the
+     * format setting is read there once; debug builds run the other format beside it in shadow mode. */
+    private val signReaders = SignLanguage.entries.associateWith { lang ->
+        lazy {
+            val format3 = kotlinx.coroutines.runBlocking { settings.current().readerFormat3 }
+            SignReaders.create(app, lang, format3, shadow = BuildConfig.DEBUG)
+        }
+    }
     val signReader: SignReader? get() = signReader(SignLanguage.ISL)
     fun signReader(lang: SignLanguage): SignReader? = signReaders.getValue(lang).value
 
@@ -112,8 +119,11 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         }
     private val databaseKey = DatabaseKey(app)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    /** Signs recorded for training, uploaded only on the signer's opt-in. */
+    val contributions = Contributions(File(app.filesDir, "contrib"), BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), { isOnline(app) }, scope)
     init {
         scope.launch(Dispatchers.IO) { settings.current().let { onlineAssistant.restoreCustom(it.devAiUrl, it.devAiModel) } }
+        contributions.kick()
     }
     private var database: SessionDatabase? = null
     private var backgroundedAt = 0L

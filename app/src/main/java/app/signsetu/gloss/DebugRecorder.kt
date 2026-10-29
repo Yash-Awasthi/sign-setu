@@ -1,12 +1,15 @@
 package app.signsetu.gloss
 
 import app.signsetu.camera.LandmarkFrame
+import app.signsetu.sign.SignGuess
 import app.signsetu.sign.SignSegment
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import java.io.File
 
@@ -20,11 +23,31 @@ object DebugRecorder {
 
     fun window(eventId: Long, question: String?, segments: List<SignSegment>, appVersion: String) {
         val d = dir ?: return
+        val record = record(eventId, question, segments, appVersion)
+        runCatching { d.mkdirs(); File(d, "window_$eventId.json").writeText(record.toString()) }
+    }
+
+    /** A typed correction of a window, stored in that window's record beside its lattice. */
+    fun correction(eventId: Long, gloss: List<String>, text: String) {
+        val f = File(dir ?: return, "window_$eventId.json").takeIf { it.exists() } ?: return
+        runCatching {
+            val old = Json.parseToJsonElement(f.readText()).jsonObject
+            val fix = buildJsonObject {
+                put("gloss", JsonArray(gloss.map(::JsonPrimitive))); put("text", text); put("at", System.currentTimeMillis())
+            }
+            f.writeText(JsonObject(old + ("correction" to fix)).toString())
+        }
+    }
+
+    /** One sign window in the recorder schema; also what a training contribution carries. */
+    fun record(eventId: Long, question: String?, segments: List<SignSegment>, appVersion: String): JsonObject {
         val lattice = GlossLattice.of(segments, appVersion)
-        val record = buildJsonObject {
+        return buildJsonObject {
             put("eventId", eventId)
             put("app", appVersion)
             question?.let { put("question", it) }
+            // Frame width over height: y is a share of the height, so the points cannot be put back without it.
+            segments.firstOrNull()?.frames?.firstOrNull()?.let { put("aspect", round(it.aspect)) }
             put("lattice", Json.parseToJsonElement(lattice.toJson()))
             put("signs", buildJsonArray {
                 for (s in segments) add(buildJsonObject {
@@ -35,7 +58,6 @@ object DebugRecorder {
             // Filled in by a person before the record joins the evaluation set.
             put("label", buildJsonObject { put("gloss", JsonPrimitive(null as String?)); put("en", JsonPrimitive(null as String?)); put("hi", JsonPrimitive(null as String?)) })
         }
-        runCatching { d.mkdirs(); File(d, "window_$eventId.json").writeText(record.toString()) }
     }
 
     fun decision(eventId: Long, what: String, detail: String?) {
@@ -44,6 +66,19 @@ object DebugRecorder {
             put("eventId", eventId); put("at", System.currentTimeMillis()); put("what", what); detail?.let { put("detail", it) }
         }
         runCatching { d.mkdirs(); File(d, "decisions.jsonl").appendText(line.toString() + "\n") }
+    }
+
+    /** Shadow mode: the shown reader's and the silent reader's top guess and time for one segment, a line in
+     * shadow.jsonl, so a week of team use gives their agreement and latency before format 3 becomes the default. */
+    fun shadow(shownFormat: Int, shown: SignGuess?, other: SignGuess?, shownMs: Float, otherMs: Float) {
+        val d = dir ?: return
+        val line = buildJsonObject {
+            put("at", System.currentTimeMillis()); put("shown_format", shownFormat)
+            put("shown", shown?.word); put("shown_p", shown?.score?.let(::round))
+            put("other", other?.word); put("other_p", other?.score?.let(::round))
+            put("agree", shown?.word == other?.word); put("shown_ms", round(shownMs)); put("other_ms", round(otherMs))
+        }
+        runCatching { d.mkdirs(); File(d, "shadow.jsonl").appendText(line.toString() + "\n") }
     }
 
     /** Hands (21 points each) and the six arm points, rounded: what the readers use. */

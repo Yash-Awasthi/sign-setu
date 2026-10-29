@@ -1,6 +1,6 @@
 # Gloss to text: plan
 
-This builds on "Sign-Setu: gloss-to-text implementation plan" (C:\work\The_bare_minmums_plan.pdf, 2026-10-28), which
+This builds on "Sign-Setu: gloss-to-text implementation plan" (The_bare_minmums_plan.pdf, kept outside the repository, 2026-10-28), which
 is the floor. Everything it asks for is kept: the gloss lattice, calibrated readers with a reject path, the name
 resolver with a margin rule, a reviewed English and Hindi phrasebook, the faithfulness checker, the four-rung output
 ladder, the evaluation harness and the release gates. This file records where the build goes further, and why.
@@ -94,7 +94,7 @@ review of meaning. Until then every number from simulated lattices is a developm
 | 2.1 to 2.3, 2.6 calibration, conformal sets, risk curve, confusion | Done: `tools/ml/calibrate.py`, `tools/ml/plots/risk_coverage.svg` |
 | 2.4 background class | Waiting for recorded non-sign motion (the recorder collects it) |
 | 2.5 segmentation error rate | Waiting for recorded sentences |
-| 2.7 better reader | Ongoing ML work (section 2 of `C:\work\newses.md`) |
+| 2.7 better reader | Ongoing ML work (`tools/ml/EVAL.md`) |
 | 3 name resolver | Done: CTC-scored, margin rule, 425-entry `names.txt`, names confirmed in a session; margin needs tuning on held-out spelling |
 | 4 phrasebook | Done: 44 intents (every asking question has one, enforced by `check_content.py`), English and Hindi, question prior, lattice matcher; review sheet `docs/review/intents_review.csv` |
 | 4.8 review | Needs a Hindi speaker and a Deaf ISL reviewer |
@@ -103,6 +103,6 @@ review of meaning. Until then every number from simulated lattices is a developm
 | 7 neural tagger, 8 continuous reader | Held for Gate B (real sentence data) |
 | Faster tracking (on-device roadmap) | Built, not yet measured on a phone: `camera/SplitTracker.kt` runs hands every frame and body and face on alternate frames (GPU, own CPU fallback, Holistic if hands cannot open); nods and shakes from the face model's head rotation; 19 mouth blendshapes per frame into the recorder. Offline the word reader barely depends on frame rate (ISLRTC top-1 0.342 at 25 fps, 0.316 at 8 fps); the gain is for head movement, mouth, spelling and segmentation |
 | Mouthing (item 5) | Features recorded; a model waits for videos with faces (full ISLRTC download) |
-| Sentence helper (item 6) | Built: its own Settings import (`ModelStore` "sentence"), separate from the automation agents' model; only reorders checked sentences when the ladder is unsure. Accepts Qwen2.5 0.5B Instruct Q4_K_M (491 MB, Apache-2.0, hash in `KNOWN_SENTENCE_MODELS`); the department copies `C:\work\ml-data\sentence_helper\qwen2.5-0.5b-instruct-q4_k_m.gguf` to the phone and imports it |
+| Sentence helper (item 6) | Built: its own Settings import (`ModelStore` "sentence"), separate from the automation agents' model; only reorders checked sentences when the ladder is unsure. Accepts Qwen2.5 0.5B Instruct Q4_K_M (491 MB, Apache-2.0, hash in `KNOWN_SENTENCE_MODELS`); the department copies `ml-data\sentence_helper\qwen2.5-0.5b-instruct-q4_k_m.gguf` to the phone and imports it |
 | Camera reads (all screens) | Nods, shakes, thumbs, points at the body, held fingers, palm, shrug and courtesies go to the officer as "Camera read" on both the phone and a paired second screen; the person is never asked to confirm |
 

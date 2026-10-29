@@ -1,0 +1,53 @@
+{
+ "C:\\work\\ml-data\\_preflight\\cache2k": {
+  "sha256": "ac176baa8c5b1ba1ec9baca4005e028345f10405dc9df028e173e74be006df40",
+  "clips": 2000,
+  "frames": 129301,
+  "date": "2026-10-28"
+ },
+ "C:\\work\\ml-data\\cache_interim": {
+  "sha256": "f3218569b616c6cbff374fef3762ba3209bca83370554a1a7b8c874158166fdd",
+  "clips": 5494,
+  "frames": 474209,
+  "date": "2026-10-28"
+ },
+ "C:\\work\\ml-data\\cache_v4": {
+  "sha256": "1d39c350e250705b2e6ecb056783e6541397ff559aa6a21359e4f0050ebb78cd",
+  "clips": 10360,
+  "frames": 726377,
+  "date": "2026-10-28"
+ },
+ "C:\\work\\ml-data\\cache_v4b": {
+  "sha256": "1d39c350e250705b2e6ecb056783e6541397ff559aa6a21359e4f0050ebb78cd",
+  "clips": 10360,
+  "frames": 726377,
+  "date": "2026-10-28"
+ },
+ "C:\\work\\ml-data\\cache_v5": {
+  "sha256": "bc0347037f803841e71476766fcc0b7175e42f8810eda05fa48752786963509a",
+  "clips": 17597,
+  "frames": 1161459,
+  "date": "2026-10-29"
+ },
+ "C:\\work\\ml-data\\cache_v5_hc": {
+  "sha256": "8322d95e966a3bbb31488c42f192c663d5afc16f5f13e4d3891570b69e56ddbe",
+  "clips": 17597,
+  "frames": 1161459,
+  "date": "2026-10-29",
+  "derived_from": "C:\\work\\ml-data\\cache_v5",
+  "transform": "handfill"
+ },
+ "C:\\work\\ml-data\\cache_v6b": {
+  "sha256": "9bddf5aa74a8041a7f4909e545ffad470850a429b1147e38fe6c5e1edf768141",
+  "clips": 34035,
+  "frames": 2135717,
+  "date": "2026-10-29",
+  "note": "stray 06:08 re-cut; replaced cache_v6 used by final2 and I10V6"
+ },
+ "C:\\work\\ml-data\\cache_asl_q4a": {
+  "sha256": "83442c6aee734ffce7b5da3d61e804a752d63774532df290d749989f61da8e18",
+  "clips": 3729,
+  "frames": 327590,
+  "date": "2026-10-29"
+ }
+}

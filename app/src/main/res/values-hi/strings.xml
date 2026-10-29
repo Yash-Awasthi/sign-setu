@@ -176,6 +176,9 @@
     <string name="settings_licences_summary">इस ऐप के चिह्न, आवाज़ें और लाइब्रेरी</string>
 
     <string name="call_missing">%1$s इस फ़ोन पर इंस्टॉल नहीं है।</string>
+    <string name="call_confirm_title">दुभाषिए को कॉल करें?</string>
+    <string name="call_confirm_body">इससे %1$s में %2$s खुलेगा। इस सत्र से कुछ भी नहीं भेजा जाता।</string>
+    <string name="call_confirm_go">खोलें</string>
 
     <string name="start_expired_title">अपडेट ज़रूरी है</string>
     <string name="start_expired_body">यह संस्करण 180 दिन से पुराना है और नया सत्र शुरू नहीं कर सकता। अपने विभाग से नया संस्करण इंस्टॉल करें। अधूरा सत्र अब भी जारी रखा, एक्सपोर्ट किया और खत्म किया जा सकता है।</string>
@@ -247,6 +250,8 @@
     <string name="settings_pin_app_summary">फ़ोन पकड़े हुए व्यक्ति ऐप से बाहर नहीं जा सकता।</string>
     <string name="settings_block_screenshots">स्क्रीनशॉट रोकें</string>
     <string name="settings_block_screenshots_summary">स्क्रीनशॉट और स्क्रीन रिकॉर्डिंग में खाली स्क्रीन दिखती है।</string>
+    <string name="settings_reader_format3">नया साइन पढ़ने वाला इंजन (परीक्षण)</string>
+    <string name="settings_reader_format3_summary">ISL साइन नए मॉडल प्रारूप से पढ़े जाते हैं। वही शब्द, वही मॉडल; ऐप अगली बार खुलने पर लागू होता है।</string>
     <string name="settings_app_lock">फ़िंगरप्रिंट माँगें</string>
     <string name="settings_app_lock_summary">ऐप खोलने, सत्र छोड़ने या कुछ मिटाने से पहले आपका फ़िंगरप्रिंट या स्क्रीन लॉक।</string>
     <string name="settings_lang_system">फ़ोन जैसी</string>
@@ -647,6 +652,32 @@
     <string name="practice_spelled">अक्षर-दर-अक्षर</string>
     <string name="reading_sign_again">पढ़ा नहीं जा सका। उनसे कैमरे की ओर मुँह करके, अच्छी रोशनी में फिर से इशारा करने को कहें।</string>
     <string name="reading_check">जाँचें: %1$s</string>
+    <string name="reading_correct">जो साइन किया गया वह लिखें</string>
+    <string name="record_title">सीखने के लिए साइन रिकॉर्ड करें</string>
+    <string name="record_settings_summary">10 शब्द और वाक्य साइन करें ताकि साइन रीडर नए साइनर को समझना सीखे</string>
+    <string name="record_consent_title">साइन सेतु प्रोजेक्ट के साथ साझा करें?</string>
+    <string name="record_consent_en">Recordings stay on this phone. If you switch sharing on, we send only hand and arm points, head and mouth movements, the words you confirm and your corrections. Never video, never sound. We keep them for 2 years and delete them whenever you ask, using your private signer id.</string>
+    <string name="record_consent_hi">रिकॉर्डिंग इसी फ़ोन पर रहती है। साझा करना चालू करने पर हम केवल हाथ और बाँह के बिंदु, सिर और मुँह की हरकतें, आपके पुष्टि किए गए शब्द और आपके सुधार भेजते हैं। कभी वीडियो नहीं, कभी आवाज़ नहीं। हम इन्हें 2 साल तक रखते हैं और आपके निजी साइनर आईडी से कभी भी कहने पर मिटा देते हैं।</string>
+    <string name="record_consent_on">साझा करना चालू है</string>
+    <string name="record_consent_off">साझा करना बंद है: कुछ भी इस फ़ोन से बाहर नहीं जाता</string>
+    <string name="record_delete_mine">मेरी साझा रिकॉर्डिंग मिटाएँ</string>
+    <string name="record_deleted">प्रोजेक्ट सर्वर से मिटा दी गईं</string>
+    <string name="record_delete_failed">सर्वर तक नहीं पहुँचे; ऑनलाइन होने पर फिर कोशिश करें</string>
+    <string name="record_hand">आप किस हाथ से साइन करते हैं?</string>
+    <string name="record_hand_right">दायाँ</string>
+    <string name="record_hand_left">बायाँ</string>
+    <string name="record_light">रोशनी</string>
+    <string name="record_light_bright">तेज़</string>
+    <string name="record_light_dim">कम</string>
+    <string name="record_light_backlit">रोशनी मेरे पीछे</string>
+    <string name="record_start">शुरू करें</string>
+    <string name="record_go">तैयार: गिनती के बाद साइन करें</string>
+    <string name="record_stop">हो गया</string>
+    <string name="record_gloss">आपके साइन, क्रम से</string>
+    <string name="record_redo">फिर से</string>
+    <string name="record_save">सहेजें</string>
+    <string name="record_done">धन्यवाद: %1$d रिकॉर्ड हुए</string>
+    <string name="record_queued">%1$d साझा होने की प्रतीक्षा में</string>
     <string name="reading_confirm">स्वास्थ्य या सुरक्षा: इस पर कार्रवाई से पहले उनसे पुष्टि करें।</string>
     <string name="reading_camera">कैमरे ने पढ़ा: %1$s। मानने के लिए टैप करें।</string>
     <string name="settings_sentence_helper">ऑफ़लाइन वाक्य सहायक</string>

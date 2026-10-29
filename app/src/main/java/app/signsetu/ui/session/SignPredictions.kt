@@ -12,7 +12,17 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.SuggestionChip
@@ -166,8 +176,12 @@ internal fun SignPredictions(
     reading: Reading = Reading(null, emptyList()),
     /** A camera read (nod, point, fingers…) has no signs: its text is the one reading to accept. */
     cameraText: String? = null,
+    /** The officer types what was signed when no guess is right (the pencil). */
+    onCorrect: ((String) -> Unit)? = null,
 ) {
     val picked = remember(eventId) { mutableStateMapOf<Int, String>() }
+    var typing by remember(eventId) { mutableStateOf(false) }
+    var typed by remember(eventId) { mutableStateOf("") }
     val guesses = segments.map { s -> s.guesses.orEmpty().take(PREDICTIONS).map { it.word } }
     val rung = reading.rung
     if (segments.isEmpty() && cameraText != null) {
@@ -210,6 +224,18 @@ internal fun SignPredictions(
                         label = { Text(w.replace('_', ' ')) },
                     )
                 }
+            }
+        }
+        if (onCorrect != null && segments.isNotEmpty()) {
+            if (!typing) {
+                IconButton(onClick = { typing = true }) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.reading_correct)) }
+            } else {
+                OutlinedTextField(
+                    value = typed, onValueChange = { typed = it }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.reading_correct)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { if (typed.isNotBlank()) { onCorrect(typed); typing = false } }),
+                )
             }
         }
     }

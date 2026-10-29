@@ -57,10 +57,10 @@
  "dtype": "float16",
  "weights": "float16 little-endian, tensors in the order above, row-major; conv weight is [out][in][kernel]",
  "feature_spec": "MediaPipe Holistic normalised image points, unmirrored; y scaled by height/width; centre = mean shoulder midpoint (pose 11, 12) over the segment, scale = mean shoulder width; per frame: left hand 21x(x,y), right hand 21x(x,y), pose 11..16 (x,y), left and right presence flags; a missing part is zeros; segment resampled to `frames` by nearest index (i*(n-1)*2 + frames-1) div (2*(frames-1))",
- "dataset": "INCLUDE (AI4Bharat), OpenHands pose release, zenodo.org/records/6674324, CC BY 4.0; Indian Sign Language video dataset (Prasad Shet, kaggle.com/datasets/prasadshet/indian-sign-language-video-dataset, MIT), landmarks by MediaPipe Holistic",
- "epochs": 400,
- "test_top1": 0.9792,
- "test_top3": 0.9951,
+ "dataset": "INCLUDE (AI4Bharat), OpenHands pose release, zenodo.org/records/6674324, CC BY 4.0; Indian Sign Language video dataset (Prasad Shet, kaggle.com/datasets/prasadshet/indian-sign-language-video-dataset, MIT), landmarks by MediaPipe Holistic; fine-tuned with ISLRTC dictionary clips (islrtc.nic.in) and RKMVU-CBE ISL channel clips, landmarks by MediaPipe",
+ "epochs": "W fine-tune",
+ "test_top1": 0.4915,
+ "test_top3": 0.6271,
  "labels": [
   "actor",
   "adult",
@@ -377,15 +377,16 @@
   "you (plural)",
   "young"
  ],
- "temperature": 0.8575,
+ "temperature": 2.2276,
  "conformal": {
   "method": "RAPS",
   "k_reg": 3,
   "lambda": 0.02,
   "thresholds": {
-   "0.50": 0.8152,
-   "0.80": 3.1515
+   "0.50": 0.5043,
+   "0.80": 2.4481
   },
-  "fit": "ISLRTC dictionary signer, 100 of 200 words"
- }
+  "fit": "validation clips (new signers, ISLRTC and RKMVU), two-fold by word, n=59"
+ },
+ "spell_odds": 1.5
 }

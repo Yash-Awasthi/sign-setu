@@ -49,7 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import app.signsetu.data.settings.AppSettings
 import app.signsetu.data.settings.InterpreterApp
-import app.signsetu.data.settings.whatsappNumber
+import app.signsetu.data.settings.interpreterUrl
 import app.signsetu.ui.practice.PracticeScreen
 import app.signsetu.ui.settings.AppearanceScreen
 import app.signsetu.ui.settings.SettingsScreen
@@ -137,6 +137,7 @@ import app.signsetu.ui.pair.UseAsStageButton
 @Serializable data object SettingsKey : NavKey
 @Serializable data object PracticeKey : NavKey
 @Serializable data object AppearanceKey : NavKey
+@Serializable data object RecordSignsKey : NavKey
 
 private const val SANDES_PACKAGE = "in.nic.gimkerala"
 
@@ -263,10 +264,12 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
     val activity = LocalActivity.current
     var pairing by remember { mutableStateOf(false) }
     var sandesHandoffContact by rememberSaveable { mutableStateOf<String?>(null) }
+    var whatsappConfirm by rememberSaveable { mutableStateOf<String?>(null) }
+    // Only a tap on the call button gets here, and it only asks: nothing opens before the officer confirms.
     val interpreterCall: (() -> Unit)? = if (settings.interpreterConfigured) {
         {
             if (settings.interpreterApp == InterpreterApp.SANDES) sandesHandoffContact = settings.interpreterContact
-            else activity?.let { callInterpreter(it, settings) }
+            else whatsappConfirm = settings.interpreterContact
         }
     } else null
     val interpreterName = stringResource(if (settings.interpreterApp == InterpreterApp.SANDES) R.string.settings_sandes else R.string.settings_whatsapp)
@@ -305,7 +308,10 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                 PracticeScreen(content, onBack = { backStack.removeLastOrNull() })
             }
             entry<SettingsKey> {
-                SettingsScreen(container.settings, container.models, container.sentenceModel, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall)
+                SettingsScreen(container.settings, container.models, container.sentenceModel, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall, onRecordSigns = { backStack.add(RecordSignsKey); Unit }.takeIf { tracker != null && app.signsetu.BuildConfig.DEBUG })
+            }
+            entry<RecordSignsKey> {
+                app.signsetu.ui.practice.RecordSignsScreen(tracker, container.contributions, onBack = { backStack.removeLastOrNull() })
             }
             entry<AppearanceKey> {
                 AppearanceScreen(container.settings, onBack = { backStack.removeLastOrNull() })
@@ -331,6 +337,16 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                 activity?.let(::launchSandes)
             },
             onDismiss = { sandesHandoffContact = null },
+        )
+    }
+    whatsappConfirm?.let { contact ->
+        GuardedAlertDialog(
+            onDismissRequest = { whatsappConfirm = null },
+            icon = { Icon(Icons.Filled.Call, contentDescription = null) },
+            title = { Text(stringResource(R.string.call_confirm_title)) },
+            text = { Text(stringResource(R.string.call_confirm_body, stringResource(R.string.settings_whatsapp), contact)) },
+            confirmButton = { TextButton(onClick = { whatsappConfirm = null; activity?.let { callInterpreter(it, settings) } }) { Text(stringResource(R.string.call_confirm_go)) } },
+            dismissButton = { TextButton(onClick = { whatsappConfirm = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
@@ -562,7 +578,7 @@ private fun launchSandes(activity: Activity) {
 /** Opens WhatsApp at the interpreter's number; no session data goes with it. Sandes goes through its dialog. */
 private fun callInterpreter(activity: Activity, settings: AppSettings) {
     val name = activity.getString(R.string.settings_whatsapp)
-    val intent = whatsappNumber(settings.interpreterContact)?.let { Intent(Intent.ACTION_VIEW, "https://wa.me/$it".toUri()) }
+    val intent = interpreterUrl(settings.interpreterContact)?.let { Intent(Intent.ACTION_VIEW, it.toUri()) }
     if (intent != null) unpinFor(activity)
     val opened = intent != null && runCatching { activity.startActivity(intent) }.isSuccess
     if (!opened) {

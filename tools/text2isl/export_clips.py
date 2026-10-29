@@ -29,6 +29,10 @@ def read_predictions(path: Path) -> dict:
 
 GLITCH = 0.05  # a point this far from its 7-frame median, and 3 deviations out, is a tracking slip
 SIGMA_XY, SIGMA_Z = 1.0, 2.5  # frames; single-camera depth shakes more than x and y
+SIGMA_HAND = 2.0  # frames, finger shape about the wrist: finger flicker -38%, palm wobble -49%, shape moves 3.5 deg
+HAND_WRISTS = (6, 27)  # first point of the left and right 21-point hands
+REST_BELOW = 1.6  # shoulder widths below the shoulders: both wrists lower than this is resting, not signing
+REST_MARGIN = 5  # frames kept either side of the signing
 
 
 def _gauss(x: list, sigma: float) -> list:
@@ -59,7 +63,27 @@ def steady(frames: list) -> list:
             if abs(x[t] - med) > max(3 * 1.4826 * mad, GLITCH):
                 y[t] = med
         cols.append(_gauss(y, SIGMA_Z if c % 3 == 2 else SIGMA_XY))
+    # Finger points about their own wrist: the shape twitched on the character while the wrist path was steady.
+    for wrist in HAND_WRISTS:
+        for p in range(wrist + 1, wrist + 21):
+            for a in range(3):
+                c, w = 3 * p + a, 3 * wrist + a
+                off = _gauss([cols[c][t] - cols[w][t] for t in range(len(frames))], SIGMA_HAND)
+                cols[c] = [cols[w][t] + off[t] for t in range(len(frames))]
     return [[cols[c][t] for c in range(len(cols))] for t in range(len(frames))]
+
+
+def signing_span(frames: list) -> tuple:
+    """Frames from a little before the first raised hand to a little after the last: the team's recordings rest for
+    up to 3 s at the ends ("where do you live" 0.6 s before, 3.1 s after), which the character played as a wait."""
+    def raised(f):
+        mid_y = (f[1] + f[4]) / 2
+        width = math.dist(f[0:2], f[3:5]) or 1.0
+        return max(f[13], f[16]) - mid_y > -REST_BELOW * width  # wrists 4 and 5 against the shoulders, y up
+    up = [t for t, f in enumerate(frames) if raised(f)]
+    if not up:
+        return 0, len(frames)
+    return max(0, up[0] - REST_MARGIN), min(len(frames), up[-1] + 1 + REST_MARGIN)
 
 
 def clips(predictions: dict) -> list:
@@ -68,9 +92,12 @@ def clips(predictions: dict) -> list:
         frames = [f["coordinates"][:144] for f in entry["frames"]]
         if not frames or any(len(f) != 144 for f in frames):
             continue
-        frames = [[round(v, 3) for v in f] for f in steady(frames)]
+        frames = steady(frames)
+        start, end = signing_span(frames)
+        frames = [[round(v, 3) for v in f] for f in frames[start:end]]
         clip = {"sentence": sentence, "fps": 25, "frames": frames}
-        face = [[round(v, 2) for v in b] if len(b := f.get("blendshapes", [])) == 52 and max(b) > 0 else [] for f in entry["frames"]]
+        face = [[round(v, 2) for v in b] if len(b := f.get("blendshapes", [])) == 52 and max(b) > 0 else []
+                for f in entry["frames"][start:end]]
         if any(face):
             clip["face"] = face
         out.append(clip)

@@ -31,6 +31,9 @@ type Config struct {
 	// Wrong codes across all callers, which a spoofed X-Forwarded-For cannot dodge; high, so one caller cannot lock all.
 	EnrollFailuresGlobalPerMinute int
 	Port                          string
+	// Opted-in landmark contributions are kept as JSON lines here, one file per signer, on the gateway's disk volume.
+	ContribDir       string
+	ContribPerMinute int
 }
 
 func defaults() Config {
@@ -44,6 +47,8 @@ func defaults() Config {
 		EnrollFailuresPerMinute:       20,
 		EnrollFailuresGlobalPerMinute: 200,
 		Port:                          "8000",
+		ContribDir:                    "/data/contrib",
+		ContribPerMinute:              6,
 	}
 }
 
@@ -78,6 +83,8 @@ func configFromEnv(getenv func(string) string) (Config, error) {
 	str("OIDC_AUDIENCE", &c.OIDCAudience)
 	str("ADMIN_ROLE", &c.AdminRole)
 	str("PORT", &c.Port)
+	str("CONTRIB_DIR", &c.ContribDir)
+	num("CONTRIB_PER_MINUTE", &c.ContribPerMinute, 1)
 	num("TOKEN_TTL_DAYS", &c.TokenTTLDays, 0)
 	num("TRUSTED_PROXY_HOPS", &c.TrustedProxyHops, 0)
 	num("ENROLL_PER_MINUTE", &c.EnrollPerMinute, 1)

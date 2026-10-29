@@ -60,6 +60,8 @@ data class AppSettings(
     val blockScreenshots: Boolean = app.signsetu.BuildConfig.SECURE_SCREEN,
     /** The officer's fingerprint or screen lock before unlocking, leaving a session or deleting. */
     val appLock: Boolean = !app.signsetu.BuildConfig.TEST_UNLOCKED,
+    /** Reads signs with the format 3 reader (LiteRT, features in the graph) instead of format 1; read at app start. */
+    val readerFormat3: Boolean = false,
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -101,6 +103,7 @@ class SettingsStore(private val context: Context) {
         val pinApp = booleanPreferencesKey("pin_app")
         val blockScreenshots = booleanPreferencesKey("block_screenshots")
         val appLock = booleanPreferencesKey("app_lock")
+        val readerFormat3 = booleanPreferencesKey("reader_format3")
     }
 
     val settings: Flow<AppSettings> = context.store.data.map { it.toSettings() }
@@ -129,6 +132,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setPinApp(on: Boolean) = context.store.edit { it[Keys.pinApp] = on }
     suspend fun setBlockScreenshots(on: Boolean) = context.store.edit { it[Keys.blockScreenshots] = on }
     suspend fun setAppLock(on: Boolean) = context.store.edit { it[Keys.appLock] = on }
+    suspend fun setReaderFormat3(on: Boolean) = context.store.edit { it[Keys.readerFormat3] = on }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -155,12 +159,23 @@ class SettingsStore(private val context: Context) {
         pinApp = this[Keys.pinApp] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
         blockScreenshots = this[Keys.blockScreenshots] ?: app.signsetu.BuildConfig.SECURE_SCREEN,
         appLock = this[Keys.appLock] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
+        readerFormat3 = this[Keys.readerFormat3] ?: false,
     )
+}
+
+/** What the interpreter button opens: an https link as given, or WhatsApp at a phone number; null for anything else
+ * (intent:, file:, javascript: or any other scheme), both when the setting is saved and when it is opened. */
+fun interpreterUrl(contact: String): String? {
+    val c = contact.trim()
+    if (Regex("""https://[A-Za-z0-9.\-]+(:\d+)?(/[^\s]*)?""").matches(c)) return c
+    return whatsappNumber(c)?.let { "https://wa.me/$it" }
 }
 
 /** The international number wa.me expects, without "+". A 10-digit number, or 11 with a leading trunk 0, is
  * Indian. Returns null when the contact cannot be a phone number. */
 fun whatsappNumber(contact: String): String? {
+    // Only phone characters: digits inside a link or script must not pass for a number.
+    if (!Regex("""[+0-9 ()\-]+""").matches(contact.trim())) return null
     val digits = contact.filter(Char::isDigit).let { if (it.length == 11 && it.startsWith("0")) it.drop(1) else it }
     return when (digits.length) {
         10 -> "91$digits"

@@ -16,6 +16,9 @@ interface SignReader : AutoCloseable {
     fun read(frames: List<LandmarkFrame>): List<SignGuess>
     /** The word reader's pooled features for comparing two signs, or null when it has none or cannot read the frames. */
     fun embed(frames: List<LandmarkFrame>): FloatArray? = null
+    /** Odds the letter reader must beat this reader's top probability by for a spelled read (tools/ml/spell_gate.py,
+     * fitted to this reader's temperature); null keeps [SPELL_ODDS]. */
+    val spellOdds: Float? get() = null
     /** Split-conformal sets fitted on held-out signers (tools/ml/calibrate.py); null when the model has none. */
     val conformal: Conformal? get() = null
     /** Names the officer confirmed in this session, given the highest prior for spelled names; [names] empty forgets

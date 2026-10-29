@@ -33,8 +33,8 @@ android {
         applicationId = "in.signsetu"
         minSdk = 29
         targetSdk = 37
-        versionCode = 17
-        versionName = "0.8.1"
+        versionCode = 18
+        versionName = "0.8.2"
         buildConfigField("long", "BUILD_EPOCH_DAY", "${providers.of(EpochDay::class.java) {}.get()}L")
         buildConfigField("boolean", "SECURE_SCREEN", "$secureScreen")
         buildConfigField("boolean", "TEST_UNLOCKED", "false")
@@ -197,6 +197,8 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.compose)
+    // The format 3 sign reader; MediaPipe bundles its own runtime privately.
+    implementation(libs.litert)
     implementation(libs.mediapipe.tasks.vision) {
         // This backend uploads MediaPipe usage statistics and brings INTERNET; a stub destination replaces it.
         exclude(group = "com.google.android.datatransport", module = "transport-backend-cct")

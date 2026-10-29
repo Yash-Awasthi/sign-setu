@@ -88,7 +88,7 @@ def sentence_demo(include: str, spell: str) -> None:
     print(f"ISL sentence demo passed: {' '.join(gloss)} -> {got[0]} / {got[1]}")
 
 
-SPELL_ODDS = 2.0  # SignReaders.kt
+SPELL_ODDS = 2.0  # SignReaders.kt; a word reader's "spell_odds" overrides it
 
 
 def held_out(cache_path: str, labels: list[str], keep=lambda label: True, norms=(None,)):
@@ -110,8 +110,9 @@ def featured(s, aspect, norm):
     return features({**s, "norm": norm} if norm else s, aspect)
 
 
-def probs(logits, x):
-    z = np.concatenate([logits(x[i:i + 256]) for i in range(0, len(x), 256)])
+def probs(logits, x, temperature=1.0):
+    """Softmax after the reader's temperature, as the app's readers score (the gate compares these)."""
+    z = np.concatenate([logits(x[i:i + 256]) for i in range(0, len(x), 256)]) / temperature
     e = np.exp(z - z.max(1, keepdims=True))
     return e / e.sum(1, keepdims=True)
 
@@ -127,8 +128,8 @@ def combined(include: str, spell: str) -> None:
     (ws, wl), (ss, sl) = reader("sign_reader"), reader("isl_spell")
     for what, path, labels in (("words", include, ws["labels"]), ("spelled", spell, ss["labels"])):
         xw, xs, y = held_out(path, labels, norms=(ws.get("norm"), ss.get("norm")))
-        pw, ps = probs(wl, xw), probs(sl, xs)
-        spelled = ps.max(1) > SPELL_ODDS * pw.max(1)
+        pw, ps = probs(wl, xw, ws.get("temperature", 1.0)), probs(sl, xs, ss.get("temperature", 1.0))
+        spelled = ps.max(1) > ws.get("spell_odds", SPELL_ODDS) * pw.max(1)
         if what == "words":
             alone, gated = (pw.argmax(1) == y).mean(), ((pw.argmax(1) == y) & ~spelled).mean()
             print(f"ISL combined words   top-1 {gated:.4f}  word-only {alone:.4f}  (n={len(y)}, gate costs {alone - gated:.4f})")
@@ -179,14 +180,14 @@ def real(islrtc: str, include: str) -> None:
     x = np.stack([featured(s, a, ss.get("norm")) for _, s, a in segs]).astype(np.float64)
     xr = np.stack([featured(s, a, ws.get("norm")) for _, s, a in segs]).astype(np.float64)
     y = np.array([index[l] for l, _, _ in segs])
-    ps, pw = probs(sl, x), probs(wl, xr)
+    ps, pw = probs(sl, x, ss.get("temperature", 1.0)), probs(wl, xr, ws.get("temperature", 1.0))
     xw, xws, yw = held_out(include, ws["labels"], norms=(ws.get("norm"), ss.get("norm")))
-    pww, psw = probs(wl, xw), probs(sl, xws)
+    pww, psw = probs(wl, xw, ws.get("temperature", 1.0)), probs(sl, xws, ss.get("temperature", 1.0))
     for what, keep in (("letters", str.isalpha), ("digits", str.isdigit)):
         m = np.array([keep(l) for l, _, _ in segs])
         top1, top3 = topk(ps[m], y[m])
         print(f"ISL real {what:8s} top-1 {top1:.4f}  top-3 {top3:.4f}  (n={m.sum()}, ISLRTC signers, isl_spell)")
-    for odds in (1.5, SPELL_ODDS, 3.0, 4.0):
+    for odds in sorted({1.5, ws.get("spell_odds", SPELL_ODDS), SPELL_ODDS, 3.0, 4.0}):
         spelled = ps.max(1) > odds * pw.max(1)
         cost = ((pww.argmax(1) == yw) & (psw.max(1) > odds * pww.max(1))).mean()
         print(f"ISL real gate odds {odds:.1f}: spelled {spelled.mean():.4f}, correctly {(spelled & (ps.argmax(1) == y)).mean():.4f}"

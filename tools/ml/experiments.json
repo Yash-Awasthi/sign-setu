@@ -1,0 +1,559 @@
+{
+ "APP": {
+  "parent": null,
+  "change": "the model in the app as shipped (format 1 weights, 32 frames, 314 words)",
+  "app": true
+ },
+ "B0": {
+  "parent": null,
+  "change": "shipped design retrained on the shipped data, new splits",
+  "arch": "shipped",
+  "sources": [
+   "include",
+   "kaggle"
+  ],
+  "recipe": "base"
+ },
+ "B1": {
+  "parent": "B0",
+  "change": "shipped conv, + ISLRTC + RKMVU",
+  "arch": "shipped",
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "base"
+ },
+ "W": {
+  "parent": "APP",
+  "change": "app reader fine-tuned: its weights and 314 head rows, 868-way head, 0.1x LR, frozen folded batch norm, 32 frames",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.3
+ },
+ "B2": {
+  "parent": "B1",
+  "change": "+ FDMSE train signers",
+  "skip": "no FDMSE data yet"
+ },
+ "B3": {
+  "parent": "B1",
+  "change": "graph attention over hand, arm, face (HWGAT style)",
+  "arch": "b3",
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "vram": 0.45,
+  "batch": 64,
+  "accum": 2
+ },
+ "B4": {
+  "parent": "B1",
+  "change": "1st-place Kaggle conv-transformer",
+  "arch": "b4",
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full"
+ },
+ "B5": {
+  "parent": "best",
+  "change": "+ ASL Citizen co-training, head per language",
+  "skip": "needs Q4"
+ },
+ "B6": {
+  "parent": "best",
+  "change": "+ synthetic signers: bone length, proportion, view rotation",
+  "synthetic": true
+ },
+ "B7": {
+  "parent": "best",
+  "change": "+ signer-adversarial head",
+  "adversarial": 0.1
+ },
+ "B8": {
+  "parent": "best",
+  "change": "+ handshape, location, movement auxiliary heads",
+  "aux": 0.2
+ },
+ "B9": {
+  "parent": "best",
+  "change": "+ look-alike groups, meaning-aware smoothing",
+  "meaning_smooth": true
+ },
+ "B10": {
+  "parent": "WF",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.42,
+  "eval_every": 1,
+  "min_epochs": 0,
+  "patience": 20,
+  "change": "WF recipe + non-sign class (rests before the headword, card pauses after it), cache_v6b, 5 seeds, soup",
+  "nonsign": true
+ },
+ "B11": {
+  "parent": "best",
+  "change": "per-signer normalisation from first 20 windows",
+  "signer_norm": true
+ },
+ "B12": {
+  "parent": "B4",
+  "change": "B4 from masked pose pretraining (train-side signers only)",
+  "arch": "b4",
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "init": "C:/work/ml-data/runs/B12_pretrain/encoder.pt"
+ },
+ "B13": {
+  "parent": "WF",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.42,
+  "eval_every": 1,
+  "min_epochs": 0,
+  "patience": 20,
+  "change": "WF recipe + whole-clip one-hand drop (20% of clips) on top of the 50% mirror, cache_v6b, 5 seeds, soup",
+  "one_hand": 0.2
+ },
+ "B11E": {
+  "parent": "WF",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "change": "WF soup5 scored with per-signer wrist offset from each signer's first 20 clips taken off (eval only)",
+  "signer_norm": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "select_restricted": true
+ },
+ "W7": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.3,
+  "change": "W + signer-adversarial head (gradient reversal, weight 0.1)",
+  "adversarial": 0.1,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10
+ },
+ "W8": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.3,
+  "change": "W + handshape, location, movement auxiliary heads",
+  "aux": 0.2,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10
+ },
+ "B0F": {
+  "parent": "APP",
+  "change": "shipped recipe from scratch: hidden 320, 32 frames, strong hand augmentation, hand drop up to 0.3",
+  "arch": "shipped",
+  "hidden": 320,
+  "frames": 32,
+  "strong": true,
+  "sources": [
+   "include",
+   "kaggle"
+  ],
+  "recipe": "base",
+  "select_restricted": true
+ },
+ "B1F": {
+  "parent": "B0F",
+  "change": "B0F recipe + ISLRTC + RKMVU",
+  "arch": "shipped",
+  "hidden": 320,
+  "frames": 32,
+  "strong": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "base",
+  "select_restricted": true
+ },
+ "WF": {
+  "parent": "APP",
+  "change": "final: W recipe on the T+7 re-split (INCLUDE test held out), 3 seeds",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "eval_every": 1,
+  "min_epochs": 0,
+  "patience": 20
+ },
+ "WR": {
+  "parent": "APP",
+  "change": "rehearsal of the final on cache_v4b (W recipe, 3 seeds)",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "eval_every": 1,
+  "min_epochs": 0,
+  "patience": 20
+ },
+ "OPT1": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.0337,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "strong": false,
+  "eval_every": 1,
+  "min_epochs": 25,
+  "patience": 10,
+  "change": "W search trial 1: LR 0.034x, augmentation level 1, min epochs 25"
+ },
+ "OPT2": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.0992,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "strong": false,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10,
+  "change": "W search trial 2: LR 0.099x, augmentation level 1, min epochs 15"
+ },
+ "OPT3": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.0404,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "strong": true,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10,
+  "change": "W search trial 3: LR 0.040x, augmentation level 2, min epochs 15"
+ },
+ "OPT4": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.0743,
+  "synthetic": false,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "strong": false,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10,
+  "change": "W search trial 4: LR 0.074x, augmentation level 0, min epochs 15"
+ },
+ "OPT5": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.0317,
+  "synthetic": false,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "strong": false,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10,
+  "change": "W search trial 5: LR 0.032x, augmentation level 0, min epochs 15"
+ },
+ "OPT6": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1842,
+  "synthetic": false,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "strong": false,
+  "eval_every": 1,
+  "min_epochs": 25,
+  "patience": 10,
+  "change": "W search trial 6: LR 0.184x, augmentation level 0, min epochs 25"
+ },
+ "OPT9": {
+  "parent": "W",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "change": "W9: W + look-alike and same-meaning label smoothing (B9 as a fine-tune)",
+  "meaning_smooth": true,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10
+ },
+ "I10": {
+  "parent": "WF",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "eval_every": 1,
+  "min_epochs": 0,
+  "patience": 20,
+  "change": "WF + HWGAT augmentation: speed 0.5 to 1.5, shear 0.1",
+  "speed": [
+   0.5,
+   1.5
+  ],
+  "shear": 0.1
+ },
+ "I11": {
+  "parent": "WF",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "eval_every": 1,
+  "min_epochs": 0,
+  "patience": 20,
+  "change": "WF on cache_v5_hc: missing hand frames filled (quadratic through nearest seen frames; wrist at the ends)"
+ },
+ "WF2": {
+  "parent": "APP",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "eval_every": 1,
+  "min_epochs": 0,
+  "patience": 20,
+  "change": "final2: WF recipe on cache_v6 (all word clips landmarked), 5 seeds, soup"
+ },
+ "I12": {
+  "parent": "WF",
+  "arch": "b4",
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "init": "C:/work/ml-data/runs/B12_pretrain/encoder.pt",
+  "change": "B12v2: b4 from the MS-MAE encoder trained to epoch 900 on cache_v5 train rows",
+  "vram": 0.45
+ },
+ "I10V6": {
+  "parent": "WF",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.45,
+  "eval_every": 1,
+  "min_epochs": 0,
+  "patience": 20,
+  "speed": [
+   0.5,
+   1.5
+  ],
+  "shear": 0.1,
+  "change": "I10 recipe on cache_v6, stock for the next run (not shipped)"
+ }
+}

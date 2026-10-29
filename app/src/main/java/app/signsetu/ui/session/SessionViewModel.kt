@@ -349,6 +349,20 @@ class SessionViewModel(
         viewModelScope.launch { logSigned(segments, words, EventSource.OFFICER, officerLang, shownId, sentence) }
     }
 
+    /** The officer typed what was really signed: accepted like a pick and kept with the window's lattice on this phone.
+     * The interviewed person never agreed to share, so a correction never reaches the upload queue. */
+    fun correctSigned(eventId: Long, typed: String) {
+        val words = typed.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (words.isEmpty()) return
+        DebugRecorder.correction(eventId, words, typed.trim())
+        val segments = local.value.signed[eventId]
+        if (segments != null && segments.size == words.size) return acceptSigned(eventId, words, typed.trim())
+        // Word counts differ, so no word can be pinned to a sign: the text is logged, and nothing is taught.
+        DebugRecorder.decision(eventId, "accepted", typed.trim())
+        val shownId = ui.value?.events?.firstOrNull { it.id == eventId }?.shownId
+        viewModelScope.launch { logSigned(segments.orEmpty(), words, EventSource.OFFICER, officerLang, shownId, typed.trim()) }
+    }
+
     private suspend fun logSigned(segments: List<SignSegment>, words: List<String>, source: EventSource, lang: String, shownId: Long? = local.value.itemId, sentence: String? = null): Long {
         val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = sentence ?: words.joinToString(" "), shownId = shownId)
         local.update { it.copy(signed = it.signed + (id to segments)) }
