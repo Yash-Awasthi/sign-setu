@@ -161,3 +161,6 @@ private class AvatarWebView(context: Context) : WebView(context) {
 
 /** Seconds the character takes from rest into a gesture, as LEAD_IN in avatar/src/rig.ts. */
 const val LEAD_IN = 0.35f
+
+/** Seconds the character takes from a gesture's last key back to rest, as LEAD_OUT in avatar/src/rig.ts. */
+const val LEAD_OUT = 0.45f

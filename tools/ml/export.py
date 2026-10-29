@@ -16,8 +16,10 @@ from train import HIDDEN, KERNEL, SignNet, features
 DATA_ROOT = pathlib.Path(os.environ.get("SIGNSETU_DATA", "ml-data"))
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-MODELS = ROOT / "app" / "src" / "main" / "assets" / "content" / "models"
-RESOURCES = ROOT / "app" / "src" / "test" / "resources"
+# EXPORT_DIR stages a reader and its fixture outside the app, for scoring before it ships (READER_DIR_<NAME>).
+STAGE = os.environ.get("EXPORT_DIR")
+MODELS = pathlib.Path(STAGE) if STAGE else ROOT / "app" / "src" / "main" / "assets" / "content" / "models"
+RESOURCES = pathlib.Path(STAGE) if STAGE else ROOT / "app" / "src" / "test" / "resources"
 DATASETS = {
     "sign_reader": "INCLUDE (AI4Bharat), OpenHands pose release, zenodo.org/records/6674324, CC BY 4.0; "
                    "Indian Sign Language video dataset (Prasad Shet, kaggle.com/datasets/prasadshet/"

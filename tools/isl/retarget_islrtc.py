@@ -19,6 +19,15 @@ BASE = "https://huggingface.co/datasets/silentone0725/Indian_Sign_Language_Data.
 MODEL = rt.ROOT / "app" / "src" / "main" / "assets" / "content" / "models" / "holistic_landmarker.task"
 CATEGORY = "ISLRTC"
 MIN_S, MAX_S = 0.3, 6.0
+# Words whose dictionary clip reads better than their INCLUDE or Kaggle take (review.md verdict "replace"): the
+# dictionary clip wins for these.
+REPLACE = {
+    "blue": "B/Blue.mp4", "boy": "B/Boy.mp4", "camera": "C/Camera.mp4", "city": "C/City.mp4", "door": "D/Door.mp4",
+    "dry": "D/Dry.mp4", "exercise": "E/Exercise.mp4", "he": "H/He.mp4", "hot": "H/Hot.mp4", "india": "I/India.mp4",
+    "lamp": "L/Lamp.mp4", "monsoon": "M/Monsoon.mp4", "month": "M/Month.mp4", "orange": "O/Orange.mp4",
+    "queen": "Q/Queen.mp4", "science": "S/Science.mp4", "short": "S/Short.mp4", "sign": "S/Sign.mp4",
+    "team": "T/Team.mp4", "window": "W/Window.mp4", "yesterday": "Y/Yesterday.mp4", "young": "Y/Young.mp4",
+}
 SOURCE = ("INCLUDE (AI4Bharat, Sridhar et al. 2020), OpenHands pose release, CC BY 4.0; ISLRTC Indian Sign Language "
           "Dictionary (Government of India), Government Open Data License - India; Indian Sign Language video dataset "
           "(Prasad Shet, Kaggle), MIT")
@@ -57,25 +66,29 @@ def landmarks(path: pathlib.Path) -> tuple[dict, float]:
     return rec, fps
 
 
-def main(targets: pathlib.Path, data: pathlib.Path) -> None:
+def main(targets: pathlib.Path, data: pathlib.Path, dictionary: pathlib.Path | None = None) -> None:
+    """[dictionary], when given, is a local copy of the ISLRTC dictionary read in place before any download."""
     clips = data / "words"
     clips.mkdir(parents=True, exist_ok=True)
     signs = json.loads(rt.OUT.read_text(encoding="utf-8"))
+    signs["gestures"] = [g for g in signs["gestures"] if g.get("rec", "").startswith("ISLRTC/") or g["word"] not in REPLACE]
     have = {g["word"] for g in signs["gestures"] if not g.get("rec", "").startswith("ISLRTC/")}  # INCLUDE and Kaggle win
     words = json.loads((rt.OUT.parent / "words.json").read_text(encoding="utf-8"))["words"]
     hindi = {e["w"][0]: next((w for w in e["w"] if any("ऀ" <= c <= "ॿ" for c in w)), "") for e in words}
     prior = {g["word"]: g for g in signs["gestures"] if g.get("rec", "").startswith("ISLRTC/")}
     made = {}
-    for word, clip in sorted(json.loads(targets.read_text(encoding="utf-8")).items()):
+    for word, clip in sorted({**json.loads(targets.read_text(encoding="utf-8")), **REPLACE}.items()):
         if word in have:
             continue
         if prior.get(word, {}).get("rec") == f"ISLRTC/{clip}":
             made[word] = prior[word]
             continue
         path = clips / clip.replace("/", "__")
-        if not path.exists():
-            path.write_bytes(urllib.request.urlopen(BASE + urllib.parse.quote(clip)).read())
         cache = path.with_suffix(".npz")
+        if not path.exists() and dictionary and (dictionary / clip).exists():
+            path = dictionary / clip
+        elif not path.exists():
+            path.write_bytes(urllib.request.urlopen(BASE + urllib.parse.quote(clip)).read())
         if cache.exists():
             z = np.load(cache)
             rec, fps = {k: z[k] for k in z.files if k not in ("fps", "aspect")}, float(z["fps"])
@@ -106,4 +119,5 @@ def main(targets: pathlib.Path, data: pathlib.Path) -> None:
 
 
 if __name__ == "__main__":
-    main(pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else str(DATA_ROOT / "islrtc")))
+    a = sys.argv[1:]
+    main(pathlib.Path(a[0]), pathlib.Path(a[1] if len(a) > 1 else str(DATA_ROOT / "islrtc")), pathlib.Path(a[2]) if len(a) > 2 else None)

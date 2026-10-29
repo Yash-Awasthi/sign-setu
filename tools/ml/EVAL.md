@@ -234,6 +234,25 @@ More intents help when the question is known and cost a little when it is not (m
 unknown questions are where rung 1 is least safe, so those answers lean on rungs 2 and 3.
 
 
+## Character signs read back (2026-10-29)
+
+The shipped reader (soup5, fp32, format 3 raw input, no face) reads each word's motion as the character plays it: the
+rendered joint tracks, fingertips extended from the last two joints. 247 app words have both versions.
+
+| Signs | Top-1 | Top-5 |
+|---|---|---|
+| Rebuilt (`isl_signs.json` now; `tools/isl/review.md`) | 0.320 | 0.567 |
+| Previous | 0.271 | 0.518 |
+
+Paired McNemar, rebuilt against previous: 20 to 8, p = 0.036. The reader trained on ISLRTC, the source of most of
+these motions, so the check favours signs close to it.
+
+22 words then taken from their ISLRTC dictionary clip instead of the INCLUDE or Kaggle take (`retarget_islrtc.py`
+`REPLACE`): flagged against their own source 21 of 22 before, 5 after; all signs 125 to 109 of 501. Read back
+(`tools/isl/read_back.py`, 308 words): 0.328 to 0.321 top-1, 5 to 3, p = 0.73; on the 22 alone 6 to 4 at top-1. The
+reader trained on the INCLUDE signers these words came from, so the read-back cannot judge this change; the
+dictionary is the reference form.
+
 ## Reader run v4
 
 ### P. Preflight (2026-10-28): all pass
@@ -1570,3 +1589,43 @@ fewer real signs than the floor (0.424 and 0.458 against 0.492) with no false ac
 Against the RKMVERI group's ported code: WF soup5
 beats their HWGAT on 52 clips of 236 shared words (0.538 vs 0.308, 16 to 4, p=0.012); their read gate is not adopted
 (above).
+| 16:49 | 84 | 5, 0.9 | 14.0 | 14 | landmark_split | under target |
+| 16:59 | 89 | 48, 4.0 | 16.0 | 14 | landmark_split, pretrain | under target |
+| 17:09 | 96 | 89, 4.2 | 17.0 | 14 | landmark_split, pretrain |  |
+| 17:19 | 100 | 53, 4.0 | 14.0 | 14 | landmark_split, pretrain | under target |
+| 17:29 | 100 | 95, 7.0 | 16.4 | 14 | landmark_split, pretrain |  |
+| 17:39 | 99 | 80, 7.0 | 15.6 | 14 | landmark_split, pretrain |  |
+| 17:49 | 94 | 84, 7.0 | 15.7 | 14 | landmark_split, pretrain |  |
+| 17:59 | 91 | 84, 7.0 | 14.9 | 14 | landmark_split, pretrain |  |
+| 18:09 | 91 | 45, 4.3 | 15.4 | 14 | landmark_split | under target |
+| 18:19 | 90 | 36, 4.3 | 15.6 | 14 | landmark_split | under target |
+| 18:30 | 91 | 30, 4.3 | 15.3 | 14 | landmark_split | under target |
+| 18:40 | 96 | 14, 3.0 | 21.3 | 13 | exp B12F2, landmark_split | RAM used 21.3 GB: landmark workers to 13 |
+| 18:53 | 68 | 34, 2.5 | 14.9 | 9 | exp B12F2, landmark_split | GPU 34% under a B row: landmark workers to 9 |
+| 18:58 | 94 | 41, 2.5 | 15.9 | 13 | exp B12F2, landmark_split | GPU 41% under a B row: landmark workers to 13 |
+| 19:01 | 94 | 26, 3.0 | 21.7 | 12 | exp B12F2, landmark_split | RAM used 21.7 GB: landmark workers to 12 |
+
+ISL speller retrain (2026-10-29, `isl_spell` format 1, rebuilt cache with 85 labels): baseline 400 epochs scored letters 0.179 against the shipped 0.197 (n=285), digits 0.523 against 0.500, real ISLRTC letters 0.130 both, and the sign-or-spell gate fired on 25% of held-out spelled clips (2% before), losing 0.5% of INCLUDE words: not shipped. With letters placed inside names from names.txt (`mix_isl_spell.py` 4th argument) it stood at 0.210 test top-1 at epoch 50, on the same path, and was stopped. The limit is four training signers of still photographs.
+
+B12F2 (2026-10-29): not accepted. The v2 encoder does not carry: as the app shows it 0.390 against WF soup5's 0.492 on new signers (n=59), INCLUDE test 0.876 under the 0.979 floor; 39 epochs, best at val 0.075 (868-way).
+
+B12F2 INCLUDE test floor (0.979): 0.876 [0.852, 0.900] (n=816)
+| B12F2 | include + islrtc + kaggle + rkmvu, 14913 clips, 594 s | b4 from the MS-MAE v2 encoder (400 epochs on cache_v6b + ASL Citizen train rows) (McNemar p=nan vs WF) | new signers 0.075 [0.000, 0.095] (n=546); all 0.391 [0.031, 0.971] / 0.435 | 0.163 | c22 0.031 | islrtc 0.078, kaggle 0.970, rkmvu 0.031 | 5.552, 0.129 | 4909.6, 0.902 | 1.000 | 0.954, +0.563 FLAG | - | 0.444 | - | no |
+
+B12F2 top confused pairs (true -> predicted): lemon -> man (2); what is your name -> clean (2); appointment -> hospital (2); capital -> power (2); rajasthan -> certificate (2); volcano -> garib rath express (2); brinjal -> onion (1); elephant -> volcano (1); switch -> uncle (1); turtle -> busy (1)
+
+
+B12F2 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.390 [0.288, 1.000] (n=59), per source {'islrtc': 0.3793, 'kaggle': 0.9698, 'rkmvu': 1.0}, against the app -
+
+| 19:11 | 91 | 70, 6.3 | 18.9 | 13 | exp B5, landmark_split | RAM used 18.9 GB: landmark workers back to 13 |
+
+B5 (2026-10-29, partial ASL: 3,729 of 40,154 ASL Citizen train clips, cache_b5_partial index over cache_v6b + cache_asl_q4a, 1 seed): early look, not a verdict. As the app shows it 0.542 against WF soup5's 0.492 (n=59); rule 1 on the union (n=546) 0.079 against 0.071, 10 to 6, p=0.45; Kaggle C 0.980; INCLUDE test 0.983. Run again on the full ASL set when Q4 ends.
+
+B5 INCLUDE test floor (0.979): 0.983 [0.973, 0.990] (n=816)
+| B5 | asl + include + islrtc + kaggle + rkmvu, 18642 clips, 242 s | + ASL Citizen co-training (join_cache.py), head per language: each clip's softmax over its own language's words (McNemar p=nan vs WF) | new signers 0.064 [0.000, 0.084] (n=546); all 0.384 [0.031, 0.971] / 0.422 | 0.152 | c22 0.031 | islrtc 0.066, kaggle 0.970, rkmvu 0.031 | 5.642, 0.120 | 4975.5, 0.897 | 1.000 | 0.613, +0.229 | - | 0.384 | - | no |
+
+B5 top confused pairs (true -> predicted): elephant -> colour (4); busy -> kill (3); switch -> uncle (2); area -> zone (2); acceleration -> photosynthesis (1); accept -> प्लास्टिक (1); across -> year to year (1); across -> footpath (1); action -> stay (1); addicted dependent hooked -> red (1)
+
+
+B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9799, 'rkmvu': 1.0}, against the app -
+

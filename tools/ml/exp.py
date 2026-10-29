@@ -18,7 +18,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 
-from cache import Clips
+from cache import Clips, frames_of
 from models import ARCHS, F as FACE_COLS, L, P, PRES, R, Shipped
 from guard import DATA
 
@@ -251,9 +251,9 @@ class GpuBatches:
     with landmarking."""
 
     def __init__(self, root, index, rows, dev, t=48, speed=(0.8, 1.2)):
-        raw = np.load(pathlib.Path(root) / "raw.npy", mmap_mode="r")
+        raw = frames_of(root, index)
         st, ln = index["start"].to_numpy()[rows], index["length"].to_numpy()[rows]
-        self.x = torch.from_numpy(np.concatenate([np.asarray(raw[s:s + n]) for s, n in zip(st, ln)])).to(dev)
+        self.x = torch.from_numpy(np.concatenate([np.asarray(raw(r)[s:s + n]) for r, s, n in zip(rows, st, ln)])).to(dev)
         self.off = torch.as_tensor(np.r_[0, np.cumsum(ln)[:-1]], device=dev)
         self.n = torch.as_tensor(ln, device=dev)
         self.aspect = torch.as_tensor(index["aspect"].to_numpy(np.float32)[rows], device=dev)
@@ -520,8 +520,18 @@ def train(cfg, ds_train, ys, signers, classes, run, dev, epochs, val_eval, resum
     if adv is not None or aux is not None:
         model.head.register_forward_hook(lambda m, i, o: feats.__setitem__("x", i[0]))
     q = soft_targets(cfg, classes, vocab, dev) if cfg.get("meaning_smooth") else None
+    # B5: one head over both languages' words; a clip's softmax runs over its own language's words only, so the rows
+    # of each language form a head of their own over the shared trunk.
+    asl = torch.tensor([w.startswith("asl:") for w in vocab], device=dev) if cfg.get("per_language") else None
 
     def ce(out, yy):
+        if asl is not None:
+            # Softmax and the 0.1 label smoothing both over the clip's own language's words only.
+            own = asl[None] == asl[yy][:, None]
+            logp = F.log_softmax(out.float().masked_fill(~own, float("-inf")), 1)
+            nll = -logp.gather(1, yy[:, None]).squeeze(1)
+            spread = -logp.masked_fill(~own, 0.0).sum(1) / own.sum(1)
+            return (0.9 * nll + 0.1 * spread).mean()
         if q is not None:
             return -(q[yy] * F.log_softmax(out.float(), 1)).sum(1).mean()
         return F.cross_entropy(out.float(), yy, label_smoothing=0.1)
@@ -653,6 +663,18 @@ def train(cfg, ds_train, ys, signers, classes, run, dev, epochs, val_eval, resum
     return model, "done"
 
 
+class IslOnly(torch.nn.Module):
+    """A co-trained reader as the ISL app sees it: the ASL head's rows never win."""
+
+    def __init__(self, model, vocab):
+        super().__init__()
+        self.model = model
+        self.register_buffer("asl", torch.tensor([w.startswith("asl:") for w in vocab]))
+
+    def forward(self, x, aspect):
+        return self.model(x, aspect).masked_fill(self.asl.to(x.device), -1e9)
+
+
 class _Restart(Exception):
     pass
 
@@ -686,6 +708,11 @@ def eval_row(rid, cfg, data, val, old, test, accepted, note="", fit="-", vs_ship
 def verify(root):
     """Hard stops: the cache must be the one registered, and its test rows the ones fixed at the split."""
     import hashlib
+    if not (root / "raw.npy").exists():
+        # A joined index (join_cache.py): every cache it reads is checked instead.
+        for src in pd.read_csv(root / "index.csv", usecols=["cache"])["cache"].unique():
+            verify(pathlib.Path(src))
+        return
     reg = json.loads((HERE / "cache_registry.json").read_text()).get(str(root)) or sys.exit(f"STOP: {root} not in registry")
     h = hashlib.sha256()
     with open(root / "raw.npy", "rb") as f:
@@ -764,7 +791,7 @@ def main():
         labels = vocab
 
         def val_eval(m):
-            lg = predict(m, val_ds, dev)
+            lg = predict(IslOnly(m, labels) if cfg.get("per_language") else m, val_ds, dev)
             if cfg.get("select_restricted"):
                 r = app_only(lg, labels, app_words)
                 kag = val_rows[index["source"].to_numpy()[val_rows] == "kaggle"]
@@ -791,6 +818,8 @@ def main():
             eval_row(rid, cfg, data, None, {"top1": float("nan")}, None, "no", status)
             print(f"JOB {rid} status={status}")
             return
+    if cfg.get("per_language"):
+        model = IslOnly(model, labels).to(dev)
     lv = predict(model, clips(val_rows), dev)
     val = score(lv, labels, index, val_rows, vset)
     # As the app would show it: logits outside the app's 314 words masked, scored on those words only.

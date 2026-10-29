@@ -77,9 +77,27 @@
   "recipe": "full"
  },
  "B5": {
-  "parent": "best",
-  "change": "+ ASL Citizen co-training, head per language",
-  "skip": "needs Q4"
+  "parent": "WF",
+  "change": "+ ASL Citizen co-training (join_cache.py), head per language: each clip's softmax over its own language's words",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu",
+   "asl"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "per_language": true,
+  "vram": 0.5,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10
  },
  "B6": {
   "parent": "best",
@@ -555,5 +573,22 @@
   ],
   "shear": 0.1,
   "change": "I10 recipe on cache_v6, stock for the next run (not shipped)"
+ },
+ "B12F2": {
+  "parent": "WF",
+  "arch": "b4",
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "init": "C:/work/ml-data/runs/B12_pretrain_v2/encoder.pt",
+  "change": "b4 from the MS-MAE v2 encoder (400 epochs on cache_v6b + ASL Citizen train rows)",
+  "vram": 0.45,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10
  }
 }

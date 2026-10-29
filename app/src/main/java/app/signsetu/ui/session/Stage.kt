@@ -54,6 +54,7 @@ import app.signsetu.sign.SignWindow
 import app.signsetu.ui.avatar.AVATAR_ASPECT
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.LEAD_IN
+import app.signsetu.ui.avatar.LEAD_OUT
 import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.components.rememberSpeechPlayer
 import app.signsetu.ui.theme.LocalAnswerColors
@@ -227,7 +228,10 @@ fun Stage(
     val plan = remember(stageLine, typed, captionEnglish, shownText, content) {
         stageLine?.let { it.plan ?: linePlan(content, it.english, shownText, CAPTION_MODES).takeIf { p -> p.gesture != null } }
             ?: typed?.let { content.planText(it.text, it.modes) }
-            ?: captionEnglish?.let { linePlan(content, it, shownText, if (pending is Pending.Ask) askModes else CAPTION_MODES) }?.takeIf { it.gesture != null }
+            ?: captionEnglish?.let {
+                val from = (pending as? Pending.Ask)?.question?.text?.get(lang)?.let { q -> shownText.lastIndexOf(q).coerceAtLeast(0) } ?: 0
+                linePlan(content, it, shownText, if (pending is Pending.Ask) askModes else CAPTION_MODES, from)
+            }?.takeIf { it.gesture != null }
     }
     // Typed text lights its own words; any other stageLine lights the shown word with the same words.json entry as the
     // English word being signed, so a Hindi caption lights its Hindi word.
@@ -242,12 +246,8 @@ fun Stage(
     val gesture = when {
         focusGesture != null -> focusGesture
         plan?.gesture != null -> plan.gesture
-        // A line whose words have no sign keeps the gesture it had before lines were signed.
-        reacting -> content.gestures["okay"]
-        drawing || writing -> content.gestures["school.write"]
-        stageLine != null && pending == Pending.LanguageFinder -> content.gestures["wave"]
-        stageLine != null && (choices != null || checking || pending is Pending.Cards) -> content.gestures["ask"]
-        stageLine != null && !narrative -> content.gestures["namaste"]
+        // A line or question with no word the hands can light is not signed: face, head and breath carry on alone.
+        stageLine != null || captionEnglish != null -> null
         signing && pending !is Pending.Ask && pending !is Pending.FreeText && pending !is Pending.PhraseAsk -> content.gestures["show_me"]
         pending is Pending.ShowBack -> content.gestures[pending.entry.id]
         pending is Pending.PhraseAsk -> content.gestureFor(pending.phrase, pending.slot)
@@ -262,7 +262,8 @@ fun Stage(
         playClock.floatValue = -1f
         if (plan == null || focus != null) return@LaunchedEffect
         val start = withFrameNanos { it }
-        val end = (plan.beats.lastOrNull()?.end ?: 0f) + LEAD_IN
+        // The last word stays lit while the hands settle back to rest.
+        val end = (plan.beats.lastOrNull()?.end ?: 0f) + LEAD_IN + LEAD_OUT
         while (playClock.floatValue < end) {
             withFrameNanos { now -> playClock.floatValue = (now - start) / 1e9f * pace }
         }
@@ -271,7 +272,8 @@ fun Stage(
     val beat by remember(plan) {
         derivedStateOf {
             val t = playClock.floatValue - LEAD_IN
-            plan?.beats?.lastOrNull { t >= it.start && t < it.end }
+            // A word stays lit until the next one starts: the hands are still on it between words.
+            plan?.beats?.lastOrNull { t >= it.start }
         }
     }
     val letter by remember(plan) {
@@ -303,11 +305,11 @@ fun Stage(
             idleLit.value = null
             val p = idlePlan?.takeIf { it.gesture != null } ?: return@LaunchedEffect
             val start = withFrameNanos { it }
-            val end = (p.beats.lastOrNull()?.end ?: 0f) + LEAD_IN
+            val end = (p.beats.lastOrNull()?.end ?: 0f) + LEAD_OUT
             while (true) {
                 val t = withFrameNanos { now -> (now - start) / 1e9f * pace } - LEAD_IN
-                if (t >= end - LEAD_IN) break
-                idleLit.value = p.beats.lastOrNull { t >= it.start && t < it.end }?.range?.takeIf { !it.isEmpty() }
+                if (t >= end) break
+                idleLit.value = p.beats.lastOrNull { t >= it.start }?.range?.takeIf { !it.isEmpty() }
             }
             idleLit.value = null
         }
@@ -552,11 +554,20 @@ private fun speechFor(pending: Pending?, content: ContentBundle, lang: String): 
  * [english]; [plan], when set, is already in [shown]'s positions. */
 internal data class CaptionLine(val shown: String?, val english: String, val plan: TextPlan? = null)
 
-/** [english] planned, each word's range moved onto the word of [shown] it lights; a word with none lights nothing. */
-internal fun linePlan(content: ContentBundle, english: String, shown: String, modes: Set<SignMode>): TextPlan {
+/** [english] planned, each word's range moved onto the word of [shown] it lights. A word with nothing to light in
+ * [shown] is not signed at all, so the hands only ever move for a lit word. */
+internal fun linePlan(
+    content: ContentBundle, english: String, shown: String, modes: Set<SignMode>,
+    /** Where in [shown] the signed wording starts: a repeated question carries a lead-in line first. */
+    from: Int = 0, again: Boolean = true,
+): TextPlan {
     val plan = content.planText(english, modes)
     if (shown == english) return plan
-    return plan.copy(beats = plan.beats.map { b -> b.copy(range = captionRange(content, english.substring(b.range), shown) ?: IntRange.EMPTY) })
+    val part = shown.substring(from)
+    val lit = plan.beats.map { b -> b to captionRange(content, english.substring(b.range), part)?.let { it.first + from..it.last + from } }
+    if (lit.all { it.second != null } || !again) return plan.copy(beats = lit.map { (b, r) -> b.copy(range = r ?: IntRange.EMPTY) })
+    val kept = lit.filter { it.second != null }.sortedBy { it.first.range.first }.joinToString(" ") { english.substring(it.first.range) }
+    return if (kept.isBlank()) TextPlan(null, emptyList()) else linePlan(content, kept, shown, modes, from, again = false)
 }
 
 /** Read words signed back as they were read, then "Is this it?" from its wording; the caption is the words and the

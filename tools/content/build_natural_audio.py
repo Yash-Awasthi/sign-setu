@@ -1,4 +1,4 @@
-"""Speech for the languages ElevenLabs (English, Hindi) and Cartesia (the others it supports) voice better than Indic
+"""Speech for the languages ElevenLabs (English) and Cartesia (Hindi and the others it supports) voice better than Indic
 Parler-TTS; build_audio.py leaves those languages to this script. One voice per language, written to audio/. Resumes
 where it stopped. Needs ELEVENLABS_API_KEY and CARTESIA_API_KEY.
 
@@ -19,7 +19,7 @@ import soundfile as sf
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from build_audio import ASSETS, NATURAL_ONLY, OUT_RATE, cut_off, finish, jobs, loud_end, trim  # noqa: E402
 
-ELEVENLABS = {"en", "hi"}
+ELEVENLABS = {"en"}
 ELEVENLABS_VOICE = "EXAVITQu4vr4xnSDxMaL"
 # Cartesia voices by language; Chhattisgarhi is read by the Hindi voice. Sonic-3 refuses Assamese, Nepali, Odia and Urdu.
 CARTESIA_VOICES = {

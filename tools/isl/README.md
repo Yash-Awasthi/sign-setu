@@ -8,7 +8,7 @@ script takes its data folder as an argument (the defaults below are one develope
 | Script | Input | Writes |
 | --- | --- | --- |
 | `retarget.py [data_dir]` | INCLUDE pose release | `isl_signs.json` (keeps ISLRTC entries) |
-| `retarget_islrtc.py <targets.json> [data_dir]` | ISLRTC dictionary clips | ISLRTC entries in `isl_signs.json` |
+| `retarget_islrtc.py <targets.json> [data_dir] [dictionary_dir]` | ISLRTC dictionary clips | ISLRTC entries in `isl_signs.json` |
 | `retarget_kaggle.py [data_dir]` | Kaggle ISL video set (Prasad Shet, MIT), the word reader's own training videos | Signs for reader words neither INCLUDE nor ISLRTC has, `rec: "Kaggle/..."` |
 | `retarget_asl.py` | PopSign landmark cache | `asl_signs.json`, `asl_words.json` |
 | `test_retarget.py` | Synthetic landmarks | Unit tests of the retarget maths |
@@ -25,7 +25,7 @@ hands (MIT). It also writes `asl_words.json`, the ASL reader's labels that are w
 
 ## ISLRTC words
 
-`retarget_islrtc.py` adds words the app could otherwise only fingerspell, from the ISLRTC Indian Sign Language
+`retarget_islrtc.py` adds words the app could otherwise only fingerspell, and the words its `REPLACE` list prefers from the dictionary, from the ISLRTC Indian Sign Language
 Dictionary (Government of India, Government Open Data License - India; clips from
 huggingface.co/datasets/silentone0725/Indian_Sign_Language_Data.gov_Rencoded). It runs the app's own Holistic model
 (`models/holistic_landmarker.task`) over each clip, so it needs the MediaPipe venv (`signsetu-mp`: mediapipe, OpenCV,

@@ -56,6 +56,16 @@ def build(out: pathlib.Path, samples, meta_keys=("label", "split", "signer", "so
     print(f"cache {out}: {len(rows)} clips, {total} frames, {total * RAW * 4 / 2**30:.2f} GB", flush=True)
 
 
+def frames_of(root, index):
+    """Row to the memmap holding its frames: a joined index (join_cache.py) names each row's cache in "cache"."""
+    if "cache" not in index:
+        raw = np.load(pathlib.Path(root) / "raw.npy", mmap_mode="r")
+        return lambda r: raw
+    maps = {c: np.load(pathlib.Path(c) / "raw.npy", mmap_mode="r") for c in index["cache"].unique()}
+    col = index["cache"].to_numpy()
+    return lambda r: maps[col[r]]
+
+
 class Clips(torch.utils.data.Dataset):
     """One clip resampled to T raw frames; time jitter only, everything else is batched on the GPU."""
 
@@ -74,7 +84,7 @@ class Clips(torch.utils.data.Dataset):
 
     def __getitem__(self, i):
         if self.raw is None:
-            self.raw = np.load(self.root / "raw.npy", mmap_mode="r")
+            self.raw = frames_of(self.root, self.index)
         r = self.rows[i]
         a, n = int(self.start[r]), int(self.length[r])
         idx = np.arange(n)
@@ -85,7 +95,7 @@ class Clips(torch.utils.data.Dataset):
             # Slow-down and speed-up: resample to 0.8 to 1.2 times as many frames with drops and repeats.
             idx = np.sort(rng.choice(idx, max(2, int(len(idx) * rng.uniform(0.8, 1.2))), replace=True))
         pick = idx[resample_index(len(idx), self.t)]
-        return torch.from_numpy(np.ascontiguousarray(self.raw[a + pick])), self.aspect[r], int(r)
+        return torch.from_numpy(np.ascontiguousarray(self.raw(r)[a + pick])), self.aspect[r], int(r)
 
 
 def check(out: pathlib.Path, workers=4):

@@ -22,6 +22,9 @@ STRONG = os.environ.get("SIGN_AUG") == "strong"
 DROPOUT = float(os.environ.get("SIGN_DROPOUT", 0.4))
 HAND_DROP = float(os.environ.get("SIGN_HAND_DROP", 0))
 WORKERS = int(os.environ.get("SIGN_WORKERS", 6))
+# SIGN_POOL=K: K augmented views of every train sample are featurised once and kept on the GPU (float16), and each
+# step draws a random view. ponytail: K fixed views, not fresh augmentation per step; raise K if it overfits them.
+POOL = int(os.environ.get("SIGN_POOL", 0))
 
 
 class SignNet(nn.Module):
@@ -105,6 +108,18 @@ def labelled_batch(train, y, aspect, rng):
     return batch([train[i] for i in ids], aspect, rng), torch.tensor(y[ids])
 
 
+def _pool_part(train, aspect, part):
+    rng = np.random.default_rng([7, part])
+    return batch(train, aspect, rng).half()
+
+
+def pool(train, aspect, dev):
+    """(POOL, N, FRAMES, FEATURES) augmented views on [dev], featurised across WORKERS processes."""
+    import concurrent.futures as cf
+    with cf.ProcessPoolExecutor(WORKERS) as ex:
+        return torch.stack([v.to(dev) for v in ex.map(functools.partial(_pool_part, train, aspect), range(POOL))])
+
+
 def evaluate(model, x, y):
     model.eval()
     with torch.no_grad():
@@ -131,7 +146,17 @@ def main(cache: pathlib.Path, out: pathlib.Path, epochs: int = 400) -> None:
     steps = epochs * ((len(train) + 63) // 64)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=2e-3, total_steps=steps)
     loss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)
-    batches = loader(functools.partial(labelled_batch, train, ytr, aspect))
+    if POOL:
+        views, ytr_dev = pool(train, aspect, dev), torch.tensor(ytr, device=dev)
+        print(f"pool {tuple(views.shape)} on {dev}", flush=True)
+
+        def gpu_batches():
+            while True:
+                ids = torch.randint(len(train), (64,), device=dev)
+                yield views[torch.randint(POOL, (64,), device=dev), ids].float(), ytr_dev[ids]
+        batches = gpu_batches()
+    else:
+        batches = loader(functools.partial(labelled_batch, train, ytr, aspect))
     for epoch in range(epochs):
         model.train()
         for _ in range((len(train) + 63) // 64):

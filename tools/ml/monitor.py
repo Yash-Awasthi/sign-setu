@@ -15,8 +15,8 @@ from exp import EVAL
 from landmark_split import CONTROL
 
 LOGICAL = os.cpu_count() or 20
-TARGET = LOGICAL - 2 - 4  # 4 cores stay with the other ML session on this laptop
-GUARD_GB = 19
+TARGET = int(os.environ.get("LANDMARK_TARGET", LOGICAL - 2 - 4))  # 4 cores stay with the other ML session on this laptop
+GUARD_GB = float(os.environ.get("LANDMARK_GUARD_GB", 21))
 
 
 def gpu():
