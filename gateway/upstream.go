@@ -143,10 +143,9 @@ func answerFrom(raw []byte, responses bool) (string, bool) {
 	return "", true
 }
 
-const elevenLabsVoice = "EXAVITQu4vr4xnSDxMaL"
-
 // The same voices as tools/content/build_natural_audio.py, so typed text sounds like the shipped recordings.
 var cartesiaVoices = map[string]string{
+	"en": "7ea5e9c2-b719-4dc3-b870-5ba5f14d31d8",
 	"hi": "6b02ffe5-e3cb-48c0-a023-c72f85953375", "hne": "6b02ffe5-e3cb-48c0-a023-c72f85953375",
 	"ta": "d4470f50-295e-4e11-82a2-158d45bf6abc", "bn": "48b9e1de-e2fa-4914-8b32-31c437813548",
 	"gu": "4590a461-bc68-4a50-8d14-ac04f5923d22", "kn": "4c00ff98-199c-4967-99ae-7b69125edcff",
@@ -154,46 +153,24 @@ var cartesiaVoices = map[string]string{
 	"pa": "9bf2ddcd-bb35-4e90-81b3-21c8183b24f4", "te": "4418bb06-8329-49a1-bb11-53bb64ca0547",
 }
 
-func speechProvider(lang string) string {
-	switch {
-	case lang == "en" || lang == "hi":
-		return "elevenlabs"
-	case cartesiaVoices[lang] != "":
-		return "cartesia"
-	}
-	return ""
-}
-
 func upstreamSpeak(c Config, client *http.Client) Speak {
 	return func(ctx context.Context, text, lang string) (io.ReadCloser, error) {
-		var url string
-		var headers map[string]string
-		var body map[string]any
-		switch speechProvider(lang) {
-		case "elevenlabs":
-			if c.ElevenLabsKey == "" {
-				return nil, &upstreamError{http.StatusServiceUnavailable, "speech not configured"}
-			}
-			url = "https://api.elevenlabs.io/v1/text-to-speech/" + elevenLabsVoice + "?output_format=mp3_22050_32"
-			headers = map[string]string{"xi-api-key": c.ElevenLabsKey}
-			body = map[string]any{"text": text, "model_id": "eleven_v3", "language_code": lang}
-		case "cartesia":
-			if c.CartesiaKey == "" {
-				return nil, &upstreamError{http.StatusServiceUnavailable, "speech not configured"}
-			}
-			language := lang
-			if lang == "hne" {
-				language = "hi"
-			}
-			url = "https://api.cartesia.ai/tts/bytes"
-			headers = map[string]string{"X-API-Key": c.CartesiaKey, "Cartesia-Version": "2025-04-16"}
-			body = map[string]any{"model_id": "sonic-3", "transcript": text, "language": language,
-				"voice":         map[string]string{"mode": "id", "id": cartesiaVoices[lang]},
-				"output_format": map[string]any{"container": "mp3", "sample_rate": 22050, "bit_rate": 32000}}
-		default:
+		voice := cartesiaVoices[lang]
+		if voice == "" {
 			return nil, &upstreamError{http.StatusUnprocessableEntity, "no voice for this language"}
 		}
-		resp, err := post(ctx, client, url, body, headers)
+		if c.CartesiaKey == "" {
+			return nil, &upstreamError{http.StatusServiceUnavailable, "speech not configured"}
+		}
+		language := lang
+		if lang == "hne" {
+			language = "hi"
+		}
+		body := map[string]any{"model_id": "sonic-3", "transcript": text, "language": language,
+			"voice":         map[string]string{"mode": "id", "id": voice},
+			"output_format": map[string]any{"container": "mp3", "sample_rate": 22050, "bit_rate": 32000}}
+		headers := map[string]string{"X-API-Key": c.CartesiaKey, "Cartesia-Version": "2025-04-16"}
+		resp, err := post(ctx, client, "https://api.cartesia.ai/tts/bytes", body, headers)
 		if err != nil {
 			return nil, transportError(err, "speech")
 		}

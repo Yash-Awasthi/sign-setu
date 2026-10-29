@@ -8,9 +8,9 @@ SPEC.loader.exec_module(natural)
 
 
 class NaturalAudioTest(unittest.TestCase):
-    def test_english_and_hindi_use_elevenlabs_and_the_rest_cartesia(self):
-        self.assertEqual("elevenlabs", natural.provider("en"))
-        self.assertEqual("elevenlabs", natural.provider("hi"))
+    def test_cartesia_voices_english_hindi_and_the_rest_it_has(self):
+        self.assertEqual("cartesia", natural.provider("en"))
+        self.assertEqual("cartesia", natural.provider("hi"))
         self.assertEqual("cartesia", natural.provider("ta"))
         self.assertEqual("cartesia", natural.provider("hne"))
 
@@ -19,8 +19,7 @@ class NaturalAudioTest(unittest.TestCase):
             self.assertIsNone(natural.provider(code))
 
     def test_each_language_has_one_voice(self):
-        voiced_here = {c for c in natural.CARTESIA_VOICES} | natural.ELEVENLABS
-        self.assertEqual(voiced_here, natural.NATURAL_ONLY)
+        self.assertEqual(set(natural.CARTESIA_VOICES), natural.NATURAL_ONLY)
 
 
 if __name__ == "__main__":

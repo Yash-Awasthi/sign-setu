@@ -4,6 +4,8 @@ services:
     runtime: docker
     plan: free
     rootDir: gateway
+    # Deploys only when asked, through the Render API; a push alone never deploys.
+    autoDeploy: false
     healthCheckPath: /healthz
     envVars:
       - key: DATABASE_URL
@@ -20,8 +22,6 @@ services:
       - key: TOKEN_TTL_DAYS
         value: "0"
       - key: ASSIST_KEY
-        sync: false
-      - key: ELEVENLABS_API_KEY
         sync: false
       - key: CARTESIA_API_KEY
         sync: false

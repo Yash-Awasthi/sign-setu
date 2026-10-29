@@ -49,5 +49,11 @@
   "clips": 3729,
   "frames": 327590,
   "date": "2026-10-29"
+ },
+ "C:\\work\\ml-data\\cache_asl_q4b": {
+  "sha256": "64205776b7442101caa0d0fa6c28cdcfdfad6487737a27c0806fff3fd675b6c5",
+  "clips": 18329,
+  "frames": 1474373,
+  "date": "2026-10-29"
  }
 }

@@ -1619,6 +1619,8 @@ B12F2 as the app shows it (logits masked to its 314 words, scored on those words
 
 | 19:11 | 91 | 70, 6.3 | 18.9 | 13 | exp B5, landmark_split | RAM used 18.9 GB: landmark workers back to 13 |
 
+B5-mid (2026-10-29, 18,329 of 40,154 ASL Citizen train clips, index cache_b5_mid): mid, not a verdict. Seed 1: union 0.088 against WF soup5's 0.071, 15 to 6, p=0.078; app view 0.508; INCLUDE test 0.975. Seed 2: app view 0.525; INCLUDE 0.978. Uniform soup of both (B5_s98): union 0.084 against 0.071, 12 to 5, p=0.14; app view 0.508; Kaggle C 0.997; INCLUDE 0.978, just under the 0.979 floor. More ASL moves rule 1 the right way and INCLUDE the wrong way; the full run tries ASL held to a share of each batch (`asl_share`, rows B5A25 and B5A50).
+
 B5 (2026-10-29, partial ASL: 3,729 of 40,154 ASL Citizen train clips, cache_b5_partial index over cache_v6b + cache_asl_q4a, 1 seed): early look, not a verdict. As the app shows it 0.542 against WF soup5's 0.492 (n=59); rule 1 on the union (n=546) 0.079 against 0.071, 10 to 6, p=0.45; Kaggle C 0.980; INCLUDE test 0.983. Run again on the full ASL set when Q4 ends.
 
 B5 INCLUDE test floor (0.979): 0.983 [0.973, 0.990] (n=816)

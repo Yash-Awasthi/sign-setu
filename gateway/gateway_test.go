@@ -659,10 +659,10 @@ func TestSpeakAnEmptyProviderReplyIsAFailureNotSilence(t *testing.T) {
 	}
 }
 
-func TestEnglishAndHindiUseElevenLabsAndOthersCartesiaWhereItHasTheLanguage(t *testing.T) {
-	for lang, want := range map[string]string{"en": "elevenlabs", "hi": "elevenlabs", "ta": "cartesia", "hne": "cartesia", "as": ""} {
-		if got := speechProvider(lang); got != want {
-			t.Fatalf("%s: %q", lang, got)
+func TestCartesiaVoicesEnglishHindiAndTheOthersItHas(t *testing.T) {
+	for lang, voiced := range map[string]bool{"en": true, "hi": true, "ta": true, "hne": true, "as": false} {
+		if got := cartesiaVoices[lang] != ""; got != voiced {
+			t.Fatalf("%s: %v", lang, got)
 		}
 	}
 }

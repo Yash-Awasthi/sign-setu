@@ -150,7 +150,9 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
         if (i in sentenceEnd) add(PAUSE)
     }
     if (text.trimEnd().endsWith("?") || text.trimEnd().endsWith("\u061F")) {
-        if (parts.none { it.id in QUESTION_SIGNS }) gestures["ask"]?.let(::add)
+        // The question mark is lit while the asking sign plays.
+        val mark = text.trimEnd().lastIndex
+        if (parts.none { it.id in QUESTION_SIGNS }) gestures["ask"]?.let { g -> settle(); val start = t; add(g); beats += WordBeat(mark..mark, null, null, start, t) }
     }
     return TextPlan(chain("text", parts, GAP).takeIf { it.keys.isNotEmpty() }, beats, parts.map { it.id })
 }

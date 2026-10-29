@@ -393,8 +393,8 @@ fun VideoCallStage(
             Column(Modifier.fillMaxSize().imePadding()) {
                 Box(Modifier.weight(if (panelCollapsed) 1f else 1f - panelShare).fillMaxWidth()) { avatarView() }
                 Text(
-                    promptText, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    litWord(promptText, captionHighlight), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White,
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                 )
                 if (panelCollapsed) PanelStrip(onExpandPanel, Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
                 else panel(Modifier.weight(panelShare).fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp).popIn(rememberPopIn(0)))
@@ -436,6 +436,9 @@ fun VideoCallStage(
             }
         }
 
+        // The open panel has its own Stop row; folded or absent, Stop waits in the corner.
+        if (panel == null || panelCollapsed) StopOctagon(content.subjectText("stop", lang) ?: stringResource(R.string.stage_stop), ui.answeredCard == "stop", { answer("stop") },
+            Modifier.align(Alignment.TopStart).padding(top = 72.dp, start = 12.dp))
         if (panel != null) return@Box
 
         Column(
@@ -523,9 +526,6 @@ fun VideoCallStage(
                 }
             }
         }
-
-        StopOctagon(content.subjectText("stop", lang) ?: stringResource(R.string.stage_stop), ui.answeredCard == "stop", { answer("stop") },
-            Modifier.align(Alignment.TopStart).padding(top = 72.dp, start = 12.dp))
 
         AnimatedVisibility(controls, Modifier.align(Alignment.BottomCenter), enter = fadeIn(), exit = fadeOut()) { Surface(
             shape = RoundedCornerShape(32.dp),

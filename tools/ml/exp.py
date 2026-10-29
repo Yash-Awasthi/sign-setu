@@ -542,6 +542,11 @@ def train(cfg, ds_train, ys, signers, classes, run, dev, epochs, val_eval, resum
     # 4,284 clips from several people filed as one signer, to 1/57 of the batches (B1 train top-1 0.14 on it).
     own = signers[ds_train.rows]
     w = 1.0 / np.sqrt(np.bincount(own)[own])
+    if cfg.get("asl_share") is not None:
+        # B5: this share of each batch is ASL clips, the rest ISL, each side keeping its own signer balance.
+        asl_row = np.array([vocab[ys[r]].startswith("asl:") for r in ds_train.rows])
+        w[asl_row] *= cfg["asl_share"] / w[asl_row].sum()
+        w[~asl_row] *= (1 - cfg["asl_share"]) / w[~asl_row].sum()
     # B3 needs batch 64 with 2 accumulated steps (effective 128, comparable) to fit beside another row.
     accum = cfg.get("accum", 1)
     bs, start, nan_strikes, best, best_epoch = cfg.get("batch", 128), 0, 0, -1.0, 0

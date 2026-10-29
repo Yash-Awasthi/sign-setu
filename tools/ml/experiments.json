@@ -590,5 +590,53 @@
   "eval_every": 1,
   "min_epochs": 15,
   "patience": 10
+ },
+ "B5A25": {
+  "parent": "B5",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu",
+   "asl"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "per_language": true,
+  "vram": 0.5,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10,
+  "asl_share": 0.25,
+  "change": "B5 with ASL clips held to 25% of each batch (INCLUDE floor)"
+ },
+ "B5A50": {
+  "parent": "B5",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu",
+   "asl"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "per_language": true,
+  "vram": 0.5,
+  "eval_every": 1,
+  "min_epochs": 15,
+  "patience": 10,
+  "asl_share": 0.5,
+  "change": "B5 with ASL clips held to 50% of each batch (INCLUDE floor)"
  }
 }

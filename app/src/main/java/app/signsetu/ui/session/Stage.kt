@@ -564,7 +564,12 @@ internal fun linePlan(
     val plan = content.planText(english, modes)
     if (shown == english) return plan
     val part = shown.substring(from)
-    val lit = plan.beats.map { b -> b to captionRange(content, english.substring(b.range), part)?.let { it.first + from..it.last + from } }
+    val lit = plan.beats.map { b ->
+        val word = english.substring(b.range)
+        val end = part.trimEnd()
+        val mark = end.lastIndex.takeIf { word.length == 1 && word[0] in QUESTION_MARKS && end.lastOrNull() in QUESTION_MARKS }
+        b to (mark?.let { it..it } ?: captionRange(content, word, part))?.let { it.first + from..it.last + from }
+    }
     if (lit.all { it.second != null } || !again) return plan.copy(beats = lit.map { (b, r) -> b.copy(range = r ?: IntRange.EMPTY) })
     val kept = lit.filter { it.second != null }.sortedBy { it.first.range.first }.joinToString(" ") { english.substring(it.first.range) }
     return if (kept.isBlank()) TextPlan(null, emptyList()) else linePlan(content, kept, shown, modes, from, again = false)
@@ -597,6 +602,8 @@ internal fun readBackLine(content: ContentBundle, labels: List<String>, lang: St
     }
     return CaptionLine(shown, "$words… $askEn", TextPlan(chain("read_back", parts), beats))
 }
+
+private val QUESTION_MARKS = setOf('?', '؟', '？')
 
 private const val REPEAT_PAUSE_MS = 2_500L
 private const val MOVING_MAX_MS = 15_000L

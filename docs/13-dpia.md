@@ -33,7 +33,7 @@ Camera, then MediaPipe landmark models on the phone, then the on-device sign rea
 
 - The second screen over bonded Bluetooth. It is encrypted (P-256 ECDH, AES-GCM) and carries no landmarks.
 - The online assistant through the department gateway, or a custom API endpoint the officer sets up instead. It carries masked text only, and session text only after the officer allows it for the session.
-- Speech of the officer's typed text through the gateway (`/v1/speak`), under the same switch and session permission: up to 500 characters of the officer's own words, unmasked, go through the gateway to the speech provider (ElevenLabs or Cartesia) and come back as audio. Nothing the person said or signed is sent.
+- Speech of the officer's typed text through the gateway (`/v1/speak`), under the same switch and session permission: up to 500 characters of the officer's own words, unmasked, go through the gateway to the speech provider (Cartesia) and come back as audio. Nothing the person said or signed is sent.
 - The encrypted PDF export, on an officer's action only.
 
 ## 2. Lawful basis

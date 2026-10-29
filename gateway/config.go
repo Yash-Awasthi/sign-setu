@@ -14,7 +14,6 @@ type Config struct {
 	AssistKey             string
 	AssistModel           string
 	AssistReasoningEffort string
-	ElevenLabsKey         string
 	CartesiaKey           string
 	OIDCIssuer            string
 	OIDCAudience          string
@@ -77,7 +76,6 @@ func configFromEnv(getenv func(string) string) (Config, error) {
 	str("ASSIST_KEY", &c.AssistKey)
 	str("ASSIST_MODEL", &c.AssistModel)
 	str("ASSIST_REASONING_EFFORT", &c.AssistReasoningEffort)
-	str("ELEVENLABS_API_KEY", &c.ElevenLabsKey)
 	str("CARTESIA_API_KEY", &c.CartesiaKey)
 	str("OIDC_ISSUER", &c.OIDCIssuer)
 	str("OIDC_AUDIENCE", &c.OIDCAudience)
