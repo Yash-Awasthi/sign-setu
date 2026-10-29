@@ -499,6 +499,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="stage_dont_understand">I don\'t understand</string>
     <string name="stage_wrong">That\'s wrong</string>
     <string name="stage_stop">Stop</string>
+    <string name="stage_show_answers">Show the answers</string>
     <string name="stage_done">Done</string>
     <string name="stage_clear">Clear</string>
     <string name="stage_next">Next</string>

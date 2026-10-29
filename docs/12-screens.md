@@ -16,6 +16,8 @@ Every screen of the application, captured from the 0.8.1 `standard` debug build 
 
 ## 2. The stage
 
+These 0.8.1 captures show the earlier stage, every button in view. The stage now first shows only the character, the caption and the Stop octagon in the corner; a tap shows the rest for 5 s ([UX](03-ux.md) §2).
+
 | Screen | File | Notes |
 | --- | --- | --- |
 | Introduction | [08-stage-introduction.png](screens/08-stage-introduction.png) | The video call: character, camera window, caption, Stop and Next, Water, Food and Help |

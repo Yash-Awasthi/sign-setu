@@ -38,7 +38,10 @@ import app.signsetu.camera.LandmarkTracker
 import app.signsetu.data.content.CAPTION_MODES
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.TOKEN
+import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.Given
+import app.signsetu.data.content.SignMode
+import app.signsetu.data.content.TextPlan
 import app.signsetu.data.content.WordBeat
 import app.signsetu.data.content.chain
 import app.signsetu.data.content.planText
@@ -84,6 +87,8 @@ fun Stage(
     tracker: LandmarkTracker?,
     cameraOn: Boolean,
     gestureSpeed: Float,
+    /** How a question is signed: the officer's typed-text modes, so a quick question and the same words typed match. */
+    askModes: Set<SignMode> = CAPTION_MODES,
     onCard: (String) -> Unit,
     onYesNo: (Boolean) -> Unit,
     onLanguage: (String) -> Unit,
@@ -136,7 +141,13 @@ fun Stage(
     // A tapped word plays alone at half speed; the sentence clock waits until it is done.
     var focus by remember(pending) { mutableStateOf<WordBeat?>(null) }
     var wordTaps by remember(pending) { mutableIntStateOf(0) }
+    // The word of the waiting line being signed, set by the character's own clock below.
+    val idleLit = remember { mutableStateOf<IntRange?>(null) }
     var reacting by remember { mutableStateOf(false) }
+    // Answer panels make room while the character signs the item or a replay; its automatic repeats leave them up.
+    var moving by remember(pending) { mutableStateOf(true) }
+    // ponytail: a fixed wait stands in for a finish the character never reports (no motion, page not loaded).
+    LaunchedEffect(moving) { if (moving) { delay(MOVING_MAX_MS); moving = false } }
     val answered = ui.answeredCard != null || ui.answeredYes != null
     LaunchedEffect(ui.answeredCard, ui.answeredYes) { reacting = answered }
     val paused = ui.answeredCard in PauseCards
@@ -174,21 +185,6 @@ fun Stage(
     LaunchedEffect(picked) { if (picked.isNotEmpty()) { delay(PICK_SETTLE_MS); settled = true } }
     // A show-back or say-back with pictures asks which one; the character must not act out the officer's reading.
     val checking = pending.asksChoice
-    val gestureId = when {
-        reacting -> "okay"
-        drawing || writing -> "school.write"
-        choices != null -> "ask"
-        // A question or typed text is still shown while they sign; otherwise the character invites them to.
-        signing && pending !is Pending.Ask && pending !is Pending.FreeText && pending !is Pending.PhraseAsk -> "show_me"
-        // Signed word by word below, from the English wording.
-        rule != null || pending is Pending.Ask -> null
-        checking -> "ask"
-        pending is Pending.ShowBack -> pending.entry.id
-        pending is Pending.Cards -> "ask"
-        pending is Pending.PhraseAsk || pending is Pending.FreeText -> null
-        pending == Pending.LanguageFinder -> "wave"
-        else -> "namaste"
-    }
     LaunchedEffect(finishedPlays) {
         val repeats = pending is Pending.Ask || pending is Pending.FreeText || pending is Pending.PhraseAsk || rule != null
         if (finishedPlays == 0 || finishedPlays > AUTO_REPEATS || !repeats || signing || answered) return@LaunchedEffect
@@ -196,23 +192,46 @@ fun Stage(
         replays++
     }
     val readLabels = readBackLabels(ui)
-    val readBack = remember(readLabels, content) {
-        readLabels.mapNotNull(content::signBack).takeIf { it.isNotEmpty() }?.let { chain("read_back", it + listOfNotNull(content.gestures["ask"])) }
+    // The hands move only for the caption: a line the stage puts up itself is signed from its English wording.
+    val readBack = remember(readLabels, content, lang) { readBackLine(content, readLabels, lang) }
+    fun say(key: String) = content.subjectText(key, "en")?.let { CaptionLine(content.subjectText(key, lang), it) }
+    val stageLine = when {
+        reacting -> say("okay")
+        drawingSent -> say("thanks")
+        drawing -> say("draw")
+        writing -> say("write")
+        readBack != null -> readBack
+        choices != null -> say("is_this_it")
+        narrative -> say("watching")
+        // While they sign the character only invites them to; a question or typed text stays as it is.
+        signing && pending !is Pending.Ask && pending !is Pending.FreeText && pending !is Pending.PhraseAsk -> null
+        pending is Pending.Ask || pending is Pending.PhraseAsk || rule != null -> null
+        checking -> say("is_this_it")
+        pending is Pending.ShowBack || pending is Pending.FreeText -> null
+        // No caption of its own: the hint stands in for it, and is what is signed.
+        pending is Pending.Cards -> say("hint_answer")?.copy(shown = null)
+        pending == Pending.LanguageFinder -> content.language("en")?.hello?.let { CaptionLine(ui.chosenLanguage?.let { c -> content.language(c)?.hello }, it) }
+        else -> content.language("en")?.hello?.let { CaptionLine(content.language(lang)?.hello, it) }
     }
-    // A question or opening line is signed from its English wording (CAPTION_MODES), unless a recorded clip plays it.
+    val caption = if (stageLine != null) stageLine.shown else item.caption
+    // What the call shows in the caption's place; the language finder's prompt is in several scripts and lights nothing.
+    val shownText = if (pending == Pending.LanguageFinder) caption.orEmpty() else caption ?: content.subjectText("hint_answer", lang).orEmpty()
+    // A question or opening stageLine is signed from its English wording, unless a recorded clip plays it.
     val captionEnglish = when {
-        recordedClip(pending, content) != null -> null
+        stageLine != null || recordedClip(pending, content) != null -> null
         pending is Pending.Ask -> pending.question.text["en"]
         rule != null -> ruleText(content, rule.key, "en")
         else -> null
     }
-    val plan = remember(pending, content, readBack) {
-        (pending as? Pending.FreeText)?.takeIf { !it.asksChoice && readBack == null }?.let { content.planText(it.text, it.modes) }
-            ?: captionEnglish?.let { content.planText(it, CAPTION_MODES) }?.takeIf { it.gesture != null }
+    val typed = (pending as? Pending.FreeText)?.takeIf { stageLine == null && !it.asksChoice }
+    val plan = remember(stageLine, typed, captionEnglish, shownText, content) {
+        stageLine?.let { it.plan ?: linePlan(content, it.english, shownText, CAPTION_MODES).takeIf { p -> p.gesture != null } }
+            ?: typed?.let { content.planText(it.text, it.modes) }
+            ?: captionEnglish?.let { linePlan(content, it, shownText, if (pending is Pending.Ask) askModes else CAPTION_MODES) }?.takeIf { it.gesture != null }
     }
-    // Word highlighting follows the planned words: typed text lights its own words; a question lights the caption word
-    // with the same entry in words.json as the English word being signed, so a Hindi caption lights its Hindi word.
-    val highlightable = (pending as? Pending.FreeText)?.caption == null
+    // Typed text lights its own words; any other stageLine lights the shown word with the same words.json entry as the
+    // English word being signed, so a Hindi caption lights its Hindi word.
+    val highlightable = typed != null && typed.caption == null
     val focusGesture = remember(focus) {
         focus?.let { f -> (pending as? Pending.FreeText)?.let { content.planText(it.text.substring(f.range), it.modes).gesture } }
     }
@@ -222,19 +241,26 @@ fun Stage(
     }
     val gesture = when {
         focusGesture != null -> focusGesture
-        readBack != null && (gestureId == null || gestureId == "ask") -> readBack
-        gestureId != null -> content.gestures[gestureId]
+        plan?.gesture != null -> plan.gesture
+        // A line whose words have no sign keeps the gesture it had before lines were signed.
+        reacting -> content.gestures["okay"]
+        drawing || writing -> content.gestures["school.write"]
+        stageLine != null && pending == Pending.LanguageFinder -> content.gestures["wave"]
+        stageLine != null && (choices != null || checking || pending is Pending.Cards) -> content.gestures["ask"]
+        stageLine != null && !narrative -> content.gestures["namaste"]
+        signing && pending !is Pending.Ask && pending !is Pending.FreeText && pending !is Pending.PhraseAsk -> content.gestures["show_me"]
+        pending is Pending.ShowBack -> content.gestures[pending.entry.id]
         pending is Pending.PhraseAsk -> content.gestureFor(pending.phrase, pending.slot)
-        pending is Pending.FreeText -> plan?.gesture ?: content.gestures["ask"]
-        pending is Pending.Ask -> plan?.gesture ?: content.gestureFor(pending.question)
-        rule != null -> plan?.gesture ?: ruleSigns
+        pending is Pending.FreeText -> content.gestures["ask"]
+        pending is Pending.Ask -> content.gestureFor(pending.question)
+        rule != null -> ruleSigns
         else -> null
     }
     // Follows the character through typed text, so the word being signed is lit and its picture or letters shown.
     val playClock = remember(pending) { mutableFloatStateOf(-1f) }
     LaunchedEffect(plan, replays, pace, reacting, focus) {
         playClock.floatValue = -1f
-        if (plan == null || reacting || focus != null) return@LaunchedEffect
+        if (plan == null || focus != null) return@LaunchedEffect
         val start = withFrameNanos { it }
         val end = (plan.beats.lastOrNull()?.end ?: 0f) + LEAD_IN
         while (playClock.floatValue < end) {
@@ -254,18 +280,8 @@ fun Stage(
             spelledIndex(b, playClock.floatValue - LEAD_IN)
         }
     }
-    val caption = when {
-        drawingSent -> content.subjectText("thanks", lang)
-        drawing -> content.subjectText("draw", lang)
-        writing -> content.subjectText("write", lang)
-        choices != null -> content.subjectText("is_this_it", lang)
-        narrative -> content.subjectText("watching", lang)
-        // Greeting back in the language they picked tells them the tap was understood.
-        pending == Pending.LanguageFinder -> ui.chosenLanguage?.let { content.language(it)?.hello }
-        else -> item.caption
-    }
     val onWordTap: ((Int) -> Unit)? = when {
-        caption != item.caption -> null
+        stageLine != null -> null
         pending is Pending.FreeText && highlightable && plan != null -> { offset ->
             beatAt(plan.beats, offset)?.let { b ->
                 if (content.planText(pending.text.substring(b.range), pending.modes).gesture != null) { focus = b; wordTaps++ }
@@ -276,14 +292,30 @@ fun Stage(
     }
 
     val avatar: @Composable (String?) -> Unit = { line ->
-        // A subject line the call lights while it waits is spoken and signed once, like every other caption.
-        val lineSigns = remember(line, content) { line?.let { content.subjectText(it, "en") }?.let { content.planText(it, CAPTION_MODES).gesture } }
+        // A subject line the call lights while it waits is spoken and signed once, like every other caption, each
+        // word lit as it is signed.
+        val idlePlan = remember(line, content, lang) {
+            line?.let { k -> content.subjectText(k, "en")?.let { linePlan(content, it, content.subjectText(k, lang).orEmpty(), CAPTION_MODES) } }
+        }
+        val lineSigns = idlePlan?.gesture
         LaunchedEffect(line, lang) { line?.let { content.subjectAudio(it, lang) }?.let { speech.play(it, audioRate(pace)) } }
+        LaunchedEffect(idlePlan, pace) {
+            idleLit.value = null
+            val p = idlePlan?.takeIf { it.gesture != null } ?: return@LaunchedEffect
+            val start = withFrameNanos { it }
+            val end = (p.beats.lastOrNull()?.end ?: 0f) + LEAD_IN
+            while (true) {
+                val t = withFrameNanos { now -> (now - start) / 1e9f * pace } - LEAD_IN
+                if (t >= end - LEAD_IN) break
+                idleLit.value = p.beats.lastOrNull { t >= it.start && t < it.end }?.range?.takeIf { !it.isEmpty() }
+            }
+            idleLit.value = null
+        }
         Box(Modifier.fillMaxSize()) {
             Avatar(
                 gesture = lineSigns ?: gesture,
                 // A typed sentence or asked question with a recorded clip plays the recording instead of word-by-word signs.
-                clip = if (lineSigns == null && focus == null && !reacting) recordedClip(pending, content) else null,
+                clip = if (lineSigns == null && focus == null && stageLine == null) recordedClip(pending, content) else null,
                 playKey = if (lineSigns != null) "line:$line" else when {
                     reacting -> "react:${ui.answeredCard}:${ui.answeredYes}"
                     focus != null -> "word:$wordTaps"
@@ -294,9 +326,10 @@ fun Stage(
                 // Breathing redraws every frame; inside a sign window the landmark tracker needs that time.
                 idle = !signing,
                 glance = pending != null && !drawing && !reacting,
-                question = if (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) questionKind(item.caption.orEmpty()) else null,
-                negated = (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) && negatedText(item.caption.orEmpty()),
+                question = if (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) questionKind(caption.orEmpty()) else null,
+                negated = (pending is Pending.Ask || pending is Pending.PhraseAsk || pending is Pending.FreeText) && negatedText(caption.orEmpty()),
                 onFinished = {
+                    moving = false
                     if (line == null && focus == null && !reacting) finishedPlays++
                     reacting = false; focus = null
                 },
@@ -310,11 +343,12 @@ fun Stage(
                 if (pending != null && !drawing && replayable) {
                     ReplayControls(
                         pace = pace,
-                        onReplay = { focus = null; replays++; audio?.let { speech.play(it, audioRate(pace)) } },
+                        onReplay = { focus = null; moving = true; replays++; audio?.let { speech.play(it, audioRate(pace)) } },
                         onPace = {
                             val next = nextPace(pace)
                             StagePace.speed.floatValue = next
                             focus = null
+                            moving = true
                             replays++
                             audio?.let { speech.play(it, audioRate(next)) }
                         },
@@ -413,10 +447,8 @@ fun Stage(
             tracker = tracker,
             avatar = avatar,
             caption = caption,
-            captionHighlight = if (caption != item.caption) null else when (pending) {
-                is Pending.FreeText -> (focus?.range ?: beat?.range)?.takeIf { highlightable }
-                else -> beat?.let { b -> captionEnglish?.let { en -> captionRange(content, en.substring(b.range), caption.orEmpty()) } }
-            },
+            captionHighlight = if (typed != null) (focus?.range ?: beat?.range)?.takeIf { highlightable } else beat?.range?.takeIf { !it.isEmpty() },
+            idleHighlight = idleLit.value,
             onWordTap = onWordTap,
             onCard = onCard,
             onYesNo = { yes ->
@@ -438,7 +470,10 @@ fun Stage(
             onWrite = { writing = true }.takeIf { canWrite && panel == null },
             panel = panel,
             // Picture tiles need little height; the character keeps the rest instead of an empty gap.
-            panelShare = if (item.choices.isNotEmpty() && !signing && !settled && panel != null && pending != Pending.LanguageFinder) 0.45f else 0.6f,
+            panelCollapsed = moving && !signing && (lesson != null || item.choices.isNotEmpty()) && panel != null &&
+                !drawing && !writing && !drawingSent && choices == null && pending != Pending.LanguageFinder,
+            onExpandPanel = { moving = false },
+            panelShare = if (item.choices.isNotEmpty() && !signing && !settled && panel != null && pending != Pending.LanguageFinder) (if (item.numbers) 0.35f else 0.45f) else 0.6f,
             modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
                 // Covered by the pause layer: screen readers must not reach answers that cannot be tapped.
                 .then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),
@@ -513,7 +548,47 @@ private fun speechFor(pending: Pending?, content: ContentBundle, lang: String): 
 }
 
 /** After the character finishes an item it pauses this long before signing it again, [AUTO_REPEATS] times at most. */
+/** A line the stage shows itself: [shown] in the subject's language (null when the hint stands in), signed from
+ * [english]; [plan], when set, is already in [shown]'s positions. */
+internal data class CaptionLine(val shown: String?, val english: String, val plan: TextPlan? = null)
+
+/** [english] planned, each word's range moved onto the word of [shown] it lights; a word with none lights nothing. */
+internal fun linePlan(content: ContentBundle, english: String, shown: String, modes: Set<SignMode>): TextPlan {
+    val plan = content.planText(english, modes)
+    if (shown == english) return plan
+    return plan.copy(beats = plan.beats.map { b -> b.copy(range = captionRange(content, english.substring(b.range), shown) ?: IntRange.EMPTY) })
+}
+
+/** Read words signed back as they were read, then "Is this it?" from its wording; the caption is the words and the
+ * question, each lit while it plays. */
+internal fun readBackLine(content: ContentBundle, labels: List<String>, lang: String): CaptionLine? {
+    val signs = labels.mapNotNull { l -> content.signBack(l)?.takeIf { it.keys.isNotEmpty() }?.let { l to it } }
+    if (signs.isEmpty()) return null
+    val words = signs.joinToString(" ") { it.first }
+    val askEn = content.subjectText("is_this_it", "en").orEmpty()
+    val shown = "$words… ${content.subjectText("is_this_it", lang) ?: askEn}"
+    val parts = mutableListOf<Gesture>()
+    val beats = mutableListOf<WordBeat>()
+    var t = 0f
+    var at = 0
+    for ((word, g) in signs) {
+        val end = t + g.keys.maxOf { it.t }
+        beats += WordBeat(at until at + word.length, null, null, t, end)
+        parts += g
+        t = end + 0.3f
+        at += word.length + 1
+    }
+    val ask = linePlan(content, askEn, shown.substring(words.length + 2), CAPTION_MODES)
+    ask.gesture?.let { g ->
+        parts += g
+        val base = words.length + 2
+        beats += ask.beats.map { b -> b.copy(range = if (b.range.isEmpty()) b.range else b.range.first + base..b.range.last + base, start = b.start + t, end = b.end + t) }
+    }
+    return CaptionLine(shown, "$words… $askEn", TextPlan(chain("read_back", parts), beats))
+}
+
 private const val REPEAT_PAUSE_MS = 2_500L
+private const val MOVING_MAX_MS = 15_000L
 private const val AUTO_REPEATS = 2
 
 /** The range in [caption] of the word that means [english]: a caption word written in the same words.json entry. */

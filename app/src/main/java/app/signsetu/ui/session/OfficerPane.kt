@@ -541,7 +541,7 @@ private fun StopBanner(onOk: () -> Unit) {
     }
 }
 
-private fun typedModes(modes: List<SignMode>, islReorder: Boolean) = if (islReorder) modes.toSet() else modes.toSet() + SignMode.TYPED_ORDER
+internal fun typedModes(modes: List<SignMode>, islReorder: Boolean) = if (islReorder) modes.toSet() else modes.toSet() + SignMode.TYPED_ORDER
 
 @Composable
 internal fun describe(p: Pending, content: ContentBundle, lang: String): String = when (p) {
@@ -556,7 +556,7 @@ internal fun describe(p: Pending, content: ContentBundle, lang: String): String 
 }
 
 /** Profiles that sign get ISL signs and spelling; everyone else gets everyday gestures. Both get pictures. */
-private fun defaultModes(profile: Profile) =
+internal fun defaultModes(profile: Profile) =
     if (profile == Profile.ISL_USER) listOf(SignMode.SIGNS, SignMode.SPELL, SignMode.PICTURES) else listOf(SignMode.GESTURES, SignMode.PICTURES)
 
 @Composable

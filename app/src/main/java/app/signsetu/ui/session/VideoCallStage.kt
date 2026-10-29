@@ -5,6 +5,14 @@ import androidx.compose.runtime.setValue
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import android.content.Context
+import android.view.accessibility.AccessibilityManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +28,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -80,6 +89,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Baloo
+import app.signsetu.ui.components.CardImage
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -99,6 +109,8 @@ fun VideoCallStage(
     avatar: @Composable (String?) -> Unit,
     caption: String?,
     captionHighlight: IntRange?,
+    /** The word of the waiting line under the caption being signed now. */
+    idleHighlight: IntRange?,
     /** Tapping the caption replays it, or one word of typed text. */
     onWordTap: ((Int) -> Unit)?,
     onCard: (String) -> Unit,
@@ -124,6 +136,9 @@ fun VideoCallStage(
     panel: (@Composable (Modifier) -> Unit)? = null,
     /** The share of the height the panel takes; the character gets the rest. */
     panelShare: Float = 0.6f,
+    /** While the character signs, the panel waits as a strip below the caption; a tap on it opens it early. */
+    panelCollapsed: Boolean = false,
+    onExpandPanel: () -> Unit = {},
     /** A nod, shake, thumb, point, held fingers, palm, shrug or courtesy the camera read, sent to the officer to accept. */
     onCameraRead: (card: String, cue: String?) -> Unit = { _, _ -> },
 ) {
@@ -160,6 +175,18 @@ fun VideoCallStage(
     // once per quiet spell, and a touch or a signed answer starts the wait again. No yes or no signs: they read as answers.
     var guideStep by remember { mutableIntStateOf(-1) }
     var touches by remember { mutableIntStateOf(0) }
+    // Avatar and caption only until a touch: every button shows on a tap and fades CONTROLS_MS after the last one.
+    // A screen reader user explores by touch without taps landing here, so their buttons always stay.
+    val context = LocalContext.current
+    val explore = remember { (context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager).isTouchExplorationEnabled }
+    var tapped by remember { mutableStateOf(false) }
+    LaunchedEffect(touches) {
+        if (touches == 0) return@LaunchedEffect
+        tapped = true
+        delay(CONTROLS_MS)
+        tapped = false
+    }
+    val controls = tapped || explore
     LaunchedEffect(touches, signing, pending) {
         guideStep = -1
         if (signing || pending == null) return@LaunchedEffect
@@ -364,12 +391,13 @@ fun VideoCallStage(
 
         if (panel != null) {
             Column(Modifier.fillMaxSize().imePadding()) {
-                Box(Modifier.weight(1f - panelShare).fillMaxWidth()) { avatarView() }
+                Box(Modifier.weight(if (panelCollapsed) 1f else 1f - panelShare).fillMaxWidth()) { avatarView() }
                 Text(
                     promptText, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                 )
-                panel(Modifier.weight(panelShare).fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
+                if (panelCollapsed) PanelStrip(onExpandPanel, Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
+                else panel(Modifier.weight(panelShare).fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp).popIn(rememberPopIn(0)))
             }
         } else Box(
             modifier = Modifier.fillMaxSize().padding(bottom = if (swapped && cameraOn) 0.dp else 90.dp),
@@ -414,7 +442,7 @@ fun VideoCallStage(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 124.dp, start = 16.dp, end = 16.dp)
+                .padding(bottom = if (controls) 124.dp else 16.dp, start = 16.dp, end = 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -463,32 +491,31 @@ fun VideoCallStage(
                     if (!ui.child && !statement && caption != null) (idleLine ?: hint)?.let {
                         // Lit and larger while the character acts it out, and the reassurance takes its place when idle.
                         val lit = hintLit || idleLine != null
-                        Text(it, fontSize = if (lit) 15.sp else 11.sp, color = if (lit) Color.White else LocalCall.current.muted, fontWeight = if (lit) FontWeight.Bold else null, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
+                        Text(litWord(it, idleHighlight.takeIf { lit }), fontSize = if (lit) 15.sp else 11.sp, color = if (lit) Color.White else LocalCall.current.muted, fontWeight = if (lit) FontWeight.Bold else null, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
                     }
                 }
             }
 
-            // Stop and the honest ways out stay in reach on every item, as on the full stage; Stop is the only one named.
+            // Stop has its own corner; Done stays while they sign, and the rest show on a tap.
             val answers = LocalAnswerColors.current
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answers.pause, answers.onPause, ui.answeredCard == "stop", { answer("stop") }, Modifier.weight(1.6f), height = 48.dp)
+            if (signing || (controls && (rightsNotice != null || onNext != null))) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (signing) {
                     SmallAnswer("done", content.subjectText("done", lang), stringResource(R.string.stage_done), answers.yes, answers.onYes, false, onDoneSigning, Modifier.weight(1.6f), height = 48.dp, icon = rememberVectorPainter(Icons.Filled.Check))
                 }
-                if (rightsNotice != null) {
+                if (controls && rightsNotice != null) {
                     SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1.6f), height = 48.dp)
                 }
-                if (onNext != null) {
+                if (controls && onNext != null) {
                     SmallAnswer("next", content.subjectText("next", lang), stringResource(R.string.stage_next), answers.yes, answers.onYes, false, onNext, Modifier.weight(1.6f), height = 48.dp, icon = rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowForward))
                 }
             }
-            // Their own row, so Stop and Next never change size or place between items.
-            if (pending != null && !signing && !statement) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Their own row, so Next never changes size or place between items.
+            if (controls && pending != null && !signing && !statement) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know))
                 SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand))
                 SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong))
             }
-            if (!signing && (onDraw != null || onWrite != null)) {
+            if (controls && !signing && (onDraw != null || onWrite != null)) {
                 val stage = LocalStageColors.current
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     onDraw?.let { SmallAnswer("draw", content.subjectText("draw", lang), stringResource(R.string.stage_draw), stage.tool, stage.onTool, false, it, Modifier.weight(1f), height = 48.dp, icon = rememberVectorPainter(Icons.Filled.Create)) }
@@ -497,13 +524,15 @@ fun VideoCallStage(
             }
         }
 
-        Surface(
+        StopOctagon(content.subjectText("stop", lang) ?: stringResource(R.string.stage_stop), ui.answeredCard == "stop", { answer("stop") },
+            Modifier.align(Alignment.TopStart).padding(top = 72.dp, start = 12.dp))
+
+        AnimatedVisibility(controls, Modifier.align(Alignment.BottomCenter), enter = fadeIn(), exit = fadeOut()) { Surface(
             shape = RoundedCornerShape(32.dp),
             color = LocalCall.current.surface.copy(alpha = 0.93f),
             border = BorderStroke(1.dp, LocalCall.current.line),
             shadowElevation = 12.dp,
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
                 .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
         ) {
@@ -531,9 +560,54 @@ fun VideoCallStage(
                     onOpenExpressBoard()
                 }
             }
-        }
+        } }
     }
 }
+
+/** The folded answer panel: a bar that opens it at once when tapped. */
+@Composable
+private fun PanelStrip(onClick: () -> Unit, modifier: Modifier) {
+    val label = stringResource(R.string.stage_show_answers)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = LocalCall.current.surface.copy(alpha = 0.93f),
+        border = BorderStroke(1.dp, LocalCall.current.line),
+        modifier = modifier.height(48.dp).semantics { contentDescription = label },
+    ) {
+        Box(contentAlignment = Alignment.Center) { Text("︿", fontSize = 22.sp, color = LocalCall.current.text) }
+    }
+}
+
+/** Stop in a corner on every item: a small red octagon, the one way out that never hides. */
+@Composable
+private fun StopOctagon(label: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val answers = LocalAnswerColors.current
+    PressableSurface(
+        onClick = onClick,
+        shape = Octagon,
+        color = answers.pause,
+        border = if (chosen) BorderStroke(3.dp, answers.onPause) else null,
+        modifier = modifier.size(56.dp).semantics { role = Role.Button; contentDescription = label },
+    ) {
+        Box(contentAlignment = Alignment.Center) { CardImage("stop", Modifier.size(30.dp)) }
+    }
+}
+
+private val Octagon = GenericShape { size, _ ->
+    val c = 0.29f
+    moveTo(size.width * c, 0f)
+    lineTo(size.width * (1 - c), 0f)
+    lineTo(size.width, size.height * c)
+    lineTo(size.width, size.height * (1 - c))
+    lineTo(size.width * (1 - c), size.height)
+    lineTo(size.width * c, size.height)
+    lineTo(0f, size.height * (1 - c))
+    lineTo(0f, size.height * c)
+    close()
+}
+
+private const val CONTROLS_MS = 5_000L
 
 /** Whether the subject's own camera picture shows the traced skeleton; kept outside the screen so it survives the
  * handover between items, where the stage is built again. */
@@ -557,12 +631,7 @@ private fun cardLabel(content: ContentBundle, card: String, lang: String): Strin
 /** The call's caption: the word being signed is lit, and a tap replays the line or that word. */
 @Composable
 private fun CallCaption(text: String, highlight: IntRange?, onWordTap: ((Int) -> Unit)?) {
-    val styled = buildAnnotatedString {
-        append(text)
-        highlight?.takeIf { it.last < text.length }?.let {
-            addStyle(SpanStyle(color = LocalCall.current.bg, background = LocalCall.current.accent), it.first, it.last + 1)
-        }
-    }
+    val styled = litWord(text, highlight)
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val replayName = stringResource(R.string.word_replay)
     // The caller's lambda changes every frame of typed-text playback; the tap detector must not restart with it.
@@ -574,6 +643,14 @@ private fun CallCaption(text: String, highlight: IntRange?, onWordTap: ((Int) ->
         styled, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
         onTextLayout = { layout = it }, modifier = tap,
     )
+}
+
+@Composable
+private fun litWord(text: String, highlight: IntRange?) = buildAnnotatedString {
+    append(text)
+    highlight?.takeIf { it.last < text.length }?.let {
+        addStyle(SpanStyle(color = LocalCall.current.bg, background = LocalCall.current.accent), it.first, it.last + 1)
+    }
 }
 
 private const val HANDS_HOLD_MS = 800L

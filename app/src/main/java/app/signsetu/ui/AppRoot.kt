@@ -109,6 +109,8 @@ import app.signsetu.ui.session.OfficerPane
 import app.signsetu.ui.session.titleToKeep
 import app.signsetu.ui.session.SessionViewModel
 import app.signsetu.ui.session.Stage
+import app.signsetu.ui.session.defaultModes
+import app.signsetu.ui.session.typedModes
 import app.signsetu.camera.LandmarkTracker
 import app.signsetu.sign.SignReader
 import androidx.compose.runtime.mutableStateOf
@@ -468,6 +470,7 @@ internal fun SessionRoute(
                     tracker = tracker,
                     cameraOn = cameraOn,
                     gestureSpeed = settings.gestureSpeed,
+                    askModes = typedModes(vm.modesFor(state.session.profile, defaultModes(state.session.profile)), settings.islReorder),
                     onCard = vm::answerCard,
                     onYesNo = vm::answerYesNo,
                     onCue = vm::noteCue,

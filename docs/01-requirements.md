@@ -56,6 +56,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | --- | --- |
 | Preset questions are grouped: Safety, Health, Needs, Personal, Family, Address, School, Everyday, Talking, Their account, Sensitive, and the rights groups. | MUST |
 | A preset question shows in the Show state with its picture cards and caption, plus by profile the character signing or gesturing, or recorded audio. No network is used. | MUST |
+| The character's hands move only for the caption on screen: every line it signs is the caption, signed from its English wording with the word being signed lit. A show-back plays the sign being checked. | MUST |
 | Sensitive questions ("what happened", "who hurt you") sit behind a deliberate second tap and never appear on the first screen. | MUST |
 | The officer can type free text and show it in one step. The character plays it word by word with ISL signs (recorded first, then authored), everyday gestures, fingerspelling and pictures, each turned on or off by the officer. | MUST |
 | Nothing reaches the Show state until the officer confirms it. | MUST |
@@ -70,8 +71,8 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 
 | Requirement | Priority |
 | --- | --- |
-| Yes and No are always available as large cards during a question. | MUST |
-| Water and food are on the stage at every moment; a tap on either is logged as the subject's request, not as an answer to the item on screen, unless that item offered the picture itself. | MUST |
+| Yes and No are one tap away during a question: until the subject touches the screen the stage shows only the character and the caption, and a tap anywhere shows every answer for 5 s after the last touch. With a screen reader on, the answers stay. | MUST |
+| Water and food are one tap away at every moment; a tap on either is logged as the subject's request, not as an answer to the item on screen, unless that item offered the picture itself. | MUST |
 | When the subject taps a card, the officer sees the card and its label in the officer language. | MUST |
 | The subject can draw on a canvas with a finger, start again, and finish; the drawing is logged as the answer. | MUST |
 | The stage shows a live mirror of the subject from the front camera: a movable window in the video call. Nothing is captured, recorded or stored. The officer can turn it off for one person; the department can turn it off in settings. | MUST |

@@ -492,6 +492,7 @@
     <string name="stage_dont_understand">मुझे समझ नहीं आया</string>
     <string name="stage_wrong">यह ग़लत है</string>
     <string name="stage_stop">रुको</string>
+    <string name="stage_show_answers">जवाब दिखाओ</string>
     <string name="stage_done">हो गया</string>
     <string name="stage_clear">मिटाएँ</string>
     <string name="stage_next">आगे</string>

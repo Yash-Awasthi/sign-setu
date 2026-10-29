@@ -247,12 +247,12 @@ internal fun ChoiceGrid(
         // Tiles sit right under the question; the spare room goes below them, not in a gap above.
         Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.Top)) {
             if (numbers) {
-                choices.chunked(4).forEach { row ->
+                choices.chunked(5).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
                         row.forEach { id ->
                             NumberButton(id.removePrefix("n"), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(40 * choices.indexOf(id))))
                         }
-                        repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(5 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             } else {
