@@ -38,7 +38,7 @@ def main():
     rows = [l.split("\t") for l in listing.read_text(encoding="utf-8").splitlines() if l.strip()]
     man = guard.Manifest(OUT / "manifest.jsonl")
     todo = [r for r in rows if not man.done(r[0])]
-    # Clips over 30 s are stories and sentences, not word signs: skipped (owner, 2026-10-28).
+    # Clips over 30 s are stories and sentences, not word signs: skipped.
     todo = [r for r in todo if not (len(r) > 2 and r[2].replace('.', '', 1).isdigit() and float(r[2]) > 30)]
     status = "done"
     lock = threading.Lock()

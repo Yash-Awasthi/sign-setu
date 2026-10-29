@@ -25,7 +25,7 @@ private const val FACE = "models/face_landmarker.task"
 private const val PROBE = "models/holistic_probe.jpg"
 
 /** Mouth shapes kept from the face model's 52 blendshapes, in this order in [LandmarkFrame.mouth]: the evidence for
- * mouthing and mouth gestures (docs/10). */
+ * mouthing and mouth gestures (docs/15-gloss-to-text.md). */
 val MOUTH_SHAPES = listOf(
     "jawOpen", "mouthClose", "mouthFunnel", "mouthPucker", "mouthSmileLeft", "mouthSmileRight", "mouthStretchLeft",
     "mouthStretchRight", "mouthRollLower", "mouthRollUpper", "mouthShrugLower", "mouthShrugUpper", "mouthPressLeft",

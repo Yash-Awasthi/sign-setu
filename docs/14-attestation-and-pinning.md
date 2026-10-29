@@ -2,7 +2,7 @@
 
 Both measures depend on the production gateway host and its certificate authority. Section 6 lists the deployment inputs.
 
-## 1. What exists today
+## 1. Current state
 
 | Topic | Current state |
 | --- | --- |
@@ -15,7 +15,7 @@ Both measures depend on the production gateway host and its certificate authorit
 
 ## 2. Threat model
 
-Assets: the assistant proxy (cost and misuse), the model files, the consented feedback labels, and the confidentiality of masked text in transit. Subject data goes to the gateway only as masked text for the optional assistant and counsellor.
+Assets: the assistant proxy (cost and misuse), the model files, the consented sign contributions, and the confidentiality of masked text in transit. Subject data goes to the gateway only as masked text for the optional assistant and counsellor.
 
 | Threat | Attacker | Current control | Gap |
 | --- | --- | --- | --- |
@@ -55,7 +55,7 @@ Design:
 
 Nothing secret goes into the APK: the nonce and all trust roots live on the server.
 
-Optional later step: bind the token to the attested key by having the app sign each request, so a copied token is useless. This changes every call and is not recommended until a threat justifies it.
+Not adopted: binding the token to the attested key by having the app sign each request, so a copied token is useless. It changes every call.
 
 Limits and risks:
 - Phones without hardware-backed attestation, and custom ROMs, fail verification. The policy must say whether such a phone is refused or enrolled with a warning flag; refusing may exclude officers' older phones.
@@ -66,7 +66,7 @@ Server requirements: a nonce table; an X.509 and ASN.1 parser for the key descri
 
 ## 5. Token life and revocation (recommended regardless)
 
-Both measures above are weaker than ordinary token hygiene. Token expiry (`TOKEN_TTL_DAYS`, off in code and in `render.yaml` by the department's choice) and a `last_seen` timestamp on devices (written at most once an hour, shown by `/v1/admin/devices`) are built. The admin route to list and revoke a device exists (`/v1/admin/devices`). The life is set with `TOKEN_TTL_DAYS`; expiry is off by default.
+Both measures above are weaker than ordinary token hygiene. Token expiry (`TOKEN_TTL_DAYS`, off in code and in `render.yaml` by the department's choice), a `last_seen` timestamp on devices (written at most once an hour) and the admin route that lists and revokes devices (`/v1/admin/devices`) are built.
 
 ## 6. Deployment inputs
 

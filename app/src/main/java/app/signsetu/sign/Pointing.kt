@@ -5,7 +5,7 @@ import app.signsetu.camera.LandmarkFrame
 import kotlin.math.abs
 import kotlin.math.hypot
 
-/** A sideways point in a sign, ISL's "he", "she" or "there" (docs/10-gloss-to-text.md, POINT tokens), or null. The
+/** A sideways point in a sign, ISL's "he", "she" or "there" (docs/15-gloss-to-text.md, POINT tokens), or null. The
  * landmarks carry no depth, so a finger aimed at the camera or back at the chest looks like a fist; "i" and "you" are
  * left to the word reader, which knows those signs. Needs the same point on two thirds of the sign's frames. */
 fun pointing(frames: List<LandmarkFrame>): List<SignGuess>? {

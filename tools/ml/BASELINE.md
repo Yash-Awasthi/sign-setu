@@ -1,4 +1,4 @@
-# Gloss-to-text baseline (docs/10-gloss-to-text.md, step 0.1)
+# Gloss-to-text baseline (docs/15-gloss-to-text.md)
 
 Frozen at git tag `baseline-glosstotext-v0` (master 4a475dd, before any gloss-to-text work). No later change may make
 these worse; each comes from `tools/ml/EVAL.md`.
@@ -12,4 +12,4 @@ these worse; each comes from `tools/ml/EVAL.md`.
 | isl_spell_ctc | held-out signer, spelled names | CER 0.120, exact 0.289 (n=498) |
 | isl_spell_ctc | ISLRTC acronyms | CER 0.75 (n=7) |
 
-The current speller file is `isl_spell_ctc.json` (the plan's checklist asked to fix that name in the notes).
+The current speller file is `isl_spell_ctc.json`.

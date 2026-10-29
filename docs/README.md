@@ -4,7 +4,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Field | Value |
 | --- | --- |
-| Version | 0.8.1 (version code 17), applicationId `in.signsetu` |
+| Version | 0.8.2 (version code 18), applicationId `in.signsetu` |
 | Classification | Internal |
 | Source of truth | This repository; the code wins over any document, and documents are corrected when they drift |
 
@@ -45,6 +45,8 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | [12-screens.md](12-screens.md) | Every screen, with screenshots in [screens/](screens/) |
 | [13-dpia.md](13-dpia.md) | Data protection impact assessment |
 | [14-attestation-and-pinning.md](14-attestation-and-pinning.md) | Certificate pinning and Key Attestation design for the gateway |
+| [15-gloss-to-text.md](15-gloss-to-text.md) | From read signs to a checked English or Hindi sentence: lattice, calibration, names, phrasebook, checker and output ladder |
+| [models/sign_reader_v3.md](models/sign_reader_v3.md) | Model card of the ISL word reader |
 | [../portal/README.md](../portal/README.md) | Reviewer portal for content sign-off |
 | [../gateway/README.md](../gateway/README.md) | Department gateway |
 | [../tools/ml/README.md](../tools/ml/README.md), [../tools/isl/README.md](../tools/isl/README.md) | Sign reader training and sign retargeting |
@@ -223,9 +225,10 @@ Sign reader accuracy, measured, not targets:
 
 | Reader | Data | Top-1 | Top-3 |
 | --- | --- | --- | --- |
-| ISL words (314) | INCLUDE test signers (n=816) | 0.979 | 0.995 |
-| ISL words | New signers, ISLRTC dictionary clips (n=269) | 0.342 | 0.442 |
-| ISL words | A held-out signer of the Kaggle ISL set (n=300) | 0.973 | 0.997 |
+| ISL words (314) | INCLUDE test signers (n=816) | 0.982 | |
+| ISL words | New signers, app words, test read once (n=62) | 0.387 | |
+| ISL words | New signers, app words, validation (n=59) | 0.492 | |
+| ISL words | A held-out signer of the Kaggle ISL set | 0.983 | |
 | ISL letters, digits | ISLRTC signers, small samples (23 letters, 10 digits) | 0.13 letters, 0.80 digits | 0.30, 1.00 |
 | ISL spelled names | A held-out news interpreter (n=498 names) | Character error rate 0.120 | |
 | ASL words (250) | Held-out PopSign signers (n=5385) | 0.467 | 0.633 |
@@ -249,7 +252,7 @@ The readers generalise poorly to people they have not seen, so a reading is neve
 
 | Item | Impact | Handling |
 | --- | --- | --- |
-| Sign reading on unseen signers | About one ISL word in three right first time; spelled names from slow, deliberate spellers are often wrong | Readings are never answers; the subject can be asked to pick the meaning from pictures; every line carries its grade |
+| Sign reading on unseen signers | About two ISL words in five right first time; spelled names from slow, deliberate spellers are often wrong | Readings are never answers; the subject can be asked to pick the meaning from pictures; every line carries its grade |
 | Translations beyond English and Hindi are drafts | Wording may be wrong | Draft label for the officer |
 | Gondi and Halbi have no voice | Captions and pictures only | Every question has both |
 | Assamese, Nepali, Odia and Urdu speech is Indic Parler-TTS | Less natural than the other languages' voices | No provider offered these voices; captions and pictures carry every question |

@@ -18,7 +18,7 @@ import java.security.SecureRandom
 /** Version of the consent card's wording; a new wording asks again. */
 const val CONSENT_VERSION = "v1"
 
-/** Signs recorded for training (docs/10, 6.2 and 6.3): every record is kept on the phone, and also queued for the
+/** Signs recorded for training (docs/15-gloss-to-text.md): every record is kept on the phone, and also queued for the
  * gateway only while the signer's opt-in stands. Landmarks, gloss and corrections only; never video or audio. The
  * queue is files, so it survives restarts; a failed upload waits and retries and never holds up the session. */
 class Contributions(

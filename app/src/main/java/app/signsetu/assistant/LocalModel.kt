@@ -105,7 +105,7 @@ class ModelStore(private val context: Context, private val name: String = "assis
         private const val MIN_FREE_BYTES = 1_200L * 1024 * 1024
 
         /** SHA-256 of the model files the department may install; see docs/10-on-device-assistant.md. */
-        /** SHA-256 of the sentence helper files the department may install (docs/10-gloss-to-text.md, item 6). */
+        /** SHA-256 of the sentence helper files the department may install (docs/15-gloss-to-text.md). */
         val KNOWN_SENTENCE_MODELS = setOf(
             // Qwen2.5 0.5B Instruct, Q4_K_M GGUF (Apache-2.0), from Qwen/Qwen2.5-0.5B-Instruct-GGUF; 491 MB.
             "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",

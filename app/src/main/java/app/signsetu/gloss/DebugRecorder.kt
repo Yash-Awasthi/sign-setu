@@ -13,7 +13,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import java.io.File
 
-/** Debug builds only (docs/10-gloss-to-text.md, steps 0.2 and 5.6): each sign window as one JSON record of landmarks,
+/** Debug builds only (docs/15-gloss-to-text.md): each sign window as one JSON record of landmarks,
  * the reader's top 5, face and head cues and the lattice, and each decision (the rung shown, what the officer took)
  * as a line in decisions.jsonl. Landmarks only, never video. Read back by tools/eval/run_eval.py after
  * `adb pull /sdcard/Android/data/in.signsetu/files/recordings`. */

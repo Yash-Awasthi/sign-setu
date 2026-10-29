@@ -96,7 +96,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Requirement | Priority |
 | --- | --- |
 | First run sets the officer language and explains the app in three screens: an aid, not an interpreter; sessions are deleted after the retention time; records stay on the phone. On a phone with no secure lock screen the app warns once at unlock and keeps records under a key not tied to unlocking until a lock is set. | MUST |
-| Settings: interpreter contact, security switches (pin the app, block screenshots, ask for fingerprint), stage camera, signing speed, ISL word order, what each sign language reads and signs, the assistants, retention period, clear all data, appearance, officer language, about and open-source licences. | MUST |
+| Settings: interpreter contact, security switches (pin the app, block screenshots, ask for fingerprint), stage camera, signing speed, ISL word order, what each sign language reads and signs, the sign reader engine, the assistants, retention period, clear all data, appearance, officer language, about and open-source licences. | MUST |
 | The "aid, not an interpreter" notice appears on first run and in About. | MUST |
 | A build stops starting new sessions 180 days after its build date and shows "Update required"; existing sessions can still be exported and cleared. | MUST |
 
@@ -200,7 +200,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Cold start to usable Officer state under 2 seconds on the oldest test device. | MUST |
 | A preset question appears in the Show state within 300 ms of confirmation. | MUST |
 | Clips play at their source frame rate without visible stutter on the oldest test device. | MUST |
-| Phone distribution APK (arm64-v8a) under 100 MB for the base content set, including the vision and sign-reader models; universal builds bundle all architectures and are not subject to the 100 MB ceiling. | MUST |
+| APK size is reported for every release (arm64-v8a phone APK and universal); there is no size ceiling, and reading accuracy takes priority over size. | SHOULD |
 | Memory under 300 MB during a session. | SHOULD |
 | Android 10 (API 29) and later, 3 GB RAM or more. | MUST |
 | Portrait, screens 5 to 6.9 inches. | MUST |

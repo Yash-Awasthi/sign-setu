@@ -24,7 +24,7 @@ const val SENTENCE_SYSTEM = "A deaf person answered a police officer's question 
     "is Ram.' Use only the chosen signs' words plus small grammar words. Give the three best different readings, one per " +
     "line, exactly as: 2,1,3 :: sentence. The numbers are the chosen guess per sign, in order. No other text."
 
-/** Words a sentence may add to what was signed: grammar only, never content (docs/10-gloss-to-text.md, checker). */
+/** Words a sentence may add to what was signed: grammar only, never content (docs/15-gloss-to-text.md, checker). */
 private val FUNCTION = setOf(
     "i", "me", "my", "mine", "you", "your", "he", "him", "his", "she", "her", "we", "us", "our", "they", "them", "their", "it", "its",
     "a", "an", "the", "is", "am", "are", "was", "were", "be", "been", "do", "does", "did", "have", "has", "had", "to", "of",

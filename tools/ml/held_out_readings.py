@@ -1,4 +1,4 @@
-"""Real reader outputs on held-out signers, for building simulated lattices (docs/10-gloss-to-text.md, upgrade 3).
+"""Real reader outputs on held-out signers, for building simulated lattices (docs/15-gloss-to-text.md, design 3).
 
 Every held-out clip (ISLRTC dictionary signer, held-out Kaggle signer) is read by the shipped sign_reader with its
 fitted temperature; the top 10 readings, in the app's words, are written per true word. The evaluation in

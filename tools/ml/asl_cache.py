@@ -4,25 +4,22 @@ signer "asl:P<n>", source "asl", split "train". Rebuild as Q4 grows.
     python asl_cache.py OUT [--min N]   (stops without writing when fewer than N clips are ready)
 """
 import csv
-import io
 import json
 import pathlib
 import sys
-import zipfile
 
 import numpy as np
 
 import cache
 from guard import DATA
 
-ZIP = str(DATA / "asl_citizen" / "ASL_Citizen.zip")
+TRAIN = DATA / "asl_citizen" / "ASL_Citizen" / "splits" / "train.csv"
 LM = DATA / "landmarks_asl"
 
 
 def main(out, at_least=0):
-    with zipfile.ZipFile(ZIP) as z:
-        meta = {"ASL_Citizen/videos/" + r["Video file"]: r for r in
-                csv.DictReader(io.TextIOWrapper(z.open("ASL_Citizen/splits/train.csv"), encoding="utf-8"))}
+    with open(TRAIN, encoding="utf-8") as f:
+        meta = {"ASL_Citizen/videos/" + r["Video file"]: r for r in csv.DictReader(f)}
     done = [json.loads(l) for l in open(LM / "manifest.jsonl", encoding="utf-8")]
     ready = sorted({d["id"] for d in done if d["state"] == "ok"} & set(meta))
     if len(ready) < at_least:

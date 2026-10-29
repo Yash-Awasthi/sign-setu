@@ -6,7 +6,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 
 1. Subject data cannot be read from a lost, stolen or shared phone without the officer's credential.
 2. Subject data does not leak through backups, screenshots (in the final release build), logs, notifications, the clipboard or other apps.
-3. Data leaves the phone only as an encrypted report or a contact link on the officer's action, as encrypted frames to a bonded stage device, or as masked text to the assistant service after the officer switched it on and allowed it for the session.
+3. Data leaves the phone only as an encrypted report or a contact link on the officer's action, as encrypted frames to a bonded stage device, or as masked text to the assistant service after the officer switched it on and allowed it for the session. Debug builds add one more path: a volunteer's Record signs landmarks, sent to the gateway only with their opt-in.
 4. Every release is built from reviewed code, scanned and traceable to an audited build.
 
 ## 2. Controls
@@ -48,7 +48,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | --- | --- |
 | INTERNET is used only by the online assistant client (`UrlHttp`): HTTPS only, cleartext refused by the network security config and by `UrlHttp`, system trust anchors only, validated networks only. Nothing connects unless the build has a gateway, or the officer has saved their own service, and the officer has switched the assistant on. | MASVS-NETWORK-1 |
 | Session text goes only after the officer allows it once per session; names, details, emails, links, PAN-like ids and long numbers are masked first (`Pseudonymizer`). The gateway accepts only the app's own system prompts. Speaking typed text (`OnlineAssistant.speak`) sends the officer's own words, up to 500 characters and not masked, to the gateway's `/v1/speak` under the same switch and permission. | MASVS-NETWORK-1, PRIVACY-1 |
-| Certificate pinning is designed and waits on the production host and CA ([14](14-attestation-and-pinning.md)). | MASVS-NETWORK-2 (gap) |
+| No certificate pinning; the design depends on the production host and CA ([14](14-attestation-and-pinning.md)). | MASVS-NETWORK-2 (gap) |
 
 ### 2.5 Platform interaction
 
@@ -162,9 +162,9 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 
 | ID | Finding | Severity | Decision |
 | --- | --- | --- | --- |
-| F-1 | No certificate pinning | Medium | Waits on the production host (NOTE E-1) |
+| F-1 | No certificate pinning | Medium | Open; depends on the production host (NOTE E-1) |
 | F-2 | DEK not bound to the biometric prompt | Low | Accepted; documented in AUTH-2 |
-| F-3 | No debugger or hook detection | Medium | Waits on the department's MASVS-R decision (NOTE E-5) |
+| F-3 | No debugger or hook detection | Medium | Open; a department MASVS-R decision (NOTE E-5) |
 | F-4 | Root check is a heuristic | Low | Warn-only by design, so an emergency is never blocked |
 | F-5 | An assistant key compiled into an APK | Closed | The build no longer has a key field; keys live on the gateway or in the officer's Keystore |
 | F-6 | The record digest joins fields without a separator | Low | The hash chain (length-prefixed fields) is the integrity control; the digest only matches re-exports |

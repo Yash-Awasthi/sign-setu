@@ -1,4 +1,4 @@
-# Names and places signers spell, with a prior weight in (0, 1]. Read by NameResolver.kt (docs/10, Phase 3).
+# Names and places signers spell, with a prior weight in (0, 1]. Read by NameResolver.kt (docs/15-gloss-to-text.md).
 # Weights are rough commonness, not counts; a session's own names are added at weight 1. Needs native review.
 aarav	0.7
 aarti	0.7

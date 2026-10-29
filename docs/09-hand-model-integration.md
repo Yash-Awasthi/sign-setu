@@ -6,9 +6,9 @@ The built vision engine and sign reader, and the contract by which the partner t
 
 | Layer | Interface | Implementation | Replaceable by the partner team |
 | --- | --- | --- | --- |
-| Landmark tracking | `camera/LandmarkTracker` | `HolisticTracker`: MediaPipe Holistic, `tasks-vision` 1.1.1, video mode, GPU delegate kept only if it finds the person in a bundled probe image, otherwise CPU | Yes, a tracker with the same output |
+| Landmark tracking | `camera/LandmarkTracker` | `SplitTracker`: MediaPipe hand, pose and face tasks, `tasks-vision` 1.1.1, video mode; each task on the GPU only if it finds the person in a bundled probe image, otherwise CPU; `HolisticTracker` if the hand or body task cannot open | Yes, a tracker with the same output |
 | Segmentation | `sign/SignCapture`, `segmentSigns` | Pause segmenter, thresholds per `SignWindow` | No; tune the constants |
-| Sign reading | `sign/SignReader` | `LandmarkSignReader` (314 ISL words, 250 ASL words, ISL letters and digits) and `CtcSpellReader` (ISL spelled names on both hands, ASL fingerspelling), combined per language by `SignReaders` | Yes, the main replacement path |
+| Sign reading | `sign/SignReader` | `LandmarkSignReader` (314 ISL words, 250 ASL words, ISL letters and digits), `LiteRtSignReader` (the ISL word reader in format 3, the default) and `CtcSpellReader` (ISL spelled names on both hands, ASL fingerspelling), combined per language by `SignReaders` | Yes, the main replacement path |
 | Home signs | `sign/HomeSigns` | Signs taught during the session, matched by cosine on the word reader's pooled features (`SignReader.embed`) | Follows the reader |
 | Context and choices | `sign/ReadPolicy`, `sign/SignChoices` | `sign_words.json` map, context ranking (`decideRead`, `inContext`), alternatives (`signChoices`), slower cue (`needsSlower`) | No; the map is content |
 
@@ -49,12 +49,13 @@ data class LandmarkFrame(
 | Pixels | RGBA, 16:9 at about 848 by 480 (480 by 848 upright), rotated upright by CameraX into its reused buffer, not mirrored; the preview uses the same 16:9 shape so the skeleton lines up |
 | Lifetime | The buffer is reused after `track` returns; an implementation never keeps or copies it |
 | Coordinates | Normalised to the upright frame, origin top-left, not mirrored; the stage mirrors for display |
-| Sides | Hands are the subject's own left and right (Holistic assigns them from the pose wrists) |
+| Sides | Hands are the subject's own left and right, assigned from the pose wrists |
 | Errors | `track` returns null for a frame it cannot read; it never throws for a bad frame |
-| Start-up | `warm` loads the model off the main thread when the session screen opens, before the first frame; never during app start |
-| Delegate | GPU first; if the GPU fails to open, or the first inference throws, the graph reopens on the CPU on the next frame. `close` frees the graph on lock and on memory pressure, and the next use opens it again |
+| Start-up | `warm` loads the models off the main thread when the session screen opens, before the first frame; never during app start |
+| Delegate | Per task, GPU first; if the GPU fails to open, or an inference throws, that task reopens on the CPU for the next frame. `close` frees the tasks on lock and on memory pressure, and the next use opens them again |
+| Schedule | Hands every frame; body and face on alternate frames, each reused for the frame between. The face task adds head angles (nods and shakes) and 19 mouth blendshapes |
 
-The holistic model (`models/holistic_landmarker.task`, 13.7 MB, float16, SHA-256 `e2dab61191e2dcd0a15f943d8e3ed1dce13c82dfa597b9dd39f562975a50c3f8`) is mapped from the uncompressed asset, checked against the content manifest and opened only if it matches. Release APKs are 64-bit only (arm64-v8a, and x86_64 in the universal build), so every installed device can run the tracker. The stage draws hands, arms, brows and lips, never the face oval or eyes.
+The models (`models/hand_landmarker.task` 7.8 MB, `pose_landmarker_lite.task` 5.8 MB, `face_landmarker.task` 3.8 MB, and the fallback `holistic_landmarker.task` 13.7 MB) are mapped from uncompressed assets, checked against the content manifest and opened only if they match. The topology matches Holistic, so the readers see the same features. Release APKs are 64-bit only (arm64-v8a, and x86_64 in the universal build), so every installed device can run the tracker. The stage draws hands, arms, brows and lips, never the face oval or eyes.
 
 ## 4. Sign reader
 
@@ -70,7 +71,7 @@ interface SignReader : AutoCloseable {
 data class SignGuess(val word: String, val score: Float, val spelled: Boolean = false)
 ```
 
-The built reader takes the frames of one chunk, resampled to 32, with per frame both hands (21 points each), shoulders, elbows and wrists, normalised to the mean shoulder midpoint and width, and presence flags (98 features). It runs a per-frame linear layer, two 1-D convolutions and average and max pooling (the features `embed` returns) to 314 logits. Weights: `models/sign_reader.bin` (2.5 MB, float16) with its spec in `sign_reader.json`; both are checked against the manifest by `SignReaders` before use. On the INCLUDE test split it scores top-1 97.9% and top-3 99.5%, and new ISLRTC dictionary signers 34.2% and 44.2% (`tools/ml/EVAL.md`); with children on phone cameras it is unmeasured. One read takes about 18 ms on a desktop JVM. Reads run one at a time on a background dispatcher.
+The built reader takes the frames of one chunk, resampled to 32, with per frame both hands (21 points each), shoulders, elbows and wrists, normalised to the mean shoulder midpoint and width, and presence flags (98 features). It runs a per-frame linear layer, two 1-D convolutions and average and max pooling (the features `embed` returns) to 314 logits. Weights: `models/sign_reader.bin` (2.5 MB, float16) with its spec in `sign_reader.json`; both are checked against the manifest by `SignReaders` before use. The shipped weights are a soup of five fine-tuned seeds ([model card](models/sign_reader_v3.md)): INCLUDE test top-1 98.2%; new signers on the app's words 38.7% on test and 49.2% on validation; with children on phone cameras it is unmeasured. The same reader also ships in format 3 (`sign_reader_v3.tflite`, 5 MB, float32), with the features computed inside the LiteRT graph; it is the default; Settings, New sign reader engine, off goes back to format 1 after the next start, and format 1 is also used if the format 3 file fails to load. Debug builds run both and log their agreement and time. On 400 held-out validation windows the two agree on every top word. One read takes about 18 ms on a desktop JVM. Reads run one at a time on a background dispatcher.
 
 Retraining: `tools/ml` (prepare, train, export), then `python tools/content/build_content.py --manifest-only`.
 
@@ -88,7 +89,7 @@ The ISL name speller (`isl_spell_ctc`) reads both hands at 15 frames a second an
 
 ## 6. Replacing the reader or tracker
 
-1. Implement `SignReader` (or `LandmarkTracker`) in plain Kotlin or with LiteRT `CompiledModel` (`com.google.ai.edge.litert`), GPU first with CPU fallback; the legacy `org.tensorflow.lite` artifacts are not used.
+1. Implement `SignReader` (or `LandmarkTracker`) in plain Kotlin or as a LiteRT model like `LiteRtSignReader` (`com.google.ai.edge.litert:litert` 1.4.2; the 2.x line pulls in Play delivery libraries).
 2. Ship the model under `app/src/main/assets/content/models/`, list it with `python tools/content/build_content.py --manifest-only`, and load it only when its hash matches.
 3. Return it from `SignReaders.create` (or `LandmarkTrackers.create` in the release source set). The app creates it once, off the main thread.
 4. Provide the label list and an updated `sign_words.json` so context limiting and picture choices keep working.
@@ -98,10 +99,10 @@ The ISL name speller (`isl_spell_ctc`) reads both hands at 15 frames a second an
 
 | Resource | Budget | Current |
 | --- | --- | --- |
-| Time per tracked frame | 33 ms on the oldest supported 64-bit phone | About 110 ms on the CPU of a mid-range phone (9 frames per second); the GPU rate is to be measured |
+| Time per tracked frame | 33 ms on the oldest supported 64-bit phone | About 110 ms with Holistic on the CPU of a mid-range phone (9 frames per second); the split tracker and the GPU are not measured |
 | Time per read | Under 100 ms | About 18 ms on a desktop JVM |
 | Memory | Session under 300 MB | Narrative landmarks about 20 MB for 3 minutes; model mapped, not copied |
-| APK | Distribution target under 100 MB | The arm64-v8a phone APK meets the target (about 89 MB); the multi-architecture universal APK is unconstrained |
+| APK | No ceiling; accuracy comes first | arm64-v8a phone APK 118 MB, universal 151 MB (0.8.2) |
 
 ## 8. Privacy and safety
 

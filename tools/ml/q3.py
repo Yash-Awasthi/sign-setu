@@ -50,7 +50,7 @@ def catalog():
         for line in man.read_text(encoding="utf-8").splitlines():
             r = json.loads(line)
             rk[r["id"]] = r
-    # Q2 was skipped (owner); clips it landed before it was stopped are kept on disk but left out.
+    # Q2 was skipped; clips it landed before it was stopped are kept on disk but left out.
     before = OUT / "islrtc_before_q2.txt"
     before = set(before.read_text(encoding="utf-8").splitlines()) if before.exists() else None
     rows = []
@@ -71,7 +71,7 @@ def catalog():
     # Language subfolders repeat clips byte for byte; only the first copy is kept for training.
     df["duplicate_of"] = df.groupby("hash")["clip"].transform("first")
     df.loc[df["duplicate_of"] == df["clip"], "duplicate_of"] = ""
-    # RKMVU stories and sentences over 30 s are kept on disk but never landmarked or trained on (owner, 2026-10-28).
+    # RKMVU stories and sentences over 30 s are kept on disk but never landmarked or trained on.
     df["skip_long"] = [int(s == "rkmvu" and float(rk.get(pathlib.PurePath(c).stem, {}).get("duration") or 0) > 30)
                        for s, c in zip(df["source"], df["clip"])]
     OUT.mkdir(parents=True, exist_ok=True)

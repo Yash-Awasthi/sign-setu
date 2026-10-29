@@ -2,15 +2,15 @@
 
 The app shows one 3D character (a VRM model, §5.7) and plays authored and recorded motions on it.
 
-## 1. Answers in brief
+## 1. Design decisions
 
-| Question | Answer |
+| Decision | Why |
 | --- | --- |
-| Can we build an avatar? | Yes, in-house, with free tools. The rendering is the easy part; the cost is authoring and reviewing every sign and gesture. Another group is reported to be building an ISL avatar; this project does not depend on it. |
-| Is there a prebuilt one we can use? | No usable one (§2). The characters are original; open-source tools serve the pipeline ([open source](08-open-source.md)). |
-| Indian signs differ from general ones. | Correct. ISL is a separate language from ASL and BSL (different vocabulary; two-handed fingerspelling against ASL's one-handed), and ISL has regional varieties (often grouped as Mumbai-Delhi, Kolkata and Bangalore-Chennai-Hyderabad). ASL is also used in some Bengaluru schools. No foreign avatar or sign asset can be reused for vocabulary. |
-| Small children do not know signs. | Correct, and this applies to most deaf children too. Children get a separate **gesture lexicon** of iconic, culturally common gestures (bindi or sindoor for mother, moustache for father, roof for home, hand on chest for me), with several variants per concept. |
-| Two avatars, a child hero and an adult? | Possible on the same rig and motion library; one character ships today (§4). Copying Shin-chan or Nobita is not possible (§4). |
+| The character is rendered in-house with free tools | Rendering is the easy part; the cost is authoring and reviewing every sign and gesture, and hosted avatar services can disappear (§2) |
+| One character ships, `ISL Sample 1` by Leo (§4) | The same rig and motion library could carry a second character, such as a child |
+| ISL signs come only from ISL sources | ISL is a separate language from ASL and BSL (different vocabulary; two-handed fingerspelling against ASL's one-handed) and has regional varieties (often grouped as Mumbai-Delhi, Kolkata and Bangalore-Chennai-Hyderabad); no foreign sign asset is reused for ISL vocabulary. ASL, used in some Bengaluru schools, has its own lexicon |
+| Children get a separate gesture lexicon | Small children, and most deaf children, do not know signs. The gesture lexicon holds iconic, culturally common gestures (bindi or sindoor for mother, moustache for father, roof for home, hand on chest for me), with several variants per concept |
+| No commercial cartoon characters | Shin-chan, Nobita and similar characters are protected (§4) |
 
 ## 2. What already exists, and why none of it fits
 
@@ -88,7 +88,7 @@ Every entry below is a **candidate**. None is final until the review above appro
 
 The model's licence asks for credit, allows modification, and reserves use as an avatar to separately licensed people and redistribution to its author; a written licence from the author is needed before a release ships it.
 
-**Why not Shin-chan or Nobita.** Crayon Shin-chan and Doraemon (with Nobita) are protected characters owned by their Japanese rights holders, who enforce them. A "replica" infringes copyright and, for names and likeness, trademark rights, whatever the purpose. A police app cannot ship it without a licence, and such a licence is unlikely. Shin-chan was also taken off air in India after complaints about its content and returned only in an edited form, a reputational risk for a police app. The same applies to Chhota Bheem and other commercial characters. What is wanted from them, a friendly, familiar cartoon child, is achievable with an original character in a similar simple style; the custom parts belong to the department.
+**Why not Shin-chan or Nobita.** Crayon Shin-chan and Doraemon (with Nobita) are protected characters owned by their Japanese rights holders, who enforce them. A "replica" infringes copyright and, for names and likeness, trademark rights, whatever the purpose. A police app cannot ship it without a licence, and such a licence is unlikely. Shin-chan was also taken off air in India after complaints about its content and returned only in an edited form, a reputational risk for a police app. The same applies to Chhota Bheem and other commercial characters. A friendly, familiar cartoon child needs an original character in a similar simple style.
 
 **No blank face for adults.** A featureless "mask" face was rejected: without eyebrows and mouth, ISL questions read as statements and negation is lost. The adult's simplified face still moves its brows, eyes and mouth, keeps the neutrality a mask was meant to give, avoids the uncanny valley, and resembles no real person.
 
@@ -134,7 +134,7 @@ The character is rendered live by the avatar module (`avatar/`, three.js and thr
 
 ### 5.5 Size
 
-Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` together are a small fraction of the APK. Pre-rendered clips would cost about 75 KB each (480 by 480, H.264, about 400 kbit/s, 1.5 s), so the roughly 1,000 current motions (42 gestures, 156 authored, 517 ISL and 286 ASL) would add well over 60 MB; the character model itself is 12 MB, beyond the 100 MB size target.
+Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` together are a small fraction of the APK. Pre-rendered clips would cost about 75 KB each (480 by 480, H.264, about 400 kbit/s, 1.5 s), so the roughly 1,000 current motions (42 gestures, 156 authored, 517 ISL and 286 ASL) would add well over 60 MB; the character model itself is 12 MB.
 
 ### 5.6 Playback rules
 

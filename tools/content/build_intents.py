@@ -1,5 +1,5 @@
 """Writes assets/content/intents.json: the phrasebook that turns a gloss lattice into English and Hindi sentences
-(docs/10-gloss-to-text.md, Phase 4). Edit this script, not the JSON. Every row is a draft until English, Hindi and
+(docs/15-gloss-to-text.md). Edit this script, not the JSON. Every row is a draft until English, Hindi and
 Deaf ISL review.
 
 Pattern items: a word or w1|w2 the sign reader can output (as mapped by sign_words.json), $SLOT for a typed slot,

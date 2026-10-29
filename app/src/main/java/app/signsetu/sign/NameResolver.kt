@@ -15,7 +15,7 @@ internal fun editDistance(a: String, b: String): Int {
     return prev[b.length]
 }
 
-/** A fingerspelled span resolved against known names (docs/10-gloss-to-text.md, Phase 3). [text] is what the
+/** A fingerspelled span resolved against known names (docs/15-gloss-to-text.md). [text] is what the
  * sentence uses: a lexicon name only when it clearly beats every other reading, otherwise the raw spelling with
  * [verified] false. [alternatives] are the next readings, best first, for the officer to tap. */
 data class ResolvedName(val text: String, val raw: String, val verified: Boolean, val alternatives: List<String>, val margin: Float)
@@ -28,7 +28,7 @@ class NameResolver(
     private val alphabet: String,
 ) {
     private val index = alphabet.lowercase().withIndex().associate { (i, c) -> c to i + 1 }
-    /** This session's confirmed names (docs/10, step 3.6), on top of [lexicon] at weight 1. */
+    /** This session's confirmed names (docs/15-gloss-to-text.md), on top of [lexicon] at weight 1. */
     @Volatile var session: Set<String> = emptySet()
     private fun prior(name: String) = if (name in session) 1f else lexicon[name]
 
@@ -105,7 +105,7 @@ class NameResolver(
         private const val NEG = -1e30f
         private const val BEAM = 10
         private const val PRUNE = -12f
-        // Calibration knobs: tune on held-out spelling clips so wrong snaps stay under 2% (docs/10, Phase 3).
+        // Calibration knobs: tune on held-out spelling clips so wrong snaps stay under 2% (docs/15-gloss-to-text.md).
         private const val LAMBDA = 1f
         private const val MARGIN = 2f
         /** The prior of a spelling that is not a listed name. */

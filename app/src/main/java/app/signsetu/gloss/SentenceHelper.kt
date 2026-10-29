@@ -1,6 +1,6 @@
 package app.signsetu.gloss
 
-/** The optional on-device sentence helper (docs/10-gloss-to-text.md, item 6): a small imported language model that
+/** The optional on-device sentence helper (docs/15-gloss-to-text.md): a small imported language model that
  * only reorders sentences the phrasebook already built and checked. It sees a numbered list and answers with numbers,
  * so it cannot add a word; a reply that is not a clean list of those numbers is ignored. */
 const val RERANK_SYSTEM = "A deaf person answered a police officer in Indian Sign Language. You get the question, what a sign " +

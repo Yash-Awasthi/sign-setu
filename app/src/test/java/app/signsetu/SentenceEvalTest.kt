@@ -23,10 +23,10 @@ import org.junit.Test
 import java.io.File
 import kotlin.random.Random
 
-/** Simulated lattices from real held-out readings (docs/10-gloss-to-text.md, upgrade 3): every sentence the
+/** Simulated lattices from real held-out readings (docs/15-gloss-to-text.md, design 3): every sentence the
  * phrasebook can say is "signed" by drawing, for each sign, a real reading of that word by a signer the reader never
- * saw (tools/ml/held_out_readings.py), with missed and extra segments at the planned rates. Development numbers only:
- * the release gates need recorded sentences. Prints the plan's metrics per source, with and without the question. */
+ * saw (tools/ml/held_out_readings.py), with missed and extra segments at assumed rates. Development numbers only:
+ * the release gates need recorded sentences. Prints the harness metrics per source, with and without the question. */
 class SentenceEvalTest {
     private val book = Phrasebook(File(ASSETS, "intents.json").readText())
     private val readings = Json.parseToJsonElement(File("src/test/resources/held_out_readings.json").readText())
@@ -71,7 +71,7 @@ class SentenceEvalTest {
                 }
             }
             if (tokens.isEmpty()) tokens += read(0, source.values.random(rnd).random(rnd))
-            // Missed and extra segments at the planned rates (docs/10, Phase 2.5 will measure them).
+            // Missed and extra segments at assumed rates until recorded sentences measure them.
             val kept = tokens.filter { rnd.nextFloat() > 0.05f }.toMutableList()
             if (rnd.nextFloat() < 0.1f) kept.add(rnd.nextInt(kept.size + 1), read(0, source.values.random(rnd).random(rnd)))
             if (kept.isEmpty()) return@List null
@@ -137,7 +137,7 @@ class SentenceEvalTest {
         stats(test, pick.first, pick.second).let { (cov, wrong) -> println("  chosen high %.2f set<=%d on held-out half: rung-1 share %.3f wrong %.3f".format(pick.first, (pick.second * 9).toInt() + 1, cov, wrong)) }
     }
 
-    /** Writes docs/review/intents_review.csv (docs/10, step 4.8): every intent with its questions and templates and up
+    /** Writes docs/review/intents_review.csv (docs/15-gloss-to-text.md): every intent with its questions and templates and up
      * to 8 example sentences in English and Hindi, rendered by the engine itself, with columns for a Hindi speaker's
      * and a Deaf ISL reviewer's verdict (correct, awkward or wrong). Re-run after any change to the phrasebook. */
     @Test

@@ -2,13 +2,12 @@
 
 ## Release status
 
-Recommended for field trials in debug builds only; a release build uses the previous reader (owner to decide). On
-test the soup and the previous reader are equally accurate (5 clips to 4, p=1) and the previous reader is better
-calibrated. Licensing: usable in this non-commercial project. The weights were fine-tuned on ISLRTC dictionary clips and RKMVU-CBE channel
+The app's word reader since 0.8.2. On test the soup and the previous reader are equally accurate (5 clips to 4,
+p=1) and the previous reader is better calibrated; the soup is better on new-signer validation and shows no word for
+rest and pause windows. Licensing: usable in this non-commercial project. The weights were fine-tuned on ISLRTC dictionary clips and RKMVU-CBE channel
 clips, which are used for training in this non-commercial project; written permission is to be sought before any
-commercial or department release (`docs/08-open-source.md`). The previous reader stays available as the fallback (git
-HEAD before this change, `sign_reader.bin` md5 8e995e24c1f300c476ec3ccb81eaccaa). The installed files are uncommitted;
-only a debug APK was built.
+commercial or department release (`docs/08-open-source.md`). The previous reader stays available as the fallback
+(`sign_reader.bin` md5 8e995e24c1f300c476ec3ccb81eaccaa, listed in `content/models/registry.json`).
 
 ## What it is
 
@@ -75,6 +74,7 @@ Non-sign windows (rests before a sign and card pauses after it, 2,437 validation
 app's 0.4 floor for 0.000 of them (previous reader 0.139), while it shows 0.492 of new-signer app-word signs.
 
 Weights stay float16: int8 weights agree with them on top-1 for 0.950 of 200 validation windows, under the 0.99 bar.
+The same weights also ship in format 3 (`sign_reader_v3.tflite`, float32, 5.05 MB, LiteRT 1.4.2) with the features inside the graph; it is the default engine, and Settings, New sign reader engine, off goes back to format 1.
 Hashes and metrics of every shipped model: `content/models/registry.json`.
 
 ## Known failures
@@ -83,23 +83,18 @@ Hashes and metrics of every shipped model: `content/models/registry.json`.
 - Validation and test each hold essentially one new signer per source; gains below about 8 points cannot be resolved.
 - Seed-to-seed spread is large (up to 9 clips to 1 on the same validation set).
 - Calibration overfits the small validation set: the fitted temperature helped on validation folds and hurt on test.
+- Recipes cannot be told apart yet: the speed and shear augmentation led on cache_v5 but tied on cache_v6 (3 clips to 3).
 - Words with a single training clip are not learned by the classifier (0 of 125 on validation); prototype retrieval
-  (stage E) reaches 0.08 there but costs app-word accuracy and is not shipped.
+  reaches 0.08 there but costs app-word accuracy and is not shipped.
 
 ## Tried and not adopted
 
 Each was compared with the shipped soup on new-signer validation (McNemar, p < 0.01 required): test-time augmentation,
 probability ensembles, prototype fusion (lost app-word clips), a random search over learning rate and augmentation, the
 signer-adversarial head, phonology auxiliary heads, look-alike label smoothing, HWGAT-style speed and shear
-augmentation (I10; positive but p 0.22), filling missing hand frames (lowered the INCLUDE floor to 0.931), the b4
+augmentation (positive but p 0.22), filling missing hand frames (lowered the INCLUDE floor to 0.931), the b4
 encoder from masked pose pretraining, soups of 8 and 15 seeds, the same recipe on more landmarked clips (final2), and
-a non-sign class (B10: 1 clip to 5, p 0.22; it showed fewer real signs at the 0.4 floor).
-
-## Next run
-
-More held-out signers before any model choice (FDMSE-ISL request, A1 collection). I10's small lead on cache_v5 did
-not hold on cache_v6 (soups level, 3 clips to 3), so the W recipe and I10 stand equal; ship a soup of 5 seeds,
-calibrated on new signers only.
+a non-sign class (1 clip to 5, p 0.22; it showed fewer real signs at the 0.4 floor).
 
 ## Licences
 

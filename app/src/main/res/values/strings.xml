@@ -257,8 +257,8 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_pin_app_summary">The subject cannot leave the app while holding the phone.</string>
     <string name="settings_block_screenshots">Block screenshots</string>
     <string name="settings_block_screenshots_summary">Screenshots and screen recording show a blank screen.</string>
-    <string name="settings_reader_format3">New sign reader engine (test)</string>
-    <string name="settings_reader_format3_summary">Reads ISL signs with the newer model format. Same words, same model; takes effect when the app next starts.</string>
+    <string name="settings_reader_format3">New sign reader engine</string>
+    <string name="settings_reader_format3_summary">Reads ISL signs with the newer model format; off uses the older one. Same words, same model; takes effect when the app next starts.</string>
     <string name="settings_app_lock">Ask for fingerprint</string>
     <string name="settings_app_lock_summary">Your fingerprint or screen lock before opening the app, leaving a session or deleting.</string>
     <string name="settings_lang_system">Same as the phone</string>
@@ -543,7 +543,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="asl_experimental_advisory">The ASL reader gets about half of the words right for a signer it has not seen. Use ISL in the field unless the person signs ASL; the character still signs ASL.</string>
     <string name="settings_sign_languages">Sign languages</string>
     <string name="settings_isl_status">Indian Sign Language (ISL)</string>
-    <string name="settings_isl_status_summary">The main language. The phone reads 314 signed words, fingerspelled names, letters and digits; for a signer it has not seen, about one word in three is right first time, and the officer settles every reading. The character signs 517 recorded words, 156 drawn signs and 112 recorded sentences. Every sign is a draft until Deaf ISL review.</string>
+    <string name="settings_isl_status_summary">The main language. The phone reads 314 signed words, fingerspelled names, letters and digits; for a signer it has not seen, about two words in five are right first time, and the officer settles every reading. The character signs 517 recorded words, 156 drawn signs and 112 recorded sentences. Every sign is a draft until Deaf ISL review.</string>
     <string name="settings_isl_badge">Main</string>
     <string name="settings_asl_status">American Sign Language (ASL)</string>
     <string name="settings_asl_status_summary">For people who sign ASL. The phone reads 250 signed words, about half right for a new signer, and fingerspelling, about one letter in three wrong. The character signs 286 recorded ASL signs and the ASL alphabet. Switch it from the officer menu during a session.</string>

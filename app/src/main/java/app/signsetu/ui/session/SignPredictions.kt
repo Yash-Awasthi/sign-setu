@@ -75,7 +75,7 @@ internal fun pendingReading(events: List<SessionEvent>): SessionEvent? {
     return events[i].takeIf { events.drop(i + 1).none { it.type in AnswerEvents } }
 }
 
-/** What the app may say about a reading (docs/10-gloss-to-text.md): the phrasebook's rung for the lattice, with the
+/** What the app may say about a reading (docs/15-gloss-to-text.md): the phrasebook's rung for the lattice, with the
  * question on screen as evidence, and the online assistant's sentences when it is switched on, each one checked so it
  * holds no word that was not signed. */
 internal class Reading(
@@ -106,13 +106,13 @@ internal fun rememberReading(
             GlossLattice.of(segments, BuildConfig.VERSION_NAME).let { l ->
                 val matches = b.match(l, question)
                 ladder(l, matches, b, gender).also { r ->
-                    // The other intents that pass the check, for the officer to pick when the rung's is not it (docs/10, 5.4).
+                    // The other intents that pass the check, for the officer to pick when the rung's is not it (docs/15-gloss-to-text.md).
                     // Under the word strip no sentence is shown, so the best of them is offered too.
                     val shown = (r as? Rung.Sentence)?.match ?: (r as? Rung.FixWords)?.match
                     alternatives.clear()
                     alternatives += matches.filter { it != shown && faithful(it, l) && it.posterior >= ALTERNATIVE_FLOOR }.take(2)
                         .map { m -> SentenceGuess(segments.mapIndexed { i, s -> m.fills.firstOrNull { it.token == i }?.label ?: s.word ?: "?" }, b.english(m)) }
-                    // Debug builds only: the lattice and the rung, the start of docs/10's decision log.
+                    // Debug builds only: the lattice and the rung, the start of the gloss-to-text decision log.
                     if (BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "q=$question rung=${r::class.simpleName} lattice=${l.toJson()}")
                     DebugRecorder.decision(eventId, "rung", "${r::class.simpleName}: ${(r as? Rung.Sentence)?.en ?: (r as? Rung.FixWords)?.en ?: ""}")
                 }

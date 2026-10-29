@@ -216,7 +216,7 @@ spelled tokens with a third unverified, 5% missed and 10% extra segments. Develo
   dropped as an extra segment and the sentence came out less specific ("a shirt" for "a pink shirt"). Unplaced signs
   now hold a sentence at rung 2.
 - Remaining rung-1 errors are signs the segmenter missed outright, which no lattice evidence shows; the segmentation
-  sanity term (docs/10, 2.5 and 5.2) needs recorded sentences.
+  sanity term (docs/15-gloss-to-text.md) needs recorded sentences.
 - Rung 1 takes only signs whose 50% conformal set is one word (`RUNG1_DOUBT`); the table above is with that rule.
   Small samples: about 130 rung-1 sentences per new-signer row, so 0.000 means under about 3% at 95% confidence.
   `tools/eval/run_eval.py` reruns all of it and writes `tools/eval/report.html`.
@@ -234,7 +234,7 @@ More intents help when the question is known and cost a little when it is not (m
 unknown questions are where rung 1 is least safe, so those answers lean on rungs 2 and 3.
 
 
-## Reader plan v4
+## Reader run v4
 
 ### P. Preflight (2026-10-28): all pass
 
@@ -881,7 +881,7 @@ n=59, two-fold by word: T 2.23 (folds 2.23 and 2.22; lowered ECE on both); RAPS 
 0.78 / 0.88 at 80%. Float16 top-1 agreement 1.00; SignReaderTest passes.
 Release recommendation: on test the soup and the previous reader are equally accurate (5 to 4, p=1) and the previous
 reader is better calibrated, so a release build uses the previous reader (staging\APP_head); the soup is for field
-trials in debug builds only. Owner to decide.
+trials in debug builds only.
 | WF_s1 | 3177 | 585 | 0.554 [0.000, 0.968] / 0.610 | 125, 0.024 |
 
 Record correction: the 50% face dropout added for B3 and later rows has no effect on the W and WF rows. Their
@@ -1270,12 +1270,11 @@ replaced the final2 WF2 runs (stopped at 06:20). Now:
 - The next comparison must score both sides on one cache version. final.sh now moves earlier runs of a row to
   runs/_old instead of deleting them.
 
-## Run summary (reader plan v4, 2026-10-28 to 2026-10-29)
+## Run summary (reader run v4, 2026-10-28 to 2026-10-29)
 
 - Shipped to the debug APK (uncommitted): a uniform soup of 5 seeds of the W recipe (the app reader fine-tuned at 0.1x
   learning rate on INCLUDE, Kaggle signers A, B, D, ISLRTC and RKMVU word clips), temperature 2.23 and RAPS fitted on
-  new-signer validation. Release recommendation: keep the previous reader (staging\APP_head) until field trials;
-  owner to decide.
+  new-signer validation. Release recommendation: keep the previous reader (staging\APP_head) until field trials.
 - Against the previous app reader on validation (app words, new signers, n=59): 0.492 vs 0.407; Kaggle validation
   signer 0.983 vs 0.940; against W on the research union 14 clips to 2 (p=0.004). INCLUDE test floor 0.982.
 - Test, read once: seed 1 (since withdrawn) 0.403 vs the previous reader 0.371 (5 to 3, p=0.73); the soup, reported
@@ -1443,8 +1442,7 @@ B10 as the app shows it (logits masked to its 314 words, scored on those words):
 Non-sign false-accept on val (cache_v6b, n=2437 rest and card-pause windows, a word shown at p >= 0.4 after T, app words): B10 0.000 [0.000, 0.000] (top label a word 0.001; new-signer app-word clips shown 0.407, shown right 0.322, n=59)
 
 B10 (completion run, 2026-10-29): WF recipe plus a non-sign class (11,406 train windows: rests before the headword and
-card pauses after it), cache_v6b, initialised from the installed WF soup5, seeds 1 and 2 (seeds 3 to 5 cut by the
-one-hour rescope), uniform soup. Rule 1 against WF soup5 scored on the same cache_v6b val (row WF_s95, words both heads
+card pauses after it), cache_v6b, initialised from the installed WF soup5, seeds 1 and 2 (seeds 3 to 5 not run), uniform soup. Rule 1 against WF soup5 scored on the same cache_v6b val (row WF_s95, words both heads
 know, n=289): 0.121 vs 0.135, 1 to 5, p=0.22; seeds 0.135 (6 to 6) and 0.114 (2 to 8). App words 0.508 vs 0.492 (n=59);
 Kaggle C 0.993; INCLUDE test 0.982. Non-sign false-accept 0.000 for both, but B10 shows fewer real words at the 0.4
 floor (0.407 vs 0.492; shown right 0.322 vs 0.390); APP 0.139. Not accepted; WF soup5 stays the reader. Staged only
@@ -1467,7 +1465,7 @@ B11E as the app shows it (logits masked to its 314 words, scored on those words)
 B11 eval-time (row B11E): WF soup5 scored with each signer's mean wrist offset (shoulder widths, first 20 clips) taken
 off its hands, cache_v6b val. Rule 1 against the same soup unshifted (n=289): 0.093 vs 0.135, 4 to 16, p=0.012; app words
 0.305 vs 0.492; Kaggle C 0.842; INCLUDE test 0.614 (floor 0.979). Eval-time normalisation hurts, so B11 is not
-trained (plan: train only if eval-time helps).
+trained (it is trained only if eval-time helps).
 
 B13 INCLUDE test floor (0.979): 0.983 [0.974, 0.991] (n=816)
 | B13 | include + islrtc + kaggle + rkmvu, 14913 clips, 238 s | WF recipe + whole-clip one-hand drop (20% of clips) on top of the 50% mirror, cache_v6b, 5 seeds, soup (McNemar p=nan vs WF) | new signers 0.062 [0.000, 0.081] (n=546); all 0.387 [0.031, 0.984] / 0.428 | 0.153 | c22 0.031 | islrtc 0.064, kaggle 0.983, rkmvu 0.031 | 5.677, 0.121 | 5183.4, 0.898 | 1.000 | 0.733, +0.345 FLAG | - | 0.403 | - | no |

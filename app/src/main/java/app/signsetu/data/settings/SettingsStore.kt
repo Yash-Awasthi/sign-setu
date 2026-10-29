@@ -61,7 +61,7 @@ data class AppSettings(
     /** The officer's fingerprint or screen lock before unlocking, leaving a session or deleting. */
     val appLock: Boolean = !app.signsetu.BuildConfig.TEST_UNLOCKED,
     /** Reads signs with the format 3 reader (LiteRT, features in the graph) instead of format 1; read at app start. */
-    val readerFormat3: Boolean = false,
+    val readerFormat3: Boolean = true,
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -159,7 +159,7 @@ class SettingsStore(private val context: Context) {
         pinApp = this[Keys.pinApp] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
         blockScreenshots = this[Keys.blockScreenshots] ?: app.signsetu.BuildConfig.SECURE_SCREEN,
         appLock = this[Keys.appLock] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
-        readerFormat3 = this[Keys.readerFormat3] ?: false,
+        readerFormat3 = this[Keys.readerFormat3] ?: true,
     )
 }
 

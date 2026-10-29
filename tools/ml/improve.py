@@ -1,4 +1,4 @@
-"""Improvement-queue items that need no training (plan section 0): I1 test-time augmentation, I2 probability
+"""Reader changes that need no training: I1 test-time augmentation, I2 probability
 ensembles, I3 fusion v2. Each is scored in app view (restricted to the app's words when the true word is one, 868-way
 otherwise) against the champion with paired McNemar on new-signer clips, plus the Kaggle validation signer.
 

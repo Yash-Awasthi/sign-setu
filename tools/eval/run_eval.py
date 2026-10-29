@@ -1,4 +1,4 @@
-"""One command for the gloss-to-text metrics (docs/10-gloss-to-text.md, steps 0.5 and 6.5).
+"""One command for the gloss-to-text metrics (docs/15-gloss-to-text.md).
 
 1. Simulated lattices: runs SentenceEvalTest (real held-out readings, every phrasebook sentence) and keeps its lines.
 2. Recorded windows: reads what the debug recorder wrote on the phone, pulled with

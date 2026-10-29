@@ -63,11 +63,11 @@ Versions are pinned in `gradle/libs.versions.toml`, locked in `app/gradle.lockfi
 | SDK levels | minSdk 29, compileSdk and targetSdk 37; AGP 9.4.1; Gradle 9.8.2; JDK 21 |
 | Session store | Room 2.8.5 over SQLCipher for Android 4.19.1 (database version 5) |
 | Settings | DataStore Preferences 1.2.1 |
-| Camera, vision | CameraX 1.6.2 (Preview and ImageAnalysis only); MediaPipe Tasks Vision 1.1.1, Holistic landmarker; protobuf-javalite 4.36.2 |
-| Sign readers | Plain Kotlin forward passes (`LandmarkSignReader`, `CtcSpellReader`); half-precision weights in the APK (`isl_spell` full precision) |
+| Camera, vision | CameraX 1.6.2 (Preview and ImageAnalysis only); MediaPipe Tasks Vision 1.1.1: hand, pose and face landmarkers, Holistic as fallback; protobuf-javalite 4.36.2 |
+| Sign readers | Plain Kotlin forward passes (`LandmarkSignReader`, `CtcSpellReader`); half-precision weights in the APK (`isl_spell` full precision). LiteRT 1.4.2 runs the format 3 word reader (`LiteRtSignReader`), the default; a Settings switch goes back to format 1 |
 | Speech | Media3 ExoPlayer 1.11.1 for recorded Opus; platform TextToSpeech for the express board |
 | Export | Android `PdfDocument` to draw, PdfBox-Android 2.0.27.0 to encrypt; BouncyCastle forced to 1.86 |
-| Assistant | llama.cpp (vendored in `app/src/main/cpp/third_party`) built by CMake 4.1.1 and NDK 30 into `libassistant.so`; `HttpURLConnection` for the online path |
+| Assistant | llama.cpp (vendored in `app/src/main/cpp/third_party`) built by CMake 4.1.2 and NDK 30 into `libassistant.so`; `HttpURLConnection` for the online path |
 | Second screen | Bluetooth RFCOMM (`standard` flavor); Google Nearby Connections 19.5.1 (`nearby` flavor only) |
 | Authentication | Platform `BiometricPrompt` and `KeyguardManager`; Android Keystore |
 | Serialization | kotlinx.serialization JSON 1.12.0; coroutines 1.11.0 |
@@ -166,8 +166,9 @@ One module, `app.signsetu`, organised by feature.
 | `data.content` | `Content.kt` loads and verifies the bundle; `IslLexicon.kt` sign lookup, dictionary and sign languages; `TextSigning.kt` plans typed text and turns read glosses back into text; `Translate.kt` the rule-based English to Hindi caption; `Lesson.kt` answer types and validation; `Completion.kt` word completions; `Motion.kt` the keyframe types every motion file uses |
 | `data.session` | Room entities and DAO, `SessionRepository` (sealed event log), `EventSeal` (hash chain), `DatabaseKey`, `RetentionJob` |
 | `data.settings` | `SettingsStore` (DataStore) and `OfficerLocale` |
-| `camera` | `CameraMirror` (Preview plus ImageAnalysis), `LandmarkTracker` and `LandmarkFrame`, `HolisticTracker`, the per-frame cue detectors, `Stabilizer` |
-| `sign` | `SignCapture` and `SignWindow` (segmentation), readers (`LandmarkSignReader`, `CtcSpellReader`, `SignReaders`), `ReadPolicy` and `SignChoices` (ranking and choices), `HomeSigns`, `SkeletonPlayer` |
+| `camera` | `CameraMirror` (Preview plus ImageAnalysis), `LandmarkTracker` and `LandmarkFrame`, `SplitTracker` (with `HolisticTracker` as its fallback), the per-frame cue detectors, `Stabilizer` |
+| `sign` | `SignCapture` and `SignWindow` (segmentation), readers (`LandmarkSignReader`, `LiteRtSignReader`, `CtcSpellReader`, `SignReaders`), `ReadPolicy` and `SignChoices` (ranking and choices), `HomeSigns`, `SkeletonPlayer` |
+| `gloss` | From read signs to a checked sentence ([gloss to text](15-gloss-to-text.md)): `GlossLattice` (tokens with calibrated candidates), `Phrasebook` (intents matched against the lattice), `Ladder` (the faithfulness check and four output rungs), `SentenceHelper` (the optional imported sentence model), `DebugRecorder` (debug builds: sign windows, decisions and reader agreement as JSON), `Contributions` (debug builds: guided sign recordings and opt-in upload) |
 | `pair` | The second-screen protocol with no Android UI: `PairCrypto`, `StageWire` messages, `StageTransport` and `BluetoothTransport`, `StageLink` state machine, `Drawings` |
 | `assistant` | `Assistant`, `LocalModel` and `ModelStore` (llama.cpp), `OnlineAssistant`, `Pseudonymizer`, `OfflineReport` |
 | `net` | `UrlHttp` (HTTPS only) and `KeystoreVault` |
@@ -176,7 +177,7 @@ One module, `app.signsetu`, organised by feature.
 | `ui.session` | Officer page, stage, view model, auto mode, counsellor, record text and grades |
 | `ui.pair` | Pairing sheet, paired bar, stage-device screens, `StageBridge` and the wire mapping of what is on stage |
 | `ui.avatar` | The 3D character's WebView host (`Avatar.kt`) and the profile still (`MiniFace.kt`); the character itself is the avatar module (`avatar/`) |
-| `ui.start`, `ui.settings`, `ui.practice`, `ui.theme`, `ui.components` | Home and first run, settings, type-to-sign practice, colours and type, shared widgets |
+| `ui.start`, `ui.settings`, `ui.practice`, `ui.theme`, `ui.components` | Home and first run, settings, type-to-sign practice and (debug builds) Record signs, colours and type, shared widgets |
 | Flavor and build-type source sets | `src/standard` and `src/nearby` each provide `pair/StageTransports`; `src/debug` and `src/release` each provide `camera/LandmarkTrackers` (debug adds a stand-in hand and a gesture gallery) |
 
 ```mermaid
@@ -246,7 +247,7 @@ Everything a subject sees ships under `app/src/main/assets/content/` and is list
 | `phrases.json`, `places.json` | 2 sentence patterns with 10 slots; 36 states and union territories, Chhattisgarh with 33 districts |
 | `audio/<lang>/*.ogg`, `audio/greet/*.ogg` | 1,372 Opus recordings: 91 per language for 11 languages, 89 for Assamese, Nepali, Odia and Urdu, plus 15 greetings; Gondi and Halbi have none |
 | `clips.json` | 112 recorded ISL sentences, 48 points a frame at 25 fps, steadied by `tools/text2isl/export_clips.py` |
-| `models/` | `holistic_landmarker.task` (13.7 MB) and its probe image; `sign_reader` (314 ISL words), `isl_spell` (36 letters and digits), `isl_spell_ctc` (ISL names, a to z and space, two hands, CTC), `asl_reader` (250 ASL words), `asl_spell` (26 letters, CTC); each a `.bin` of weights with a `.json` spec |
+| `models/` | `hand_landmarker.task`, `pose_landmarker_lite.task` and `face_landmarker.task` (the split tracker), `holistic_landmarker.task` (13.7 MB, fallback) and the probe image; `sign_reader` (314 ISL words; also `sign_reader_v3.tflite`, the same reader in format 3), `isl_spell` (36 letters and digits), `isl_spell_ctc` (ISL names, a to z and space, two hands, CTC), `asl_reader` (250 ASL words), `asl_spell` (26 letters, CTC); each a `.bin` of weights with a `.json` spec |
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "step"}}}%%
@@ -524,7 +525,7 @@ sequenceDiagram
     autonumber
     actor S as Subject
     participant CM as CameraMirror
-    participant HT as HolisticTracker
+    participant HT as SplitTracker
     participant VM as SessionViewModel
     participant SC as SignCapture
     participant RD as SignReader
@@ -557,7 +558,7 @@ sequenceDiagram
 | `ANSWER` | Raised hands on the call stage, the camera button, or Read signs | 20 s, or quiet hands for 2 s | 0.4 s | Kept |
 | `NARRATIVE` | Tell me | 3 minutes, or quiet hands for 5 s | 0.7 s | Dropped |
 
-`HolisticTracker` runs MediaPipe Holistic in video mode, GPU first and kept only if it finds the person in a bundled probe image, otherwise CPU. Readers (`SignReaders.load`): ISL has `sign_reader` (314 words), `isl_spell` (single letters and digits) and the CTC `isl_spell_ctc` (spelled names, both hands); ASL has `asl_reader` (250 words) and the CTC `asl_spell`. A single letter or digit wins over the word reader only at twice its score and with steady wrists; a CTC read wins with at least 3 letters, each at least as sure as its model's floor (0.7 for ISL names, 0.8 for ASL). Guesses that answer the item on screen rank first (`decideRead`). Signs the officer reads as a word the reader did not offer are matched for the rest of the session (`HomeSigns`) by cosine on the word reader's pooled features, at 0.65 or above.
+`SplitTracker` runs three MediaPipe tasks in video mode: hands on every frame, body and face on alternate frames. Each task is opened on the GPU and kept there only if it finds the person in a bundled probe image, otherwise on the CPU. If the hand or body task cannot open at all, `HolisticTracker` tracks every frame instead. Readers (`SignReaders.load`): ISL has `sign_reader` (314 words), `isl_spell` (single letters and digits) and the CTC `isl_spell_ctc` (spelled names, both hands); ASL has `asl_reader` (250 words) and the CTC `asl_spell`. A single letter or digit wins over the word reader only at twice its score and with steady wrists; a CTC read wins with at least 3 letters, each at least as sure as its model's floor (0.7 for ISL names, 0.8 for ASL). Guesses that answer the item on screen rank first (`decideRead`). Signs the officer reads as a word the reader did not offer are matched for the rest of the session (`HomeSigns`) by cosine on the word reader's pooled features, at 0.65 or above.
 
 ## 12. Export
 
@@ -565,7 +566,7 @@ sequenceDiagram
 
 ## 13. Build and delivery
 
-- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.8.1, code 17. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
+- `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.8.2, code 18. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
 - Release builds: R8 with resource shrinking, `android.util.Log` calls stripped, native libraries and models stored uncompressed. Default ABIs arm64-v8a and x86_64 (universal); `-Pabi=arm64-v8a` builds the phone APK. Gradle builds unsigned APKs; CI aligns and signs them with the release key from repository secrets and publishes them ([README](README.md#5-build-release-and-operation), section 5).
 - Build gates on every variant before packaging: `check<Variant>Permissions` fails on RECORD_AUDIO or background location in any build and on discovery and location permissions in `standard`.
 - The gateway (`gateway/`, Go and PostgreSQL) enrols devices, proxies assistant and speech calls, and gives the administrator the device list, revocation and the audit trail. The avatar module (`avatar/`, TypeScript, three.js 0.160 and three-vrm 3.0) plays motions on the VRM character; it builds to `app/src/main/assets/avatar/avatar.js`, which CI checks is current. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) renders every motion with that same module.

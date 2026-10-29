@@ -1,4 +1,4 @@
-"""Calibration, conformal prediction sets and the confusion table for the shipped word reader (docs/10-gloss-to-text.md).
+"""Calibration, conformal prediction sets and the confusion table for the shipped word reader (docs/15-gloss-to-text.md).
 
 Held-out data: ISLRTC dictionary clips (one signer, not in training) and the held-out Kaggle signer. The ISLRTC signer
 is the only truly new signer on disk, so it is split by word into a fitting half and a reporting half; every number

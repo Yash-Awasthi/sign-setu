@@ -102,7 +102,7 @@ def check(assets: pathlib.Path = ASSETS) -> list[str]:
     for key, values in subject_ui.items():
         if isinstance(values, dict) and set(values) & allowed:
             label(f"subject_ui {key}", values, allowed)
-    # Every word an intent waits for must be one the sign reader can actually give (docs/10, step 4.1).
+    # Every word an intent waits for must be one the sign reader can actually give (docs/15-gloss-to-text.md).
     if (assets / "intents.json").exists():
         intents = load(assets, "intents.json")
         readable = set(load(assets, "models/sign_reader.json")["labels"]) | set(load(assets, "sign_words.json")["words"].values())
@@ -116,7 +116,7 @@ def check(assets: pathlib.Path = ASSETS) -> list[str]:
                 elif not item.startswith(("$", "@")):
                     errors += [f"intent {intent['id']}: the reader cannot sign {w!r}" for w in item.rstrip("?").split("|") if w not in readable]
             errors += [f"intent {intent['id']}: unknown question {q}" for q in intent["questions"] if q not in questions]
-        # Every question that asks for an answer has at least one intent to read the answer with (docs/10, Phase 4).
+        # Every question that asks for an answer has at least one intent to read the answer with (docs/15-gloss-to-text.md).
         answered = {q for intent in intents["intents"] for q in intent["questions"]}
         errors += [f"question {q['id']}: no intent answers it" for q in triage["questions"]
                    if q.get("kind", "QUESTION") != "STATEMENT" and q["id"] not in answered]

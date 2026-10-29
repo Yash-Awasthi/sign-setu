@@ -37,7 +37,7 @@ data class GlossToken(
     val top: String? get() = candidates.firstOrNull()?.label
 }
 
-/** Everything read from one signed answer; every later stage reads this and nothing else (docs/10-gloss-to-text.md). */
+/** Everything read from one signed answer; every later stage reads this and nothing else (docs/15-gloss-to-text.md). */
 @Serializable
 data class GlossLattice(val tokens: List<GlossToken>, val signerMeta: String? = null, val appVersion: String = "") {
     fun toJson(): String = JSON.encodeToString(serializer(), this)

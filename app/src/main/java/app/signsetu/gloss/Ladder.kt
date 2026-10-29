@@ -3,7 +3,7 @@ package app.signsetu.gloss
 import kotlin.math.exp
 import kotlin.math.ln
 
-/** What the app may say about one signed answer, from most to least (docs/10-gloss-to-text.md, Phase 5). */
+/** What the app may say about one signed answer, from most to least (docs/15-gloss-to-text.md). */
 sealed interface Rung {
     /** The sentence in English and Hindi; [confirm] when the intent is risky (health, an attack) and must be confirmed. */
     data class Sentence(val en: String, val hi: String, val match: IntentMatch, val confidence: Float, val confirm: Boolean) : Rung
@@ -62,7 +62,7 @@ fun ladder(lattice: GlossLattice, matches: List<IntentMatch>, book: Phrasebook, 
     else Rung.FixWords(en, hi, best, confidence, doubtful, best.intent.risk)
 }
 
-// Calibration knobs: tune on held-out lattices so that rung 1's wrong-sentence rate meets its target (docs/10, 5.3).
+// Calibration knobs: tune on held-out lattices so that rung 1's wrong-sentence rate meets its target (docs/15-gloss-to-text.md).
 /** A token's top reading at or above this, with a reject score under [DOUBT], counts as sure. */
 private const val SURE_P = 0.5f
 private const val DOUBT = 0.3f

@@ -21,7 +21,7 @@ data class IntentMatch(val intent: Intent, val logScore: Float, val fills: List<
 
 enum class Gender { UNKNOWN, MASCULINE, FEMININE }
 
-/** The reviewed phrasebook: intents as data, matched against the whole lattice (docs/10-gloss-to-text.md, Phase 4). */
+/** The reviewed phrasebook: intents as data, matched against the whole lattice (docs/15-gloss-to-text.md). */
 class Phrasebook(json: String) {
     val intents: List<Intent>
     private val slots: Map<String, Map<String, JsonObject>>
@@ -149,7 +149,7 @@ class Phrasebook(json: String) {
 
     companion object {
         /** Calibration knobs, log probabilities: an extra segment and a missed sign (the segmenter's measured rates
-         * belong here once docs/10 Phase 2.5 has them). */
+         * belong here once recorded sentences give them). */
         private const val INSERT = -2.3f   // ln 0.1
         private const val DELETE = -3.0f   // ln 0.05
         private const val UNEXPLAINED_SHAKE = -1.6f   // ln 0.2

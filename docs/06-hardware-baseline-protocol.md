@@ -1,6 +1,6 @@
 # 06. Hardware Baseline Protocol
 
-How to measure the app on physical arm64 phones against the non-functional requirements in [01-requirements.md](01-requirements.md#5-non-functional-requirements). MediaPipe Holistic, CameraX analysis (848 by 480), the character's WebView (three.js) and SQLCipher all run on the phone, so an emulator is not a valid benchmark target.
+How to measure the app on physical arm64 phones against the non-functional requirements in [01-requirements.md](01-requirements.md#5-non-functional-requirements). MediaPipe landmark tracking, CameraX analysis (848 by 480), the character's WebView (three.js) and SQLCipher all run on the phone, so an emulator is not a valid benchmark target.
 
 ## 1. Devices
 
