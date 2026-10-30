@@ -55,5 +55,17 @@
   "clips": 18329,
   "frames": 1474373,
   "date": "2026-10-29"
+ },
+ "C:\\work\\ml-data\\cache_asl_full": {
+  "sha256": "039bcd39b8c98f12b1c7fb7c88387f2570d788d65fd01aaddfc56fb7bfde15df",
+  "clips": 40154,
+  "frames": 3453959,
+  "date": "2026-10-29"
+ },
+ "C:\\work\\ml-data\\cache_isign_mid": {
+  "sha256": "d2a1a82df3c0451c6b8aa70653ee586fc2086bcce9bc953bff0ecd72276d6123",
+  "clips": 441,
+  "frames": 13059,
+  "date": "2026-10-30"
  }
 }

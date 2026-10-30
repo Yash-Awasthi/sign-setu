@@ -186,7 +186,8 @@ def near(root, rel):
     return copy if rest and copy.exists() else root / rel
 
 
-CONTROL = DATA / "landmark_workers.txt"
+# LANDMARK_CONTROL gives a second run its own worker count; monitor.py drives the default file.
+CONTROL = pathlib.Path(os.environ.get("LANDMARK_CONTROL", DATA / "landmark_workers.txt"))
 
 
 def wanted(current):

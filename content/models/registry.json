@@ -1,18 +1,48 @@
 {
  "sign_reader": {
   "installed": {
-   "name": "WF soup5",
+   "name": "B5A50F soup5",
    "file": "app/src/main/assets/content/models/sign_reader.bin",
-   "sha256": "f2aa1fdbc3486dcc3df872fd9d0128b861a0a577bb92640545964552d6394e83",
+   "sha256": "0356d740629ca1758975d20d230c8c757ccf501ddae4b5bf8a315de12e2e79d4",
    "format": 1,
    "weights": "float16",
-   "int8_check": "top-1 agreement 0.950 on 200 val windows, under 0.99: float16 kept",
-   "recipe": "app reader fine-tuned (row WF), uniform soup of seeds 1 to 5",
+   "recipe": "app reader co-trained with ASL Citizen (row B5A50F: a softmax head per language, ASL clips held to half of each batch), uniform soup of seeds 1 to 5; only the 314 app ISL head rows ship",
    "data": {
-    "cache": "cache_v5",
-    "sha256": "bc0347037f803841e71476766fcc0b7175e42f8810eda05fa48752786963509a",
-    "clips": 17597
+    "cache": "cache_b5_full (cache_v6b + cache_asl_full, index only)",
+    "sha256": "039bcd39b8c98f12b1c7fb7c88387f2570d788d65fd01aaddfc56fb7bfde15df (cache_asl_full)",
+    "clips": 74189
    },
+   "temperature": 2.5678,
+   "metrics": {
+    "val_new_signer_app_words_top1": 0.525,
+    "val_new_signer_app_words_n": 59,
+    "val_new_signer_all_words_top1": 0.1007,
+    "val_new_signer_all_words_n": 546,
+    "mcnemar_vs_WF_s95": "22 to 6, p 0.0037",
+    "val_kaggle_c_top1": 0.9933,
+    "include_test_floor": 0.979,
+    "nonsign_false_accept_val": 0.0,
+    "val_new_signer_app_words_shown_right": 0.407,
+    "test": "closed: not scored"
+   },
+   "date": "2026-10-30",
+   "spell_odds": 1.5,
+   "format3": {
+    "file": "app/src/main/assets/content/models/sign_reader_v3.tflite",
+    "sha256": "eb1bc95bea0e3c9dd2d850ed093ad361a625e2a0aa8e9be074446c5fe35480fc",
+    "weights": "float32",
+    "gate": "conversion parity max abs difference 5.3e-05; 400 val windows against format 1: top-1 agreement 1.000, max logit difference 0.0182",
+    "default": "on; Settings, New sign reader engine, off returns to format 1"
+   },
+   "confusion": {
+    "file": "app/src/main/assets/content/models/sign_confusion.json",
+    "sha256": "800ad4f6c09eb13c41b6f0af5a6724638976c4f9f99b0ca4e152e56b4b62ffac"
+   }
+  },
+  "previous": {
+   "name": "WF soup5",
+   "sha256": "f2aa1fdbc3486dcc3df872fd9d0128b861a0a577bb92640545964552d6394e83",
+   "format3_sha256": "e044e51fcea4a6dbae1719c37d72b5aa7e467942d8f87bc95a2fbbfe40bc93fe",
    "temperature": 2.2276,
    "metrics": {
     "val_new_signer_app_words_top1": 0.492,
@@ -23,15 +53,7 @@
     "test_app_words_n": 62,
     "nonsign_false_accept_val": 0.0
    },
-   "date": "2026-10-29",
-   "spell_odds": 1.5,
-   "format3": {
-    "file": "app/src/main/assets/content/models/sign_reader_v3.tflite",
-    "sha256": "e044e51fcea4a6dbae1719c37d72b5aa7e467942d8f87bc95a2fbbfe40bc93fe",
-    "weights": "float32",
-    "gate": "200 val windows, top-1 agreement with the float32 trunk 1.000, max logit difference 6.9e-05",
-    "default": "off (setting); shadow in debug builds"
-   }
+   "date": "2026-10-29"
   },
   "fallback": {
    "name": "APP (pre-WF reader)",

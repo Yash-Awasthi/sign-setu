@@ -1,7 +1,14 @@
 // Renders the VRM character and plays content gestures or 48-point clips on it.
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { VRMExpression, VRMExpressionMorphTargetBind, VRMLoaderPlugin, type VRM, type VRMHumanBoneName } from "@pixiv/three-vrm";
+import {
+  MToonMaterial,
+  VRMExpression,
+  VRMExpressionMorphTargetBind,
+  VRMLoaderPlugin,
+  type VRM,
+  type VRMHumanBoneName,
+} from "@pixiv/three-vrm";
 import { applyClipFrame, clipFace } from "./clip";
 import { arm, expressions, fingerAngles, handTurn, solveArm, splitTwist, type Body } from "./retarget";
 import { FACES, L, R, Timeline, blinkAt, glanceAt, livePose, type Gesture, type Pose, type QuestionKind, type Side } from "./rig";
@@ -73,6 +80,23 @@ export class AvatarStage {
     const springs = vrm.springBoneManager;
     for (const joint of springs?.joints ?? []) if (/Bust/i.test(joint.bone.name)) springs!.deleteJoint(joint);
     vrm.scene.traverse((o) => (o.frustumCulled = false));
+    // The navy top vanished against the dark stage, so it is whitened (keeping cutout alpha) and tinted pink; the
+    // black bra straps painted on the skin showed beside it, so they become skin. Outlined meshes carry material arrays.
+    vrm.scene.traverse((o) => {
+      for (const m of [(o as THREE.Mesh).material ?? []].flat()) {
+        if (!(m instanceof MToonMaterial) || !m.map) continue;
+        if (m.name.startsWith("N00_002_04_Tops")) {
+          m.map = repaint(m.map, (p, i) => p.fill(255, i, i + 3));
+          m.shadeMultiplyTexture = null;
+          m.color.set(0xf8c8d0);
+          m.shadeColorFactor.set(0xe0a3b0);
+        } else if (m.name.startsWith("N00_000_00_Body_00_SKIN")) {
+          m.map = m.shadeMultiplyTexture = repaint(m.map, (p, i) => {
+            if (p[i] + p[i + 1] + p[i + 2] < 120) p.set([249, 231, 217], i);
+          });
+        }
+      }
+    });
     const bind = (name: string, morphs: Record<string, number>) => {
       const e = new VRMExpression(name);
       vrm.scene.traverse((o) => {
@@ -261,6 +285,21 @@ function aim(node: THREE.Object3D, rest: THREE.Vector3, dir: THREE.Vector3, pare
 }
 
 /** Face weights from a rig face, or a neutral face that only blinks when [p] is null. */
+// A copy of the texture with each RGBA pixel (at offset i) edited in place.
+function repaint(map: THREE.Texture, edit: (px: Uint8ClampedArray, i: number) => void) {
+  const img = map.image as CanvasImageSource & { width: number; height: number };
+  const c = Object.assign(document.createElement("canvas"), { width: img.width, height: img.height });
+  const g = c.getContext("2d")!;
+  g.drawImage(img, 0, 0);
+  const data = g.getImageData(0, 0, c.width, c.height);
+  for (let i = 0; i < data.data.length; i += 4) edit(data.data, i);
+  g.putImageData(data, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = map.colorSpace;
+  t.flipY = map.flipY;
+  return t;
+}
+
 function setFace(vrm: VRM, p: Pose | null, blink: number) {
   const m = vrm.expressionManager;
   if (!m) return;

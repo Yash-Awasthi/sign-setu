@@ -72,19 +72,29 @@ def _angle(u: np.ndarray, v: np.ndarray) -> float:
 FINGERS = {"index": (5, 6, 7, 8), "middle": (9, 10, 11, 12), "ring": (13, 14, 15, 16), "pinky": (17, 18, 19, 20)}
 
 
+# The character's fingers against the signer's, fitted on rendered signs (degrees of bend): it never quite
+# straightens a finger (offset) and bends a full fist less than the signer (gain). Curls are keyed to undo both.
+CURL_FIT = {"index": (19.9, 0.83), "middle": (13.0, 0.87), "ring": (18.3, 0.83), "pinky": (26.0, 0.79)}
+# The thumb bends about a fifth as far as the signer's (4.8 + 0.22 x degrees) when keyed at bend/250.
+THUMB_FIT = (4.8, 0.22)
+
+
 def finger_curl(h: np.ndarray, finger: str) -> float:
     """0 straight to 1 fully bent: the finger's total flexion from the palm, about 240 degrees in a fist."""
     m, p, d, t = (h[i] for i in FINGERS[finger])
     total = _angle(m - h[0], p - m) + _angle(p - m, d - p) + _angle(d - p, t - d)
-    return min(1.0, total / 240.0)
+    off, gain = CURL_FIT[finger]
+    return float(np.clip((total - off) / (gain * 240.0), 0.0, 1.0))
 
 
 def thumb(h: np.ndarray) -> tuple[float, float]:
-    """Thumb curl (0 to about 0.6 in a fist) and how far it lies across the palm towards the little finger."""
+    """Thumb curl (0 to 1, fitted so the character bends as far as the signer) and how far it lies across the palm towards
+    the little finger."""
     bend = _angle(h[2] - h[1], h[3] - h[2]) + _angle(h[3] - h[2], h[4] - h[3])
     width = np.linalg.norm(h[5] - h[17]) + 1e-9
     across = (1.6 - np.linalg.norm(h[4] - h[17]) / width) / 1.1
-    return min(0.6, bend / 150.0 * 0.6), float(np.clip(across, 0.0, 1.0))
+    off, gain = THUMB_FIT
+    return float(np.clip((bend - off) / (gain * 250.0), 0.0, 1.0)), float(np.clip(across, 0.0, 1.0))
 
 
 def spread(h: np.ndarray) -> float:
@@ -223,7 +233,29 @@ def key_frames(track: np.ndarray, fps: float = FPS, gap: float = 0.5, min_gap: f
     for i in keep[1:]:
         steps = int(math.ceil((i - filled[-1]) / fps / gap))
         filled += [round(filled[-1] + (i - filled[-1]) * s / steps) for s in range(1, steps)] + [i]
-    return sorted(set(filled))
+    return refine(track, sorted(set(filled)))
+
+
+def refine(track: np.ndarray, keys: list[int], tol: float = 4.0) -> list[int]:
+    """Adds the frame furthest from the player's straight, time-even move between two keys while it is more than [tol]
+    rig units off: a short sign keyed only at its ends otherwise plays without its movement."""
+    out = [keys[0]]
+    for a, b in zip(keys, keys[1:]):
+        span = []
+        stack = [(a, b)]
+        while stack:
+            i, j = stack.pop()
+            if j - i < 2:
+                continue
+            t = (np.arange(i, j + 1) - i) / (j - i)
+            line = track[i] + t[:, None] * (track[j] - track[i])
+            off = np.linalg.norm((track[i:j + 1] - line).reshape(j - i + 1, -1, 2), axis=2).max(1)
+            k = int(off.argmax())
+            if off[k] > tol:
+                span.append(i + k)
+                stack += [(i, i + k), (i + k, j)]
+        out += sorted(span) + [b]
+    return out
 
 
 

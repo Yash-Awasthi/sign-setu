@@ -253,6 +253,10 @@ these motions, so the check favours signs close to it.
 reader trained on the INCLUDE signers these words came from, so the read-back cannot judge this change; the
 dictionary is the reference form.
 
+Generator fixes after the review (2026-10-29), each rendered and scored against its own source, read back over 308 words. Finger curls fitted to the character's bend (`CURL_FIT`): mean finger-bend error 15.7 to 14.7 degrees. Thumb fitted the same way (`THUMB_FIT`, no 0.6 cap): thumb error 9.1 to 8.1 degrees, read back 0.331 to 0.334. Key frames refined where the player's straight, time-even move between two keys strays more than 4 rig units from the source (`refine`; 6.1 to 10.8 keys a sign, same lengths): flagged hands placed 56 to 16, path 28 to 2, shape 73 to 11 of 517 signs; read back 0.334 to 0.386 top-1, 21 to 5, p=0.0025. The 16 ISLRTC words whose clips were missing are rebuilt from the downloaded clips.
+
+B5 ASL share (2026-10-29, 18,329 ASL clips, 1 seed each, against WF soup5 on the union, n=546): natural share 15 to 6, p=0.078, INCLUDE 0.975; `asl_share` 0.5 15 to 5, p=0.041, INCLUDE 0.980; 0.25 13 to 6, p=0.17, INCLUDE 0.982.
+
 ## Reader run v4
 
 ### P. Preflight (2026-10-28): all pass
@@ -1631,3 +1635,206 @@ B5 top confused pairs (true -> predicted): elephant -> colour (4); busy -> kill 
 
 B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9799, 'rkmvu': 1.0}, against the app -
 
+
+B5 INCLUDE test floor (0.979): 0.975 [0.963, 0.985] (n=816)
+| B5 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 402 s | + ASL Citizen co-training (join_cache.py), head per language: each clip's softmax over its own language's words (McNemar p=nan vs WF) | new signers 0.077 [0.000, 0.097] (n=546); all 0.397 [0.031, 0.983] / 0.443 | 0.170 | c22 0.031 | islrtc 0.080, kaggle 0.983, rkmvu 0.031 | 5.642, 0.127 | 4887.1, 0.904 | 1.000 | 0.386, -0.011 | - | 0.414 | - | no |
+
+B5 top confused pairs (true -> predicted): elephant -> colour (3); area -> zone (2); capital -> day before (2); mall -> format (2); busy -> kill (1); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> प्लास्टिक (1); across -> parade (1); across -> earthen water pot matka (1)
+
+
+B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+
+
+B5 INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
+| B5 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 432 s | + ASL Citizen co-training (join_cache.py), head per language: each clip's softmax over its own language's words (McNemar p=nan vs WF) | new signers 0.077 [0.000, 0.095] (n=546); all 0.398 [0.031, 0.988] / 0.447 | 0.169 | c22 0.031 | islrtc 0.080, kaggle 0.987, rkmvu 0.031 | 5.642, 0.138 | 4896.7, 0.898 | 1.000 | 0.398, -0.001 | - | 0.410 | - | no |
+
+B5 top confused pairs (true -> predicted): busy -> kill (3); area -> island (2); gujarat -> issue price (2); mall -> format (2); switch -> uncle (1); acceleration -> anthrax (1); accept -> validate (1); across -> increase (1); across -> अंडरस्टोरी (1); action -> stay (1)
+
+
+B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
+
+
+B5 INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
+| B5 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 0 s | + ASL Citizen co-training (join_cache.py), head per language: each clip's softmax over its own language's words (McNemar p=nan vs WF) | new signers 0.071 [0.000, 0.092] (n=546); all 0.397 [0.031, 0.994] / 0.460 | 0.166 | c22 0.031 | islrtc 0.074, kaggle 0.993, rkmvu 0.031 | 5.534, 0.121 | 4877.1, 0.908 | 1.000 | 0.400, +0.003 | - | 0.429 | - | no |
+
+B5 top confused pairs (true -> predicted): area -> island (2); capital -> day before (2); mall -> format (2); busy -> kill (1); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> validate (1); across -> neonatologist (1); across -> अंडरस्टोरी (1); action -> stay (1)
+
+
+B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
+
+
+B5A50 INCLUDE test floor (0.979): 0.980 [0.969, 0.989] (n=816)
+| B5A50 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 407 s | B5 with ASL clips held to 50% of each batch (INCLUDE floor) (McNemar p=0.851 vs B5) | new signers 0.075 [0.000, 0.096] (n=546); all 0.395 [0.031, 0.982] / 0.448 | 0.164 | c22 0.031 | islrtc 0.078, kaggle 0.980, rkmvu 0.031 | 5.678, 0.117 | 5276.0, 0.905 | 1.000 | 0.378, -0.017 | - | 0.392 | - | no |
+
+B5A50 top confused pairs (true -> predicted): busy -> kill (3); capital -> day before (2); mall -> format (2); size -> increase (2); elephant -> colour (1); key -> man (1); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> add (1); across -> सर्विस (1)
+
+
+B5A50 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+B5A25 INCLUDE test floor (0.979): 0.982 [0.971, 0.990] (n=816)
+| B5A25 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 428 s | B5 with ASL clips held to 25% of each batch (INCLUDE floor) (McNemar p=0.21 vs B5) | new signers 0.070 [0.000, 0.090] (n=546); all 0.390 [0.031, 0.978] / 0.449 | 0.162 | c22 0.031 | islrtc 0.072, kaggle 0.977, rkmvu 0.031 | 5.636, 0.144 | 4845.9, 0.900 | 1.000 | 0.415, +0.025 | - | 0.418 | - | no |
+
+B5A25 top confused pairs (true -> predicted): busy -> kill (3); elephant -> colour (3); area -> zone (2); size -> anti corruption law (bihar) (2); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> add (1); across -> bell (1); across -> footpath (1); action -> stay (1)
+
+
+B5A25 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+
+
+B5A50 INCLUDE test floor (0.979): 0.977 [0.964, 0.987] (n=816)
+| B5A50 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 392 s | B5 with ASL clips held to 50% of each batch (INCLUDE floor) (McNemar p=0.557 vs B5) | new signers 0.071 [0.000, 0.092] (n=546); all 0.392 [0.000, 0.982] / 0.442 | 0.163 | c22 0.000 | islrtc 0.076, kaggle 0.980, rkmvu 0.000 | 5.642, 0.115 | 5258.7, 0.905 | 1.000 | 0.365, -0.027 | - | 0.407 | - | no |
+
+B5A50 top confused pairs (true -> predicted): busy -> kill (3); capital -> day before (2); gujarat -> statistics (2); land -> harmonium (2); elephant -> colour (1); lemon -> man (1); switch -> uncle (1); acceleration -> act of war (1); accept -> validate (1); across -> bell (1)
+
+
+B5A50 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+B5A50 INCLUDE test floor (0.979): 0.978 [0.966, 0.988] (n=816)
+| B5A50 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 0 s | B5 with ASL clips held to 50% of each batch (INCLUDE floor) (McNemar p=0.523 vs B5) | new signers 0.070 [0.000, 0.090] (n=546); all 0.392 [0.031, 0.985] / 0.447 | 0.161 | c22 0.031 | islrtc 0.072, kaggle 0.983, rkmvu 0.031 | 5.553, 0.107 | 5059.9, 0.902 | 1.000 | 0.383, -0.010 | - | 0.414 | - | no |
+
+B5A50 top confused pairs (true -> predicted): busy -> kill (3); area -> zone (2); capital -> day before (2); mall -> format (2); elephant -> colour (1); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> add (1); across -> सर्विस (1); across -> अंडरस्टोरी (1)
+
+
+B5A50 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9933, 'rkmvu': 1.0}, against the app -
+
+
+B5A50F INCLUDE test floor (0.979): 0.979 [0.968, 0.988] (n=816)
+| B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 591 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.405 vs B5A50) | new signers 0.086 [0.000, 0.108] (n=546); all 0.400 [0.031, 0.978] / 0.463 | 0.176 | c22 0.031 | islrtc 0.089, kaggle 0.977, rkmvu 0.031 | 5.599, 0.166 | 4967.3, 0.898 | 1.000 | 0.256, -0.144 | - | 0.459 | - | unclear |
+
+B5A50F top confused pairs (true -> predicted): busy -> kill (3); elephant -> colour (3); area -> zone (2); gujarat -> moderates (2); land -> size (2); mall -> format (2); switch -> uncle (1); acceleration -> act of war (1); accept -> add (1); across -> tear (1)
+
+
+B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9832, 'rkmvu': 1.0}, against the app -
+
+
+B5A50F INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
+| B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 636 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.0784 vs B5A50) | new signers 0.090 [0.000, 0.112] (n=546); all 0.405 [0.031, 0.984] / 0.464 | 0.178 | c22 0.031 | islrtc 0.093, kaggle 0.983, rkmvu 0.031 | 5.602, 0.169 | 4984.8, 0.899 | 1.000 | 0.256, -0.149 | - | 0.459 | - | unclear |
+
+B5A50F top confused pairs (true -> predicted): busy -> kill (3); area -> zone (2); gujarat -> moderates (2); land -> size (2); mall -> format (2); elephant -> colour (1); switch -> uncle (1); acceleration -> act of war (1); accept -> add (1); across -> tear (1)
+
+
+B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+B5A50F INCLUDE test floor (0.979): 0.977 [0.966, 0.987] (n=816)
+| B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 804 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.169 vs B5A50) | new signers 0.090 [0.000, 0.112] (n=546); all 0.404 [0.031, 0.982] / 0.457 | 0.179 | c22 0.031 | islrtc 0.093, kaggle 0.980, rkmvu 0.031 | 5.575, 0.158 | 5119.9, 0.904 | 1.000 | 0.256, -0.149 | - | 0.478 | - | unclear |
+
+B5A50F top confused pairs (true -> predicted): busy -> kill (3); area -> island (2); capital -> power (2); mall -> format (2); lemon -> man (1); switch -> man (1); switch -> uncle (1); acceleration -> act of war (1); accept -> add (1); across -> bell (1)
+
+
+B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+B5A50F INCLUDE test floor (0.979): 0.978 [0.967, 0.988] (n=816)
+| B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 805 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.845 vs B5A50) | new signers 0.084 [0.000, 0.104] (n=546); all 0.397 [0.031, 0.970] / 0.460 | 0.173 | c22 0.031 | islrtc 0.087, kaggle 0.970, rkmvu 0.031 | 5.578, 0.151 | 5124.0, 0.900 | 1.000 | 0.254, -0.143 | - | 0.459 | - | unclear |
+
+B5A50F top confused pairs (true -> predicted): elephant -> colour (4); busy -> kill (3); gujarat -> moderates (2); mall -> format (2); lemon -> man (1); switch -> uncle (1); acceleration -> adultery (1); accept -> add (1); across -> meat product (1); across -> atmosphere (1)
+
+
+B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9765, 'rkmvu': 1.0}, against the app -
+
+
+B5A50F INCLUDE test floor (0.979): 0.982 [0.972, 0.990] (n=816)
+| B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 519 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.189 vs B5A50) | new signers 0.084 [0.000, 0.106] (n=546); all 0.403 [0.031, 0.988] / 0.455 | 0.177 | c22 0.031 | islrtc 0.087, kaggle 0.987, rkmvu 0.031 | 5.627, 0.135 | 5233.5, 0.903 | 1.000 | 0.242, -0.160 | - | 0.429 | - | unclear |
+
+B5A50F top confused pairs (true -> predicted): busy -> kill (3); area -> zone (2); capital -> power (2); mall -> format (2); switch -> uncle (1); acceleration -> grill grilling barbeque (1); accept -> add (1); across -> parade (1); across -> atmosphere (1); action -> stay (1)
+
+
+B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
+
+
+B5A50F INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
+| B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 762 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.678 vs B5A50) | new signers 0.082 [0.000, 0.104] (n=546); all 0.398 [0.031, 0.979] / 0.460 | 0.174 | c22 0.031 | islrtc 0.086, kaggle 0.977, rkmvu 0.031 | 5.601, 0.148 | 5119.2, 0.903 | 1.000 | 0.257, -0.142 | - | 0.455 | - | unclear |
+
+B5A50F top confused pairs (true -> predicted): busy -> kill (3); elephant -> colour (2); capital -> day before (2); mall -> format (2); lemon -> man (1); switch -> uncle (1); acceleration -> macros (1); accept -> validate (1); across -> parade (1); across -> atmosphere (1)
+
+
+B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+
+
+B5A50F INCLUDE test floor (0.979): 0.979 [0.968, 0.988] (n=816)
+| B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 0 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.189 vs B5A50) | new signers 0.086 [0.000, 0.106] (n=546); all 0.403 [0.031, 0.984] / 0.466 | 0.177 | c22 0.031 | islrtc 0.089, kaggle 0.983, rkmvu 0.031 | 5.455, 0.136 | 5032.4, 0.905 | 1.000 | 0.256, -0.147 | - | 0.478 | - | unclear |
+
+B5A50F top confused pairs (true -> predicted): busy -> kill (3); gujarat -> moderates (2); mall -> format (2); lemon -> man (1); switch -> uncle (1); acceleration -> act of war (1); accept -> add (1); across -> parade (1); across -> atmosphere (1); action -> stay (1)
+
+
+B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9933, 'rkmvu': 1.0}, against the app -
+
+
+Non-sign false-accept on val (cache_v6b, n=2437 rest and card-pause windows, a word shown at p >= 0.4 after T, app words): shipped 0.000 [0.000, 0.000] (top label a word 1.000; new-signer app-word clips shown 0.492, shown right 0.390, n=59)
+
+Non-sign false-accept on val (cache_v6b, n=2437 rest and card-pause windows, a word shown at p >= 0.4 after T, app words): b5 0.000 [0.000, 0.000] (top label a word 1.000; new-signer app-word clips shown 0.492, shown right 0.407, n=59)
+
+B5A50F_s98 (5-seed soup, full ASL Citizen) rule 1 vs WF_s95: new-signer 0.1007 vs 0.0714 (n=546), 22:6, McNemar p=0.0037; Kaggle C 0.9933; INCLUDE 0.979 (floor). Installed: T 2.5678, non-sign FA 0, app-word shown right 0.407 vs 0.390, format 3 vs 1 agree 1.000 on 400 windows.
+
+B5M INCLUDE test floor (0.979): 0.977 [0.964, 0.987] (n=816)
+| B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 874 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.327 vs B5A50F) | new signers 0.097 [0.000, 0.119] (n=546); all 0.412 [0.031, 0.991] / 0.473 | 0.183 | c22 0.031 | islrtc 0.101, kaggle 0.990, rkmvu 0.031 | 5.500, 0.117 | 5320.4, 0.904 | 1.000 | 0.274, -0.138 | - | 0.537 | - | unclear |
+
+B5M top confused pairs (true -> predicted): area -> island (2); jackfruit -> ऑफ साइड (2); mall -> format (2); brinjal -> hello (1); lemon -> man (1); switch -> uncle (1); acceleration -> numerical control (1); accept -> add (1); across -> meat product (1); across -> leather (1)
+
+
+B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.576 [0.458, 1.000] (n=59), per source {'islrtc': 0.569, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+B5M INCLUDE test floor (0.979): 0.973 [0.961, 0.984] (n=816)
+| B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 699 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.711 vs B5A50F) | new signers 0.092 [0.000, 0.114] (n=546); all 0.409 [0.031, 0.991] / 0.460 | 0.182 | c22 0.031 | islrtc 0.095, kaggle 0.990, rkmvu 0.031 | 5.547, 0.164 | 5140.4, 0.902 | 1.000 | 0.261, -0.148 | - | 0.496 | - | unclear |
+
+B5M top confused pairs (true -> predicted): area -> island (2); brain -> brain tumor (outside) (2); capital -> power (2); environment -> होटल श्रृंखला (2); gujarat -> umbrella (2); mall -> format (2); triangle -> television (2); key -> man (1); switch -> man (1); switch -> uncle (1)
+
+
+B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.576 [0.458, 1.000] (n=59), per source {'islrtc': 0.569, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+B5M INCLUDE test floor (0.979): 0.969 [0.957, 0.980] (n=816)
+| B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 579 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.557 vs B5A50F) | new signers 0.079 [0.000, 0.100] (n=546); all 0.400 [0.031, 0.991] / 0.448 | 0.170 | c22 0.031 | islrtc 0.082, kaggle 0.990, rkmvu 0.031 | 5.582, 0.155 | 5065.1, 0.903 | 1.000 | 0.264, -0.136 | - | 0.466 | - | no |
+
+B5M top confused pairs (true -> predicted): amritsar -> april (2); gujarat -> umbrella (2); elephant -> colour (1); lemon -> man (1); switch -> uncle (1); acceleration -> imitation (1); accept -> validate (1); across -> सर्विस (1); across -> atmosphere (1); action -> loud speaker (1)
+
+
+B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.559 [0.441, 1.000] (n=59), per source {'islrtc': 0.5517, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+B5M INCLUDE test floor (0.979): 0.972 [0.958, 0.983] (n=816)
+| B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 641 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.856 vs B5A50F) | new signers 0.079 [0.000, 0.099] (n=546); all 0.403 [0.031, 0.998] / 0.460 | 0.170 | c22 0.031 | islrtc 0.082, kaggle 0.997, rkmvu 0.031 | 5.570, 0.152 | 5287.4, 0.904 | 1.000 | 0.253, -0.150 | - | 0.485 | - | no |
+
+B5M top confused pairs (true -> predicted): area -> zone (2); capital -> day before (2); jackfruit -> gross (2); mall -> format (2); switch -> uncle (1); acceleration -> act of war (1); accept -> add (1); across -> bell (1); across -> assassination (1); action -> stay (1)
+
+
+B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
+
+
+B5M INCLUDE test floor (0.979): 0.974 [0.963, 0.985] (n=816)
+| B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 650 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=1 vs B5A50F) | new signers 0.086 [0.000, 0.106] (n=546); all 0.405 [0.031, 0.991] / 0.462 | 0.176 | c22 0.031 | islrtc 0.089, kaggle 0.990, rkmvu 0.031 | 5.552, 0.158 | 5023.3, 0.896 | 1.000 | 0.265, -0.141 | - | 0.485 | - | no |
+
+B5M top confused pairs (true -> predicted): appointment -> project (2); area -> island (2); capital -> day before (2); gujarat -> umbrella (2); mall -> format (2); key -> man (1); lemon -> man (1); switch -> uncle (1); acceleration -> हाउस फुल (1); accept -> add (1)
+
+
+B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+B5M INCLUDE test floor (0.979): 0.973 [0.961, 0.984] (n=816)
+| B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 0 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.523 vs B5A50F) | new signers 0.090 [0.000, 0.110] (n=546); all 0.410 [0.031, 0.998] / 0.466 | 0.180 | c22 0.031 | islrtc 0.093, kaggle 0.997, rkmvu 0.031 | 5.400, 0.121 | 5129.9, 0.903 | 1.000 | 0.271, -0.139 | - | 0.496 | - | no |
+
+B5M top confused pairs (true -> predicted): area -> island (2); capital -> day before (2); gujarat -> umbrella (2); mall -> format (2); switch -> uncle (1); acceleration -> act of war (1); accept -> add (1); across -> brain (1); across -> assassination (1); action -> stay (1)
+
+
+B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
+
+
+B5M_s98 (B5A50F + 441 mined iSign windows, 65 words, judge WF_s2, held-out-signer face filter) rule 1 vs B5A50F_s98: new-signer 0.1026 vs 0.1007 (n=546), 5:4, p=1.0; app words 0.542 vs 0.525; INCLUDE 0.973 below the 0.979 floor. Not adopted.
+
+Hand-crop handshape model (2026-10-30, `crops.py`, `handshape.py`, 14,377 cache_v6b clips, hands seen 0.768): k-means
+handshape labels (k=48) from train signers and a small crop encoder, epoch picked on a tune split of train signers.
+Validation app-word clips: run 1 shape 0.238, word 0.076; run 2 (balanced loss) near chance; run 3 shape 0.161, word
+0.099. In every run the crops are right on 0 of the clips the installed reader misses. Not adopted.
+
+App ASL reader fine-tune (2026-10-30, `asl_tune.py`, ASL Citizen clips of 208 of its 250 words, signer split by hash,
+ASL Citizen test split never read): validation 0.845 against the shipped 0.618 (320 to 26, p=1.5e-65), but the 42
+words without ASL Citizen clips lose out (top guess on outside-vocabulary clips 0.221 to 0.025). With distillation from
+the shipped reader: 0.798 (245 to 12), 42-word share 0.148. The 42 words have no clean held-out signers, so it is not
+shipped.
+
+iSign signers (2026-10-30, 1,832 landmarked recordings, YuNet and SFace, average linkage at cosine 0.55): 44 face
+groups; 1,174 recordings near training signers, 575 near held-out signers (dropped by the mining face filter), about
+70 from new signers. More iSign landmarks add few new signers.

@@ -318,14 +318,14 @@
   "you (plural)",
   "young"
  ],
- "temperature": 2.2276,
+ "temperature": 2.5678,
  "conformal": {
   "method": "RAPS",
   "k_reg": 3,
   "lambda": 0.02,
   "thresholds": {
-   "0.50": 0.5043,
-   "0.80": 2.4481
+   "0.50": 0.4519,
+   "0.80": 2.3195
   },
   "fit": "validation clips (new signers, ISLRTC and RKMVU), two-fold by word, n=59"
  },
@@ -363,7 +363,7 @@
   234,
   454
  ],
- "source": "WF soup5 (same weights as sign_reader.bin, float32), exported by tools/ml/export_litert.py",
- "dataset": "INCLUDE (AI4Bharat), OpenHands pose release, zenodo.org/records/6674324, CC BY 4.0; Indian Sign Language video dataset (Prasad Shet, kaggle.com/datasets/prasadshet/indian-sign-language-video-dataset, MIT), landmarks by MediaPipe Holistic; fine-tuned with ISLRTC dictionary clips (islrtc.nic.in) and RKMVU-CBE ISL channel clips, landmarks by MediaPipe",
+ "source": "B5A50F soup5 (same weights as sign_reader.bin, float32), exported by tools/ml/export_litert.py",
+ "dataset": "INCLUDE (AI4Bharat), OpenHands pose release, zenodo.org/records/6674324, CC BY 4.0; Indian Sign Language video dataset (Prasad Shet, kaggle.com/datasets/prasadshet/indian-sign-language-video-dataset, MIT), landmarks by MediaPipe Holistic; fine-tuned with ISLRTC dictionary clips (islrtc.nic.in) and RKMVU-CBE ISL channel clips, landmarks by MediaPipe; co-trained with ASL Citizen (Microsoft Research) landmarks through a separate ASL head that is not shipped",
  "spell_odds": 1.5
 }

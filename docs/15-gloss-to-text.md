@@ -54,12 +54,26 @@ read as N costs less than an M read as A). The margin rule keeps wrong correctio
 Besides corrupted-output tests, a property test generates thousands of random lattices and random outputs and checks
 that no output with a content word outside the lattice ever passes.
 
+### 8. A learned tagger as a second ranker, kept out of the app
+
+A small encoder (`tools/ml/tagger.py`) reads the lattice and the question and names the intent and, per token, the
+pattern item or slot it fills. It ranks; it never writes, since a sequence-to-sequence writer was tried and invented
+words. It trains on answers built from the phrasebook patterns, each sign token carrying a candidate list the shipped
+reader produced for that word on a held-out signer, with further confusions drawn from `sign_confusion.json` and
+answers that match no intent. A fifth of each varied intent's wordings (which optional signs appear, which of "a|b")
+are held out of training, and epochs are picked on a separate tune set. On new-signer noise it beats the phrasebook
+matcher on wordings it trained on (intent 0.903 against 0.875) but falls far behind on held-out wordings (0.444
+against 0.801, 134 answers to 1,317) and loses overall (0.811 against 0.860); `tools/ml/phrasebook_eval.py` ports
+the matcher and runs the paired test. It learns the templates, not the task, so the app does not use it: its spec
+carries `"enabled": false`.
+
 ## Where each part lives
 
 | Part | Code and data |
 |---|---|
 | Lattice | `gloss/GlossLattice.kt`, with a JSON form; POINT tokens from a sideways point (`sign/Pointing.kt`) when the reader is unsure. "I" and "you" stay with the reader: without depth a point at the camera cannot be told from a fist |
-| Calibration, conformal sets, confusion | `tools/ml/calibrate.py` writes the temperature and RAPS thresholds into each reader's spec and `sign_confusion.json`; risk against coverage in `tools/ml/plots/risk_coverage.svg` |
+| Calibration, conformal sets, confusion | `tools/ml/ship_w.py` fits the word reader's temperature and RAPS thresholds on new-signer validation clips and writes them into its spec, with `sign_confusion.json`; `tools/ml/calibrate.py` did this for earlier readers and draws risk against coverage in `tools/ml/plots/risk_coverage.svg` |
+| Tagger (research) | `tools/ml/tagger_data.py` builds its answers, `tools/ml/tagger.py` trains it, `tools/ml/phrasebook_eval.py` scores the matcher on the same answers; not in the app |
 | Name resolver | `sign/NameResolver.kt`: CTC-scored candidates, the margin rule, `names.txt` (425 entries) and names confirmed earlier in the session |
 | Phrasebook | `gloss/Phrasebook.kt` over `intents.json` (44 intents in English and Hindi, built by `tools/content/build_intents.py`); every asking question has at least one intent, enforced by `check_content.py`; review sheet `docs/review/intents_review.csv` |
 | Checker and ladder | `gloss/Ladder.kt`: the faithfulness check, four rungs, alternatives, and a confirmation for risky intents |

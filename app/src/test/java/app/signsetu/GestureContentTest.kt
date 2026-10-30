@@ -168,8 +168,8 @@ class GestureContentTest {
     fun typedTextIsSignedWordByWord() {
         val text = "Is Ravi your brother?"
         val plan = bundle.planText(text, setOf(SignMode.GESTURES, SignMode.SPELL, SignMode.PICTURES))
-        // "Is" is a grammar word, "Ravi" is spelled, "your" and "brother" have gestures, and "?" adds the asking face.
-        assertEquals(listOf("Ravi", "your", "brother"), plan.beats.map { text.substring(it.range) })
+        // "Is" is a grammar word, "Ravi" is spelled, "your" and "brother" have gestures, and "?" stays lit for the asking sign.
+        assertEquals(listOf("Ravi", "your", "brother", "?"), plan.beats.map { text.substring(it.range) })
         assertEquals(listOf("r", "a", "v", "i"), plan.beats[0].letters)
         assertEquals("brother", plan.beats[2].card)
         assertTrue(plan.beats.zipWithNext().all { (a, b) -> a.end <= b.start + 1e-4f })

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.platform.app.InstrumentationRegistry
+import app.signsetu.data.content.CAPTION_MODES
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.ContentRepository
 import app.signsetu.data.session.Profile
@@ -98,7 +99,7 @@ class StageAccessibilityTest(private val dark: Boolean) {
         show(atf) {
             SubjectTheme {
                 Box(if (size != null) Modifier.size(size) else Modifier) {
-                    Stage(ui, content, tracker = null, cameraOn = false, gestureSpeed = 1f, {}, {}, {}, {}, {}, {}, {}, {}, {}, onGiven = if (lesson) { _ -> } else null)
+                    Stage(ui, content, tracker = null, cameraOn = false, gestureSpeed = 1f, askModes = CAPTION_MODES, {}, {}, {}, {}, {}, {}, {}, {}, {}, onGiven = if (lesson) { _ -> } else null)
                 }
             }
         }

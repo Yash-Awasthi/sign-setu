@@ -31,7 +31,8 @@ from cache import Clips  # noqa: E402
 from guard import DATA  # noqa: E402
 
 STAGE = DATA / "staging" / "W"
-FILES = {"sign_reader.bin": export.MODELS, "sign_reader.json": export.MODELS, "sign_reader_fixture.json": export.RESOURCES}
+FILES = {"sign_reader.bin": export.MODELS, "sign_reader.json": export.MODELS, "sign_reader_fixture.json": export.RESOURCES,
+         "sign_confusion.json": export.MODELS}
 
 
 def install():
@@ -99,16 +100,34 @@ def main(a):
     export.MODELS = export.RESOURCES = runtime.MODELS = STAGE
     ckpt = run / "sign_reader_w.pt"
     torch.save({"state": state, "labels": app_labels, "top1": float((logits.argmax(1) == y).double().mean()),  # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
-                "top3": float((logits.topk(3, 1).indices == y[:, None]).any(1).double().mean()), "epochs": "W fine-tune"}, ckpt)
+                "top3": float((logits.topk(3, 1).indices == y[:, None]).any(1).double().mean()),
+                "epochs": "B5 co-training, soup of 5 seeds" if "asl" in cfg.get("sources", ()) else "W fine-tune"}, ckpt)
     export.main("sign_reader", ckpt, DATA / "include_pose" / "include.pkl")
     spec = json.loads((STAGE / "sign_reader.json").read_text(encoding="utf-8"))
     spec["dataset"] = (export.DATASETS["sign_reader"] + "; fine-tuned with ISLRTC dictionary clips (islrtc.nic.in) and "
                        "RKMVU-CBE ISL channel clips, landmarks by MediaPipe")
+    if "asl" in cfg.get("sources", ()):
+        spec["dataset"] += "; co-trained with ASL Citizen (Microsoft Research) landmarks through a separate ASL head that is not shipped"
+    if "spell_odds" in spec_old:
+        spec["spell_odds"] = spec_old["spell_odds"]
     spec["temperature"] = round(t, 4)
     spec["conformal"] = {"method": "RAPS", "k_reg": calibrate.K_REG, "lambda": calibrate.LAMBDA,
                          "thresholds": {f"{c:.2f}": round(q, 4) for c, q in qhats.items()},
                          "fit": f"validation clips ({'all signers' if '--full-val' in a else 'new signers, ISLRTC and RKMVU'}), two-fold by word, n={len(y)}"}
     (STAGE / "sign_reader.json").write_text(json.dumps(spec, indent=1) + "\n", encoding="utf-8", newline="\n")
+
+    # The confusion table the tagger's noise and the read-back use: every validation reading (new signers and the
+    # Kaggle signer), true word to first guess, at the fitted temperature.
+    allv = index[(index["split"] == "val") & index["label"].isin(app_labels) & (index["source"] != "nonsign")]
+    first = exp.predict(small, Clips(root, allv.index.to_numpy(), train=False, t=cfg["frames"]), torch.device("cpu")).argmax(1)
+    table = {}
+    for w, k in zip(allv["label"], first.tolist()):
+        row = table.setdefault(w, {})
+        row[app_labels[k]] = row.get(app_labels[k], 0) + 1
+    (STAGE / "sign_confusion.json").write_text(json.dumps({
+        "note": "Validation readings of the shipped sign_reader (new signers and the held-out Kaggle signer): true word to "
+                "first guess, counts. Written by tools/ml/ship_w.py; edit the script, not this file.",
+        "temperature": round(t, 4), "counts": table}, ensure_ascii=False, sort_keys=True), encoding="utf-8")
 
     # Gate: the staged float16 file against the float32 trunk on the same clips, and fold coverage.
     _, f16 = runtime.reader("sign_reader")

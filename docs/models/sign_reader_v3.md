@@ -2,7 +2,7 @@
 
 ## Release status
 
-The app's word reader since 0.8.2. On test the soup and the previous reader are equally accurate (5 clips to 4,
+The app's word reader in 0.8.2, replaced after it by v4 ([model card](sign_reader_v4.md)). On test the soup and the previous reader are equally accurate (5 clips to 4,
 p=1) and the previous reader is better calibrated; the soup is better on new-signer validation and shows no word for
 rest and pause windows. Licensing: usable in this non-commercial project. The weights were fine-tuned on ISLRTC dictionary clips and RKMVU-CBE channel
 clips, which are used for training in this non-commercial project; written permission is to be sought before any

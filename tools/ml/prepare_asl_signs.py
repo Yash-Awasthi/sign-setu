@@ -1,5 +1,6 @@
 """Builds the ASL landmark cache from Google's Isolated Sign Language Recognition set (Kaggle `asl-signs`, CC BY 4.0;
-same 250 signs as PopSign), downloaded and unzipped by hand. Signer-independent: TEST_SIGNERS never train."""
+same 250 signs as PopSign). SRC is the unzipped folder or the Kaggle zip itself (read in place). Signer-independent:
+TEST_SIGNERS never train; with --no-test their clips are not even read, so a closed test split stays closed."""
 import csv
 import json
 import os
@@ -17,8 +18,17 @@ LABELS = pathlib.Path(__file__).with_name("popsign_labels.json")
 TEST_SIGNERS = 4  # the participants with the fewest clips
 
 
-def clip(path: pathlib.Path) -> dict:
+_ZIP = {}
+
+
+def clip(path) -> dict:
+    """path: a parquet file, or (zip path, member) for one read from the Kaggle zip."""
+    import io
+    import zipfile
     import pyarrow.parquet as pq
+    if isinstance(path, tuple):
+        z = _ZIP.get(path[0]) or _ZIP.setdefault(path[0], zipfile.ZipFile(path[0]))
+        path = io.BytesIO(z.read(path[1]))
     t = pq.read_table(path, columns=["frame", "type", "landmark_index", "x", "y"])
     frame = t.column("frame").to_numpy()
     kind = np.array(t.column("type").to_pylist())
@@ -47,15 +57,24 @@ def aspect(samples) -> float:
     return float(grid[np.argmin([np.log(d[:, 0] ** 2 + (d[:, 1] / a) ** 2 + 1e-12).var() for a in grid])])
 
 
-def main(src: pathlib.Path, out: pathlib.Path, workers: int = 6) -> None:
+def main(src: pathlib.Path, out: pathlib.Path, workers: int = 6, no_test: bool = False) -> None:
+    import io
+    import zipfile
     names = {l.lower(): l for l in json.loads(LABELS.read_text(encoding="utf-8"))["labels"]}
-    rows = list(csv.DictReader(open(src / "train.csv", newline="")))
+    zipped = src.suffix == ".zip"
+    if zipped:
+        with zipfile.ZipFile(src) as z:
+            rows = list(csv.DictReader(io.TextIOWrapper(z.open("train.csv"), newline="")))
+    else:
+        rows = list(csv.DictReader(open(src / "train.csv", newline="")))
     counts = {}
     for r in rows:
         counts[r["participant_id"]] = counts.get(r["participant_id"], 0) + 1
     test = set(sorted(counts, key=counts.get)[:TEST_SIGNERS])
+    if no_test:
+        rows = [r for r in rows if r["participant_id"] not in test]
     with ProcessPoolExecutor(workers) as ex:
-        clips = list(ex.map(clip, [src / r["path"] for r in rows], chunksize=64))
+        clips = list(ex.map(clip, [(str(src), r["path"]) if zipped else src / r["path"] for r in rows], chunksize=64))
     by_signer = {}
     for r, c in zip(rows, clips):
         if c["has_pose"].any() and (c["has_left"].any() or c["has_right"].any()):
@@ -74,6 +93,8 @@ def main(src: pathlib.Path, out: pathlib.Path, workers: int = 6) -> None:
 
 if __name__ == "__main__":
     a = sys.argv[1:]
+    no_test = "--no-test" in a
+    a = [x for x in a if x != "--no-test"]
     main(pathlib.Path(a[0]) if a else DATA_ROOT / "asl_signs",
          pathlib.Path(a[1]) if len(a) > 1 else DATA_ROOT / "asl_signs" / "asl_signs.pkl",
-         int(a[2]) if len(a) > 2 else 6)
+         int(a[2]) if len(a) > 2 else 6, no_test)
