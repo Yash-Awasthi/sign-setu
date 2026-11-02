@@ -24,6 +24,8 @@ interface SignReader : AutoCloseable {
     /** Names the officer confirmed in this session, given the highest prior for spelled names; [names] empty forgets
      * them. Session only: names of the people interviewed are never kept between sessions. */
     fun sessionNames(names: Set<String>) {}
+    /** The letter or digit reader's top guess for a short held handshape, for live spelling; null without one. */
+    fun letter(frames: List<LandmarkFrame>): SignGuess? = null
     override fun close() {}
 }
 
@@ -52,4 +54,6 @@ data class SignGuess(
     val spelled: Boolean = false,
     /** A spelled reading checked against known names; null for word signs and unchecked spellings. */
     val name: ResolvedName? = null,
+    /** A second reader read the same sign and its top word was another, so the sign is ambiguous. */
+    val disputed: Boolean = false,
 )

@@ -17,7 +17,13 @@ import app.signsetu.data.session.SessionRepository
 import app.signsetu.camera.Head
 import app.signsetu.gloss.DebugRecorder
 import app.signsetu.camera.LandmarkFrame
+import app.signsetu.sign.DominantHand
+import app.signsetu.sign.FeatureRing
 import app.signsetu.sign.HomeSigns
+import app.signsetu.sign.LetterCommitter
+import app.signsetu.sign.MotionGate
+import app.signsetu.sign.SignGuess
+import app.signsetu.sign.handEnergy
 import app.signsetu.sign.SignCapture
 import app.signsetu.sign.SignChoice
 import app.signsetu.sign.SignConfirm
@@ -99,6 +105,18 @@ class SessionViewModel(
     @Volatile var reader: SignReader? = reader
     private val confirmedNames: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
     private val homeSigns = HomeSigns { frames -> reader?.let { r -> runCatching { r.embed(frames) }.getOrNull() } }
+    // The leading hand, learnt over the session: home signs are kept and matched as if signed with the right hand.
+    private val dominant = DominantHand()
+    private val ring = FeatureRing()
+    private val gate = MotionGate()
+    private val letters = LetterCommitter()
+    @Volatile private var prevFrame: LandmarkFrame? = null
+    @Volatile private var peeking = false
+    private var lastPeekMs = 0L
+    private var lastLetterMs = 0L
+    private val liveFlow = MutableStateFlow(LiveRead())
+    /** Officer side only: what the reader sees mid-sign and the letters spelled so far. Never logged as a reading. */
+    val live: StateFlow<LiveRead> = liveFlow
 
     private val local = MutableStateFlow(Local())
     @Volatile private var capture: SignCapture? = null
@@ -251,6 +269,44 @@ class SessionViewModel(
         capture = SignCapture(window)
         windowStartMs = lastFrameMs
         local.update { it.copy(reading = emptyList(), signWindow = window, confirm = null) }
+        synchronized(ring) { ring.clear(); letters.clear(); gate.reset() }
+        liveFlow.value = LiveRead()
+    }
+
+    /** On the analysis thread, inside a window: the last [RING_FRAMES] frames are read while the hands move, at most
+     * every [LIVE_PEEK_MS], and a still handshape is read as a letter every [LETTER_PEEK_MS]. */
+    private fun peek(frame: LandmarkFrame) {
+        val r = reader ?: return
+        val moving: Boolean
+        val window: List<LandmarkFrame>
+        synchronized(ring) {
+            moving = gate.update(handEnergy(prevFrame, frame).total)
+            ring.push(frame)
+            val ms = frame.timestampMs
+            val hands = frame.leftHand != null || frame.rightHand != null
+            val wordDue = moving && ms - lastPeekMs >= LIVE_PEEK_MS && ring.size >= LIVE_MIN_FRAMES
+            val letterDue = !moving && hands && ms - lastLetterMs >= LETTER_PEEK_MS && ring.size >= LETTER_FRAMES
+            if (peeking || !(wordDue || letterDue)) {
+                // Moving or lowering the hand ends a held letter, so the same letter may follow it.
+                if (!hands || moving) letters.see(ms, null)
+                return
+            }
+            if (wordDue) lastPeekMs = ms else lastLetterMs = ms
+            window = ring.frames(if (wordDue) ring.size else LETTER_FRAMES)
+            peeking = true
+        }
+        viewModelScope.launch(readDispatcher) {
+            try {
+                if (moving) {
+                    val top = runCatching { r.read(window) }.getOrNull().orEmpty().sortedByDescending { it.score }.take(3)
+                    liveFlow.update { it.copy(guesses = top) }
+                } else {
+                    val g = runCatching { r.letter(window) }.getOrNull()
+                    val committed = synchronized(ring) { letters.see(window.last().timestampMs, g) }
+                    if (committed != null) liveFlow.update { it.copy(spelled = it.spelled + committed) }
+                }
+            } finally { peeking = false }
+        }
     }
 
     /** Every tracked camera frame, on the analysis thread. */
@@ -264,7 +320,11 @@ class SessionViewModel(
             }
             if (app.signsetu.BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "head $h at ${frame.timestampMs}")
         }
-        val c = capture ?: return
+        val c = capture
+        if (c != null) dominant.see(handEnergy(prevFrame, frame))
+        if (c != null) peek(frame)
+        prevFrame = frame
+        c ?: return
         // Three seconds with nothing raised, or two since the hands stopped: what was given is ingested, no tap needed.
         val (segments, done) = synchronized(c) {
             val wasFull = c.full
@@ -281,7 +341,7 @@ class SessionViewModel(
         local.update { it.copy(reading = it.reading?.plus(segment)) }
         reads += viewModelScope.launch(readDispatcher) {
             val all = reader?.let { r -> runCatching { r.read(frames) }.getOrNull() }.orEmpty().sortedByDescending { it.score }
-            val read = decideRead(frames, all, homeSigns.match(frames), cards, reader?.words.orEmpty(), content.words, reader?.cards.orEmpty(), reader?.conformal)
+            val read = decideRead(frames, all, homeSigns.match(dominant.canonical(frames)), cards, reader?.words.orEmpty(), content.words, reader?.cards.orEmpty(), reader?.conformal)
             local.update { l -> l.copy(reading = l.reading?.map { if (it === segment) read else it }) }
         }
     }
@@ -302,6 +362,10 @@ class SessionViewModel(
             val segments = local.value.reading.orEmpty().map { it.withWindowHead(headsAround(start, end)) }
             val narrative = local.value.signWindow == SignWindow.NARRATIVE
             local.update { it.copy(reading = null, signWindow = null) }
+            val spelled = liveFlow.value.spelled
+            liveFlow.value = LiveRead()
+            // Letters held one by one are kept as the app's note; the officer still decides what was said.
+            if (spelled.length >= 2) repo.log(sessionId, EventType.NOTE, EventSource.MACHINE, "en", text = "Spelled, letter by letter: ${spelled.uppercase()}")
             if (segments.isEmpty()) { windowEndMs = Long.MIN_VALUE / 2; return@launch }
             val words = segments.map { it.word ?: "?" }
             val id = logSigned(segments, words, EventSource.MACHINE, "en")
@@ -344,7 +408,7 @@ class SessionViewModel(
         local.value.signed[eventId]?.zip(words)?.filter { (s, w) -> s.guesses?.firstOrNull()?.spelled == true && w.isNotBlank() && w != "?" }
             ?.forEach { (_, w) -> confirmedNames += w.lowercase(); reader?.sessionNames(confirmedNames.toSet()) }
         val segments = local.value.signed[eventId] ?: return
-        segments.zip(words).forEach { (s, w) -> if (w.isNotBlank() && w != "?" && w != s.word) homeSigns.teach(s.frames, w) }
+        segments.zip(words).forEach { (s, w) -> if (w.isNotBlank() && w != "?" && w != s.word) homeSigns.teach(dominant.canonical(s.frames), w) }
         val shownId = ui.value?.events?.firstOrNull { it.id == eventId }?.shownId
         viewModelScope.launch { logSigned(segments, words, EventSource.OFFICER, officerLang, shownId, sentence) }
     }
@@ -437,6 +501,9 @@ class SessionViewModel(
     fun wipeSigns() {
         capture = null
         lastBody = null
+        prevFrame = null
+        synchronized(ring) { ring.clear(); letters.clear() }
+        liveFlow.value = LiveRead()
         reads.forEach { it.cancel() }
         reads.clear()
         local.update { it.copy(reading = null, signed = emptyMap(), signWindow = null, confirm = null) }
@@ -890,3 +957,12 @@ class SessionViewModel(
 /** How long before a sign window opens and after it closes a nod or shake still counts for its reading. */
 private const val HEAD_MARGIN_MS = 5_000L
 private const val HEAD_KEEP_MS = 30_000L
+
+/** Mid-sign reading for the officer: the reader's top 3 on the latest frames, and letters committed by holding. */
+@androidx.compose.runtime.Immutable
+data class LiveRead(val guesses: List<SignGuess> = emptyList(), val spelled: String = "")
+
+private const val LIVE_PEEK_MS = 400L
+private const val LIVE_MIN_FRAMES = 8
+private const val LETTER_PEEK_MS = 150L
+private const val LETTER_FRAMES = 8

@@ -653,6 +653,9 @@
     <string name="practice_spelled">अक्षर-दर-अक्षर</string>
     <string name="reading_sign_again">पढ़ा नहीं जा सका। उनसे कैमरे की ओर मुँह करके, अच्छी रोशनी में फिर से इशारा करने को कहें।</string>
     <string name="reading_check">जाँचें: %1$s</string>
+    <string name="reading_ambiguous">अस्पष्ट संकेत: %1$s</string>
+    <string name="reading_live">अभी दिख रहा है, अंतिम नहीं: %1$s</string>
+    <string name="reading_spelled">अब तक वर्तनी: %1$s</string>
     <string name="reading_correct">जो साइन किया गया वह लिखें</string>
     <string name="record_title">सीखने के लिए साइन रिकॉर्ड करें</string>
     <string name="record_settings_summary">10 शब्द और वाक्य साइन करें ताकि साइन रीडर नए साइनर को समझना सीखे</string>

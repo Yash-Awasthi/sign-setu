@@ -29,6 +29,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -210,6 +211,7 @@ internal fun SignPredictions(
         }
         guesses.forEachIndexed { i, words ->
             if (words.isEmpty()) return@forEachIndexed
+            if (segments[i].ambiguous && picked[i] == null) Text(stringResource(R.string.reading_ambiguous, words.take(2).joinToString(" / ") { it.replace('_', ' ') }), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val choice = picked[i]
                 (if (choice != null) listOf(choice) else words).forEach { w ->
@@ -238,6 +240,21 @@ internal fun SignPredictions(
                 )
             }
         }
+    }
+}
+
+/** While the subject signs: the reader's current top 3 and the letters held so far, plainly marked as not final.
+ * Nothing here can be tapped; the reading to accept comes when the window closes. */
+@Composable
+internal fun LiveReading(live: kotlinx.coroutines.flow.StateFlow<LiveRead>, modifier: Modifier = Modifier) {
+    val now by live.collectAsStateWithLifecycle()
+    if (now.guesses.isEmpty() && now.spelled.isEmpty()) return
+    Column(modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (now.guesses.isNotEmpty()) Text(
+            stringResource(R.string.reading_live, now.guesses.joinToString("  ·  ") { "${it.word.replace('_', ' ')} ${(it.score * 100).toInt()}%" }),
+            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (now.spelled.isNotEmpty()) Text(stringResource(R.string.reading_spelled, now.spelled.uppercase()), style = MaterialTheme.typography.titleSmall)
     }
 }
 

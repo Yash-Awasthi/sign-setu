@@ -29,3 +29,6 @@
 # Flogger, which MediaPipe's Graph logs through, finds its caller by class name on the stack; renaming makes Graph fail to load.
 -keep class com.google.common.flogger.** { *; }
 -dontwarn com.google.common.flogger.**
+
+# JNI entry points of the camera frame library.
+-keepclasseswithmembernames class app.signsetu.camera.YuvFrames { native <methods>; }

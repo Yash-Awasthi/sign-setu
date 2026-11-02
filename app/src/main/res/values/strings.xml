@@ -660,6 +660,9 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="practice_spelled">spelled</string>
     <string name="reading_sign_again">Could not read that. Ask them to sign again, facing the camera in good light.</string>
     <string name="reading_check">Check: %1$s</string>
+    <string name="reading_ambiguous">Unclear sign: %1$s</string>
+    <string name="reading_live">Seeing now, not final: %1$s</string>
+    <string name="reading_spelled">Spelled so far: %1$s</string>
     <string name="reading_correct">Type what was signed</string>
     <string name="record_title">Record signs for training</string>
     <string name="record_settings_summary">Sign 10 words and sentences to help the sign reader learn new signers</string>

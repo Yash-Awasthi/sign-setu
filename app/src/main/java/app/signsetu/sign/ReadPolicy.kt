@@ -42,7 +42,9 @@ fun decideRead(
     // In the app's own words ("store or shop" is shop), which the phrasebook and the lattice use.
     val candidates = (guesses + all.take(size ?: CANDIDATES).map { g -> signWords[g.word]?.let { g.copy(word = it) } ?: g })
         .distinctBy { it.word }.take(CANDIDATES)
-    return SignSegment(frames, guesses, needsSlower(frames, all), cards, candidates, unsure = size != null && size > CANDIDATES)
+    // Ambiguity only flags the sign for the officer; the sentence ranker still weighs its candidates.
+    val close = home == null && ambiguous(all, margin = conformal == null)
+    return SignSegment(frames, guesses, needsSlower(frames, all), cards, candidates, unsure = size != null && size > CANDIDATES, ambiguous = close)
 }
 
 /** The signs of one window as words, one per sign: each sign's best guess for the item on screen, "?" where none was read. */

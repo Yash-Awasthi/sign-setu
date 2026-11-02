@@ -141,9 +141,9 @@ fun CameraMirror(
             val preview = Preview.Builder().setResolutionSelector(PREVIEW_RESOLUTION).build().apply { setSurfaceProvider { request = it } }
             val frames = tracker?.let {
                 ImageAnalysis.Builder()
-                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-                    // CameraX turns the frame upright into its own reused buffer, cheaper than a bitmap rotate per frame.
-                    .setOutputImageRotationEnabled(true)
+                    // YUV straight from the camera: luma alone gates and judges a frame, and only the focus window is
+                    // turned upright and converted to colour, in one native pass.
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setResolutionSelector(ANALYSIS_RESOLUTION)
                     .build()
@@ -172,9 +172,12 @@ fun CameraMirror(
         var lastPerson: Long? = null
         val pipeline = FramePipeline()
         val blur = BlurMeter()
+        val gate = LumaGate()
+        val focus = FocusWindow()
+        val converter = FrameConverter()
+        var last: LandmarkFrame? = null
         val executor = Executors.newSingleThreadExecutor()
         var lastMs: Long? = null
-        var reused: Bitmap? = null
         // Heard on the analysis thread, so the analyzer reads it without a lock. Severe heat slows the idle mirror first.
         var hot = false
         val power = context.getSystemService(PowerManager::class.java)
@@ -184,24 +187,23 @@ fun CameraMirror(
             proxy.use {
                 val ms = it.imageInfo.timestamp / 1_000_000
                 // An empty room outside a sign window is checked about three times a second, to save battery and heat.
+                val rot = it.imageInfo.rotationDegrees
+                val luma = gate.read(it, rot)
                 val idle = lastPerson.let { seenAt -> seenAt == null || ms - seenAt > IDLE_AFTER_MS }
-                val interval = if (analysing) ANALYSIS_INTERVAL_MS else if (idle || hot) IDLE_INTERVAL_MS else PREVIEW_INTERVAL_MS
+                // Movement in an empty room wakes the tracker at once instead of on the next slow poll.
+                val woken = luma != null && luma.energy > LumaGate.WAKE_ENERGY
+                val interval = if (analysing) ANALYSIS_INTERVAL_MS else if ((idle && !woken) || hot) IDLE_INTERVAL_MS else PREVIEW_INTERVAL_MS
                 if (!analysisDue(lastMs, ms, interval)) return@setAnalyzer
                 lastMs = ms
-                val plane = it.planes[0]
-                val packed = plane.pixelStride == 4 && plane.rowStride == it.width * 4
-                val bitmap = if (packed) {
-                    (reused?.takeIf { b -> b.width == it.width && b.height == it.height }
-                        ?: createBitmap(it.width, it.height).also { b -> reused?.recycle(); reused = b })
-                        .apply { plane.buffer.rewind(); copyPixelsFromBuffer(plane.buffer) }
-                } else {
-                    it.toBitmap()
-                }
-                val aspect = bitmap.width.toFloat() / bitmap.height
+                // Inside a sign window the tracker sees the signer's reach at full detail; elsewhere the whole frame.
+                val window = if (analysing) focus.update(last, luma?.moved) else Focus.FULL
+                val crop = converter.crop(it, rot, window)
+                val bitmap = converter.convert(it, rot, crop)
+                val aspect = crop.uprightW.toFloat() / crop.uprightH
                 // Picture quality is judged only while a sign is being read; elsewhere it costs nothing.
-                val blurry = analysing && blur.blurry(bitmap)
-                val frame = runCatching { tracker.track(bitmap, ms)?.let { raw -> pipeline.mark(raw, aspect, blurry) } }.getOrNull()
-                if (!packed) bitmap.recycle()
+                val blurry = analysing && (luma?.let { l -> blur.judge(l.sharpness) } ?: blur.blurry(bitmap))
+                val frame = runCatching { tracker.track(bitmap, ms)?.fromCrop(crop)?.let { raw -> pipeline.mark(raw, aspect, blurry) } }.getOrNull()
+                last = frame
                 if (frame?.pose != null) lastPerson = ms
                 shown = frame
                 traced = frame?.let { f -> traced.next(f, System.nanoTime()) }
@@ -219,7 +221,7 @@ fun CameraMirror(
         onDispose {
             power?.removeThermalStatusListener(thermal)
             a.clearAnalyzer()
-            executor.execute { reused?.recycle() }
+            executor.execute { converter.close() }
             executor.shutdown()
             shown = null
             traced = null

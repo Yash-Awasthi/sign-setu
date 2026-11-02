@@ -31,3 +31,7 @@ add_library(assistant SHARED assistant.cpp)
 target_link_libraries(assistant llama log)
 # Android 15 and later need native libraries aligned to 16 KB pages.
 target_link_options(assistant PRIVATE "-Wl,-z,max-page-size=16384")
+
+add_library(frames SHARED frames.cpp)
+target_link_libraries(frames jnigraphics)
+target_link_options(frames PRIVATE "-Wl,-z,max-page-size=16384")

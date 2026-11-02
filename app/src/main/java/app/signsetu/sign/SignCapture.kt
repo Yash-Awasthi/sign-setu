@@ -65,8 +65,10 @@ class SignSegment(
     val unsure: Boolean = false,
     /** Nods and shakes seen anywhere in the sign window, between signs included: negation is often not inside a sign. */
     val windowHead: Set<Head> = emptySet(),
+    /** Two readers disagree on this sign, or its runner-up is nearly as likely: the officer is told (Kinetics.kt). */
+    val ambiguous: Boolean = false,
 ) {
-    fun withWindowHead(head: Set<Head>) = SignSegment(frames, guesses, slower, context, candidates, unsure, head)
+    fun withWindowHead(head: Set<Head>) = SignSegment(frames, guesses, slower, context, candidates, unsure, head, ambiguous)
 
     val word: String? get() = guesses?.let { it.firstOrNull()?.word ?: "?" }
     /** Brows raised over most of the sign's face frames. */

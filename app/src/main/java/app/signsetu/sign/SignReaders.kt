@@ -43,7 +43,12 @@ object SignReaders {
         }.getOrNull() else null
         val shown = (if (format3) v3 ?: format1 else format1) ?: return null
         val other = if (shown === v3) format1 else v3
-        val words = if (shadow && other != null) ShadowReader(shown, other, if (shown === v3) 3 else 1) else shown.also { if (other !== shown) other?.close() }
+        val words = when {
+            shadow && other != null -> ShadowReader(shown, other, if (shown === v3) 3 else 1)
+            // The small reader costs little beside the LiteRT one; where they disagree, the officer is told.
+            shown === v3 && format1 != null -> ArbiterReader(v3, format1)
+            else -> shown.also { if (other !== shown) other?.close() }
+        }
         val spell = lang.spell?.let { base ->
             val spec = verified("$base.json")?.decodeToString()
             if (spec != null && Json.parseToJsonElement(spec).jsonObject["format"]?.jsonPrimitive?.content == "2") {
@@ -112,6 +117,22 @@ private class ShadowReader(private val shown: SignReader, private val other: Sig
     override fun close() { shown.close(); other.close() }
 }
 
+/** Two word readers on every sign: [shown]'s guesses are the reading, and its top is marked disputed when [second]
+ * is fairly sure of another word. Agreement is not averaged into the scores, which stay [shown]'s calibrated ones. */
+private class ArbiterReader(private val shown: SignReader, private val second: SignReader) : SignReader by shown {
+    override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
+        val a = shown.read(frames)
+        val top = a.firstOrNull() ?: return a
+        val b = runCatching { second.read(frames) }.getOrDefault(emptyList())
+        return if (disputes(top, b.firstOrNull())) listOf(top.copy(disputed = true)) + a.drop(1) else a
+    }
+
+    override fun close() { shown.close(); second.close() }
+}
+
+/** The second reader's top disagrees with [top] and is at least [OTHER_SURE] sure. */
+internal fun disputes(top: SignGuess, other: SignGuess?): Boolean = other != null && other.word != top.word && other.score >= OTHER_SURE
+
 /** The format 2 CTC reader as a [SignReader]: the letters read, scored by its least sure letter. With [names], the
  * reading is resolved against known names and the alternatives follow it as further guesses. */
 private class CtcSpell(private val ctc: CtcSpellReader, private val names: NameResolver? = null) : SignReader {
@@ -153,6 +174,8 @@ internal class CombinedReader(private val signs: SignReader, private val spell: 
     override val cards = signs.cards
     override val conformal = signs.conformal
     override fun sessionNames(names: Set<String>) { signs.sessionNames(names); spell.sessionNames(names) }
+    override fun letter(frames: List<LandmarkFrame>): SignGuess? =
+        (if (spell is CtcSpell) null else spell.read(frames).firstOrNull()) ?: signs.letter(frames)
     override fun embed(frames: List<LandmarkFrame>) = signs.embed(frames)
     override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
         val w = signs.read(frames)

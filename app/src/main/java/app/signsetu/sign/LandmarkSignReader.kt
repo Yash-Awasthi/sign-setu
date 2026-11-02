@@ -96,7 +96,7 @@ class LandmarkSignReader(spec: String, weights: ByteArray, override val words: M
 // Parsed once per process: a Json instance is expensive to build and the spec never changes shape.
 private val SPEC_JSON = Json { ignoreUnknownKeys = true }
 
-private const val FEATURES = 98
+internal const val FEATURES = 98
 
 /** relu(embedding) of [t] frames of [FEATURES] values into [out] (channel-major). Zero inputs, absent hands, are skipped: adding 0 changes nothing. */
 internal fun embed(x: FloatArray, w: FloatArray, bias: FloatArray, out: FloatArray, h: Int, t: Int, features: Int = FEATURES) {
