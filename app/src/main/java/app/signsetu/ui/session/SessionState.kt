@@ -33,6 +33,8 @@ sealed interface Pending {
         val meant: String? = null,
         /** Written by the AI counsellor while the officer watched (Counsellor.kt). */
         val byAi: Boolean = false,
+        /** Sign order from the station brain's gloss, when it answered in time; null signs in the phone's own order. */
+        val order: List<String>? = null,
     ) : Pending
     data class Cards(val cardIds: List<String>) : Pending
     /** [choices] are the pictures offered, the entry's among them; fewer than two is a plain Yes or No. */

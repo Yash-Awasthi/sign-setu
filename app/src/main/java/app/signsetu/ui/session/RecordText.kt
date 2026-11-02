@@ -50,6 +50,10 @@ fun promptText(res: Resources, content: ContentBundle, lang: String, r: PromptRe
     )
 }
 
+/** A note's text as shown: speech the app heard is marked as its reading. */
+fun noteText(res: Resources, text: String?): String? =
+    if (text != null && text.startsWith(HEARD_PREFIX)) res.getString(R.string.voice_heard_note, text.removePrefix(HEARD_PREFIX)) else text
+
 fun systemText(res: Resources, text: String?): String = when {
     text == SYSTEM_LANGUAGE_FINDER -> res.getString(R.string.officer_find_language)
     text == SYSTEM_DRAWING -> res.getString(R.string.officer_draw)

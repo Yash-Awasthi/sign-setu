@@ -28,6 +28,14 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | `ISL Sample 1` VRM model by Leo | VRM Public License 1.0, credit required, redistribution and avatar use reserved | Ship only with the author's written licence | The character; clip kinematics in `avatar/src/clip.ts` from the SignSetu avatar module (Lilesh Lahre) |
 | | ISL-CSLTR sentence videos | CC BY 4.0 | Data | Recorded sentence clips (`clips.json`) through `tools/text2isl` |
 | | Media3 ExoPlayer | Apache-2.0 | Ship | Recorded speech |
+| | Rive Android runtime 10.4 | MIT | Ship | Drives a department-supplied `.riv` character from the rig; loads only when chosen |
+| Evidence export | ZXing core 3.5 | Apache-2.0 | Ship | QR code on the verification seal page |
+| Station brain (`brain/`, optional) | FastAPI, Uvicorn | MIT, BSD-3-Clause | Run on the station computer | HTTPS API on port 8000 |
+| | faster-whisper with Whisper `small` | MIT | Run on the station computer | Speech to text, INT8 on the CPU |
+| | IndicTrans2 distilled 200M (AI4Bharat) | MIT | Run on the station computer | English and Indian-language translation |
+| | NLLB-200 distilled 600M (Meta) | CC BY-NC 4.0 | Run only with legal approval | Fallback translation and Chhattisgarhi; non-commercial clause |
+| | Ollama with Gemma 3 1B | MIT; Gemma Terms of Use | Run on the station computer | Local language model for sign order and chat |
+| | Indic NLP Library | MIT | Run on the station computer | Script conversion for IndicTrans2 |
 | | Cartesia | Service terms: free plans give no commercial licence; check the plan the key is on before release | Data, and the gateway's `/v1/speak` | Recorded speech for English, Hindi and nine other languages (Cartesia) (`tools/content/build_natural_audio.py`) and live speech of typed text; keys stay on the gateway, never in the app |
 | | Indic Parler-TTS (AI4Bharat) | Apache-2.0 | Data | Recorded speech for Assamese, Nepali, Odia and Urdu (`tools/content/build_audio.py`) |
 | Officer colour themes | Mihon colour schemes | Apache-2.0 | Ship (values) | Five light and dark schemes copied into `ui/theme/MihonPalettes.kt` |
@@ -56,7 +64,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | ISL emergency-word video set (Mendeley 2vfdm42337) | Per dataset | Not used | Hands-only close-ups; a reader trained on them did not carry over to full-body signers (`tools/ml/EVAL.md`) |
 | | Indian Sign Language video dataset (Prasad Shet, Kaggle) | MIT | Data | 60 words by 4 signers; landmarks join INCLUDE to train `sign_reader` (`tools/ml/prepare_isl_more.py`), and 47 of its words are retargeted onto the character (`tools/isl/retarget_kaggle.py`) |
 | | ISL-Fingerspelling (ISH News; WSLP at AACL-IJCNLP 2025) | CC BY-NC 4.0 | Data | 1,308 fingerspelled segments by 3 signers; trains `isl_spell_ctc` (`tools/ml/prepare_isl_fingerspell.py`) |
-| | sherpa-onnx, Vosk | Apache-2.0 | Not used | Offline speech recognition was considered; the app has no microphone permission |
+| | sherpa-onnx, Vosk | Apache-2.0 | Not used | On-phone speech recognition was considered; speech goes to the station brain instead |
 | Storage and crypto | SQLCipher for Android | BSD-style | Ship | Room 3 supported from 4.18.0 |
 | Export | PdfBox-Android 2.0.27.0 | Apache-2.0 | Ship | AES-256 password-protected PDF export; no recent release, so watch advisories. Its BouncyCastle is held at 1.86 by a build constraint because 1.72 has known critical vulnerabilities |
 | | BouncyCastle (bcprov, bcpkix, bcutil) 1.86 | MIT-style Bouncy Castle licence | Ship | Pulled in for PdfBox-Android; pinned to 1.86 for the vulnerability fix above |

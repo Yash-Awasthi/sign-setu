@@ -246,10 +246,15 @@ internal fun SignPredictions(
 /** While the subject signs: the reader's current top 3 and the letters held so far, plainly marked as not final.
  * Nothing here can be tapped; the reading to accept comes when the window closes. */
 @Composable
-internal fun LiveReading(live: kotlinx.coroutines.flow.StateFlow<LiveRead>, modifier: Modifier = Modifier) {
+internal fun LiveReading(live: kotlinx.coroutines.flow.StateFlow<LiveRead>, segments: List<SignSegment> = emptyList(), modifier: Modifier = Modifier) {
     val now by live.collectAsStateWithLifecycle()
-    if (now.guesses.isEmpty() && now.spelled.isEmpty()) return
+    if (now.guesses.isEmpty() && now.spelled.isEmpty() && segments.isEmpty()) return
     Column(modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        // The sentence so far, one word per closed sign ("…" while the reader is still on it), in signing order.
+        if (segments.isNotEmpty()) Text(
+            stringResource(R.string.reading_so_far, segments.joinToString("  ") { s -> s.guesses?.let { (s.word ?: "?").replace('_', ' ') + if (s.ambiguous) "?" else "" } ?: "…" }),
+            style = MaterialTheme.typography.titleSmall, maxLines = 2,
+        )
         if (now.guesses.isNotEmpty()) Text(
             stringResource(R.string.reading_live, now.guesses.joinToString("  ·  ") { "${it.word.replace('_', ' ')} ${(it.score * 100).toInt()}%" }),
             style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,

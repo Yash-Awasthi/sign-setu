@@ -195,7 +195,7 @@ fun AppRoot(container: AppContainer) {
         onDispose {}
     }
 
-    CompositionLocalProvider(LocalContentRepository provides container.content, LocalOnlineAssistant provides container.onlineAssistant, LocalSentenceHelper provides container.sentenceModel, LocalMotion provides motionOn) { NoPersonalisedLearning {
+    CompositionLocalProvider(LocalContentRepository provides container.content, LocalOnlineAssistant provides container.onlineAssistant, app.signsetu.ui.components.LocalBrain provides container.brain, LocalSentenceHelper provides container.sentenceModel, LocalMotion provides motionOn) { NoPersonalisedLearning {
         SignSetuTheme(dark = dark, theme = settings?.colorTheme ?: ColorTheme.EMERALD, amoled = settings?.amoled == true) {
             val r = repo
             val c = content

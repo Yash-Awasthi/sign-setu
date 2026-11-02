@@ -93,7 +93,7 @@ The ISL name speller (`isl_spell_ctc`) reads both hands at 15 frames a second an
 2. Ship the model under `app/src/main/assets/content/models/`, list it with `python tools/content/build_content.py --manifest-only`, and load it only when its hash matches.
 3. Return it from `SignReaders.create` (or `LandmarkTrackers.create` in the release source set). The app creates it once, off the main thread.
 4. Provide the label list and an updated `sign_words.json` so context limiting and picture choices keep working.
-5. Native libraries are aligned to 16 KB pages; no new permission (the build gate refuses RECORD_AUDIO, background location, and in `standard` every discovery and location permission); every new artifact is added to `gradle/verification-metadata.xml` and `app/gradle.lockfile`, scans clean with OSV for anything that ships, and is listed in [open source](08-open-source.md) with its licence and attribution.
+5. Native libraries are aligned to 16 KB pages; no new permission (the build gate refuses background location, and in `standard` every discovery and location permission); every new artifact is added to `gradle/verification-metadata.xml` and `app/gradle.lockfile`, scans clean with OSV for anything that ships, and is listed in [open source](08-open-source.md) with its licence and attribution.
 
 ## 7. Budgets
 

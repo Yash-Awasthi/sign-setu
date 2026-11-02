@@ -230,7 +230,7 @@ fun Stage(
     val typed = (pending as? Pending.FreeText)?.takeIf { stageLine == null && !it.asksChoice }
     val plan = remember(stageLine, typed, captionEnglish, shownText, content) {
         stageLine?.let { it.plan ?: linePlan(content, it.english, shownText, CAPTION_MODES).takeIf { p -> p.gesture != null } }
-            ?: typed?.let { content.planText(it.text, it.modes) }
+            ?: typed?.let { content.planText(it.text, it.modes, it.order) }
             ?: captionEnglish?.let {
                 val from = (pending as? Pending.Ask)?.question?.text?.get(lang)?.let { q -> shownText.lastIndexOf(q).coerceAtLeast(0) } ?: 0
                 linePlan(content, it, shownText, if (pending is Pending.Ask) askModes else CAPTION_MODES, from)

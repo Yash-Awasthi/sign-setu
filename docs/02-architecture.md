@@ -72,7 +72,7 @@ Versions are pinned in `gradle/libs.versions.toml`, locked in `app/gradle.lockfi
 | Authentication | Platform `BiometricPrompt` and `KeyguardManager`; Android Keystore |
 | Serialization | kotlinx.serialization JSON 1.12.0; coroutines 1.11.0 |
 
-Not used: dependency injection frameworks, Firebase, analytics or crash SDKs, microphone APIs, camera capture or recording. The only WebView is the character's (`ui/avatar/Avatar.kt`), which loads the bundled avatar page and blocks every network request.
+Not used: dependency injection frameworks, Firebase, analytics or crash SDKs, camera capture or recording. The microphone is used only by the voice sheet (`voice/VoiceCapture.kt`): push-to-talk, 16 kHz PCM in memory, sent once to the paired station brain (`net/BrainClient.kt`) and wiped. The only WebView is the character's (`ui/avatar/Avatar.kt`), which loads the bundled avatar page and blocks every network request.
 
 ## 4. Runtime structure
 
@@ -568,5 +568,5 @@ sequenceDiagram
 
 - `applicationId` `in.signsetu`; code namespace `app.signsetu` (`in` is a Kotlin keyword). Version 0.8.3, code 19. Flavors `standard` (reference) and `nearby` (`.nearby` suffix, Play services).
 - Release builds: R8 with resource shrinking, `android.util.Log` calls stripped, native libraries and models stored uncompressed. Default ABIs arm64-v8a and x86_64 (universal); `-Pabi=arm64-v8a` builds the phone APK. Gradle builds unsigned APKs; CI aligns and signs them with the release key from repository secrets and publishes them ([README](README.md#5-build-release-and-operation), section 5).
-- Build gates on every variant before packaging: `check<Variant>Permissions` fails on RECORD_AUDIO or background location in any build and on discovery and location permissions in `standard`.
+- Build gates on every variant before packaging: `check<Variant>Permissions` fails on background location in any build and on discovery and location permissions in `standard`.
 - The gateway (`gateway/`, Go and PostgreSQL) enrols devices, proxies assistant and speech calls, and gives the administrator the device list, revocation and the audit trail. The avatar module (`avatar/`, TypeScript, three.js 0.160 and three-vrm 3.0) plays motions on the VRM character; it builds to `app/src/main/assets/avatar/avatar.js`, which CI checks is current. The reviewer portal (`portal/`, Vite+, React 19, TypeScript 7) renders every motion with that same module.

@@ -100,7 +100,7 @@ With the online assistant on, a paired stage can host the **AI counsellor** for 
 
 | Control | Description |
 | --- | --- |
-| Offline | Every feature works with no connection; no RECORD_AUDIO or background location in any build and no location in `standard`, enforced by a build gate |
+| Offline | Every feature works with no connection; speech to text needs the station brain on the local network; no background location in any build and no location in `standard`, enforced by a build gate |
 | Encrypted record | SQLCipher (AES-256) under a random key wrapped by an Android Keystore key that works only after the phone's own lock |
 | Relock | After five minutes away from the app, thirty inside a session; a relock, crash or restart always asks for the credential |
 | Retention | Sessions are deleted once idle past 24 hours by default, or a set period of 4 to 72 hours, or kept until deleted if the officer chooses; while the app is locked, everything is wiped once even the newest session is past retention; "Delete all data" destroys the keys |

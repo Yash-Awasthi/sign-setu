@@ -70,6 +70,7 @@ import app.signsetu.R
 import androidx.compose.runtime.mutableIntStateOf
 import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.data.content.ContentBundle
+import app.signsetu.data.content.isDevanagari
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.Question
 import app.signsetu.data.content.SignLanguage
@@ -166,6 +167,16 @@ fun OfficerPane(
     var logNote by rememberSaveable { mutableStateOf("") }
     var boardDraft by rememberSaveable { mutableStateOf<String?>(null) }
     var ownText by rememberSaveable { mutableStateOf("") }
+    val brain = app.signsetu.ui.components.LocalBrain.current
+    // The brain's sign order for the text being typed, asked for once typing pauses; the phone's order stands without it.
+    var glossed by remember { mutableStateOf<Pair<String, List<String>>?>(null) }
+    LaunchedEffect(ownText, brain) {
+        val t = ownText.trim()
+        if (brain == null || !brain.paired || t.length < 3 || glossed?.first == t) return@LaunchedEffect
+        kotlinx.coroutines.delay(GLOSS_PAUSE_MS)
+        brain.gloss(t, if (t.isDevanagari()) "hi" else "en", content.words.keys)?.let { glossed = t to it }
+    }
+    var voiceOpen by remember { mutableStateOf(false) }
     var suggestion by remember { mutableStateOf<Suggestion?>(null) }
     var thinking by remember { mutableStateOf(false) }
     var noHelp by remember { mutableStateOf(false) }
@@ -216,7 +227,7 @@ fun OfficerPane(
     val prepareTyped = {
         if (ownText.isNotBlank() && (ui.pending == null || ui.pending is Pending.FreeText)) {
             val caption = suggestion?.caption ?: if (draftOff) null else hindi(ownText)
-            vm.prepare(Pending.FreeText(ownText.trim(), attached.toList(), typedModes(modes, islReorder), caption))
+            vm.prepare(Pending.FreeText(ownText.trim(), attached.toList(), typedModes(modes, islReorder), caption, order = glossed?.takeIf { it.first == ownText.trim() }?.second))
             ownText = ""
             attached.clear()
             suggestion = null
@@ -346,7 +357,7 @@ fun OfficerPane(
 
         if (counsel != Counsel.Off) CounsellorPanel(counsel, vm.counsellor, onResume = startCounsel)
         else if (autoConv != Conv.Off && ownText.isEmpty()) AutoPanel(vm.auto, ui, content, officerLang)
-        if (ui.reading != null) LiveReading(vm.live)
+        if (ui.reading != null) LiveReading(vm.live, ui.reading)
         pendingReading(ui.events)?.let { ev -> ui.signed[ev.id]?.let { segs ->
             val reading = rememberReading(ev.id, segs, ui.pending, content, subjectNames(ui.events, content, officerLang), subjectDetails(ui.events, content, officerLang), ui.speakerGender)
             SignPredictions(ev.id, segs, onPick = { words, sentence -> vm.acceptSigned(ev.id, words, sentence) }, reading = reading, cameraText = ev.text, onCorrect = { vm.correctSigned(ev.id, it) })
@@ -387,6 +398,7 @@ fun OfficerPane(
             onClear = { vm.prepare(null) },
             onSend = send,
             onRead = read,
+            onVoice = brain?.takeIf { it.paired }?.let { { voiceOpen = true } },
             run = runQuestions,
             onRunRemove = { q -> run = run - q.id },
             onAskNow = { q -> vm.prepare(Pending.Ask(q)); send() },
@@ -470,6 +482,13 @@ fun OfficerPane(
             dismissButton = { TextButton(onClick = { askSensitive = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
+    if (voiceOpen && brain != null) VoiceSheet(brain, officerLang, subjectLang, onHeard = { who, heard ->
+        when (who) {
+            // The officer's words wait in the text box to be checked; nothing is sent by voice alone.
+            Speaker.OFFICER -> { ownText = heard.text; voiceOpen = false }
+            Speaker.SUBJECT -> vm.heard(heard.text, heard.lang)
+        }
+    }, onDismiss = { voiceOpen = false })
     if (askEnd) {
         if (saveAs.isEmpty()) saveAs = ui.session.title ?: defaultTitle(res, ui.session.startedAt)
         val startExport: () -> Unit = {
@@ -596,3 +615,6 @@ fun backAction(page: Int, secondScreenShowing: Boolean) = when {
     secondScreenShowing -> BackAction.ASK_LEAVE
     else -> BackAction.LEAVE
 }
+
+/** Typing pause after which the station brain is asked for the text's sign order. */
+private const val GLOSS_PAUSE_MS = 700L

@@ -179,6 +179,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                 ModelImport(models, ModelLabels.ASSISTANT)
             }
             // A separate model and import from the assistant's, which serves the automation agents.
+            app.signsetu.ui.components.LocalBrain.current?.let { b -> Group(R.string.brain_group) { BrainItems(b) } }
             Group(R.string.settings_sentence_helper) {
                 ModelImport(sentenceModel, ModelLabels.SENTENCE)
             }

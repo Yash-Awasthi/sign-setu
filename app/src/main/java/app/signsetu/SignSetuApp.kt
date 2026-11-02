@@ -21,6 +21,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import app.signsetu.data.content.ContentRepository
 import app.signsetu.data.session.DatabaseKey
 import app.signsetu.data.session.DeviceSeal
+import app.signsetu.net.BrainClient
 import app.signsetu.data.session.RetentionJob
 import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
@@ -79,6 +80,8 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     val sentenceModel = ModelStore(app, "sentence", ModelStore.KNOWN_SENTENCE_MODELS)
     val onlineAssistant = OnlineAssistant({ settings.current().onlineAssistant }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, ""), KeystoreVault(app, "assist.bin", "signsetu.assist.key")) { isOnline(app) }
     val assistant = Assistant(models, onlineAssistant)
+    /** The station's local brain, when paired (Settings, Local AI brain). */
+    val brain = BrainClient(KeystoreVault(app, "brain.bin", "signsetu.brain.key"))
 
     /** Landmark tracking, created per build type; without it the stage shows a plain mirror. */
     private val tracker = lazy { LandmarkTrackers.create(app) }

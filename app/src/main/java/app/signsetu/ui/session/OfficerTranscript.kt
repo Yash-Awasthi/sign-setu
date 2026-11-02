@@ -113,7 +113,7 @@ internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Ma
             Box(Modifier.animateItem()) {
                 when (e.type) {
                     EventType.QUESTION_SHOWN -> Shown(e, by[e.id], onAskAgain?.takeIf { e.itemId != null }?.let { ask -> { ask(e) } })
-                    EventType.NOTE -> Aside(e.text.orEmpty(), note = true)
+                    EventType.NOTE -> Aside(noteText(LocalResources.current, e.text).orEmpty(), note = true)
                     EventType.SYSTEM -> Aside(systemText(e.text), note = false)
                     EventType.LINK -> Aside(linkText(e).orEmpty(), note = false)
                     else -> Answered(

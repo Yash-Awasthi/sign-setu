@@ -118,6 +118,8 @@ internal fun Dock(
     onClear: () -> Unit,
     onSend: () -> Unit,
     onRead: () -> Unit,
+    /** Opens the voice sheet; null without a paired brain. */
+    onVoice: (() -> Unit)? = null,
     run: List<Question> = emptyList(),
     onRunRemove: (Question) -> Unit = {},
     onRunAsk: (Question) -> Unit = {},
@@ -270,6 +272,7 @@ internal fun Dock(
                 canSend = text.isNotBlank() || pending != null || run.isNotEmpty(),
                 onSend = onSend,
                 onRead = onRead.takeIf { canRead },
+                onVoice = onVoice,
                 visualTransformation = rememberSignabilityTint(content),
             )
         }
@@ -308,6 +311,7 @@ private fun Composer(
     canSend: Boolean,
     onSend: () -> Unit,
     onRead: (() -> Unit)?,
+    onVoice: (() -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -335,6 +339,9 @@ private fun Composer(
                     field()
                 },
             )
+        }
+        if (text.isEmpty()) onVoice?.let { voice ->
+            IconButton(onClick = voice, modifier = Modifier.size(48.dp)) { Icon(painterResource(R.drawable.ic_mic), contentDescription = stringResource(R.string.voice_title)) }
         }
         // Reading signs is the other half of the conversation, so it sits beside Send; typed text goes first.
         onRead?.let { read ->

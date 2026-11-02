@@ -95,7 +95,7 @@ private val PAUSE = Gesture("pause", listOf(Key(0f), Key(0.6f)))
 
 /** Turns free text into one gesture, word by word: a sign or gesture where the vocabulary has one, otherwise
  * fingerspelling. Hindi is spelled akshara by akshara on the ISL two-handed alphabet. */
-fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
+fun ContentBundle.planText(text: String, modes: Set<SignMode>, order: List<String>? = null): TextPlan {
     val parts = mutableListOf<Gesture>()
     val beats = mutableListOf<WordBeat>()
     var t = 0f
@@ -124,7 +124,15 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>): TextPlan {
     val english = tokens.any { it.second in ENGLISH_ONLY }
     fun grammar(i: Int) = (tokens[i].second in FILLER && (i != tokens.lastIndex || english)) || (isl && tokens[i].second in ISL_UNSIGNED)
     fun entryOf(i: Int) = tokens[i].second.let { w -> words[w]?.takeIf { !grammar(i) } }
-    val order = tokens.indices.let { all -> if (isl && SignMode.TYPED_ORDER !in modes) all.sortedBy { islRank(tokens[it].second, entryOf(it)) } else all }
+    // A gloss order from the station brain (BrainClient.gloss) leads where given; words it left out keep the local
+    // rank after it, so the brain can reorder signs but never drop or add one.
+    val order = tokens.indices.let { all ->
+        when {
+            !isl || SignMode.TYPED_ORDER in modes -> all
+            order != null -> all.sortedBy { i -> order.indexOf(tokens[i].second).takeIf { it >= 0 } ?: (order.size + islRank(tokens[i].second, entryOf(i))) }
+            else -> all.sortedBy { islRank(tokens[it].second, entryOf(it)) }
+        }
+    }
     // A sentence break inside the text is a pause in the signing: without it two sentences read as one long run.
     val sentenceEnd = tokens.indices.filter { i ->
         i < tokens.lastIndex && text.substring(tokens[i].first.last + 1, tokens[i + 1].first.first).any { it in ".।!?" }

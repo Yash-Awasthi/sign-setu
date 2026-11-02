@@ -16,7 +16,7 @@ internal val WireJson = Json { classDiscriminator = "t"; ignoreUnknownKeys = fal
 @Serializable
 sealed interface WirePending {
     @Serializable @SerialName("ask") data class Ask(val questionId: String) : WirePending
-    @Serializable @SerialName("text") data class FreeText(val text: String, val cardIds: List<String>, val modes: Set<SignMode>, val caption: String? = null, val meant: String? = null) : WirePending
+    @Serializable @SerialName("text") data class FreeText(val text: String, val cardIds: List<String>, val modes: Set<SignMode>, val caption: String? = null, val meant: String? = null, val order: List<String>? = null) : WirePending
     @Serializable @SerialName("cards") data class Cards(val cardIds: List<String>) : WirePending
     @Serializable @SerialName("back") data class ShowBack(val lexiconId: String, val choices: List<String> = emptyList()) : WirePending
     @Serializable @SerialName("phrase") data class PhraseAsk(val phraseId: String, val slotCard: String) : WirePending

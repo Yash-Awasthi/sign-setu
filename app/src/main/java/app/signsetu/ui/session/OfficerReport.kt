@@ -109,6 +109,7 @@ internal fun sessionLog(events: List<SessionEvent>) = events.joinToString("\n") 
 
 internal fun eventDetail(res: Resources, e: SessionEvent, by: Map<Long, ShownBy> = emptyMap(), idle: Set<Long> = emptySet()): String = when {
     e.type == EventType.SYSTEM -> systemText(res, e.text)
+    e.type == EventType.NOTE && e.text?.startsWith(HEARD_PREFIX) == true -> noteText(res, e.text).orEmpty()
     e.type == EventType.ANSWER_SIGNED -> "${signedDisplay(res, e.text)} (${res.getString(signedMark(e))})"
     e.drawingId != null -> res.getString(R.string.report_drawing)
     else -> (linkText(res, e) ?: e.text.orEmpty()) + autoSuffix(res, e, by, idle)

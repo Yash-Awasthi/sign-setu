@@ -170,7 +170,7 @@ fun rememberPairedStage(
 
 fun Pending.toWire(): WirePending = when (this) {
     is Pending.Ask -> WirePending.Ask(question.id)
-    is Pending.FreeText -> WirePending.FreeText(text, cardIds, modes, caption, meant)
+    is Pending.FreeText -> WirePending.FreeText(text, cardIds, modes, caption, meant, order)
     is Pending.Cards -> WirePending.Cards(cardIds)
     is Pending.ShowBack -> WirePending.ShowBack(entry.id, choices)
     is Pending.PhraseAsk -> WirePending.PhraseAsk(phrase.id, slot.card)
@@ -182,7 +182,7 @@ fun Pending.toWire(): WirePending = when (this) {
 /** Null for an ID this build's content does not have; the stage then shows nothing rather than a guess. */
 fun WirePending.resolve(content: ContentBundle): Pending? = when (this) {
     is WirePending.Ask -> content.questions.firstOrNull { it.id == questionId }?.let { Pending.Ask(it) }
-    is WirePending.FreeText -> if (cardIds.all { it in content.cards }) Pending.FreeText(text, cardIds, modes, caption, meant = meant?.takeIf { it in cardIds }) else null
+    is WirePending.FreeText -> if (cardIds.all { it in content.cards }) Pending.FreeText(text, cardIds, modes, caption, meant = meant?.takeIf { it in cardIds }, order = order?.take(64)) else null
     is WirePending.Cards -> if (cardIds.all { it in content.cards }) Pending.Cards(cardIds) else null
     is WirePending.ShowBack -> content.lexicon[lexiconId]?.takeIf { choices.all { c -> c in content.cards } }?.let { Pending.ShowBack(it, choices) }
     is WirePending.PhraseAsk -> content.phrases.firstOrNull { it.id == phraseId }?.let { p -> p.slots.firstOrNull { it.card == slotCard }?.let { Pending.PhraseAsk(p, it) } }

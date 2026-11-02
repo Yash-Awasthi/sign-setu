@@ -33,8 +33,8 @@ android {
         applicationId = "in.signsetu"
         minSdk = 29
         targetSdk = 37
-        versionCode = 19
-        versionName = "0.8.3"
+        versionCode = 20
+        versionName = "0.8.4"
         buildConfigField("long", "BUILD_EPOCH_DAY", "${providers.of(EpochDay::class.java) {}.get()}L")
         buildConfigField("boolean", "SECURE_SCREEN", "$secureScreen")
         buildConfigField("boolean", "TEST_UNLOCKED", "false")
@@ -127,8 +127,8 @@ androidComponents {
         val check = tasks.register("check${name}Permissions") {
             inputs.file(manifest)
             doLast {
+                // RECORD_AUDIO is allowed for push-to-talk to the station brain only (VoiceSheet); audio never leaves memory or the LAN.
                 val always = listOf(
-                    "android.permission.RECORD_AUDIO",
                     "android.permission.ACCESS_BACKGROUND_LOCATION",
                 )
                 val discovery = listOf(

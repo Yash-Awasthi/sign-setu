@@ -928,6 +928,12 @@ class SessionViewModel(
         show()
     }
 
+    /** The person's speech as the brain heard it: the app's reading for the officer, never the person's answer. */
+    fun heard(text: String, lang: String) {
+        if (text.isBlank()) return
+        viewModelScope.launch { repo.log(sessionId, EventType.NOTE, EventSource.MACHINE, lang, text = "$HEARD_PREFIX${text.trim().take(TEXT_CAP)}") }
+    }
+
     fun addNote(text: String) {
         if (text.isBlank()) return
         viewModelScope.launch { repo.log(sessionId, EventType.NOTE, EventSource.OFFICER, officerLang, text = text.trim()) }
@@ -987,6 +993,9 @@ class SessionViewModel(
 /** How long before a sign window opens and after it closes a nod or shake still counts for its reading. */
 private const val HEAD_MARGIN_MS = 5_000L
 private const val HEAD_KEEP_MS = 30_000L
+
+/** Notes the app writes for speech it heard; RecordText shows them as a reading. */
+const val HEARD_PREFIX = "heard: "
 
 /** Mid-sign reading for the officer: the reader's top 3 on the latest frames, and letters committed by holding. */
 @androidx.compose.runtime.Immutable
