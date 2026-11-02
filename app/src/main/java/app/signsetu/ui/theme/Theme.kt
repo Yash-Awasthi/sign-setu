@@ -2,6 +2,7 @@ package app.signsetu.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -16,6 +17,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.signsetu.R
@@ -85,6 +90,8 @@ fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), theme: ColorTheme = Col
         LocalInk provides if (dark) palette.inkDark else palette.inkLight,
         LocalCall provides palette.call,
         LocalHighContrast provides (theme == ColorTheme.CONTRAST),
+        // Officer screens keep their dense layout; only the touch area around each target grows to 56 dp.
+        LocalViewConfiguration provides wideTouch(LocalViewConfiguration.current),
     ) {
         MaterialTheme(
             colorScheme = if (!dark) palette.light else if (amoled) palette.dark.amoled() else palette.dark,
@@ -95,14 +102,28 @@ fun SignSetuTheme(dark: Boolean = isSystemInDarkTheme(), theme: ColorTheme = Col
     }
 }
 
-/** The stage keeps the light scheme in both themes; only its backdrop dims at night. */
+/** Smallest touch target on the subject's screens: a child's or a shaking hand misses 48 dp targets. */
+val SubjectTouchTarget = 56.dp
+
+/** Custom tap targets are expanded to the view configuration's minimum, Material controls to their own local. */
+@Composable
+private fun wideTouch(base: ViewConfiguration): ViewConfiguration =
+    if (base.minimumTouchTargetSize.width >= SubjectTouchTarget) base
+    else remember(base) { object : ViewConfiguration by base { override val minimumTouchTargetSize = DpSize(SubjectTouchTarget, SubjectTouchTarget) } }
+
+/** The stage keeps the light scheme in both themes; only its backdrop dims at night. Every Material control on it
+ * reserves at least [SubjectTouchTarget] to touch. */
 @Composable
 fun SubjectTheme(content: @Composable () -> Unit) {
-    if (LocalHighContrast.current) {
-        CompositionLocalProvider(LocalStageColors provides SunStageColors, LocalAnswerColors provides SunAnswerColors) {
+    val touch = wideTouch(LocalViewConfiguration.current)
+    val body: @Composable () -> Unit = {
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides SubjectTouchTarget, LocalViewConfiguration provides touch) {
             MaterialTheme(colorScheme = StageScheme, typography = SubjectType, shapes = AppShapes, content = content)
         }
+    }
+    if (LocalHighContrast.current) {
+        CompositionLocalProvider(LocalStageColors provides SunStageColors, LocalAnswerColors provides SunAnswerColors, content = body)
     } else {
-        MaterialTheme(colorScheme = StageScheme, typography = SubjectType, shapes = AppShapes, content = content)
+        body()
     }
 }

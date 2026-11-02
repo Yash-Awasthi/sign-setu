@@ -1,7 +1,6 @@
 package app.signsetu.ui.session
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
@@ -61,13 +60,12 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.or
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
-import java.util.Locale
 
 /** A picture card on the express board; its words come from the card's reviewed labels. */
 private class ExpressCard(val id: String, val tab: String, val accent: Color, val ink: Color)
 
 /** The board's tabs are content card categories, so their titles exist in every language. */
-private val Tabs = listOf("feelings", "needs", "people", "places", "answers", "body")
+private val Tabs = listOf("feelings", "needs", "alert", "safety", "people", "places", "answers", "body")
 
 /** The things a frightened child or a person who cannot speak most needs to say. */
 private val ExpressCards = listOf(
@@ -101,6 +99,24 @@ private val ExpressCards = listOf(
     ExpressCard("dont_know", "answers", Color(0xFFEFE3D3), Color(0xFF4F4539)),
     ExpressCard("dont_understand", "answers", Color(0xFFFFF3CD), Color(0xFF664D03)),
     ExpressCard("thank_you", "answers", Color(0xFFE0F2FE), Color(0xFF0369A1)),
+    ExpressCard("pain", "alert", Color(0xFFFFD4D4), Color(0xFF8B1D1D)),
+    ExpressCard("sick", "alert", Color(0xFFFFE0D0), Color(0xFF8C2E00)),
+    ExpressCard("doctor", "alert", Color(0xFFCCFBF1), Color(0xFF115E59)),
+    ExpressCard("hospital", "alert", Color(0xFFFFE4E6), Color(0xFF9F1239)),
+    ExpressCard("medicine", "alert", Color(0xFFCCFBF1), Color(0xFF115E59)),
+    ExpressCard("toilet", "alert", Color(0xFFE8DEFF), Color(0xFF5521B5)),
+    ExpressCard("cold", "alert", Color(0xFFD8F3FF), Color(0xFF026AA7)),
+    ExpressCard("hot", "alert", Color(0xFFFFEDD5), Color(0xFF9A3412)),
+    ExpressCard("break", "alert", Color(0xFFEFE3D3), Color(0xFF4F4539)),
+    ExpressCard("help", "safety", Color(0xFFFFCDD2), Color(0xFFB71C1C)),
+    ExpressCard("stop", "safety", Color(0xFFFFCDD2), Color(0xFFB71C1C)),
+    ExpressCard("police", "safety", Color(0xFFD6E4FF), Color(0xFF1D3B8B)),
+    ExpressCard("scared", "safety", Color(0xFFFFF1C2), Color(0xFF8C5800)),
+    ExpressCard("alone", "safety", Color(0xFFEDE9FE), Color(0xFF5B21B6)),
+    ExpressCard("someone_else", "safety", Color(0xFFFEE2E2), Color(0xFF991B1B)),
+    ExpressCard("home", "safety", Color(0xFFFEF3C7), Color(0xFF92400E)),
+    ExpressCard("knife", "safety", Color(0xFFF3F4F6), Color(0xFF374151)),
+    ExpressCard("okay", "safety", Color(0xFFD1F2D9), Color(0xFF1B6B32)),
     ExpressCard("head", "body", Color(0xFFFFE4E6), Color(0xFF9F1239)),
     ExpressCard("throat", "body", Color(0xFFFEF3C7), Color(0xFF92400E)),
     ExpressCard("stomach", "body", Color(0xFFFFECCC), Color(0xFF8C5500)),
@@ -109,18 +125,11 @@ private val ExpressCards = listOf(
     ExpressCard("back", "body", Color(0xFFF3E8FF), Color(0xFF6B21A8)),
 )
 
-/** Speaks a tapped card aloud in the subject's language; silent when the phone has no voice for it. */
+/** Speaks a tapped card aloud in the subject's language; silent when the phone has no offline voice for it. */
 private class CardVoice(context: Context) {
-    private var ready = false
-    private val tts: TextToSpeech = TextToSpeech(context.applicationContext) { ready = it == TextToSpeech.SUCCESS }
-
-    fun speak(text: String, lang: String) {
-        val locale = if (lang == "en") Locale.ENGLISH else Locale.forLanguageTag("$lang-IN")
-        if (!ready || tts.setLanguage(locale) < TextToSpeech.LANG_AVAILABLE) return
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "card")
-    }
-
-    fun shutdown() = tts.shutdown()
+    private val voice = app.signsetu.ui.components.OfflineVoice(context)
+    fun speak(text: String, lang: String) { voice.speak(text, lang) }
+    fun shutdown() = voice.shutdown()
 }
 
 /** The full-screen express board: large picture cards by category, each spoken aloud and sent as an answer. */
@@ -131,6 +140,8 @@ fun FullChildMuteCommunicationBoard(
     chosenCard: String?,
     onCard: (String) -> Unit,
     onDismiss: () -> Unit,
+    /** A touch on the body map; without it the body tab shows only its cards. */
+    onBodyTouch: ((BodyTouch) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     var tab by remember { mutableStateOf(Tabs.first()) }
@@ -192,12 +203,15 @@ fun FullChildMuteCommunicationBoard(
                 }
             }
 
+            val map = tab == "body" && onBodyTouch != null
+            // The map takes most of the height; the body cards stay below it for a named answer.
+            if (map) HurtMap({ t -> haptic.performHapticFeedback(HapticFeedbackType.LongPress); onBodyTouch(t) }, Modifier.fillMaxWidth().weight(0.62f))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(if (map) 0.38f else 1f),
             ) {
                 items(ExpressCards.filter { it.tab == tab }, key = { it.id }) { card ->
                     val chosen = chosenCard == card.id

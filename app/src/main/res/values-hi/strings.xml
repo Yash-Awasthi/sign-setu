@@ -730,4 +730,24 @@
     <string name="check_report_unsigned">रिपोर्ट पर मुहर है, पर डिवाइस हस्ताक्षर नहीं है।</string>
     <string name="check_report_differs">यह रिपोर्ट बनने के बाद इस फ़ोन का सत्र बदला है। ताज़ा रिकॉर्ड के लिए फिर से निर्यात करें।</string>
     <string name="check_report_no_seal">इस रिपोर्ट में जाँचने को कोई मुहर नहीं है।</string>
+    <string name="hurt_map">शरीर। जहाँ दर्द है वहाँ छुएँ।</string>
+    <string name="hurt_front">आगे</string>
+    <string name="hurt_back">पीछे</string>
+    <string name="part_head">सिर</string>
+    <string name="part_face">चेहरा</string>
+    <string name="part_neck">गर्दन</string>
+    <string name="part_shoulder">कंधा</string>
+    <string name="part_chest">छाती</string>
+    <string name="part_belly">पेट</string>
+    <string name="part_private">गुप्तांग</string>
+    <string name="part_arm">बाँह</string>
+    <string name="part_hand">हाथ</string>
+    <string name="part_leg">पैर</string>
+    <string name="part_foot">पाँव</string>
+    <string name="part_upper_back">ऊपरी पीठ</string>
+    <string name="part_lower_back">निचली पीठ</string>
+    <string name="part_bottom">नितंब</string>
+    <string name="part_left">बायाँ</string>
+    <string name="part_right">दायाँ</string>
+    <string name="cue_body">शरीर का नक्शा, %1$s: %2$s, %3$d%% आड़ा, %4$d%% नीचे</string>
 </resources>

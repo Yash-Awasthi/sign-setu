@@ -60,6 +60,9 @@ internal fun ByteArray.b64(): String = b64.encodeToString(this)
 internal fun String.unb64(): ByteArray = try { unb64.decode(this) } catch (_: IllegalArgumentException) { throw PairAbort(Abort.PROTOCOL) }
 
 /** What each side states about itself; both must run the same build and the same content. */
+/** 2: every frame starts with its packet type (StageWire.kt). */
+const val WIRE_V = 2
+
 data class Identity(val versionCode: Int, val contentHash: String, val model: String)
 
 @Serializable internal data class Hello1(val v: Int, val versionCode: Int, val contentHash: String, val model: String, val mode: String, val commit: String)
@@ -138,11 +141,11 @@ fun officerHandshake(input: DataInputStream, out: DataOutputStream, me: Identity
     val kp = newKeyPair()
     val nonce = ByteArray(32).also(SecureRandom()::nextBytes)
     val pk = kp.public.encoded
-    val h1 = handshakeJson.encodeToString(Hello1.serializer(), Hello1(1, me.versionCode, me.contentHash, me.model, mode, sha256(pk, nonce).b64())).toByteArray()
+    val h1 = handshakeJson.encodeToString(Hello1.serializer(), Hello1(WIRE_V, me.versionCode, me.contentHash, me.model, mode, sha256(pk, nonce).b64())).toByteArray()
     writePlain(out, h1)
     val h2bytes = readPlain(input)
     val h2 = decode<Hello2>(h2bytes)
-    if (h2.v != 1) throw PairAbort(Abort.PROTOCOL)
+    if (h2.v != WIRE_V) throw PairAbort(Abort.PROTOCOL)
     checkPeer(me, h2.versionCode, h2.contentHash)
     if (h2.mode != mode) throw PairAbort(Abort.MODE)
     val peer = decodeP256(h2.pk.unb64())
@@ -158,11 +161,11 @@ fun stageHandshake(input: DataInputStream, out: DataOutputStream, me: Identity, 
     val mode = if (resumeKey == null) MODE_NEW else MODE_RESUME
     val h1bytes = readPlain(input)
     val h1 = decode<Hello1>(h1bytes)
-    if (h1.v != 1) throw PairAbort(Abort.PROTOCOL)
+    if (h1.v != WIRE_V) throw PairAbort(Abort.PROTOCOL)
     val kp = newKeyPair()
     val nonce = ByteArray(32).also(SecureRandom()::nextBytes)
     // Hello2 goes out before the checks below, so the officer learns of a version mismatch too.
-    val h2 = handshakeJson.encodeToString(Hello2.serializer(), Hello2(1, me.versionCode, me.contentHash, me.model, mode, kp.public.encoded.b64(), nonce.b64())).toByteArray()
+    val h2 = handshakeJson.encodeToString(Hello2.serializer(), Hello2(WIRE_V, me.versionCode, me.contentHash, me.model, mode, kp.public.encoded.b64(), nonce.b64())).toByteArray()
     writePlain(out, h2)
     nonce.fill(0)
     checkPeer(me, h1.versionCode, h1.contentHash)

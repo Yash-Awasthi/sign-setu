@@ -175,7 +175,7 @@ class PairTest {
         val committed = gen.generateKeyPair().public.encoded
         val revealed = gen.generateKeyPair().public.encoded
         val n = ByteArray(32).also(SecureRandom()::nextBytes)
-        writePlain(oo, Json.encodeToString(Hello1.serializer(), Hello1(1, me.versionCode, me.contentHash, me.model, "new", sha256(committed, n).b64())).toByteArray())
+        writePlain(oo, Json.encodeToString(Hello1.serializer(), Hello1(app.signsetu.pair.WIRE_V, me.versionCode, me.contentHash, me.model, "new", sha256(committed, n).b64())).toByteArray())
         readPlain(oi)
         writePlain(oo, Json.encodeToString(Reveal.serializer(), Reveal(revealed.b64(), n.b64())).toByteArray())
         assertEquals(Abort.COMMIT, abortOf(stage.get(10, TimeUnit.SECONDS)))

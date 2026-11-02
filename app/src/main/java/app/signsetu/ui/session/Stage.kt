@@ -168,7 +168,10 @@ fun Stage(
     // Typed text has no recording; with online help allowed, the gateway speaks it in the subject's language.
     LaunchedEffect(pending, lang) {
         val typed = (pending as? Pending.FreeText)?.text
-        if (audio == null && typed != null) cloud.speak(typed, lang)?.let(speech::playBytes)
+        if (audio == null && typed != null) {
+            val online = cloud.speak(typed, lang)
+            if (online != null) speech.playBytes(online) else speech.speakOffline(typed, null)
+        }
     }
     LaunchedEffect(pending) { withFrameNanos { }; ShowTiming.firstFrame() }
 
@@ -487,6 +490,7 @@ fun Stage(
                 chosenCard = ui.answeredCard,
                 onCard = { id -> onCard(id); reacting = true },
                 onDismiss = { showExpressBoard = false },
+                onBodyTouch = { t -> onCue(t.cue); onCard(HURT_CARD); reacting = true },
             )
         }
         // Over the whole stage, so no answer can be tapped during a break; the officer's way out stays above it.

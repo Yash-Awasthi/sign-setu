@@ -91,7 +91,11 @@ fun recordDetail(res: Resources, content: ContentBundle, lang: String, events: L
 }
 
 /** How a tapped answer followed a gesture the app proposed, e.g. "(after a nod or thumbs up)". */
-fun cueText(res: Resources, e: SessionEvent): String? = when (e.reason?.takeIf { e.type == EventType.ANSWER_CARD }) {
+fun cueText(res: Resources, e: SessionEvent): String? = BodyTouch.parse(e.reason?.takeIf { e.type == EventType.ANSWER_CARD })?.let { t ->
+    val side = res.getString(if (t.side == BodySide.FRONT) R.string.hurt_front else R.string.hurt_back)
+    val whose = when (t.personsLeft) { true -> res.getString(R.string.part_left) + " "; false -> res.getString(R.string.part_right) + " "; null -> "" }
+    "(" + res.getString(R.string.cue_body, side, whose + res.getString(t.part.label), (t.x * 100).toInt(), (t.y * 100).toInt()) + ")"
+} ?: when (e.reason?.takeIf { e.type == EventType.ANSWER_CARD }) {
     "cue:nod" -> R.string.cue_nod
     "cue:shake" -> R.string.cue_shake
     "cue:point" -> R.string.cue_point

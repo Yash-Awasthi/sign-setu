@@ -99,7 +99,35 @@ fun AnswerBody.fits(): Boolean = when (this) {
 /** A drawing from the link is refused on its declared size, before any pixels are decoded. */
 fun drawingBoundsOk(width: Int, height: Int) = width in 1..4096 && height in 1..4096
 
-fun encodeToStage(m: ToStage): ByteArray = WireJson.encodeToString(ToStage.serializer(), m).toByteArray()
-fun encodeToOfficer(m: ToOfficer): ByteArray = WireJson.encodeToString(ToOfficer.serializer(), m).toByteArray()
-fun decodeToStage(b: ByteArray): ToStage = WireJson.decodeFromString(ToStage.serializer(), b.decodeToString())
-fun decodeToOfficer(b: ByteArray): ToOfficer = WireJson.decodeFromString(ToOfficer.serializer(), b.decodeToString())
+/** The first byte of every frame, inside the encryption so it is authenticated with the body: a receiver checks
+ * the type against the message before acting, so a frame of one kind cannot pass as another. */
+object Packet {
+    /** Pairing confirmation, heartbeat, hold and goodbye. */
+    const val CONTROL: Byte = 0x01
+    /** An answer from the stage, or the officer's receipt of one. */
+    const val ANSWER: Byte = 0x02
+    /** Live synchronisation: what the stage shows, that it was shown, and the stage phone's status. */
+    const val LIVE_SYNC: Byte = 0x03
+}
+
+internal fun packetOf(m: ToStage): Byte = when (m) {
+    is ToStage.Show -> Packet.LIVE_SYNC
+    is ToStage.Ack -> Packet.ANSWER
+    ToStage.Confirm, ToStage.Hold, ToStage.Ping, is ToStage.Bye -> Packet.CONTROL
+}
+
+internal fun packetOf(m: ToOfficer): Byte = when (m) {
+    is ToOfficer.Displayed, is ToOfficer.Status -> Packet.LIVE_SYNC
+    is ToOfficer.Answer -> Packet.ANSWER
+    ToOfficer.Confirm, ToOfficer.Ping, is ToOfficer.Bye -> Packet.CONTROL
+}
+
+fun encodeToStage(m: ToStage): ByteArray = byteArrayOf(packetOf(m)) + WireJson.encodeToString(ToStage.serializer(), m).toByteArray()
+fun encodeToOfficer(m: ToOfficer): ByteArray = byteArrayOf(packetOf(m)) + WireJson.encodeToString(ToOfficer.serializer(), m).toByteArray()
+fun decodeToStage(b: ByteArray): ToStage = typed(b) { WireJson.decodeFromString(ToStage.serializer(), it) }.also { if (packetOf(it) != b[0]) throw PairAbort(Abort.PROTOCOL) }
+fun decodeToOfficer(b: ByteArray): ToOfficer = typed(b) { WireJson.decodeFromString(ToOfficer.serializer(), it) }.also { if (packetOf(it) != b[0]) throw PairAbort(Abort.PROTOCOL) }
+
+private inline fun <T> typed(b: ByteArray, decode: (String) -> T): T {
+    if (b.isEmpty() || b[0] !in Packet.CONTROL..Packet.LIVE_SYNC) throw PairAbort(Abort.PROTOCOL)
+    return decode(b.decodeToString(1, b.size))
+}

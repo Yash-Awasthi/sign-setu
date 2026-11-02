@@ -25,6 +25,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.platform.LocalView
+import android.view.HapticFeedbackConstants
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -50,14 +56,46 @@ internal val PauseCards = setOf("stop", "break")
 internal fun pauseSeconds(events: List<SessionEvent>, now: Long): Long? =
     events.lastOrNull { it.cardId in PauseCards }?.let { ((now - it.ts) / 1000).coerceAtLeast(0) }
 
-/** A quiet night sky over the character: a circle that breathes in and out over four seconds and a few bubbles
- * to pop. No score and no sound. */
+/** One guided breath: in for 4 s, held for 2 s, out for 6 s; the long out-breath is the calming part. */
+internal const val BREATH_IN_MS = 4000
+internal const val BREATH_HOLD_MS = 2000
+internal const val BREATH_OUT_MS = 6000
+internal const val BREATH_MS = BREATH_IN_MS + BREATH_HOLD_MS + BREATH_OUT_MS
+
+/** Size of the breathing circle, 0..1, at [t] ms into a breath, eased so it never jerks at a turn. */
+internal fun breathAt(t: Long): Float {
+    val ms = (t % BREATH_MS).toInt()
+    fun ease(x: Float) = (1 - kotlin.math.cos(Math.PI * x).toFloat()) / 2
+    return when {
+        ms < BREATH_IN_MS -> ease(ms / BREATH_IN_MS.toFloat())
+        ms < BREATH_IN_MS + BREATH_HOLD_MS -> 1f
+        else -> 1f - ease((ms - BREATH_IN_MS - BREATH_HOLD_MS) / BREATH_OUT_MS.toFloat())
+    }
+}
+
+/** A quiet night sky over the character: a circle to breathe with, guided without words (it grows for in, stays
+ * for hold, shrinks for out, and dots count the seconds, with a soft tick at each turn), and a few bubbles to pop.
+ * No score and no sound. */
 @Composable
 internal fun PauseLayer(label: String?, onReady: () -> Unit, modifier: Modifier = Modifier, stop: (@Composable (Modifier) -> Unit)? = null) {
     val context = LocalContext.current
     val still = remember { Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
     val motion = rememberInfiniteTransition(label = "pause")
-    val breath by motion.animateFloat(0f, if (still) 0f else 1f, infiniteRepeatable(tween(4000), RepeatMode.Reverse), label = "breath")
+    var clock by remember { mutableLongStateOf(0L) }
+    val view = LocalView.current
+    LaunchedEffect(still) {
+        if (still) return@LaunchedEffect
+        val start = withFrameMillis { it }
+        var phase = -1
+        while (true) {
+            withFrameMillis { now ->
+                clock = now - start
+                val ms = (clock % BREATH_MS).toInt()
+                val p = if (ms < BREATH_IN_MS) 0 else if (ms < BREATH_IN_MS + BREATH_HOLD_MS) 1 else 2
+                if (p != phase) { phase = p; view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK) }
+            }
+        }
+    }
     val drift by motion.animateFloat(0f, if (still) 0f else 1f, infiniteRepeatable(tween(12000, easing = LinearEasing)), label = "drift")
     // x and phase of each bubble, both 0..1; a popped bubble is replaced by a new one lower down.
     val bubbles = remember { mutableStateListOf<Offset>().apply { repeat(7) { add(Offset(Random.nextFloat(), Random.nextFloat())) } } }
@@ -76,9 +114,24 @@ internal fun PauseLayer(label: String?, onReady: () -> Unit, modifier: Modifier 
         ) {
             drawRect(Brush.verticalGradient(listOf(Color(0xEB0D1B3E), Color(0xEB1E3A6E))))
             val centre = Offset(size.width / 2f, size.height * 0.42f)
+            // Read in the draw phase only, so the breath redraws the canvas without recomposing the layer.
+            val breath = if (still) 0.5f else breathAt(clock)
             val radius = size.minDimension * (0.16f + 0.1f * breath)
             drawCircle(Color(0x3384C5FF), radius * 1.35f, centre)
             drawCircle(Color(0x6684C5FF), radius, centre)
+            // One dot per second of the current phase, lit as it passes: the count is the guide, in any language.
+            val ms = (clock % BREATH_MS).toInt()
+            val (count, into) = when {
+                ms < BREATH_IN_MS -> BREATH_IN_MS / 1000 to ms
+                ms < BREATH_IN_MS + BREATH_HOLD_MS -> BREATH_HOLD_MS / 1000 to ms - BREATH_IN_MS
+                else -> BREATH_OUT_MS / 1000 to ms - BREATH_IN_MS - BREATH_HOLD_MS
+            }
+            val gap = size.minDimension * 0.06f
+            val dotY = centre.y + size.minDimension * 0.36f
+            for (i in 0 until count) {
+                val lit = !still && i <= into / 1000
+                drawCircle(if (lit) Color(0xCCFFFFFF) else Color(0x33FFFFFF), gap * 0.25f, Offset(centre.x + (i - (count - 1) / 2f) * gap, dotY))
+            }
             bubbles.forEach { b -> drawCircle(Color(0x66FFFFFF), size.width * 0.06f, at(b, size.width, size.height)) }
         }
         Surface(

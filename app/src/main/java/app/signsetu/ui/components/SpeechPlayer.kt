@@ -38,10 +38,16 @@ class SpeechPlayer(private val context: Context, private val intact: (String) ->
         player.play()
     }
 
-    fun stop() = player.stop()
+    private val voice by lazy { OfflineVoice(context) }
+
+    /** Typed text with no recording and no online voice: the phone's own Hindi or English voice, if it has one. */
+    fun speakOffline(text: String, lang: String?, speed: Float = 1f) = voice.speak(text, lang, speed)
+
+    fun stop() { player.stop(); voice.stop() }
 
     fun release() {
         player.release()
+        voice.shutdown()
         java.io.File(context.cacheDir, SPOKEN).delete()
     }
 }
