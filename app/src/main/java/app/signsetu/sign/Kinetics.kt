@@ -180,7 +180,9 @@ private const val DEFAULT_SPAN = 0.25f
 const val GATE_ON = 1.2f
 const val GATE_OFF = 0.45f
 const val RING_FRAMES = 30
-const val LETTER_HOLD_MS = 750L
+/** Live top 3 while the hands move: fast enough to follow a sign made in half a second. */
+const val LIVE_PEEK_MS = 250L
+const val LETTER_HOLD_MS = 500L
 const val LETTER_FLOOR = 0.6f
 const val AMBIGUOUS_RATIO = 0.8f
 /** The second reader's top must be at least this sure to count as a disagreement. */

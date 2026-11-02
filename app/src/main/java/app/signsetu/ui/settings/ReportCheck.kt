@@ -51,6 +51,7 @@ internal fun ReportCheckItem(repo: SessionRepository?) {
                         SealCheck.SIGNATURE_INVALID -> R.string.check_report_invalid
                         SealCheck.UNSIGNED -> R.string.check_report_unsigned
                         SealCheck.DIFFERS_FROM_DEVICE -> R.string.check_report_differs
+                        SealCheck.RECORD_ALTERED -> R.string.check_report_altered
                         SealCheck.MALFORMED -> R.string.check_report_no_seal
                     }
                 }

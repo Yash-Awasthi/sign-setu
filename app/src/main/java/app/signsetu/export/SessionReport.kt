@@ -66,10 +66,12 @@ class SessionReport(private val context: Context) {
         certificateText: String? = null,
         chainDigest: String? = null,
         seal: ReportSeal? = null,
+        /** Files carried inside the PDF, by name: the person's recorded speech, so the export holds the record whole. */
+        attachments: List<Pair<String, ByteArray>> = emptyList(),
     ): Pair<File, String> =
         withContext(Dispatchers.IO) {
             purgeStaleExports()
-            val plain = render(rows, text, drawing, section, aiSummary, certificateText, chainDigest, seal)
+            val plain = render(rows, text, drawing, section, aiSummary, certificateText, chainDigest, seal, attachments)
             val passphrase = newPassphrase()
             PDFBoxResourceLoader.init(context)
             val dir = exportsDir(context).apply { mkdirs() }
@@ -93,6 +95,7 @@ class SessionReport(private val context: Context) {
         certificateText: String?,
         chainDigest: String?,
         seal: ReportSeal?,
+        attachments: List<Pair<String, ByteArray>>,
     ): ByteArray {
         val pdf = PdfDocument()
         val pages = mutableListOf<PdfDocument.Page>()
@@ -300,10 +303,10 @@ class SessionReport(private val context: Context) {
 
         // Page numbers need the final count, so they are written after the PDF is laid out, by PdfBox.
         val bytes = ByteArrayOutputStream().use { out -> pdf.writeTo(out); pdf.close(); out.toByteArray() }
-        return numberPages(bytes, text, recordDigest(rows), chainDigest, seal?.qr)
+        return numberPages(bytes, text, recordDigest(rows), chainDigest, seal?.qr, attachments)
     }
 
-    private fun numberPages(bytes: ByteArray, text: ReportText, digest: String, chainDigest: String?, seal: String?): ByteArray {
+    private fun numberPages(bytes: ByteArray, text: ReportText, digest: String, chainDigest: String?, seal: String?, attachments: List<Pair<String, ByteArray>>): ByteArray {
         PDFBoxResourceLoader.init(context)
         val chainSuffix = if (!chainDigest.isNullOrBlank()) "   chain $chainDigest" else ""
         return PDDocument.load(bytes).use { doc ->
@@ -320,6 +323,18 @@ class SessionReport(private val context: Context) {
             }
             // The seal travels in the file's own metadata too, so the app can check a report without a scanner.
             seal?.let { doc.documentInformation.setCustomMetadataValue(SEAL_KEY, it) }
+            // Embedded inside the encrypted PDF: each file opens only with the passphrase, and its SHA-256 is the one sealed.
+            if (attachments.isNotEmpty()) {
+                val files = attachments.associate { (name, data) ->
+                    val embedded = com.tom_roush.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile(doc, data.inputStream()).apply {
+                        subtype = if (name.endsWith(".wav")) "audio/wav" else "application/octet-stream"
+                        size = data.size
+                    }
+                    name to com.tom_roush.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification().apply { file = name; embeddedFile = embedded }
+                }
+                val tree = com.tom_roush.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode().apply { names = files }
+                doc.documentCatalog.names = (doc.documentCatalog.names ?: com.tom_roush.pdfbox.pdmodel.PDDocumentNameDictionary(doc.documentCatalog)).apply { embeddedFiles = tree }
+            }
             ByteArrayOutputStream().use { out -> doc.save(out); out.toByteArray() }
         }
     }

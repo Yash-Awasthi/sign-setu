@@ -140,6 +140,7 @@ import app.signsetu.ui.pair.UseAsStageButton
 @Serializable data object PracticeKey : NavKey
 @Serializable data object AppearanceKey : NavKey
 @Serializable data object RecordSignsKey : NavKey
+@Serializable data object SignToTypeKey : NavKey
 
 private const val SANDES_PACKAGE = "in.nic.gimkerala"
 
@@ -162,6 +163,7 @@ fun AppRoot(container: AppContainer) {
     LaunchedEffect(settings?.avatarStyle) {
         app.signsetu.ui.avatar.AvatarRenderer.style.value = settings?.avatarStyle
             ?.let { runCatching { app.signsetu.ui.avatar.AvatarStyle.valueOf(it) }.getOrNull() } ?: app.signsetu.ui.avatar.AvatarStyle.AUTO
+        if (app.signsetu.ui.avatar.AvatarRenderer.style.value != app.signsetu.ui.avatar.AvatarStyle.AUTO) app.signsetu.ui.avatar.AvatarViews.drop()
     }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -314,7 +316,10 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                 PracticeScreen(content, onBack = { backStack.removeLastOrNull() })
             }
             entry<SettingsKey> {
-                SettingsScreen(container.settings, container.models, container.sentenceModel, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall, onRecordSigns = { backStack.add(RecordSignsKey); Unit }.takeIf { tracker != null && app.signsetu.BuildConfig.DEBUG }, repo = repo)
+                SettingsScreen(container.settings, container.models, container.sentenceModel, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onSignToType = { backStack.add(SignToTypeKey); Unit }.takeIf { tracker != null }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall, onRecordSigns = { backStack.add(RecordSignsKey); Unit }.takeIf { tracker != null && app.signsetu.BuildConfig.DEBUG }, repo = repo)
+            }
+            entry<SignToTypeKey> {
+                app.signsetu.ui.practice.SignToTypeScreen(content, tracker, reader, onBack = { backStack.removeLastOrNull() })
             }
             entry<RecordSignsKey> {
                 app.signsetu.ui.practice.RecordSignsScreen(tracker, container.contributions, onBack = { backStack.removeLastOrNull() })

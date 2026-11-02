@@ -36,6 +36,8 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | NLLB-200 distilled 600M (Meta) | CC BY-NC 4.0 | Run only with legal approval | Fallback translation and Chhattisgarhi; non-commercial clause |
 | | Ollama with Gemma 3 1B | MIT; Gemma Terms of Use | Run on the station computer | Local language model for sign order and chat |
 | | Indic NLP Library | MIT | Run on the station computer | Script conversion for IndicTrans2 |
+| | iroh 1.2 (n0) | MIT or Apache-2.0 | Ship (app) and run on the station computer | Reaches the brain from any network: QUIC end-to-end encrypted to the brain's key, hole punching, n0's public relays as fallback |
+| | JNA 5.19 | Apache-2.0 or LGPL-2.1 | Ship | Native calls for iroh's Kotlin bindings |
 | | Cartesia | Service terms: free plans give no commercial licence; check the plan the key is on before release | Data, and the gateway's `/v1/speak` | Recorded speech for English, Hindi and nine other languages (Cartesia) (`tools/content/build_natural_audio.py`) and live speech of typed text; keys stay on the gateway, never in the app |
 | | Indic Parler-TTS (AI4Bharat) | Apache-2.0 | Data | Recorded speech for Assamese, Nepali, Odia and Urdu (`tools/content/build_audio.py`) |
 | Officer colour themes | Mihon colour schemes | Apache-2.0 | Ship (values) | Five light and dark schemes copied into `ui/theme/MihonPalettes.kt` |

@@ -72,7 +72,7 @@ import app.signsetu.ui.pair.linkText
 
 /** The conversation so far: what was shown on the right, the subject's answers on the left, newest at the bottom. */
 @Composable
-internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map<Long, List<SignSegment>>, onReplay: (Long) -> Unit, modifier: Modifier, onSayBack: (SessionEvent) -> Unit = {}, drawing: suspend (Long) -> ByteArray? = { null }, onAskAgain: ((SessionEvent) -> Unit)? = null) {
+internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map<Long, List<SignSegment>>, onReplay: (Long) -> Unit, modifier: Modifier, onSayBack: (SessionEvent) -> Unit = {}, drawing: suspend (Long) -> ByteArray? = { null }, onAskAgain: ((SessionEvent) -> Unit)? = null, onPlayAudio: (Long) -> Unit = {}) {
     if (events.isEmpty()) {
         Column(modifier.padding(Spacing.xxl), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             MiniFace(72.dp, Color(0xFFFFDDBE))
@@ -117,7 +117,7 @@ internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Ma
                     EventType.SYSTEM -> Aside(systemText(e.text), note = false)
                     EventType.LINK -> Aside(linkText(e).orEmpty(), note = false)
                     else -> Answered(
-                        e, profile, onReplay = if (e.id in signed) ({ onReplay(e.id) }) else null,
+                        e, profile, onReplay = if (e.id in signed) ({ onReplay(e.id) }) else e.audioId?.let { a -> { onPlayAudio(a) } },
                         grade = grades[e.id], trail = trails[e.id], position = positions[e.id],
                         onSayBack = if (canSayBack(e, grades[e.id])) ({ onSayBack(e) }) else null,
                         drawing = drawing,
@@ -140,6 +140,8 @@ internal fun readingNotes(events: List<SessionEvent>): Map<Long, Long> {
     var answer: SessionEvent? = null
     for (e in events) {
         if (e.type in AutoRows || e.type == EventType.PROMPT) continue
+        // Speech is heard after a delay, so its text names the answer it reads.
+        if (e.type == EventType.NOTE && e.source == EventSource.MACHINE && e.shownId != null && events.any { it.id == e.shownId && it.type == EventType.ANSWER_SPOKEN }) { out[e.shownId] = e.id; continue }
         if (e.type == EventType.NOTE && e.source == EventSource.MACHINE && answer != null) out[answer.id] = e.id
         answer = e.takeIf { it.type == EventType.ANSWER_SIGNED }
     }
@@ -219,7 +221,7 @@ private fun Answered(
                     val signed = e.type == EventType.ANSWER_SIGNED
                     Column(Modifier.padding(start = 10.dp).weight(1f, fill = false)) {
                         Text(
-                            if (signed) signedDisplay(LocalResources.current, e.text) else e.text ?: stringResource(e.type.label()),
+                            if (signed) signedDisplay(LocalResources.current, e.text) else if (e.type == EventType.ANSWER_SPOKEN) stringResource(R.string.spoken_bubble, e.text.orEmpty()) else e.text ?: stringResource(e.type.label()),
                             style = MaterialTheme.typography.titleSmall,
                             color = if (signed && signedWords(e.text) == null) colors.onSurfaceVariant else colors.onSurface,
                         )
@@ -227,7 +229,7 @@ private fun Answered(
                     }
                     onReplay?.let { play ->
                         IconButton(onClick = play, modifier = Modifier.padding(start = 4.dp)) {
-                            Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.signed_replay), tint = colors.primary)
+                            Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(if (e.type == EventType.ANSWER_SPOKEN) R.string.spoken_play else R.string.signed_replay), tint = colors.primary)
                         }
                     }
                 }

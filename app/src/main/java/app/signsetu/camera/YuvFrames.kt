@@ -71,26 +71,26 @@ internal class FocusWindow {
     var current: Focus = Focus.FULL
         private set
     private var lost = 0
+    /** A window was chosen for the body now in view; until it leaves, the window only grows. */
+    private var settled = false
 
     fun update(last: LandmarkFrame?, moved: Focus?): Focus {
         val want = last?.let { reach(it) }
         if (want == null) {
             // A few frames without a body are a turned head or a blur; then the whole frame is searched again.
-            if (++lost > LOST_FRAMES) current = Focus.FULL
+            if (++lost > LOST_FRAMES) { current = Focus.FULL; settled = false }
             return current
         }
         lost = 0
         val target = moved?.let { union(want, it) } ?: want
-        val fitted = fit(target)
-        val keep = current != Focus.FULL && current.contains(target) && fitted.width > current.width * SHRINK_BELOW
-        if (!keep) current = fitted
+        // Only grown, never shrunk or slid: each move costs the tracker its hold on the hands for a frame or two.
+        if (!settled) { current = fit(target); settled = true }
+        else if (!current.contains(target)) current = fit(union(current, target))
         return current
     }
 
     companion object {
         const val LOST_FRAMES = 6
-        /** A window shrinks only when the body fills less than this share of it, so it does not jitter. */
-        const val SHRINK_BELOW = 0.7f
         /** Larger than this, the crop saves little and the full frame is used. */
         const val MAX_SHARE = 0.8f
 
@@ -125,8 +125,16 @@ internal class FocusWindow {
 }
 
 /** Turns camera frames in YUV_420_888 into upright RGBA bitmaps of the focus window only, converting colour last. */
-internal class FrameConverter {
-    private var reused: Bitmap? = null
+/** [ring] bitmaps are written in turn, so one shown on screen is not overwritten while it is drawn. */
+internal class FrameConverter(ring: Int = 1) {
+    private val bitmaps = arrayOfNulls<Bitmap>(ring)
+    private var next = 0
+
+    private fun target(w: Int, h: Int): Bitmap {
+        val b = bitmaps[next]?.takeIf { it.width == w && it.height == h } ?: createBitmap(w, h).also { bitmaps[next] = it }
+        next = (next + 1) % bitmaps.size
+        return b
+    }
 
     /** Pixel crop in upright coordinates, rounded to even sizes so chroma lines up. */
     class Crop(val x: Int, val y: Int, val w: Int, val h: Int, val uprightW: Int, val uprightH: Int)
@@ -141,10 +149,10 @@ internal class FrameConverter {
         return Crop(x, y, w, h, uw, uh)
     }
 
-    /** The bitmap is reused across frames; the caller must not keep it. */
+    /** The bitmap comes back to the caller again after [ring] frames; it must not be kept longer. */
     fun convert(image: ImageProxy, rot: Int, c: Crop): Bitmap {
         if (YuvFrames.loaded) {
-            val b = reused?.takeIf { it.width == c.w && it.height == c.h } ?: createBitmap(c.w, c.h).also { reused?.recycle(); reused = it }
+            val b = target(c.w, c.h)
             val (yp, up, vp) = image.planes
             if (YuvFrames.convert(yp.buffer, up.buffer, vp.buffer, yp.rowStride, up.rowStride, up.pixelStride,
                     image.width, image.height, rot, c.x, c.y, c.w, c.h, b)) return b
@@ -155,12 +163,11 @@ internal class FrameConverter {
         val upright = Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, m, true)
         if (upright !== raw) raw.recycle()
         val out = if (c.w == upright.width && c.h == upright.height) upright else Bitmap.createBitmap(upright, c.x, c.y, c.w, c.h).also { upright.recycle() }
-        reused?.recycle()
-        reused = out
-        return out
+        return target(c.w, c.h).also { android.graphics.Canvas(it).drawBitmap(out, 0f, 0f, null); out.recycle() }
     }
 
-    fun close() { reused?.recycle(); reused = null }
+    /** Never recycled here: the screen may still be drawing one; the collector frees them. */
+    fun close() { bitmaps.fill(null) }
 }
 
 /** Maps landmarks the tracker found in a crop back to the whole upright frame. */

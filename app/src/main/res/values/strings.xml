@@ -2,7 +2,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Sign Setu</string>
     <string name="cancel">Cancel</string>
-    <string name="notice_aid">Sign Setu helps you communicate. It is not an interpreter, and it never records statements.</string>
+    <string name="notice_aid">Sign Setu helps you communicate. It is not an interpreter, and it is not the statutory recording of a statement. It records the person\'s voice only with their consent, while you hold the button.</string>
 
     <!-- Lock -->
     <string name="lock_title">Sign Setu is locked</string>
@@ -218,7 +218,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="officer_has_audio">Recorded speech in their language</string>
     <string name="officer_media_missing">Picture and caption only</string>
     <string name="officer_skeleton_show">Show skeleton on camera</string>
-    <string name="officer_skeleton_keep">Keep skeleton snapshot in record</string>
     <string name="officer_sign_language">Sign language</string>
     <string name="sign_isl">Indian (ISL)</string>
     <string name="sign_asl">American (ASL)</string>
@@ -259,8 +258,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_pin_app_summary">The subject cannot leave the app while holding the phone.</string>
     <string name="settings_block_screenshots">Block screenshots</string>
     <string name="settings_block_screenshots_summary">Screenshots and screen recording show a blank screen.</string>
-    <string name="settings_reader_format3">New sign reader engine</string>
-    <string name="settings_reader_format3_summary">Reads ISL signs with the newer model format; off uses the older one. Same words, same model; takes effect when the app next starts.</string>
     <string name="settings_app_lock">Ask for fingerprint</string>
     <string name="settings_app_lock_summary">Your fingerprint or screen lock before opening the app, leaving a session or deleting.</string>
     <string name="settings_lang_system">Same as the phone</string>
@@ -291,7 +288,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="ai_caption">In %1$s: machine translation, not checked</string>
     <string name="ai_meaning">Which means</string>
     <string name="ai_none">The assistant could not help with this; it will be shown as typed.</string>
-    <string name="settings_developer">AI service</string>
     <string name="settings_developer_mode">Custom key</string>
     <string name="settings_developer_summary">AI service address, key and model</string>
     <string name="dev_ai_title">Custom key: AI service</string>
@@ -544,7 +540,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="asl_experimental_badge">Experimental</string>
     <string name="asl_experimental_title">ASL Recognition is Experimental</string>
     <string name="asl_experimental_advisory">The ASL reader gets about half of the words right for a signer it has not seen. Use ISL in the field unless the person signs ASL; the character still signs ASL.</string>
-    <string name="settings_sign_languages">Sign languages</string>
     <string name="settings_isl_status">Indian Sign Language (ISL)</string>
     <string name="settings_isl_status_summary">The main language. The phone reads 314 signed words, fingerspelled names, letters and digits; for a signer it has not seen, about two words in five are right first time, and the officer settles every reading. The character signs 517 recorded words, 156 drawn signs and 112 recorded sentences. Every sign is a draft until Deaf ISL review.</string>
     <string name="settings_isl_badge">Main</string>
@@ -697,7 +692,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_sentence_helper">Offline sentence helper</string>
     <string name="settings_sentence_ready">Installed. When a signed answer is unclear, it puts the likeliest of the checked sentences first, on this phone only. It never adds words.</string>
     <string name="settings_sentence_missing">Not installed. This optional small model helps order sentences for unclear signed answers without internet. It needs a phone with 3 GB of memory or more. Import the file your department gives you.</string>
-    <string name="settings_sentence_import">Import sentence helper file</string>
     <string name="settings_sentence_remove">Remove the sentence helper</string>
     <string name="reading_helper_pick">Helper\'s pick: %1$s</string>
     <string name="start_gender">Their gender (for Hindi wording)</string>
@@ -763,19 +757,18 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_character_auto">3D character</string>
     <string name="settings_character_flat">Drawn character (light)</string>
     <string name="settings_character_rive">Rive character (department file)</string>
-    <string name="voice_title">Speak</string>
-    <string name="voice_hold">Hold a button while speaking, then let go. The station computer turns the speech into text; the audio is not kept.</string>
+    <string name="voice_title">Record their voice</string>
+    <string name="voice_hold">Hold the button while the person speaks, then let go. Their voice is kept in this session\'s record, encrypted, and goes in the export.</string>
     <string name="voice_no_permission">Allow the microphone to use speech.</string>
-    <string name="voice_me">I am speaking</string>
-    <string name="voice_them">They are speaking</string>
+    <string name="voice_them">Hold while they speak</string>
     <string name="voice_listening">Listening…</string>
-    <string name="voice_working">Turning speech into text…</string>
     <string name="voice_too_short">Too short. Hold the button while speaking.</string>
-    <string name="voice_failed">The station computer did not answer. Type instead.</string>
+    <string name="voice_failed">The microphone did not start. Try again.</string>
     <string name="voice_heard_note">Heard by the app (speech to text, not confirmed): %1$s</string>
     <string name="brain_group">Local AI brain</string>
     <string name="brain_title">Station computer</string>
-    <string name="brain_note">Speech to text, translation and sign order on a computer on this network. Without it the phone works alone.</string>
+    <string name="brain_note">Speech to text, translation and sign order on the station computer, over this network or, by its ticket, from anywhere. Without it the phone works alone.</string>
+    <string name="brain_via_iroh">station computer %1$s… (from anywhere)</string>
     <string name="brain_not_paired">Not paired</string>
     <string name="brain_checking">Checking…</string>
     <string name="brain_unreachable">Paired with %1$s, not answering now</string>
@@ -784,10 +777,37 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="brain_llm_off">no language model</string>
     <string name="brain_forget">Forget the station computer</string>
     <string name="brain_pair">Pair with the station computer</string>
-    <string name="brain_pair_help">Enter the three values the station computer shows when it starts.</string>
-    <string name="brain_url">Address (https://…:8000)</string>
+    <string name="brain_pair_help">Enter what the station computer shows when it starts: its ticket and token to reach it from anywhere, or its https address, token and pin on the station network.</string>
+    <string name="brain_url">Ticket, or address (https://…:8000)</string>
     <string name="brain_token">Token</string>
     <string name="brain_pin">Certificate pin</string>
     <string name="brain_pair_go">Pair</string>
-    <string name="brain_pair_failed">Pairing failed. The address must be on this network, and the token and pin must match.</string>
+    <string name="brain_pair_failed">Pairing failed. Check the ticket and token, or for an address: it must be on this network and the pin must match.</string>
+    <string name="second_screen_find">Find a nearby phone</string>
+    <string name="second_screen_searching">Searching. On the other phone, open Bluetooth settings so it can be found.</string>
+    <string name="second_screen_bonding">Pairing. Confirm on both phones.</string>
+    <string name="second_screen_bond_failed">Pairing did not finish. Try again, or pair in Bluetooth settings.</string>
+    <string name="stage_visible">Make this phone visible</string>
+    <string name="check_report_altered">The seal matches, but a row of the session on this phone was changed after it was sealed. Treat the record as altered.</string>
+    <string name="sign_to_type">Sign to Type</string>
+    <string name="sign_to_type_summary">Sign to the camera and see the words build into a sentence</string>
+    <string name="sign_to_type_note">Practice only. The reader\'s words are guesses: tap a word to see its other guesses. Nothing is recorded or kept.</string>
+    <string name="sign_to_type_no_camera">The camera is not available.</string>
+    <string name="sign_to_type_start">Start reading</string>
+    <string name="sign_to_type_stop">Stop</string>
+    <string name="sign_to_type_clear">Clear</string>
+    <string name="sign_to_type_say_en">Say in English</string>
+    <string name="sign_to_type_say_hi">Say in Hindi</string>
+    <string name="voice_saved">Saved to the record.</string>
+    <string name="voice_consent">Recording keeps the person\'s voice in this session\'s record and its export. Ask the person, or for a child their parent or guardian, and record only if they agree. Their answer is logged.</string>
+    <string name="voice_consent_yes">They agreed to recording</string>
+    <string name="log_spoken">Spoke (recorded)</string>
+    <string name="log_voice_consent">Consent given to record the person\'s voice</string>
+    <string name="spoken_bubble">Recorded speech, %1$s s. Tap play.</string>
+    <string name="report_spoken">Recorded speech, %1$s s (attached to this PDF as audio-%2$d.wav)</string>
+    <string name="spoken_play">Play the recording</string>
+    <string name="settings_online">Online</string>
+    <string name="settings_offline">Offline</string>
+    <string name="permission_allow">Allow access</string>
+    <string name="permission_open_settings">Open settings to allow</string>
 </resources>

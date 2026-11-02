@@ -106,7 +106,11 @@ android {
     }
 
     // Native libraries and models ship uncompressed, so they load straight from the APK at full precision.
-    packaging { jniLibs { useLegacyPackaging = false } }
+    packaging {
+        jniLibs { useLegacyPackaging = false }
+        // The iroh JVM jar also carries desktop builds of its native library; Android loads the AAR's.
+        resources { excludes += listOf("darwin-*/**", "win32-*/**", "linux-*/**") }
+    }
 
     androidResources {
         // The detection pipeline is never compressed, so every file it reads can be memory-mapped like the models.
@@ -134,7 +138,6 @@ androidComponents {
                 val discovery = listOf(
                     "android.permission.ACCESS_FINE_LOCATION",
                     "android.permission.ACCESS_COARSE_LOCATION",
-                    "android.permission.BLUETOOTH_SCAN",
                     "android.permission.BLUETOOTH_ADMIN",
                     "android.permission.BLUETOOTH_ADVERTISE",
                     "android.permission.NEARBY_WIFI_DEVICES",
@@ -143,6 +146,9 @@ androidComponents {
                 val text = manifest.get().asFile.readText()
                 val found = forbidden.filter { text.contains("\"$it\"") }
                 if (found.isNotEmpty()) throw GradleException("Forbidden permissions in the merged manifest: $found")
+                // Standard may scan only to find a phone to bond with, never to derive location.
+                val scan = Regex("<uses-permission[^>]*android.permission.BLUETOOTH_SCAN[^>]*>").find(text)?.value
+                if (standard && scan != null && "neverForLocation" !in scan) throw GradleException("BLUETOOTH_SCAN without neverForLocation in $name")
             }
         }
         // Every task that packages the merged manifest, so neither an APK nor an AAB nor an install can skip the check.
@@ -188,6 +194,9 @@ dependencies {
     implementation(libs.pdfbox.android)
     implementation(libs.zxing.core)
     implementation(libs.rive.android)
+    // iroh for the station brain off the LAN: Kotlin API and libiroh_ffi.so; JNA's Android build, 16 KB-aligned from 5.19.
+    implementation(libs.iroh.android)
+    implementation(libs.jna) { artifact { type = "aar" } }
     constraints {
         // PdfBox-Android brings BouncyCastle 1.72, which has known critical vulnerabilities (OSV scan); 1.86 fixes them.
         implementation(libs.bouncycastle.prov)

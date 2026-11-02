@@ -343,7 +343,8 @@ fun OfficerPane(
             )
         } else {
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            Transcript(ui.events, ui.session.profile, ui.signed, onReplay = { replaying = it }, Modifier.fillMaxSize(), onSayBack = { sayingBackId = it.id }, drawing = vm::drawing, onAskAgain = { if (counsel != Counsel.Off) vm.counsellor.takeOver(); vm.askAgain(it) })
+            Transcript(ui.events, ui.session.profile, ui.signed, onReplay = { replaying = it }, Modifier.fillMaxSize(), onSayBack = { sayingBackId = it.id }, drawing = vm::drawing,
+                onPlayAudio = { id -> scope.launch { vm.audio(id)?.let { app.signsetu.voice.WavPlayer.play(it) } } }, onAskAgain = { if (counsel != Counsel.Off) vm.counsellor.takeOver(); vm.askAgain(it) })
             // The scope-free overload: inside this Box the Column's AnimatedVisibility does not apply.
             androidx.compose.animation.AnimatedVisibility(
                 lastStop != null && lastStop.id != stopSeen && paired == null,
@@ -398,7 +399,7 @@ fun OfficerPane(
             onClear = { vm.prepare(null) },
             onSend = send,
             onRead = read,
-            onVoice = brain?.takeIf { it.paired }?.let { { voiceOpen = true } },
+            onVoice = { voiceOpen = true },
             run = runQuestions,
             onRunRemove = { q -> run = run - q.id },
             onAskNow = { q -> vm.prepare(Pending.Ask(q)); send() },
@@ -482,13 +483,12 @@ fun OfficerPane(
             dismissButton = { TextButton(onClick = { askSensitive = false }) { Text(stringResource(R.string.cancel)) } },
         )
     }
-    if (voiceOpen && brain != null) VoiceSheet(brain, officerLang, subjectLang, onHeard = { who, heard ->
-        when (who) {
-            // The officer's words wait in the text box to be checked; nothing is sent by voice alone.
-            Speaker.OFFICER -> { ownText = heard.text; voiceOpen = false }
-            Speaker.SUBJECT -> vm.heard(heard.text, heard.lang)
-        }
-    }, onDismiss = { voiceOpen = false })
+    if (voiceOpen) VoiceSheet(
+        consented = ui.events.any { it.type == EventType.SYSTEM && it.text == SYSTEM_VOICE_CONSENT },
+        onConsent = vm::consentToVoice,
+        onRecorded = { wav -> vm.recordSpeech(wav, brain) },
+        onDismiss = { voiceOpen = false },
+    )
     if (askEnd) {
         if (saveAs.isEmpty()) saveAs = ui.session.title ?: defaultTitle(res, ui.session.startedAt)
         val startExport: () -> Unit = {

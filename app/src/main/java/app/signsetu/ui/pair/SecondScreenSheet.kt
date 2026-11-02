@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,6 +26,8 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.TextButton
+import kotlinx.coroutines.launch
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -51,7 +52,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.signsetu.AppContainer
 import app.signsetu.R
@@ -67,20 +67,16 @@ import kotlinx.coroutines.flow.flowOf
 
 internal fun bluetoothOn(context: Context) = context.getSystemService(BluetoothManager::class.java)?.adapter?.isEnabled == true
 
-private fun granted(context: Context, perms: Array<String>) =
-    perms.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
-
 /** Officer side: pick a device paired in system settings, then type the code it shows. */
 @Composable
 fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
     val transport = container.pairTransport ?: return
     val context = LocalContext.current
     val perms = remember { StageTransports.permissions(context) }
-    var allowed by remember { mutableStateOf(granted(context, perms)) }
+    val access = app.signsetu.ui.components.rememberPermissions(perms)
+    val allowed = access.granted
     var on by remember { mutableStateOf(bluetoothOn(context)) }
-    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { allowed = granted(context, perms) }
     val enable = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { on = bluetoothOn(context) }
-    LaunchedEffect(Unit) { if (!allowed) ask.launch(perms) }
     val link by container.link.collectAsStateWithLifecycle()
     val officer = link?.takeIf { it.role == LinkRole.OFFICER }
     val state = officer?.state?.collectAsStateWithLifecycle()?.value
@@ -126,7 +122,7 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
                     when {
                         !allowed -> {
                             Text(stringResource(R.string.second_screen_permission))
-                            Button(onClick = { ask.launch(perms) }) { Text(stringResource(R.string.ok)) }
+                            app.signsetu.ui.components.PermissionButton(access)
                         }
                         !on -> Button(onClick = { enable.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)) }) { Text(stringResource(R.string.second_screen_open_bluetooth)) }
                         peers.isEmpty() -> Column(Modifier.fillMaxWidth().padding(vertical = Spacing.sm), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -147,6 +143,7 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
                             }
                         }
                     }
+                    if (allowed && on) FindPhone(container) { p -> container.pairWith(p) }
                     Text(stringResource(R.string.second_screen_not_listed), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedButton(
                         onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
@@ -157,6 +154,54 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+/** Finds unpaired phones nearby and bonds with the one tapped; once bonded it pairs the link at once. The system shows
+ * its own confirmation on both phones; the six-digit code of the link follows as usual. */
+@Composable
+private fun FindPhone(container: AppContainer, onBonded: (app.signsetu.pair.Peer) -> Unit) {
+    val context = LocalContext.current
+    val bonding = remember { app.signsetu.pair.BluetoothBonding(context) }
+    if (!bonding.supported) return
+    var scanning by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf<String?>(null) }
+    var failed by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val scan = app.signsetu.ui.components.rememberPermissions(bonding.permissions(), askNow = false) { ok -> scanning = ok }
+    if (!scanning) {
+        OutlinedButton(
+            onClick = { failed = false; if (scan.granted) scanning = true else scan.request() },
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) { Text(stringResource(R.string.second_screen_find)) }
+        if (failed) Text(stringResource(R.string.second_screen_bond_failed), color = MaterialTheme.colorScheme.error)
+        return
+    }
+    val found by remember { bonding.discover() }.collectAsStateWithLifecycle(emptyList())
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+        Text(stringResource(if (busy != null) R.string.second_screen_bonding else R.string.second_screen_searching), style = MaterialTheme.typography.bodyMedium)
+    }
+    if (found.isNotEmpty()) OfficerCard(padding = 0.dp) {
+        found.forEachIndexed { i, p ->
+            if (i > 0) HorizontalDivider(Modifier.padding(start = Spacing.lg), color = MaterialTheme.colorScheme.outlineVariant)
+            ListItem(
+                headlineContent = { Text(p.label) },
+                leadingContent = { Icon(Icons.Filled.Phone, contentDescription = null) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable(role = Role.Button, enabled = busy == null) {
+                    busy = p.id
+                    scope.launch {
+                        val ok = bonding.bond(p.id)
+                        busy = null
+                        scanning = false
+                        if (ok) onBonded(p) else failed = true
+                    }
+                },
+            )
+        }
+    }
+    TextButton(onClick = { scanning = false }) { Text(stringResource(R.string.cancel)) }
 }
 
 /** The officer never sees the code here: typing what the other screen shows proves it is the device in front of them. */

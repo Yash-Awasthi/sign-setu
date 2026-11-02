@@ -60,8 +60,6 @@ data class AppSettings(
     val blockScreenshots: Boolean = app.signsetu.BuildConfig.SECURE_SCREEN,
     /** The officer's fingerprint or screen lock before unlocking, leaving a session or deleting. */
     val appLock: Boolean = !app.signsetu.BuildConfig.TEST_UNLOCKED,
-    /** Reads signs with the format 3 reader (LiteRT, features in the graph) instead of format 1; read at app start. */
-    val readerFormat3: Boolean = true,
     /** AUTO, FLAT or RIVE (ui.avatar.AvatarStyle). */
     val avatarStyle: String = "AUTO",
 ) {
@@ -105,7 +103,6 @@ class SettingsStore(private val context: Context) {
         val pinApp = booleanPreferencesKey("pin_app")
         val blockScreenshots = booleanPreferencesKey("block_screenshots")
         val appLock = booleanPreferencesKey("app_lock")
-        val readerFormat3 = booleanPreferencesKey("reader_format3")
         val avatarStyle = stringPreferencesKey("avatar_style")
     }
 
@@ -135,7 +132,6 @@ class SettingsStore(private val context: Context) {
     suspend fun setPinApp(on: Boolean) = context.store.edit { it[Keys.pinApp] = on }
     suspend fun setBlockScreenshots(on: Boolean) = context.store.edit { it[Keys.blockScreenshots] = on }
     suspend fun setAppLock(on: Boolean) = context.store.edit { it[Keys.appLock] = on }
-    suspend fun setReaderFormat3(on: Boolean) = context.store.edit { it[Keys.readerFormat3] = on }
     suspend fun setAvatarStyle(style: String) = context.store.edit { it[Keys.avatarStyle] = style }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
@@ -163,7 +159,6 @@ class SettingsStore(private val context: Context) {
         pinApp = this[Keys.pinApp] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
         blockScreenshots = this[Keys.blockScreenshots] ?: app.signsetu.BuildConfig.SECURE_SCREEN,
         appLock = this[Keys.appLock] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
-        readerFormat3 = this[Keys.readerFormat3] ?: true,
         avatarStyle = this[Keys.avatarStyle] ?: "AUTO",
     )
 }

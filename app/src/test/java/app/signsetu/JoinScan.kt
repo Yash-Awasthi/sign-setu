@@ -41,14 +41,19 @@ class JoinScan {
                 val t1 = c.start + 0.1f
                 var peak = 0f
                 val flags = mutableSetOf<String>()
-                var prev = tl.pose(Timeline.LEAD_IN + t0)
+                val startPose = tl.pose(Timeline.LEAD_IN + t0)
+                val endPose = tl.pose(Timeline.LEAD_IN + t1)
+                fun startY(side: String) = if (side == "right") startPose.r.y else startPose.l.y
+                fun endY(side: String) = if (side == "right") endPose.r.y else endPose.l.y
+                var prev = startPose
                 var t = t0 + DT
                 while (t <= t1) {
                     val p = tl.pose(Timeline.LEAD_IN + t)
-                    for ((h, q) in listOf(p.r to prev.r, p.l to prev.l)) {
+                    for ((side, h, q) in listOf(Triple("right", p.r, prev.r), Triple("left", p.l, prev.l))) {
                         peak = maxOf(peak, hypot(h.x - q.x, h.y - q.y) / DT)
-                        if (h.y < chinY && abs(h.x - 100f) < 25f && q.y >= chinY) flags += "through face"
-                        if (h.y > waistY + 12f) flags += "drops below waist"
+                        if (h.y < chinY && abs(h.x - 100f) < 25f && q.y >= chinY) flags += "$side through face"
+                        // A drop is a hand raised on both sides of the join that dips to the waist between; going to rest is not one.
+                        if (h.y > waistY + 12f && startY(side) < waistY && endY(side) < waistY) flags += "$side drops below waist"
                     }
                     // The character's right hand is drawn on the viewer's left; crossing puts it to the right.
                     if (p.r.x > p.l.x + 30f) flags += "hands cross"

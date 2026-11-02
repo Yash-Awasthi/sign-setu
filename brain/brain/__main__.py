@@ -28,6 +28,7 @@ def main() -> None:
     ap.add_argument("--llm", default="gemma3:1b", help="Ollama model name")
     ap.add_argument("--ollama", default="http://127.0.0.1:11434")
     ap.add_argument("--rotate-token", action="store_true")
+    ap.add_argument("--no-iroh", action="store_true", help="LAN only: no iroh endpoint")
     a = ap.parse_args()
 
     secrets = Secrets(Path(a.state))
@@ -35,6 +36,12 @@ def main() -> None:
         secrets.rotate_token()
     for ip in lan_addresses() or ["127.0.0.1"]:
         print(f"Pair a phone: https://{ip}:{a.port}  token {secrets.token}  pin {secrets.pin}", flush=True)
+    if not a.no_iroh:
+        from .link import Link
+
+        # Started before the API, so it is serving by the time the first phone dials; it forwards to the API below.
+        ticket = Link(Path(a.state), f"https://127.0.0.1:{a.port}", secrets.cert).start()
+        print(f"Pair a phone from anywhere: ticket {ticket}  token {secrets.token}", flush=True)
     app = create(secrets, Asr(a.asr), Translator(a.translator), Llm(a.ollama, a.llm))
     uvicorn.run(app, host=a.host, port=a.port, ssl_certfile=str(secrets.cert), ssl_keyfile=str(secrets.key),
                 log_level="warning", access_log=False, server_header=False, date_header=False)

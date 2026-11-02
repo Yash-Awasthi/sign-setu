@@ -20,12 +20,9 @@ class StabilizerTest {
     }
 
     @Test
-    fun jitterIsDampedButFastMotionPassesThrough() {
+    fun pointsPassThroughAsTracked() {
         val s = Stabilizer()
         s.mark(LandmarkFrame(0, rightHand = hand(0.5f)))
-        val still = s.mark(LandmarkFrame(33, rightHand = hand(0.502f))).rightHand!![0].x
-        assertEquals(0.5008f, still, 0.0005f)
-        val fast = s.mark(LandmarkFrame(66, rightHand = hand(0.9f))).rightHand!![0].x
-        assertEquals(0.9f, fast, 1e-6f)
+        assertEquals(0.502f, s.mark(LandmarkFrame(33, rightHand = hand(0.502f))).rightHand!![0].x, 1e-6f)
     }
 }

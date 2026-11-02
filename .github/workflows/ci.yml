@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: avatar/package-lock.json
       - run: npm ci
@@ -66,7 +66,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: |
             portal/package-lock.json
@@ -202,9 +202,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # A green master push publishes v<versionName>: a new version gets a new release, the same version is replaced.
+  # Only the main repository holds the signing key and publishes; a copy used to check CI stops before this.
   release:
     needs: [version, android, avatar, portal, tools, gateway, semgrep, osv, instrumented, gitleaks]
-    if: ${{ !failure() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+    if: ${{ !failure() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'Yash-Awasthi/sign-setu-pvt' }}
     runs-on: ubuntu-24.04
     concurrency: release
     permissions:

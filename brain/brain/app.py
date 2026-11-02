@@ -68,15 +68,23 @@ def create(secrets: Secrets, asr: Asr, translator: Translator, llm: Llm, limit: 
         return {"asr": asr.loaded, "translation": translator.loaded, "llm": llm.available(), "llm_model": llm.model}
 
     @app.post("/v1/asr")
-    async def recognise(audio: UploadFile = File(...), lang: str | None = Form(None)):
+    async def recognise(audio: UploadFile = File(...), lang: str | None = Form(None), to: str | None = Form(None)):
         data = await audio.read(MAX_BODY + 1)
         if len(data) > MAX_BODY:
             raise HTTPException(413, "audio too long")
         # The audio lives only in this request's memory: nothing is written to disk or kept.
         try:
-            return asr.transcribe(data, lang)
+            out = asr.transcribe(data, lang)
         finally:
             del data
+        # With [to], the words are also given in that language, so the officer can read what was said.
+        if to and out["text"] and out["lang"] != to:
+            try:
+                texts, engine = translator.translate([out["text"]], out["lang"], to)
+                out["translation"] = {"lang": to, "text": texts[0], "engine": engine}
+            except ValueError:
+                pass  # a language the translator does not cover: the words alone are returned
+        return out
 
     @app.post("/v1/translate")
     def translate(body: TranslateIn):

@@ -1,10 +1,9 @@
 package app.signsetu.camera
 
 import androidx.compose.ui.geometry.Offset
-import kotlin.math.hypot
 
 /** Cleans the tracker's output before anything reads it: a hand or pose lost for a frame or two is held, so a
- * sign is not split by a dropout, and still points are smoothed, so held letters stop shimmering. */
+ * sign is not split by a dropout. Points pass through as tracked: any smoothing here made the skeleton trail the hands. */
 class Stabilizer(private val holdMs: Long = HOLD_MS) {
     private class Track(val points: List<Offset>, val seenAt: Long)
 
@@ -30,25 +29,12 @@ class Stabilizer(private val holdMs: Long = HOLD_MS) {
             tracks[slot] = null
             return null
         }
-        if (prev == null || prev.points.size != now.size) { tracks[slot] = Track(now, ms); return now }
-        val seconds = ((ms - prev.seenAt).coerceAtLeast(1)) / 1000f
-        var sum = 0f
-        for (i in now.indices) sum += hypot(now[i].x - prev.points[i].x, now[i].y - prev.points[i].y)
-        val speed = sum / now.size / seconds
-        val a = MIN_ALPHA + (1f - MIN_ALPHA) * ((speed - SLOW) / (FAST - SLOW)).coerceIn(0f, 1f)
-        val out = if (a >= 1f) now else List(now.size) { i ->
-            Offset(prev.points[i].x + (now[i].x - prev.points[i].x) * a, prev.points[i].y + (now[i].y - prev.points[i].y) * a)
-        }
-        tracks[slot] = Track(out, ms)
-        return out
+        tracks[slot] = Track(now, ms)
+        return now
     }
 
     companion object {
-        // Calibration knobs; tune on device. Speeds are frame widths per second, as in SignCapture.
         const val HOLD_MS = 100L
         const val RESET_MS = 1000L
-        const val MIN_ALPHA = 0.4f
-        const val SLOW = 0.15f
-        const val FAST = 0.8f
     }
 }

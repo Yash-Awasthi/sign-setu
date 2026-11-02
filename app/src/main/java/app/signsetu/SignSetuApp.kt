@@ -62,6 +62,8 @@ class SignSetuApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // iroh reads network state through the app's context; nothing connects until a brain is paired by ticket.
+        app.signsetu.net.IrohBrain.init(this)
         // Debug builds record sign windows for the evaluation set (docs/15-gloss-to-text.md); release builds never do.
         if (BuildConfig.DEBUG) app.signsetu.gloss.DebugRecorder.dir = getExternalFilesDir("recordings")
         container = AppContainer(this)
@@ -88,13 +90,10 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     val landmarkTracker: LandmarkTracker? by tracker
     private fun landmarkTrackerOrNull() = if (tracker.isInitialized()) tracker.value else null
 
-    /** Reads isolated signs from landmarks; none until its model is present. First read on Dispatchers.IO, so the
-     * format setting is read there once; debug builds run the other format beside it in shadow mode. */
+    /** Reads isolated signs from landmarks; none until its model is present. The format 3 reader, checked by format 1,
+     * where the language has one; debug builds run format 1 beside it in shadow mode. */
     private val signReaders = SignLanguage.entries.associateWith { lang ->
-        lazy {
-            val format3 = kotlinx.coroutines.runBlocking { settings.current().readerFormat3 }
-            SignReaders.create(app, lang, format3, shadow = BuildConfig.DEBUG)
-        }
+        lazy { SignReaders.create(app, lang, format3 = true, shadow = BuildConfig.DEBUG) }
     }
     val signReader: SignReader? get() = signReader(SignLanguage.ISL)
     fun signReader(lang: SignLanguage): SignReader? = signReaders.getValue(lang).value

@@ -403,6 +403,7 @@ fun EventType.label() = when (this) {
     EventType.SYSTEM -> R.string.log_system
     EventType.ANSWER_TEXT -> R.string.log_typed
     EventType.ANSWER_SIGNED -> R.string.log_signed
+    EventType.ANSWER_SPOKEN -> R.string.log_spoken
     EventType.LINK -> R.string.log_link
     EventType.SUGGESTED -> R.string.log_suggested
     EventType.APPROVED -> R.string.log_approved

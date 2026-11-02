@@ -3,7 +3,6 @@ package app.signsetu.ui.session
 import androidx.compose.material3.TextButton
 import app.signsetu.ui.components.GuardedAlertDialog
 import androidx.compose.material.icons.filled.Star
-import app.signsetu.camera.EvidenceMode
 import app.signsetu.camera.SkeletonOverlay
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -114,9 +113,6 @@ internal fun OfficerMenu(
                 modifier = Modifier.toggleState(ui.rotated, Role.Checkbox),
             )
             SwitchMenuItem(R.string.officer_skeleton_show, painterResource(R.drawable.ic_videocam), SkeletonOverlay.on.value) { SkeletonOverlay.on.value = !SkeletonOverlay.on.value }
-            SwitchMenuItem(R.string.officer_skeleton_keep, painterResource(R.drawable.ic_videocam), EvidenceMode.autoCapture.value) {
-                EvidenceMode.autoCapture.value = !EvidenceMode.autoCapture.value
-            }
             HorizontalDivider()
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.officer_end)) },

@@ -19,6 +19,8 @@ enum class EventType {
     SUGGESTED, APPROVED, SKIPPED, AUTO_ADVANCED, LINK, PROMPT,
     /** Something the subject asked for by themselves, such as water; never an answer to the item on screen. */
     REQUEST,
+    /** The person's own speech, recorded while the officer held the button, after consent was logged. */
+    ANSWER_SPOKEN,
 }
 
 enum class EventSource { PRESET, TEXT, BOARD, SHOW_BACK, SUBJECT, OFFICER, PHRASE, RULE, MACHINE }
@@ -54,6 +56,8 @@ data class SessionEvent(
     val shownId: Long? = null,
     /** "stage" or "stage_late" for answers from the second screen; null on this phone. */
     val via: String? = null,
+    /** The person's recorded speech, when this row holds some. */
+    val audioId: Long? = null,
     /** The row's seal in the session's hash chain (EventSeal); null on rows from before sealing. */
     val hash: String? = null,
 )
@@ -127,17 +131,21 @@ class SessionRepository(
         reason: String? = null,
         shownId: Long? = null,
         via: String? = null,
+        audioWav: ByteArray? = null,
     ): Long = unlessClosed(-1L) {
         sealing.withLock {
             val ts = clock()
             val previous = dao.lastHash(sessionId) ?: EventSeal.genesis(sessionId, dao.startedAt(sessionId) ?: 0L)
-            val hash = EventSeal.seal(previous, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, drawingPng, itemId, reason, shownId, via)
+            val hash = EventSeal.seal(previous, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, drawingPng, itemId, reason, shownId, via, audioWav)
             val drawing = drawingPng?.let { DrawingEntity(sessionId = sessionId, png = it) }
-            dao.insertSealed(EventEntity(0, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, null, itemId, reason, shownId, via, hash), drawing)
+            val audio = audioWav?.let { AudioEntity(sessionId = sessionId, wav = it) }
+            dao.insertSealed(EventEntity(0, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, null, itemId, reason, shownId, via, hash), drawing, audio)
         }
     }
 
     suspend fun drawing(id: Long): ByteArray? = unlessClosed(null) { dao.drawing(id) }
+
+    suspend fun audio(id: Long): ByteArray? = unlessClosed(null) { dao.audio(id) }
 
     /** Ending a session purges it; there is no archive. */
     suspend fun purge(sessionId: String) = unlessClosed(Unit) { dao.deleteSession(sessionId) }
@@ -214,5 +222,6 @@ class SessionRepository(
         shownId = shownId,
         via = via,
         hash = hash,
+        audioId = audioId,
     )
 }

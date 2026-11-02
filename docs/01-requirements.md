@@ -4,7 +4,7 @@
 
 Police officers find lost children and adults, and rescue people from kidnapping or trafficking, who cannot communicate in words: they are deaf, non-verbal, too traumatised to speak, or speak a language the officer does not know. Sign Setu lets the officer ask simple questions and understand the answers on one shared phone while formal support is arranged.
 
-The app is a communication aid. It does not interpret, it does not replace an ISL interpreter, special educator or counsellor, and it never records statements.
+The app is a communication aid. It does not interpret, it does not replace an ISL interpreter, special educator or counsellor, and it is not the statutory recording of a statement. It records the person's own voice only after their consent (a guardian's for a child) is logged, only while the officer holds the button, into the encrypted session record.
 
 ## 2. Users
 
@@ -192,7 +192,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | --- | --- |
 | Every event row is sealed into a SHA-256 hash chain as it is written; export re-walks the chain and reports the first broken row. | MUST |
 | The report carries a draft certificate under BSA section 63 with the chain head and the record digest, for the officer to sign. | SHOULD |
-| A skeleton snapshot of a signed answer is kept only when the officer turns evidence mode on for the session. | MUST |
+| Every signed answer keeps a skeleton drawing in the encrypted record: each sign's movement as a strip of stick figures, one row per sign headed by the word read; no camera picture. | MUST |
 
 ## 5. Non-functional requirements
 
@@ -215,7 +215,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Opening the app and past sessions require the device credential or a strong biometric whenever the phone has a secure lock screen. | MUST |
 | Screenshots, screen recording and recents thumbnails blocked in the final release build, behind the single build switch `secureScreen`; testing builds leave them open. | MUST |
 | No session data in backups or device transfer. | MUST |
-No build declares background location; the `standard` build declares no location or discovery permission. RECORD_AUDIO is asked for only when the officer first opens the voice sheet, and audio goes only to a paired station brain on the local network, held in memory for one recognition. INTERNET is used only for the online assistant, under the same switch for speaking typed text through the gateway, and for the paired station brain on the local network. CAMERA is declared for the stage mirror and sign windows, BLUETOOTH_CONNECT for the second screen, USE_BIOMETRIC for the officer's unlock, VIBRATE (a normal permission) for answer codes, and RECEIVE_BOOT_COMPLETED (normal) to keep the hourly retention job scheduled. The optional `nearby` flavor adds the Nearby Connections discovery permissions and nothing else. | MUST |
+No build declares background location; the `standard` build declares no location permission, and its only discovery permission is BLUETOOTH_SCAN marked `neverForLocation`, used to find a phone to bond with on Android 12 and later. RECORD_AUDIO is asked for only after consent is logged in the voice sheet; the recording is kept in the encrypted session record, sealed in its hash chain, exported inside the encrypted PDF and deleted with the session, and is sent only to a paired station brain for its text. INTERNET is used only for the online assistant, under the same switch for speaking typed text through the gateway, and for the paired station brain on the local network. CAMERA is declared for the stage mirror and sign windows, BLUETOOTH_CONNECT for the second screen, USE_BIOMETRIC for the officer's unlock, VIBRATE (a normal permission) for answer codes, and RECEIVE_BOOT_COMPLETED (normal) to keep the hourly retention job scheduled. The optional `nearby` flavor adds the Nearby Connections discovery permissions and nothing else. | MUST |
 | No third-party analytics, advertising or crash-reporting SDKs. | MUST |
 | No personal data in logs, crash traces or notifications. | MUST |
 | Under 1 crash per 100 sessions in the pilot. | MUST |

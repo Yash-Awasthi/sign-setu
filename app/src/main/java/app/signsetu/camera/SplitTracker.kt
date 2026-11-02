@@ -14,7 +14,9 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
+import androidx.core.graphics.scale
 import java.nio.ByteBuffer
+import java.util.concurrent.Executors
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.hypot
@@ -23,6 +25,9 @@ private const val HANDS = "models/hand_landmarker.task"
 private const val POSE = "models/pose_landmarker_lite.task"
 private const val FACE = "models/face_landmarker.task"
 private const val PROBE = "models/holistic_probe.jpg"
+private const val HAND_CONFIDENCE = 0.5f
+/** Brows, lips and head turns change slower than hand shapes; every third frame keeps up with them. */
+private const val FACE_EVERY = 3L
 
 /** Mouth shapes kept from the face model's 52 blendshapes, in this order in [LandmarkFrame.mouth]: the evidence for
  * mouthing and mouth gestures (docs/15-gloss-to-text.md). */
@@ -40,8 +45,9 @@ fun landmarkTracker(context: Context): LandmarkTracker? {
     return if (split) SplitTracker(app) { holisticTracker(app) } else holisticTracker(app)
 }
 
-/** Hands, body and face as three MediaPipe tasks instead of one Holistic graph: hands on every frame, body and face on
- * alternate frames (each reused for the frame between), each on the GPU with its own CPU fallback. The face task adds
+/** Hands, body and face as three MediaPipe tasks instead of one Holistic graph, each on the GPU with its own CPU
+ * fallback. Hands come first: they run on the caller's thread while the body runs beside them on its own, and the face
+ * runs on a third thread every [FACE_EVERY] frames, never waited for; its latest result rides along. The face task adds
  * head angles, so nods and shakes are read from rotation, and mouth blendshapes. Same topology as Holistic, so the
  * readers see the same features. */
 class SplitTracker(private val context: Context, private val fallback: () -> LandmarkTracker?) : LandmarkTracker {
@@ -56,7 +62,12 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
     private var last = Long.MIN_VALUE
     private var frameNo = 0L
     private var lastPose: List<Offset>? = null
-    private var lastFace: FaceRead? = null
+    @Volatile private var lastFace: FaceRead? = null
+    private val poseThread = Executors.newSingleThreadExecutor { Thread(it, "pose").apply { isDaemon = true } }
+    private val faceThread = Executors.newSingleThreadExecutor { Thread(it, "face").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
+    @Volatile private var faceBusy = false
+    // The face task's own clock: video mode needs its timestamps to rise, and it skips frames the others see.
+    private var faceLast = Long.MIN_VALUE
     internal val delegates = HashMap<String, Delegate>()
 
     private class FaceRead(val points: List<Offset>, val yaw: Float?, val pitch: Float?, val mouth: List<Float>?)
@@ -73,8 +84,8 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
         hands = hands ?: task(HANDS, { it.detectForVideo(probe(), 0); true }) { m, d ->
             HandLandmarker.createFromOptions(context, HandLandmarker.HandLandmarkerOptions.builder().setBaseOptions(base(m, d))
                 .setRunningMode(RunningMode.VIDEO).setNumHands(2)
-                // As for Holistic: 0.5 drops small or fast hands; the readers' own scores filter the weak ones.
-                .setMinHandDetectionConfidence(0.3f).setMinHandPresenceConfidence(0.3f).setMinTrackingConfidence(0.3f).build())
+                // 0.3 let a ghost hand appear in an empty corner; 0.5 is MediaPipe's own default.
+                .setMinHandDetectionConfidence(HAND_CONFIDENCE).setMinHandPresenceConfidence(HAND_CONFIDENCE).setMinTrackingConfidence(HAND_CONFIDENCE).build())
         }
         pose = pose ?: task(POSE, { it.detectForVideo(probe(), 0).landmarks().isNotEmpty() }) { m, d ->
             PoseLandmarker.createFromOptions(context, PoseLandmarker.PoseLandmarkerOptions.builder().setBaseOptions(base(m, d))
@@ -117,12 +128,36 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
         last = timestampMs
         val image = BitmapImageBuilder(frame).build()
         frameNo++
-        if (frameNo % 2 == 0L || lastPose == null) lastPose = runOr(POSE) { pose?.detectForVideo(image, timestampMs)?.landmarks()?.firstOrNull()?.points() }
-        if (frameNo % 2 == 1L || lastFace == null) lastFace = runOr(FACE) { face?.let { readFace(it, image, timestampMs) } }
-        val r = runOr(HANDS) { h.detectForVideo(image, timestampMs) } ?: return null
+        // The face reads its own smaller copy, since the caller reuses [frame] once this returns.
+        val f = face
+        if (f != null && !faceBusy && frameNo % FACE_EVERY == 0L) {
+            faceBusy = true
+            val copy = frame.scale((frame.width / 2).coerceAtLeast(1), (frame.height / 2).coerceAtLeast(1))
+            faceThread.execute {
+                try {
+                    val ms = maxOf(timestampMs, faceLast + 1).also { faceLast = it }
+                    readFaceOr(f, BitmapImageBuilder(copy).build(), ms)?.let { lastFace = it }
+                } finally { copy.recycle(); faceBusy = false }
+            }
+        }
+        // The body beside the hands, on the same frame, so the arms never trail them.
+        val p = pose
+        val body = p?.let { poseThread.submit<List<Offset>?> { it.detectForVideo(image, timestampMs).landmarks().firstOrNull()?.points() } }
+        val r = runOr(HANDS) { h.detectForVideo(image, timestampMs) }
+        // A failure on the body thread is handled here, under the lock this thread already holds.
+        lastPose = runOr(POSE) { try { body?.get() } catch (e: java.util.concurrent.ExecutionException) { throw e.cause as? RuntimeException ?: RuntimeException(e.cause) } }
+        if (r == null) return null
         val (left, right) = assignHands(r.landmarks().map { it.points() }, r.handedness().map { it.firstOrNull()?.categoryName() }, lastPose)
-        val f = lastFace
-        LandmarkFrame(timestampMs, left, right, f?.points, lastPose, yaw = f?.yaw, pitch = f?.pitch, mouth = f?.mouth)
+        val fr = lastFace
+        LandmarkFrame(timestampMs, left, right, fr?.points, lastPose, yaw = fr?.yaw, pitch = fr?.pitch, mouth = fr?.mouth)
+    }
+
+    // On the face thread: a GPU failure there is reopened under the tracker's lock, like the others.
+    private fun readFaceOr(model: FaceLandmarker, image: MPImage, ms: Long): FaceRead? = try {
+        readFace(model, image, ms)
+    } catch (e: RuntimeException) {
+        synchronized(lock) { if (delegates[FACE] == Delegate.GPU && face === model) { Log.w("SplitTracker", "face failed on the GPU, reopening on the CPU", e); reopenOnCpu(FACE) } }
+        null
     }
 
     private fun readFace(model: FaceLandmarker, image: MPImage, ms: Long): FaceRead? {
@@ -157,7 +192,10 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
     }
 
     override fun close() = synchronized(lock) {
-        hands?.close(); pose?.close(); face?.close()
+        // The face thread may still be reading; the task closes once that read is done.
+        val closing = face
+        faceThread.execute { runCatching { closing?.close() } }
+        hands?.close(); pose?.close()
         if (opened && (hands == null || pose == null)) instead?.close()
         hands = null; pose = null; face = null
         opened = false

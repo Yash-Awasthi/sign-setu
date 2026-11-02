@@ -15,7 +15,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | Android APKs | [Latest release](https://github.com/Yash-Awasthi/sign-setu-pvt/releases/latest) | Signed phone (arm64) and universal (arm64 and x86_64) APKs, SHA-256 sums and an SBOM |
 | Department gateway | [signsetu-gateway.onrender.com](https://signsetu-gateway.onrender.com/healthz) | Go, Neon PostgreSQL; the free tier sleeps, so the first call can take about 30 s |
 | Reviewer portal | [signsetu-portal.pages.dev](https://signsetu-portal.pages.dev) | Vite+ and React on Cloudflare Pages |
-| On-device model | [gemma-3-1b-it-Q4_K_M.gguf](https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf) | About 806 MB; Settings, On-device assistant |
+| On-device model | [gemma-3-1b-it-Q4_K_M.gguf](https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf) | About 806 MB; Settings, Offline, Import model file |
 
 ## Contents
 
@@ -97,7 +97,7 @@ flowchart LR
 | Devices | Android 10 (API 29) or later, 64-bit, 3 GB RAM or more, 5 to 6.9 inch portrait |
 | Flavors | `standard` (reference, Bluetooth RFCOMM) and `nearby` (adds Google Nearby Connections) |
 | Release packages | Universal (arm64-v8a and x86_64) and arm64-v8a phone APKs, signed by CI; native libraries and models stored uncompressed |
-| Permissions (standard) | `CAMERA`, `BLUETOOTH_CONNECT` (`BLUETOOTH` up to API 30), `USE_BIOMETRIC`, `VIBRATE`, `INTERNET` (online assistant only), `RECEIVE_BOOT_COMPLETED` (keeps the hourly retention job scheduled), `RECORD_AUDIO` (push-to-talk to the station brain only). No location: a build gate fails the build otherwise |
+| Permissions (standard) | `CAMERA`, `BLUETOOTH_CONNECT` (`BLUETOOTH` up to API 30), `BLUETOOTH_SCAN` (never for location, to pair a second screen), `USE_BIOMETRIC`, `VIBRATE`, `INTERNET` (online assistant only), `RECEIVE_BOOT_COMPLETED` (keeps the hourly retention job scheduled), `RECORD_AUDIO` (push-to-talk to the station brain only). No location: a build gate fails the build otherwise |
 | Languages (17) | English, Hindi, Chhattisgarhi, Gondi, Halbi, Bengali, Nepali, Assamese, Odia, Tamil, Telugu, Kannada, Malayalam, Marathi, Gujarati, Punjabi, Urdu |
 
 ## 3. Data flow
@@ -259,6 +259,9 @@ The readers generalise poorly to people they have not seen, so a reading is neve
 | Assamese, Nepali, Odia and Urdu speech is Indic Parler-TTS | Less natural than the other languages' voices | No provider offered these voices; captions and pictures carry every question |
 | Hindi caption is rule-based | Odd sentences for unusual input | No caption when a word is unknown; captions marked unchecked |
 | Android 64-bit only | No iOS or 32-bit phones | Distribution is the arm64 phone APK |
+| The station brain's speech recognition covers about 13 of the 17 languages | No text for Chhattisgarhi, Gondi, Halbi or Odia speech | The recording itself is kept; the officer listens to it |
+| The brain reached over iroh uses n0's public relays when no direct path exists | Relays see that two devices talk, never what they say; an n0 outage leaves only same-network links | A department relay removes the dependency |
+| The Rive character needs a designer's file | Without `avatar/signer.riv` only the 3D and drawn characters are offered | The input contract is in [05](05-avatar-and-gestures.md), section 5.8 |
 | Assistant model licence | Gemma terms are not OSI open source | A fully open model can replace it by adding its hash |
 
 ## 7. Glossary

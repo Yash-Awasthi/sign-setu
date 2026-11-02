@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Live mirror of the subject's hands; nothing is captured or stored. -->
+    <!-- Live mirror of the subject's hands; no camera picture is captured or stored. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <!-- Answer codes felt by the officer holding the phone; a normal permission. -->
@@ -14,12 +14,21 @@
 
     <!-- Only the department gateway client uses it: off by default, HTTPS only, nothing else in the app opens a connection. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Whether the network is up before calling the gateway or the station brain; a normal permission, no prompt. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- The video player library asks for it, but the app never holds the phone awake to play a clip. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove" />
     <!-- Push-to-talk to the station's local brain only; asked for when the officer first opens the voice sheet. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- A second screen over bonded Bluetooth. No scan, advertise or bond: those permissions are refused by the build. -->
+    <!-- A second screen over bonded Bluetooth. Scanning finds an unpaired phone to bond with, on Android 12 and later,
+         and is declared never to derive location; advertising stays refused by the build. -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s" />
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 
     <!-- Sandes (NIC) for the interpreter call and Google Translate for an unknown language; visibility needs them declared (API 30+). -->

@@ -74,7 +74,7 @@ Non-sign windows (rests before a sign and card pauses after it, 2,437 validation
 app's 0.4 floor for 0.000 of them (previous reader 0.139), while it shows 0.492 of new-signer app-word signs.
 
 Weights stay float16: int8 weights agree with them on top-1 for 0.950 of 200 validation windows, under the 0.99 bar.
-The same weights also ship in format 3 (`sign_reader_v3.tflite`, float32, 5.05 MB, LiteRT 1.4.2) with the features inside the graph; it is the default engine, and Settings, New sign reader engine, off goes back to format 1.
+The same weights also ship in format 3 (`sign_reader_v3.tflite`, float32, 5.05 MB, LiteRT 1.4.2) with the features inside the graph; it is always the engine, and format 1 takes over only if the format 3 file fails to load.
 Hashes and metrics of every shipped model: `content/models/registry.json`.
 
 ## Known failures

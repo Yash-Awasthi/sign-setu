@@ -8,6 +8,7 @@ import app.signsetu.data.session.SessionRepository
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 /** Opens an exported report with its passphrase and checks its seal: the signature with the key the seal carries,
@@ -21,5 +22,13 @@ suspend fun checkReport(context: Context, uri: Uri, passphrase: String, repo: Se
     }.getOrNull() ?: return@withContext null
     val sessionId = payload.split('|').getOrNull(1)
     val current = sessionId?.let { repo?.currentSeal(it)?.line }
-    EvidenceIntegrity.checkSeal(payload, { line, sig, key -> DeviceSeal.verify(line, sig, Base64.decode(key, Base64.NO_WRAP)) }, current)
+    val check = EvidenceIntegrity.checkSeal(payload, { line, sig, key -> DeviceSeal.verify(line, sig, Base64.decode(key, Base64.NO_WRAP)) }, current)
+    // Stored seals can stand while a row under them was edited: with the session still here, its rows are re-walked.
+    if (check == EvidenceIntegrity.SealCheck.MATCHES_DEVICE && repo != null && sessionId != null) {
+        val session = repo.session(sessionId).first()
+        if (session != null && !EvidenceIntegrity.verifyChain(session, repo.eventsNow(sessionId), { repo.audio(it) }) { repo.drawing(it) }.intact) {
+            return@withContext EvidenceIntegrity.SealCheck.RECORD_ALTERED
+        }
+    }
+    check
 }

@@ -111,6 +111,7 @@ internal fun eventDetail(res: Resources, e: SessionEvent, by: Map<Long, ShownBy>
     e.type == EventType.SYSTEM -> systemText(res, e.text)
     e.type == EventType.NOTE && e.text?.startsWith(HEARD_PREFIX) == true -> noteText(res, e.text).orEmpty()
     e.type == EventType.ANSWER_SIGNED -> "${signedDisplay(res, e.text)} (${res.getString(signedMark(e))})"
+    e.type == EventType.ANSWER_SPOKEN -> res.getString(R.string.report_spoken, e.text.orEmpty(), e.audioId ?: 0L)
     e.drawingId != null -> res.getString(R.string.report_drawing)
     else -> (linkText(res, e) ?: e.text.orEmpty()) + autoSuffix(res, e, by, idle)
 }.let { if (e.via != null) "$it (${res.getString(R.string.report_via_stage)})" else it }

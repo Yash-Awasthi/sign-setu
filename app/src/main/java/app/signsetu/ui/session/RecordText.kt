@@ -60,6 +60,7 @@ fun systemText(res: Resources, text: String?): String = when {
     text == SYSTEM_READ_SIGNS -> res.getString(R.string.officer_read_signs)
     text == SYSTEM_TELL_ME -> res.getString(R.string.tell_me)
     text == SYSTEM_BREAK_GIVEN -> res.getString(R.string.log_break_given)
+    text == SYSTEM_VOICE_CONSENT -> res.getString(R.string.log_voice_consent)
     text == SYSTEM_JJ_NOTICE -> res.getString(R.string.log_jj_notice)
     text == SYSTEM_JUVENILE -> res.getString(R.string.log_juvenile)
     text == SYSTEM_JUVENILE_OFF -> res.getString(R.string.log_juvenile_off)

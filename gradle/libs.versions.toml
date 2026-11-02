@@ -18,6 +18,8 @@ coroutines = "1.11.0"
 pdfbox = "2.0.27.0"
 zxing = "3.5.3"
 rive = "10.4.4"
+iroh = "1.2.0"
+jna = "5.19.1"
 camerax = "1.6.2"
 bouncycastle = "1.86"
 guava = "33.7.2-android"
@@ -57,6 +59,8 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 pdfbox-android = { module = "com.tom-roush:pdfbox-android", version.ref = "pdfbox" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 rive-android = { module = "app.rive:rive-android", version.ref = "rive" }
+iroh-android = { module = "computer.iroh:iroh-android", version.ref = "iroh" }
+jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 junit = { module = "junit:junit", version.ref = "junit" }
 play-services-nearby = { module = "com.google.android.gms:play-services-nearby", version.ref = "playServicesNearby" }
 bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk15to18", version.ref = "bouncycastle" }

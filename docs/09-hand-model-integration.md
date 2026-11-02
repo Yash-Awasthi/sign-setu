@@ -53,7 +53,7 @@ data class LandmarkFrame(
 | Errors | `track` returns null for a frame it cannot read; it never throws for a bad frame |
 | Start-up | `warm` loads the models off the main thread when the session screen opens, before the first frame; never during app start |
 | Delegate | Per task, GPU first; if the GPU fails to open, or an inference throws, that task reopens on the CPU for the next frame. `close` frees the tasks on lock and on memory pressure, and the next use opens them again |
-| Schedule | Hands every frame; body and face on alternate frames, each reused for the frame between. The face task adds head angles (nods and shakes) and 19 mouth blendshapes |
+| Schedule | Hands and body every frame, in parallel; face every third frame on its own thread, never waited for, its latest result reused. The face task adds head angles (nods and shakes) and 19 mouth blendshapes |
 
 The models (`models/hand_landmarker.task` 7.8 MB, `pose_landmarker_lite.task` 5.8 MB, `face_landmarker.task` 3.8 MB, and the fallback `holistic_landmarker.task` 13.7 MB) are mapped from uncompressed assets, checked against the content manifest and opened only if they match. The topology matches Holistic, so the readers see the same features. Release APKs are 64-bit only (arm64-v8a, and x86_64 in the universal build), so every installed device can run the tracker. The stage draws hands, arms, brows and lips, never the face oval or eyes.
 
@@ -71,7 +71,7 @@ interface SignReader : AutoCloseable {
 data class SignGuess(val word: String, val score: Float, val spelled: Boolean = false)
 ```
 
-The built reader takes the frames of one chunk, resampled to 32, with per frame both hands (21 points each), shoulders, elbows and wrists, normalised to the mean shoulder midpoint and width, and presence flags (98 features). It runs a per-frame linear layer, two 1-D convolutions and average and max pooling (the features `embed` returns) to 314 logits. Weights: `models/sign_reader.bin` (2.5 MB, float16) with its spec in `sign_reader.json`; both are checked against the manifest by `SignReaders` before use. The shipped weights are a soup of five seeds co-trained with ASL Citizen ([model card](models/sign_reader_v4.md)): INCLUDE test top-1 97.9%; new signers on the app's words 52.5% on validation; with children on phone cameras it is unmeasured. The same reader also ships in format 3 (`sign_reader_v3.tflite`, 5 MB, float32), with the features computed inside the LiteRT graph; it is the default; Settings, New sign reader engine, off goes back to format 1 after the next start, and format 1 is also used if the format 3 file fails to load. Debug builds run both and log their agreement and time. On 400 held-out validation windows the two agree on every top word. One read takes about 18 ms on a desktop JVM. Reads run one at a time on a background dispatcher.
+The built reader takes the frames of one chunk, resampled to 32, with per frame both hands (21 points each), shoulders, elbows and wrists, normalised to the mean shoulder midpoint and width, and presence flags (98 features). It runs a per-frame linear layer, two 1-D convolutions and average and max pooling (the features `embed` returns) to 314 logits. Weights: `models/sign_reader.bin` (2.5 MB, float16) with its spec in `sign_reader.json`; both are checked against the manifest by `SignReaders` before use. The shipped weights are a soup of five seeds co-trained with ASL Citizen ([model card](models/sign_reader_v4.md)): INCLUDE test top-1 97.9%; new signers on the app's words 52.5% on validation; with children on phone cameras it is unmeasured. The same reader also ships in format 3 (`sign_reader_v3.tflite`, 5 MB, float32), with the features computed inside the LiteRT graph; it is always used, with format 1 beside it to flag disagreements, and format 1 alone is used if the format 3 file fails to load. Debug builds run both and log their agreement and time. On 400 held-out validation windows the two agree on every top word. One read takes about 18 ms on a desktop JVM. Reads run one at a time on a background dispatcher.
 
 Retraining: `tools/ml` (prepare, train, export), then `python tools/content/build_content.py --manifest-only`.
 
@@ -106,7 +106,7 @@ The ISL name speller (`isl_spell_ctc`) reads both hands at 15 frames a second an
 
 ## 8. Privacy and safety
 
-- Frames and landmarks are never stored, logged or sent anywhere; landmarks stay in view-model memory for the session and are wiped on end, lock and clear. The one exception is a one-frame skeleton drawing kept with a signed answer when the officer turns evidence mode on for the session.
+- Frames and landmarks are never stored, logged or sent anywhere; landmarks stay in view-model memory for the session and are wiped on end, lock and clear. The one exception is the skeleton drawing kept with every signed answer: each sign's movement as six stick figures from its start to its end, one row per sign headed by the word read, drawn without any camera picture.
 - MediaPipe's usage statistics are dropped on the device.
 - The partner team holds the training data, its consent records and the model card for any replacement, and supplies them for the DPIA and the audit.
 

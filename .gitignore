@@ -34,3 +34,8 @@ __pycache__/
 
 # Local install bundles (contain the assistant key; never commit)
 /dist/
+
+# Station brain: per-machine settings and environment
+brain/brain.json
+brain/brain.env
+brain/.venv/

@@ -22,10 +22,13 @@ object EventSeal {
         reason: String?,
         shownId: Long?,
         via: String?,
+        audio: ByteArray? = null,
     ): String = sha256Hex(
         previous + field(sessionId) + field(ts.toString()) + field(type) + field(source) + field(lang) + field(text) +
             field(cardId) + field(lexiconId) + field(drawing?.let(::sha256Hex)) + field(itemId) + field(reason) +
-            field(shownId?.toString()) + field(via),
+            field(shownId?.toString()) + field(via) +
+            // Only a row with speech gains this field, so every seal written before it still verifies.
+            (audio?.let { "|audio" + field(sha256Hex(it)) } ?: ""),
     )
 
     /** Merkle root over [seals] in write order (RFC 6962 hashing: 0x00 before a leaf, 0x01 before a node), so one

@@ -36,6 +36,9 @@ class MemoryDao : SessionDao {
     private val drawings = mutableMapOf<Long, ByteArray>()
     override suspend fun insertDrawing(drawing: DrawingEntity) = synchronized(this) { next++.also { drawings[it] = drawing.png } }
     override suspend fun drawing(id: Long): ByteArray? = synchronized(this) { drawings[id] }
+    private val audios = mutableMapOf<Long, ByteArray>()
+    override suspend fun insertAudio(audio: app.signsetu.data.session.AudioEntity) = synchronized(this) { next++.also { audios[it] = audio.wav } }
+    override suspend fun audio(id: Long): ByteArray? = synchronized(this) { audios[id] }
     override suspend fun deleteSession(id: String) = sessions.update { it - id }.also { rows.update { all -> all.filter { e -> e.sessionId != id } } }
     override suspend fun endSession(id: String, endedAt: Long, title: String) = edit(id) { it.copy(endedAt = endedAt, title = title) }
     override suspend fun reopen(id: String) = edit(id) { it.copy(endedAt = null) }

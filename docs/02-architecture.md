@@ -72,7 +72,7 @@ Versions are pinned in `gradle/libs.versions.toml`, locked in `app/gradle.lockfi
 | Authentication | Platform `BiometricPrompt` and `KeyguardManager`; Android Keystore |
 | Serialization | kotlinx.serialization JSON 1.12.0; coroutines 1.11.0 |
 
-Not used: dependency injection frameworks, Firebase, analytics or crash SDKs, camera capture or recording. The microphone is used only by the voice sheet (`voice/VoiceCapture.kt`): push-to-talk, 16 kHz PCM in memory, sent once to the paired station brain (`net/BrainClient.kt`) and wiped. The only WebView is the character's (`ui/avatar/Avatar.kt`), which loads the bundled avatar page and blocks every network request.
+Not used: dependency injection frameworks, Firebase, analytics or crash SDKs, camera capture or recording. The microphone is used only by the voice sheet (`voice/VoiceCapture.kt`): the person's speech after logged consent, while the officer holds the button, 16 kHz WAV kept in the `audio` table and sealed with its row, played back from memory (`voice/WavPlayer.kt`), embedded in the export, and sent to the paired station brain for its text (`net/BrainClient.kt`, over the LAN or `net/IrohBrain.kt` from any network) and wiped. The only WebView is the character's (`ui/avatar/Avatar.kt`), which loads the bundled avatar page and blocks every network request.
 
 ## 4. Runtime structure
 
@@ -353,7 +353,9 @@ Readings by the app (`MACHINE`) and the officer (`OFFICER`) are their own rows, 
 
 ### 7.3 Hash chain
 
-Each row is sealed as it is written (`SessionRepository.log` under a mutex): its hash covers the previous row's hash, every field and the SHA-256 of its drawing. An edited, inserted or removed row breaks every later hash. Rows from before version 5 have no hash and are counted, not chained.
+Each row is sealed as it is written (`SessionRepository.log` under a mutex): its hash covers the previous row's hash, every field, the SHA-256 of its drawing and, on a recorded answer, the SHA-256 of its audio. A drawing or audio row and its event are written in one transaction. An edited, inserted or removed row breaks every later hash. Rows from before version 5 have no hash and are counted, not chained.
+
+Each session's first row records the app version, the content manifest and the device key fingerprint; taking a session up again re-walks its chain and logs the result. Ending a session stores a Merkle root over its seals (RFC 6962 hashing) and an ECDSA P-256 signature over the line `SS1|session|count|head|root`, made by a key that never leaves the Android Keystore (StrongBox where the phone has one) (`DeviceSeal`). The export prints that line, the signature and the public key as a QR code on a verification page and carries it in the PDF's metadata; Settings, Records, Check a report and `tools/security/verify_seal.py` check it, and on the phone the stored rows are re-walked as well.
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "step"}}}%%
@@ -463,6 +465,8 @@ sequenceDiagram
     O->>T: Bye (end, cancel, fallback, exit, unpinned)
 ```
 
+Every encrypted frame starts with a packet type, checked against the message before it is acted on (wire version 2): `0x01` control (confirm, ping, hold, bye), `0x02` answers and their acknowledgements, `0x03` live synchronisation (what the stage shows, that it was shown, the stage phone's status). On Android 12 and later the officer can find and bond a second screen from the sheet (`BluetoothBonding`), under BLUETOOTH_SCAN marked never for location.
+
 *Figure 13. Pairing and exchange (`PairCrypto`, `StageWire`, `StageLink`).*
 
 ```mermaid
@@ -518,7 +522,7 @@ flowchart TB
 
 ## 11. Camera and sign reading
 
-`CameraMirror` binds Preview and ImageAnalysis only (no capture or recording), both 16:9; analysis targets 848 by 480, rotated upright into a reused RGBA buffer. While the stage camera shows, frames are tracked in memory for the skeleton overlay and the gesture proposals: about every 30 ms with a person in view, every 250 ms after 10 s with nobody. Landmarks are kept only inside a sign window.
+`CameraMirror` binds Preview and ImageAnalysis only (no capture or recording), both 16:9; analysis targets 848 by 480 in YUV_420_888. A native pass (`frames.cpp`, `YuvFrames`) reads block means of the luma plane for motion and a Laplacian for blur, then turns upright and converts to RGBA only the region the tracker sees: the whole frame outside a sign window, and inside one the signer's reach (`FocusWindow`), with landmarks mapped back to the full frame. While the stage camera shows, frames are tracked in memory for the skeleton overlay and the gesture proposals: about every 30 ms with a person in view, every 250 ms after 10 s with nobody. Landmarks are kept only inside a sign window.
 
 ```mermaid
 sequenceDiagram
@@ -558,11 +562,17 @@ sequenceDiagram
 | `ANSWER` | Raised hands on the call stage, the camera button, or Read signs | 20 s, or quiet hands for 2 s | 0.4 s | Kept |
 | `NARRATIVE` | Tell me | 3 minutes, or quiet hands for 5 s | 0.7 s | Dropped |
 
-`SplitTracker` runs three MediaPipe tasks in video mode: hands on every frame, body and face on alternate frames. Each task is opened on the GPU and kept there only if it finds the person in a bundled probe image, otherwise on the CPU. If the hand or body task cannot open at all, `HolisticTracker` tracks every frame instead. Readers (`SignReaders.load`): ISL has `sign_reader` (314 words), `isl_spell` (single letters and digits) and the CTC `isl_spell_ctc` (spelled names, both hands); ASL has `asl_reader` (250 words) and the CTC `asl_spell`. A single letter or digit wins over the word reader only at twice its score and with steady wrists; a CTC read wins with at least 3 letters, each at least as sure as its model's floor (0.7 for ISL names, 0.8 for ASL). Guesses that answer the item on screen rank first (`decideRead`). Signs the officer reads as a word the reader did not offer are matched for the rest of the session (`HomeSigns`) by cosine on the word reader's pooled features, at 0.65 or above.
+Inside a window, hand kinetic energy (weighted squared point speeds in shoulder widths a second, with hysteresis: `MotionGate`) drives a 30-frame feature ring (`FeatureRing`, 1 x 30 x 98): while the hands move, the reader's top 3 on the ring is shown to the officer every 250 ms; while a hand is held still, the letter reader runs every 150 ms and a letter held for 500 ms is committed once (`LetterCommitter`). Where the LiteRT reader is shown, the format 1 reader reads every sign too; a top word they disagree on, or a runner-up within 80% of the top, marks the sign unclear. Signs taught in a session are kept as if made with the right hand, so a left-led signer's home signs match (`DominantHand`).
+
+`SplitTracker` runs three MediaPipe tasks in video mode: hands and body on every frame, side by side on two threads, and the face every third frame on a third thread that the hands never wait for. Hands need 0.5 confidence. The camera view draws the analysed picture under its own skeleton, so the two always match. Each task is opened on the GPU and kept there only if it finds the person in a bundled probe image, otherwise on the CPU. If the hand or body task cannot open at all, `HolisticTracker` tracks every frame instead. Readers (`SignReaders.load`): ISL has `sign_reader` (314 words), `isl_spell` (single letters and digits) and the CTC `isl_spell_ctc` (spelled names, both hands); ASL has `asl_reader` (250 words) and the CTC `asl_spell`. A single letter or digit wins over the word reader only at twice its score and with steady wrists; a CTC read wins with at least 3 letters, each at least as sure as its model's floor (0.7 for ISL names, 0.8 for ASL). Guesses that answer the item on screen rank first (`decideRead`). Signs the officer reads as a word the reader did not offer are matched for the rest of the session (`HomeSigns`) by cosine on the word reader's pooled features, at 0.65 or above.
+
+## 11a. Station brain
+
+`brain/` is an optional service for one station computer: speech to text (faster-whisper), translation (IndicTrans2, NLLB-200), sign order (rules, refined by a local language model through Ollama) and chat. It serves HTTPS on port 8000 to private addresses, with a self-signed certificate the phone pins and a bearer token, and binds an iroh endpoint so phones reach it from any network by its ticket, QUIC end-to-end encrypted to its key (`link.py`). `BrainClient` calls it over either path; `IrohBrain` keeps one iroh connection per process and redials after a failure. Typed text asks it for sign order after a typing pause, and a recorded answer gets its text and translation as the app's reading. With the brain unreachable each feature falls back to the phone alone. `setup.ps1` and `setup.sh` install it ([brain/README.md](../brain/README.md)).
 
 ## 12. Export
 
-`SessionViewModel.exportReport` re-reads the rows from the store, re-walks the hash chain and builds the Section 63 certificate (`EvidenceIntegrity`); `SessionReport` draws A4 pages with `PdfDocument` (header, personal details given, optional machine draft summary, the conversation, a separate section for readings, drawings, the certificate), numbers every page with the record digest and chain head, and encrypts the file with PdfBox AES-256 under a 16-character passphrase from 32 symbols (80 bits) and a random owner password. The file waits in `cacheDir/exports` for the share sheet; files older than 15 minutes, and all of them at every unlock and on Clear all data, are deleted.
+`SessionViewModel.exportReport` re-reads the rows from the store, re-walks the hash chain and builds the Section 63 certificate (`EvidenceIntegrity`); `SessionReport` draws A4 pages with `PdfDocument` (header, personal details given, optional machine draft summary, the conversation, a separate section for readings, drawings, the certificate), numbers every page with the record digest and chain head, adds the verification seal page, embeds each recorded answer as `audio-<id>.wav`, and encrypts the file with PdfBox AES-256 under a 16-character passphrase from 32 symbols (80 bits) and a random owner password. The file waits in `cacheDir/exports` for the share sheet; files older than 15 minutes, and all of them at every unlock and on Clear all data, are deleted.
 
 ## 13. Build and delivery
 

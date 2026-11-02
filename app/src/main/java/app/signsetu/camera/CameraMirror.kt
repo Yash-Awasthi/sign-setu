@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.os.PowerManager
+import android.os.Process
 import android.util.Log
 import android.util.Size
 import app.signsetu.BuildConfig
@@ -23,22 +24,26 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import app.signsetu.ui.components.PermissionButton
+import app.signsetu.ui.components.rememberPermission
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size as Extent
-import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -46,6 +51,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -59,20 +70,17 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executors
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 /** Whether the traced skeleton is drawn over the camera picture; the picture itself always shows. */
 object SkeletonOverlay {
     val on = mutableStateOf(true)
-}
-
-/** Whether a skeleton snapshot (biometric landmarks) is kept in the record when a signed answer is logged; off unless
- * the officer turns it on, and off again with every new session. */
-object EvidenceMode {
-    val autoCapture = mutableStateOf(false)
 }
 
 fun hasCameraPermission(context: Context) =
@@ -98,6 +106,8 @@ fun CameraMirror(
     onShrug: (() -> Unit)? = null,
     /** A courtesy held on the analysis thread (namaste, a wave, thanks, a bow); the stage treats it as a proposal. */
     onEveryday: ((Everyday) -> Unit)? = null,
+    /** Ask for the camera as soon as this shows, when it is not yet allowed; a button asks again either way. */
+    askPermission: Boolean = true,
     placeholder: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -105,10 +115,8 @@ fun CameraMirror(
     var request by remember { mutableStateOf<SurfaceRequest?>(null) }
     var analysis by remember { mutableStateOf<ImageAnalysis?>(null) }
     var shown by remember { mutableStateOf<LandmarkFrame?>(null) }
-    // The previous frame and when the latest arrived: the overlay eases between them at screen rate, since the tracker
-    // runs at about 9 frames a second on a CPU.
-    var traced by remember { mutableStateOf<Traced?>(null) }
-    var screenTick by remember { mutableLongStateOf(0L) }
+    // The picture the tracker read, drawn under its own skeleton so the two always match.
+    var picture by remember { mutableStateOf<ImageBitmap?>(null) }
     val frameSink by rememberUpdatedState(onFrame)
     val headSink by rememberUpdatedState(onHead)
     val pointSink by rememberUpdatedState(onPoint)
@@ -117,8 +125,8 @@ fun CameraMirror(
     val everydaySink by rememberUpdatedState(onEveryday)
     var front by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
-    val permitted = remember { hasCameraPermission(context) }
-
+    val camera = rememberPermission(Manifest.permission.CAMERA, askNow = askPermission)
+    val permitted = camera.granted
     if (permitted) {
         // CameraX binds and sets surfaces on the main thread only; an effect resumes wherever its dispatcher says.
         LaunchedEffect(owner, tracker) { withContext(Dispatchers.Main.immediate) {
@@ -168,15 +176,15 @@ fun CameraMirror(
     val analysing = onFrame != null
     DisposableEffect(analysis, tracker, analysing) {
         val a = analysis
-        if (a == null || tracker == null) return@DisposableEffect onDispose { shown = null; traced = null }
+        if (a == null || tracker == null) return@DisposableEffect onDispose { shown = null; picture = null }
         var lastPerson: Long? = null
         val pipeline = FramePipeline()
         val blur = BlurMeter()
         val gate = LumaGate()
-        val focus = FocusWindow()
-        val converter = FrameConverter()
-        var last: LandmarkFrame? = null
-        val executor = Executors.newSingleThreadExecutor()
+        // Three buffers: the screen draws one while the next is written.
+        val converter = FrameConverter(ring = 3)
+        // Hands are read on this thread, so it runs ahead of ordinary work.
+        val executor = Executors.newSingleThreadExecutor { r -> Thread { Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY); r.run() } }
         var lastMs: Long? = null
         // Heard on the analysis thread, so the analyzer reads it without a lock. Severe heat slows the idle mirror first.
         var hot = false
@@ -195,18 +203,17 @@ fun CameraMirror(
                 val interval = if (analysing) ANALYSIS_INTERVAL_MS else if ((idle && !woken) || hot) IDLE_INTERVAL_MS else PREVIEW_INTERVAL_MS
                 if (!analysisDue(lastMs, ms, interval)) return@setAnalyzer
                 lastMs = ms
-                // Inside a sign window the tracker sees the signer's reach at full detail; elsewhere the whole frame.
-                val window = if (analysing) focus.update(last, luma?.moved) else Focus.FULL
-                val crop = converter.crop(it, rot, window)
+                // Always the whole frame: a crop that follows the signer made the tracker lose and misplace the body.
+                val crop = converter.crop(it, rot, Focus.FULL)
                 val bitmap = converter.convert(it, rot, crop)
                 val aspect = crop.uprightW.toFloat() / crop.uprightH
                 // Picture quality is judged only while a sign is being read; elsewhere it costs nothing.
                 val blurry = analysing && (luma?.let { l -> blur.judge(l.sharpness) } ?: blur.blurry(bitmap))
                 val frame = runCatching { tracker.track(bitmap, ms)?.fromCrop(crop)?.let { raw -> pipeline.mark(raw, aspect, blurry) } }.getOrNull()
-                last = frame
                 if (frame?.pose != null) lastPerson = ms
                 shown = frame
-                traced = frame?.let { f -> traced.next(f, System.nanoTime()) }
+                // Only at full rate: at the idle rate the picture would stutter.
+                picture = if (interval < IDLE_INTERVAL_MS) bitmap.asImageBitmap() else null
                 frame?.let { f -> frameSink?.invoke(f) }
                 // Inside a sign window open hands and pointing are signs, not answers.
                 if (!analysing) {
@@ -224,18 +231,22 @@ fun CameraMirror(
             executor.execute { converter.close() }
             executor.shutdown()
             shown = null
-            traced = null
+            picture = null
         }
     }
 
     val surface = request
     if (!permitted || failed || surface == null) {
-        Box(modifier) { placeholder() }
+        Box(modifier) {
+            placeholder()
+            if (!permitted) PermissionButton(camera, Modifier.align(Alignment.BottomCenter).padding(12.dp))
+        }
         return
     }
     val labels = rememberTextMeasurer()
-    val skeletonOn = showSkeleton && SkeletonOverlay.on.value
-    LaunchedEffect(skeletonOn) { while (skeletonOn) withFrameNanos { screenTick = it } }
+    // No new picture for a while: the tracker slowed or stopped, so the live picture shows again.
+    // Watched outside composition, so a new picture each frame redraws the canvas only.
+    LaunchedEffect(Unit) { snapshotFlow { picture }.collectLatest { if (it != null) { delay(FRESH_NS / 1_000_000); picture = null } } }
     Box(modifier) {
         // TextureView-backed, so the rounded window around it clips the picture. Fit: the subject sees all the camera sees.
         CameraXViewfinder(surface, Modifier.fillMaxSize(), implementationMode = ImplementationMode.EMBEDDED, contentScale = if (fill) ContentScale.Crop else ContentScale.Fit)
@@ -255,33 +266,31 @@ fun CameraMirror(
                     quadraticTo(c.x + r * 2.4f, c.y + r * 1.6f, c.x + r * 2.6f, size.height * 0.85f)
                 }, guide, style = line)
             }
-            screenTick
-            val seen = traced?.at(System.nanoTime()) ?: return@Canvas
+            // The tracked picture covers the live one while it keeps coming, so the skeleton sits on the very hands it
+            // was read from; when the tracker slows to save power, the live picture shows again.
+            picture?.let { drawTracked(it, front, fill) }
+            val seen = shown ?: return@Canvas
             drawLandmarks(seen, front, analysing, showFace, handColor, labels, fill)
         }
     }
 }
 
-/** The last two tracked frames, the newest arriving at [atNs] after a gap of [gapNs]. */
-internal class Traced(val before: LandmarkFrame?, val latest: LandmarkFrame, val atNs: Long, val gapNs: Long) {
-    /** The overlay one tracker step behind, eased so it moves every screen frame instead of jumping. */
-    fun at(nowNs: Long): LandmarkFrame {
-        val b = before ?: return latest
-        val t = ((nowNs - atNs).toFloat() / gapNs).coerceIn(0f, 1f)
-        return latest.copy(leftHand = mix(b.leftHand, latest.leftHand, t), rightHand = mix(b.rightHand, latest.rightHand, t), face = mix(b.face, latest.face, t), pose = mix(b.pose, latest.pose, t))
+/** A tracked picture older than this means the tracker has slowed down; the live picture shows instead. */
+private const val FRESH_NS = 150_000_000L
+
+/** [image] where the live picture would be: same fit or crop, mirrored like the front camera's preview. */
+private fun DrawScope.drawTracked(image: ImageBitmap, front: Boolean, fill: Boolean) {
+    val aspect = image.width.toFloat() / image.height
+    val w = if (fill) maxOf(size.width, size.height * aspect) else minOf(size.width, size.height * aspect)
+    val h = w / aspect
+    val left = (size.width - w) / 2f
+    val top = (size.height - h) / 2f
+    clipRect {
+        scale(if (front) -1f else 1f, 1f, pivot = Offset(size.width / 2f, size.height / 2f)) {
+            drawImage(image, dstOffset = IntOffset(left.toInt(), top.toInt()), dstSize = IntSize(w.toInt(), h.toInt()), filterQuality = FilterQuality.Low)
+        }
     }
 }
-
-/** A gap longer than this is a person stepping in or out: no easing across it. */
-private const val MAX_EASE_NS = 300_000_000L
-
-internal fun Traced?.next(frame: LandmarkFrame, nowNs: Long): Traced {
-    val gap = this?.let { nowNs - it.atNs } ?: 0L
-    return Traced(this?.latest?.takeIf { gap in 1..MAX_EASE_NS }, frame, nowNs, gap.coerceAtLeast(1))
-}
-
-private fun mix(a: List<Offset>?, b: List<Offset>?, t: Float): List<Offset>? =
-    if (a == null || b == null || a.size != b.size) b else List(b.size) { i -> lerp(a[i], b[i], t) }
 
 /** The traced skeleton, brows and lips of [seen] over a frame drawn Fit and centred; the camera overlay and its device test both draw this. */
 internal fun DrawScope.drawLandmarks(seen: LandmarkFrame, front: Boolean, analysing: Boolean, showFace: Boolean, handColor: Color, labels: TextMeasurer, fill: Boolean = false) {
@@ -404,28 +413,66 @@ internal fun tuningLine(f: LandmarkFrame): String {
     )
 }
 
-/** The arms and hands of [seen] as a PNG, the skeleton snapshot kept with a signed answer when evidence mode is on. */
-fun renderSkeletonPng(seen: LandmarkFrame, width: Int = 360, height: Int = 480): ByteArray {
-    val bitmap = createBitmap(width, height)
+/** The arms and hands of [seen] as a PNG, the stick figure kept with a camera read. */
+fun renderSkeletonPng(seen: LandmarkFrame, width: Int = 360): ByteArray = renderSheetPng(listOf(listOf(seen)), emptyList(), width)
+
+/** Every sign of a signed answer as a strip of stick figures from its start to its end, one row per sign in signing
+ * order, each row headed by the word read for it: the motion kept in the record with every signed answer. Null when
+ * no sign has a body in view. */
+fun renderSignsPng(signs: List<List<LandmarkFrame>>, words: List<String> = emptyList(), steps: Int = SIGN_STEPS, panelWidth: Int = 150): ByteArray? {
+    val rows = signs.mapIndexedNotNull { i, frames -> signSteps(frames, steps).takeIf { it.isNotEmpty() }?.let { it to (words.getOrNull(i) ?: "?") } }
+    if (rows.isEmpty()) return null
+    return renderSheetPng(rows.map { it.first }, rows.mapIndexed { n, (_, w) -> "${n + 1}. $w" }, panelWidth)
+}
+
+/** Frames spread evenly over the part of one sign where a hand is in view, so the strip shows its whole movement. */
+internal fun signSteps(frames: List<LandmarkFrame>, steps: Int): List<LandmarkFrame> {
+    val seen = frames.filter { it.hands.isNotEmpty() }.ifEmpty { frames.filter { it.pose != null } }
+    if (seen.size <= steps) return seen
+    return List(steps) { i -> seen[(i * (seen.size - 1).toFloat() / (steps - 1)).roundToInt()] }
+}
+
+private const val SIGN_STEPS = 6
+
+private fun renderSheetPng(rows: List<List<LandmarkFrame>>, labels: List<String>, panelWidth: Int): ByteArray {
+    // Kept to the frame's own shape, so arms are not stretched.
+    val aspect = rows.first().first().aspect.coerceIn(0.3f, 3f)
+    val panelHeight = (panelWidth / aspect).toInt()
+    val cols = rows.maxOf { it.size }
+    val gap = if (cols > 1 || rows.size > 1) 4 else 0
+    val labelHeight = if (labels.isEmpty()) 0 else (panelWidth / 5f).toInt()
+    val rowHeight = labelHeight + panelHeight
+    val bitmap = createBitmap(cols * panelWidth + (cols - 1) * gap, rows.size * rowHeight + (rows.size - 1) * gap)
     val canvas = android.graphics.Canvas(bitmap)
-    canvas.drawColor(android.graphics.Color.rgb(30, 42, 51))
+    canvas.drawColor(android.graphics.Color.rgb(18, 26, 32))
+    val back = Paint().apply { color = android.graphics.Color.rgb(30, 42, 51) }
     val bone = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.rgb(255, 197, 107)
-        strokeWidth = 6f
+        strokeWidth = panelWidth / 50f
         strokeCap = Paint.Cap.ROUND
     }
     val joint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
-    fun line(a: Offset, b: Offset) = canvas.drawLine(a.x * width, a.y * height, b.x * width, b.y * height, bone)
-    fun dot(p: Offset, r: Float) = canvas.drawCircle(p.x * width, p.y * height, r, joint)
-
-    seen.pose?.takeIf { it.size >= 33 }?.let { pose ->
-        for ((i, j) in ArmBones) line(pose[i], pose[j])
-        for (i in 11..16) dot(pose[i], 7f)
-    }
-    for (hand in seen.hands) {
-        if (hand.size < 21) continue
-        for ((i, j) in HandBones) line(hand[i], hand[j])
-        for (p in hand) dot(p, 4.5f)
+    val label = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE; textSize = labelHeight * 0.7f; isFakeBoldText = true }
+    rows.forEachIndexed { r, frames ->
+        val rowTop = r * (rowHeight + gap).toFloat()
+        labels.getOrNull(r)?.let { canvas.drawText(it, 4f, rowTop + labelHeight * 0.78f, label) }
+        frames.forEachIndexed { c, seen ->
+            val left = c * (panelWidth + gap).toFloat()
+            val top = rowTop + labelHeight
+            canvas.drawRect(left, top, left + panelWidth, top + panelHeight, back)
+            fun at(p: Offset) = Offset(left + p.x * panelWidth, top + p.y * panelHeight)
+            fun line(a: Offset, b: Offset) { val p = at(a); val q = at(b); canvas.drawLine(p.x, p.y, q.x, q.y, bone) }
+            fun dot(p: Offset, radius: Float) { val o = at(p); canvas.drawCircle(o.x, o.y, radius, joint) }
+            seen.pose?.takeIf { it.size >= 33 }?.let { pose ->
+                for ((i, j) in ArmBones) line(pose[i], pose[j])
+                for (i in 11..16) dot(pose[i], panelWidth / 45f)
+            }
+            for (hand in seen.hands) {
+                if (hand.size < 21) continue
+                for ((i, j) in HandBones) line(hand[i], hand[j])
+                for (p in hand) dot(p, panelWidth / 70f)
+            }
+        }
     }
     return try {
         ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 90, it) }.toByteArray()

@@ -9,7 +9,9 @@ Preconditions: two phones with the same release APK from the [latest release](ht
 1. On the stage phone, tap **Use as stage screen** on the start screen.
 2. On the officer phone, open a session, then More, **Second screen**, and pick the stage phone.
 
-Pass: no scan or location permission is asked on either phone (only Nearby devices, `BLUETOOTH_CONNECT`); the stage phone shows a 6-digit code.
+Pass: no location permission is asked on either phone (only Nearby devices: `BLUETOOTH_CONNECT`, and `BLUETOOTH_SCAN` when Find a nearby phone is used); the stage phone shows a 6-digit code.
+
+In-app pairing (Android 12 and later): unpair the two phones in system settings. On the stage phone tap Make this phone visible; on the officer phone tap Find a nearby phone, pick the stage phone and confirm on both. Pass: the pairing confirmation appears on both phones, the link starts at once and the 6-digit code follows.
 
 ## 2. Code and check number
 

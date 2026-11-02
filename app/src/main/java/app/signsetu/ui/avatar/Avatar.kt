@@ -1,7 +1,10 @@
 package app.signsetu.ui.avatar
 
 import android.annotation.SuppressLint
+import android.content.ComponentCallbacks2
 import android.content.Context
+import android.content.MutableContextWrapper
+import android.content.res.Configuration
 import android.graphics.Color
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
@@ -21,7 +24,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import app.signsetu.data.content.Clip
 import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.QuestionKind
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -55,13 +60,14 @@ internal fun VrmAvatar(
     onReady: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val web = remember { AvatarWebView(context) }
+    val web = remember { AvatarViews.take(context) }
     val finished by rememberUpdatedState(onFinished)
     val readySink by rememberUpdatedState(onReady)
     DisposableEffect(web) { web.onReady = { readySink() }; onDispose { web.onReady = {} } }
-    DisposableEffect(web) { onDispose { web.destroy() } }
+    DisposableEffect(web) { onDispose { AvatarViews.give(web) } }
     // A phone whose WebView never draws the model gets the drawn character from then on.
-    LaunchedEffect(web) { delay(VRM_READY_MS); if (!web.isReady) AvatarRenderer.vrmFailed.value = true }
+    // Wall time, off the frame clock: a test clock that skips ahead must not count as a model that failed to load.
+    LaunchedEffect(web) { withContext(Dispatchers.Default) { delay(VRM_READY_MS) }; if (!web.isReady) AvatarRenderer.vrmFailed.value = true }
     LaunchedEffect(view) { web.run("signsetu.view('${view.js}')") }
     // Breathing and glancing change as the person starts and stops signing; that must not restart the signs.
     LaunchedEffect(idle, glance) { web.run("signsetu.mode({\"idle\": $idle, \"glance\": $glance})") }
@@ -94,9 +100,53 @@ internal fun VrmAvatar(
 
 private val json = Json { encodeDefaults = false }
 
+/** Loaded 3D views kept between screens, so going back to a screen shows the character at once instead of loading
+ * the model again. Each view wraps a swappable context: the screen's while shown, the app's while kept. */
+object AvatarViews {
+    private val idle = ArrayDeque<AvatarWebView>()
+    /** One spare covers the moment two screens overlap in a transition; a third view would only cost memory. */
+    private const val KEEP = 1
+    private var trimHooked = false
+
+    internal fun take(context: Context): AvatarWebView {
+        hookTrim(context)
+        val web = idle.removeFirstOrNull()?.also { (it.context as MutableContextWrapper).baseContext = context; it.onResume() }
+            ?: AvatarWebView(MutableContextWrapper(context))
+        (web.parent as? ViewGroup)?.removeView(web)
+        return web
+    }
+
+    internal fun give(web: AvatarWebView) {
+        (web.parent as? ViewGroup)?.removeView(web)
+        // A dead renderer or a full spare list: this view goes.
+        if (AvatarRenderer.vrmFailed.value || idle.size >= KEEP) { web.destroy(); return }
+        web.onPause()
+        (web.context as MutableContextWrapper).baseContext = web.context.applicationContext
+        idle.addLast(web)
+    }
+
+    private fun hookTrim(context: Context) {
+        if (trimHooked) return
+        trimHooked = true
+        context.applicationContext.registerComponentCallbacks(object : ComponentCallbacks2 {
+            override fun onTrimMemory(level: Int) {
+                // Kept through the app going to the background; dropped only when the phone is short of memory.
+                @Suppress("DEPRECATION")
+                if (level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) drop()
+            }
+            override fun onConfigurationChanged(newConfig: Configuration) {}
+            @Deprecated("Deprecated in Java")
+            override fun onLowMemory() = drop()
+        })
+    }
+
+    /** Frees the kept views: memory is short, or another character style was chosen. */
+    fun drop() { while (idle.isNotEmpty()) idle.removeFirst().destroy() }
+}
+
 /** Serves only assets/avatar to its page and runs commands once the model has loaded. */
 @SuppressLint("SetJavaScriptEnabled", "ViewConstructor")
-private class AvatarWebView(context: Context) : WebView(context) {
+internal class AvatarWebView(context: Context) : WebView(context) {
     private var ready = false
     val isReady get() = ready
     private var pending = linkedMapOf<String, String>()

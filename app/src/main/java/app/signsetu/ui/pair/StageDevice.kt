@@ -74,6 +74,7 @@ import app.signsetu.AppContainer
 import app.signsetu.R
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.camera.LandmarkTracker
+import app.signsetu.camera.renderSignsPng
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.forSignLanguage
 import app.signsetu.data.content.SignLanguage
@@ -114,11 +115,11 @@ fun UseAsStageButton(container: AppContainer) {
     var checklist by remember { mutableStateOf(false) }
     val enable = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { if (bluetoothOn(context)) container.startStage() }
     val proceed = { if (bluetoothOn(context)) container.startStage() else enable.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)) }
-    // The stage never passes the start screen, where the camera is otherwise asked for.
+    // The stage never passes the start screen, where the camera is otherwise asked for. Without the link it cannot
+    // start; without the camera it still shows, and its camera view asks again.
+    val linkPerms = remember { StageTransports.permissions(context) }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { proceed() }
-    val link = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        if (granted.values.all { it }) camera.launch(Manifest.permission.CAMERA)
-    }
+    val access = app.signsetu.ui.components.rememberPermissions(linkPerms, askNow = false) { ok -> if (ok) camera.launch(Manifest.permission.CAMERA) }
     TextButton(onClick = { checklist = true }) { Text(stringResource(R.string.stage_use)) }
     if (checklist) {
         GuardedAlertDialog(
@@ -127,8 +128,7 @@ fun UseAsStageButton(container: AppContainer) {
             confirmButton = {
                 TextButton(onClick = {
                     checklist = false
-                    val perms = StageTransports.permissions(context)
-                    if (perms.isEmpty()) camera.launch(Manifest.permission.CAMERA) else link.launch(perms)
+                    if (access.granted) camera.launch(Manifest.permission.CAMERA) else access.request()
                 }) { Text(stringResource(R.string.stage_continue)) }
             },
             dismissButton = {
@@ -198,6 +198,9 @@ fun StageDeviceScreen(link: StageLink, content: ContentBundle, container: AppCon
 internal fun Waiting(name: String, onCancel: () -> Unit) = Centered {
     Text(stringResource(R.string.stage_waiting, name), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
     CircularProgressIndicator(color = LocalContentColor.current)
+    // An unpaired officer phone finds this one only while the system Bluetooth screen is open; the app never advertises.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    StageOutlinedButton(onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }) { Text(stringResource(R.string.stage_visible)) }
     StageOutlinedButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
 }
 
@@ -279,7 +282,9 @@ private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkSt
             val cards = pending.answerCards()
             scope.launch {
                 val words = withContext(Dispatchers.Default) { readSigns(taken, r, cards, content.words) }
-                if (words.any { it != "?" }) send(AnswerBody.Signed(words))
+                // The officer's record keeps every sign's movement as stick figures, shrunk if needed to fit the link.
+                val png = withContext(Dispatchers.Default) { runCatching { renderSignsPng(taken, words)?.let(::fitDrawing) }.getOrNull() }?.b64()
+                if (words.any { it != "?" }) send(AnswerBody.Signed(words, png))
             }
         }
     }

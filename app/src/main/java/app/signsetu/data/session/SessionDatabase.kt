@@ -59,6 +59,8 @@ data class EventEntity(
     val via: String? = null,
     /** EventSeal over the previous row's hash and this row; null on rows written before sealing existed. */
     val hash: String? = null,
+    /** The person's recorded speech for this row (AudioEntity); null on every other row. */
+    val audioId: Long? = null,
 )
 
 @Entity(
@@ -70,6 +72,19 @@ class DrawingEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val sessionId: String,
     val png: ByteArray,
+)
+
+/** The person's speech as 16 kHz mono 16-bit WAV, recorded only while the officer held the button and only after
+ * consent was logged; encrypted with the database and deleted with its session. */
+@Entity(
+    tableName = "audio",
+    foreignKeys = [ForeignKey(SessionEntity::class, ["id"], ["sessionId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("sessionId")],
+)
+class AudioEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val sessionId: String,
+    val wav: ByteArray,
 )
 
 @Dao
@@ -95,10 +110,16 @@ interface SessionDao {
 
     /** A drawing and the row that names it are written together or not at all, so a crash leaves no orphan. */
     @Transaction
-    suspend fun insertSealed(event: EventEntity, drawing: DrawingEntity?): Long {
+    suspend fun insertSealed(event: EventEntity, drawing: DrawingEntity?, audio: AudioEntity? = null): Long {
         val drawingId = drawing?.let { insertDrawing(it) }
-        return insertEvent(event.copy(drawingId = drawingId))
+        val audioId = audio?.let { insertAudio(it) }
+        return insertEvent(event.copy(drawingId = drawingId, audioId = audioId))
     }
+
+    @Insert suspend fun insertAudio(audio: AudioEntity): Long
+
+    @Query("SELECT wav FROM audio WHERE id = :id")
+    suspend fun audio(id: Long): ByteArray?
 
     @Query("SELECT hash FROM event WHERE sessionId = :sessionId AND hash IS NOT NULL ORDER BY id")
     suspend fun seals(sessionId: String): List<String>
@@ -137,7 +158,7 @@ interface SessionDao {
     suspend fun deleteIdleBefore(cutoff: Long): Int
 }
 
-@Database(entities = [SessionEntity::class, EventEntity::class, DrawingEntity::class], version = 6, exportSchema = true)
+@Database(entities = [SessionEntity::class, EventEntity::class, DrawingEntity::class, AudioEntity::class], version = 7, exportSchema = true)
 abstract class SessionDatabase : RoomDatabase() {
     abstract fun dao(): SessionDao
 
@@ -178,13 +199,21 @@ abstract class SessionDatabase : RoomDatabase() {
             }
         }
 
-        fun open(context: Context, key: ByteArray, onDestructiveMigration: () -> Unit = {}): SessionDatabase {
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE event ADD COLUMN audioId INTEGER")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `audio` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` TEXT NOT NULL, `wav` BLOB NOT NULL, FOREIGN KEY(`sessionId`) REFERENCES `session`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_audio_sessionId` ON `audio` (`sessionId`)")
+            }
+        }
+
+        fun open(context: Context, key: ByteArray, onDestructiveMigration: () -> Unit = {}, fileName: String = FILE_NAME): SessionDatabase {
             System.loadLibrary("sqlcipher")
-            return Room.databaseBuilder(context, SessionDatabase::class.java, FILE_NAME)
+            return Room.databaseBuilder(context, SessionDatabase::class.java, fileName)
                 .openHelperFactory(SupportOpenHelperFactory(key))
                 // Purged rows are overwritten in place, and no write-ahead log keeps old pages around.
                 .setJournalMode(JournalMode.TRUNCATE)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 // A downgrade drops sessions rather than failing every unlock; the officer is told (onDestructiveMigration).
                 .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
                 .addCallback(object : Callback() {

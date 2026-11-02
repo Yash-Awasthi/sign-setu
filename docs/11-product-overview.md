@@ -100,17 +100,18 @@ With the online assistant on, a paired stage can host the **AI counsellor** for 
 
 | Control | Description |
 | --- | --- |
-| Offline | Every feature works with no connection; speech to text needs the station brain on the local network; no background location in any build and no location in `standard`, enforced by a build gate |
+| Offline | Every feature works with no connection; the text and translation of a recorded answer need the station brain (on the station network or over iroh); no background location in any build and no location in `standard`, enforced by a build gate |
 | Encrypted record | SQLCipher (AES-256) under a random key wrapped by an Android Keystore key that works only after the phone's own lock |
 | Relock | After five minutes away from the app, thirty inside a session; a relock, crash or restart always asks for the credential |
 | Retention | Sessions are deleted once idle past 24 hours by default, or a set period of 4 to 72 hours, or kept until deleted if the officer chooses; while the app is locked, everything is wiped once even the newest session is past retention; "Delete all data" destroys the keys |
 | Screen | Screenshots blocked in the final release build (`secureScreen`); taps through another app's overlay ignored; no backup or device transfer |
 | Keyboard | Every text field asks the keyboard not to learn from what is typed |
 | Integrity | Every content file, the vision and sign-reader models and the assistant model are checked by SHA-256 before use |
-| Landmarks | Biometric data: kept only from sign windows, in memory for the session, never stored or exported, except a skeleton drawing when the officer turns evidence mode on |
-| Record integrity | Every row sealed into a SHA-256 hash chain; export re-checks it and adds a draft BSA s.63 certificate |
+| Landmarks | Biometric data: kept only from sign windows, in memory for the session, never stored or exported, except the skeleton drawing kept with every signed answer |
+| Record integrity | Every row sealed into a SHA-256 hash chain, recorded audio included; an ended session's Merkle root is signed by a key that never leaves the Keystore; export re-checks the chain, adds a QR verification page and a draft BSA s.63 certificate; Check a report and `verify_seal.py` check a report later |
+| Voice | The person's own voice only, after consent is logged for the session, only while the officer holds the button; kept and exported like any answer; never the officer's voice |
 | Expiry | A build refuses new sessions 180 days after it was made; rooted phones are warned, list no saved sessions and delete a session when it is finished |
-| Excluded by design | Identity columns in the database (personal details exist only as the subject's own logged answers, purged with the session), statements, audio or video recording, identity recognition, thumb or open-palm signals for yes, no or stop, body maps for the subject |
+| Excluded by design | Identity columns in the database (personal details exist only as the subject's own logged answers, purged with the session), statements, video recording, recording in the background, identity recognition, thumb or open-palm signals for yes, no or stop, body maps for the subject |
 
 ## 4. Mechanisms
 
@@ -185,7 +186,9 @@ Export works without a network. The PDF is written on the phone and handed to An
 | Role | Only when set | "Not known yet" is not a fact about the person |
 | Answers from a second screen | Yes, marked "from second screen" | Provenance |
 | Landmarks and replays | Never | Biometric data |
-| Skeleton snapshot of a signed answer | Only with evidence mode on for the session | One drawn frame, no picture of the person |
+| Skeleton drawing of a signed answer | Always | Each sign's movement as stick figures, one row per sign with its word; no picture of the person |
 | Hash-chain status and certificate | Yes: chain head, record digest on every page, draft BSA s.63 certificate | Integrity of the record |
 | Machine draft summary | Only when the officer attaches it, marked not part of the record | A draft, not evidence |
-| Camera video or photographs | Never | The application records nothing |
+| The person's recorded speech | Yes, embedded in the encrypted PDF as `audio-<id>.wav`, with its row in the conversation | Their own answer, recorded with consent |
+| The brain's text and translation of that speech | Yes, beside the recording, marked as the app's reading | A reading, not the person's words |
+| Camera video or photographs | Never | The camera is never recorded |

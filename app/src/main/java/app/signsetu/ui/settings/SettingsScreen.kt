@@ -90,7 +90,7 @@ private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?, onRecordSigns: (() -> Unit)? = null, repo: app.signsetu.data.session.SessionRepository? = null) {
+fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onSignToType: (() -> Unit)? = null, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?, onRecordSigns: (() -> Unit)? = null, repo: app.signsetu.data.session.SessionRepository? = null) {
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
@@ -135,6 +135,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
         ) {
             Group(R.string.practice_title) {
                 Item(stringResource(R.string.practice_title), stringResource(R.string.practice_settings_summary), onClick = onPractice)
+                onSignToType?.let { Item(stringResource(R.string.sign_to_type), stringResource(R.string.sign_to_type_summary), onClick = it) }
                 onRecordSigns?.let { Item(stringResource(R.string.record_title), stringResource(R.string.record_settings_summary), onClick = it) }
             }
             Group(R.string.settings_interpreter) {
@@ -157,12 +158,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                 SwitchItem(R.string.settings_isl_reorder, R.string.settings_isl_reorder_summary, s.islReorder) { on -> scope.launch { store.setIslReorder(on) } }
                 Item(stringResource(R.string.settings_character), stringResource(characterLabel(s.avatarStyle)), note = stringResource(R.string.settings_character_note)) { dialog = Dialog.CHARACTER }
             }
-            Group(R.string.settings_sign_languages) {
-                LanguageItem(R.string.settings_isl_status, R.string.settings_isl_status_summary, R.string.settings_isl_badge, warn = false)
-                LanguageItem(R.string.settings_asl_status, R.string.settings_asl_status_summary, R.string.asl_experimental_badge, warn = true)
-                SwitchItem(R.string.settings_reader_format3, R.string.settings_reader_format3_summary, s.readerFormat3) { on -> scope.launch { store.setReaderFormat3(on) } }
-            }
-            Group(R.string.settings_assistant) {
+            Group(R.string.settings_online) {
                 if (available) ListItem(
                     headlineContent = { Text(stringResource(if (viaGateway) R.string.settings_online_assistant else R.string.settings_online_assistant_direct)) },
                     supportingContent = { Text(stringResource(if (viaGateway) R.string.settings_online_assistant_summary else R.string.settings_online_assistant_summary_direct)) },
@@ -176,18 +172,15 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                     if (viaGateway) Item(stringResource(R.string.settings_online_assistant_key), if (enrolled) stringResource(R.string.settings_online_assistant_enrolled) else notSet) { dialog = Dialog.AIKEY }
                     else if (cloud.hasGateway) Item(stringResource(R.string.cloud_notice_custom), "${s.devAiModel} · ${s.devAiUrl.removePrefix("https://")}") { dialog = Dialog.DEVELOPER }
                 }
-                ModelImport(models, ModelLabels.ASSISTANT)
-            }
-            // A separate model and import from the assistant's, which serves the automation agents.
-            app.signsetu.ui.components.LocalBrain.current?.let { b -> Group(R.string.brain_group) { BrainItems(b) } }
-            Group(R.string.settings_sentence_helper) {
-                ModelImport(sentenceModel, ModelLabels.SENTENCE)
-            }
-            if (!cloud.hasGateway) Group(R.string.settings_developer) {
-                Item(
+                if (!cloud.hasGateway) Item(
                     stringResource(R.string.settings_developer_mode),
                     if (s.devAiUrl.isBlank()) stringResource(R.string.settings_developer_summary) else "${s.devAiModel} · ${s.devAiUrl.removePrefix("https://")}",
                 ) { dialog = Dialog.DEVELOPER }
+                app.signsetu.ui.components.LocalBrain.current?.let { b -> BrainItems(b) }
+            }
+            Group(R.string.settings_offline) {
+                ModelImport(models, ModelLabels.ASSISTANT)
+                ModelImport(sentenceModel, ModelLabels.SENTENCE)
             }
             Group(R.string.settings_records) {
                 Item(
@@ -216,6 +209,8 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                         }
                     },
                 )
+                LanguageItem(R.string.settings_isl_status, R.string.settings_isl_status_summary, R.string.settings_isl_badge, warn = false)
+                LanguageItem(R.string.settings_asl_status, R.string.settings_asl_status_summary, R.string.asl_experimental_badge, warn = true)
             }
             Spacer(Modifier.height(Spacing.xl))
         }
@@ -568,16 +563,20 @@ private fun LicencesDialog(onDismiss: () -> Unit) {
 
 /** The words one model import uses: its state, the import and the removal. */
 internal enum class ModelLabels(
+    /** Headline once installed, and while not: the offline assistant's row is its import action until then. */
+    @StringRes val title: Int, @StringRes val emptyTitle: Int,
     @StringRes val ready: Int, @StringRes val missing: Int, @StringRes val memory: Int, @StringRes val unsupported: Int,
-    @StringRes val import: Int, @StringRes val importing: Int, @StringRes val bad: Int, @StringRes val remove: Int,
+    @StringRes val importing: Int, @StringRes val bad: Int, @StringRes val remove: Int,
 ) {
     ASSISTANT(
+        R.string.settings_assistant, R.string.settings_assistant_import,
         R.string.settings_assistant_ready, R.string.settings_assistant_missing, R.string.settings_assistant_memory, R.string.settings_assistant_unsupported,
-        R.string.settings_assistant_import, R.string.settings_assistant_importing, R.string.settings_assistant_bad, R.string.settings_assistant_remove,
+        R.string.settings_assistant_importing, R.string.settings_assistant_bad, R.string.settings_assistant_remove,
     ),
     SENTENCE(
+        R.string.settings_sentence_helper, R.string.settings_sentence_helper,
         R.string.settings_sentence_ready, R.string.settings_sentence_missing, R.string.settings_assistant_memory, R.string.settings_assistant_unsupported,
-        R.string.settings_sentence_import, R.string.settings_assistant_importing, R.string.settings_assistant_bad, R.string.settings_sentence_remove,
+        R.string.settings_assistant_importing, R.string.settings_assistant_bad, R.string.settings_sentence_remove,
     ),
 }
 
@@ -600,30 +599,30 @@ internal fun ModelImport(models: ModelStore, labels: ModelLabels) {
             }
         }
     }
+    val missing = modelState == ModelStore.State.NOT_INSTALLED
+    val status = when {
+        importing -> labels.importing
+        badModel -> labels.bad
+        else -> when (modelState) {
+            ModelStore.State.READY -> labels.ready
+            ModelStore.State.NOT_INSTALLED -> labels.missing
+            ModelStore.State.TOO_LITTLE_MEMORY -> labels.memory
+            ModelStore.State.UNSUPPORTED -> labels.unsupported
+        }
+    }
+    val canImport = !importing && missing
     ListItem(
-        headlineContent = {
+        headlineContent = { Text(stringResource(if (missing) labels.emptyTitle else labels.title)) },
+        supportingContent = {
             Text(
-                stringResource(
-                    when {
-                        importing -> labels.importing
-                        badModel -> labels.bad
-                        else -> when (modelState) {
-                            ModelStore.State.READY -> labels.ready
-                            ModelStore.State.NOT_INSTALLED -> labels.missing
-                            ModelStore.State.TOO_LITTLE_MEMORY -> labels.memory
-                            ModelStore.State.UNSUPPORTED -> labels.unsupported
-                        }
-                    },
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (badModel) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                stringResource(status),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (badModel) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         colors = ItemColors,
+        modifier = if (canImport) Modifier.clickable(role = Role.Button) { pickModel.launch(arrayOf("*/*")) } else Modifier,
     )
-    if (!importing && modelState == ModelStore.State.NOT_INSTALLED) {
-        Item(stringResource(labels.import), "") { pickModel.launch(arrayOf("*/*")) }
-    }
     if (!importing && modelState == ModelStore.State.READY) {
         Item(stringResource(labels.remove), "", destructive = true) {
             scope.launch { models.remove(); modelState = models.state() }

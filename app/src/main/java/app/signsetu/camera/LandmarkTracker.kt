@@ -11,6 +11,8 @@ interface LandmarkTracker : AutoCloseable {
     fun track(frame: Bitmap, timestampMs: Long): LandmarkFrame?
     /** Loads the model ahead of the first frame, off the main thread; it analyses nothing. */
     fun warm() {}
+    /** The next frame shows a different part of the picture: nothing read from earlier frames may be reused for it. */
+    fun viewMoved() {}
     override fun close() {}
 }
 

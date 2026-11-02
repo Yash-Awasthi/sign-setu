@@ -32,3 +32,8 @@
 
 # JNI entry points of the camera frame library.
 -keepclasseswithmembernames class app.signsetu.camera.YuvFrames { native <methods>; }
+
+# iroh's generated bindings and JNA are reached from native code by name.
+-keep class computer.iroh.** { *; }
+-keep class com.sun.jna.** { *; }
+-dontwarn java.awt.**

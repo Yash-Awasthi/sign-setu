@@ -42,7 +42,7 @@ object EvidenceIntegrity {
 
     /** Recomputes every seal in write order from the rows and drawings as they are now; the first row whose seal
      * no longer matches is reported. Rows from before sealing are counted and left out of the chain. */
-    suspend fun verifyChain(session: Session, events: List<SessionEvent>, drawing: suspend (Long) -> ByteArray?): ChainCheck {
+    suspend fun verifyChain(session: Session, events: List<SessionEvent>, audio: suspend (Long) -> ByteArray? = { null }, drawing: suspend (Long) -> ByteArray?): ChainCheck {
         var running = EventSeal.genesis(session.id, session.startedAt)
         var sealed = 0
         var unsealed = 0
@@ -52,7 +52,7 @@ object EvidenceIntegrity {
             if (stored == null) { unsealed++; continue }
             val expected = EventSeal.seal(
                 running, session.id, e.ts, e.type.name, e.source.name, e.lang, e.text, e.cardId, e.lexiconId,
-                e.drawingId?.let { drawing(it) }, e.itemId, e.reason, e.shownId, e.via,
+                e.drawingId?.let { drawing(it) }, e.itemId, e.reason, e.shownId, e.via, e.audioId?.let { audio(it) },
             )
             if (expected != stored && broken == null) broken = e.id
             sealed++
@@ -120,7 +120,7 @@ object EvidenceIntegrity {
     fun qrPayload(line: String, recordDigest: String, sig: String?, publicKey: String?) = "$line|$recordDigest|${sig ?: "-"}|${publicKey ?: "-"}"
 
     /** What checking a report's seal found. */
-    enum class SealCheck { MATCHES_DEVICE, SIGNATURE_VALID, SIGNATURE_INVALID, UNSIGNED, DIFFERS_FROM_DEVICE, MALFORMED }
+    enum class SealCheck { MATCHES_DEVICE, SIGNATURE_VALID, SIGNATURE_INVALID, UNSIGNED, DIFFERS_FROM_DEVICE, RECORD_ALTERED, MALFORMED }
 
     /** Checks a seal payload: its signature with the key it carries ([verify]), then, when the session is still on
      * this device ([current] is its line now), whether the record has changed since. */

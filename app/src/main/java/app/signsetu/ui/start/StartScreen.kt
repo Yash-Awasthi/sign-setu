@@ -161,7 +161,7 @@ fun StartScreen(
         }
         Unit
     }
-    // The camera permission is asked of the officer here, never of the subject on the stage.
+    // Asked here first, so the officer answers it; a camera view still without it asks again.
     val profile = if (langUnknown) Profile.OTHER_LANGUAGE else Profile.NOT_SURE
     val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { begin(profile) }
     val onStart = {

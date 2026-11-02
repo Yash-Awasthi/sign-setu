@@ -21,6 +21,7 @@ import app.signsetu.data.session.DeviceSeal
 import app.signsetu.data.session.SYSTEM_OPENED
 import app.signsetu.sign.DominantHand
 import app.signsetu.sign.FeatureRing
+import app.signsetu.sign.LIVE_PEEK_MS
 import app.signsetu.sign.HomeSigns
 import app.signsetu.sign.LetterCommitter
 import app.signsetu.sign.MotionGate
@@ -67,7 +68,7 @@ import app.signsetu.export.SessionReport
 import app.signsetu.export.recordDigest
 import java.io.File
 import java.util.Base64
-import app.signsetu.camera.EvidenceMode
+import app.signsetu.camera.renderSignsPng
 import app.signsetu.camera.renderSkeletonPng
 import kotlinx.coroutines.withContext
 
@@ -154,14 +155,12 @@ class SessionViewModel(
             val events = repo.eventsNow(sessionId)
             if (events.none { it.text?.startsWith(SYSTEM_OPENED) != true }) return@launch
             val session = repo.session(sessionId).first() ?: return@launch
-            val chain = EvidenceIntegrity.verifyChain(session, events) { repo.drawing(it) }
+            val chain = EvidenceIntegrity.verifyChain(session, events, { repo.audio(it) }) { repo.drawing(it) }
             repo.logResume(sessionId, if (chain.intact) "chain intact, ${chain.sealed} entries" else "CHAIN BROKEN at entry ${chain.brokenAt}")
         }
     }
 
     init {
-        // Keeping skeleton snapshots is the officer's choice for one session, never carried into the next.
-        EvidenceMode.autoCapture.value = false
         viewModelScope.launch {
             val session = repo.session(sessionId).first() ?: return@launch
             // Starting a session is the officer's confirmation of its opening: the stage greets the person first,
@@ -445,17 +444,23 @@ class SessionViewModel(
     private suspend fun logSigned(segments: List<SignSegment>, words: List<String>, source: EventSource, lang: String, shownId: Long? = local.value.itemId, sentence: String? = null): Long {
         val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = sentence ?: words.joinToString(" "), shownId = shownId)
         local.update { it.copy(signed = it.signed + (id to segments)) }
-        keepSkeleton(
-            segments.flatMap { it.frames }.firstOrNull { it.pose != null || it.leftHand != null || it.rightHand != null } ?: segments.firstOrNull()?.frames?.firstOrNull(),
-            source, shownId,
-        )
+        // The app's own reading is the moment the signs were seen; the officer's later reading of them adds no new picture.
+        if (source == EventSource.MACHINE) keepSigns(segments.map { it.frames }, words, shownId)
         return id
     }
 
     private suspend fun keepSkeleton(frame: LandmarkFrame?, source: EventSource, shownId: Long?) {
-        if (!EvidenceMode.autoCapture.value || frame == null) return
-        val png = withContext(Dispatchers.Default) { runCatching { renderSkeletonPng(frame) }.getOrNull() } ?: return
-        repo.log(sessionId, EventType.ANSWER_DRAWING, source, drawingPng = png, shownId = shownId, reason = "evidence:skeleton")
+        if (frame == null) return
+        keepPng(withContext(Dispatchers.Default) { runCatching { renderSkeletonPng(frame) }.getOrNull() }, source, shownId)
+    }
+
+    /** Each sign's movement as a strip of stick figures, one row per sign, headed by the word read for it. */
+    private suspend fun keepSigns(signs: List<List<LandmarkFrame>>, words: List<String>, shownId: Long?) =
+        keepPng(withContext(Dispatchers.Default) { runCatching { renderSignsPng(signs, words) }.getOrNull() }, EventSource.MACHINE, shownId)
+
+    private suspend fun keepPng(png: ByteArray?, source: EventSource, shownId: Long?, via: String? = null) {
+        if (png == null) return
+        repo.log(sessionId, EventType.ANSWER_DRAWING, source, drawingPng = png, shownId = shownId, via = via, reason = "evidence:skeleton")
     }
 
     /** The subject chooses what each sign meant, from the officer's reading and the reader's guesses. Each set of
@@ -528,7 +533,6 @@ class SessionViewModel(
         // The reader outlives the session; the names learned in it must not.
         reader?.sessionNames(emptySet())
         wipeSigns()
-        EvidenceMode.autoCapture.value = false
     }
 
     // The same item with the pictures [offered] left out, shown if the subject answers "Something else".
@@ -656,11 +660,7 @@ class SessionViewModel(
                 if (text.isNotBlank()) {
                     repo.log(sessionId, EventType.ANSWER_SIGNED, EventSource.MACHINE, lang, text = text, shownId = q, via = via)
                 }
-                if (body.skeletonPng != null && EvidenceMode.autoCapture.value) {
-                    remotePng(body.skeletonPng)?.let { png ->
-                        repo.log(sessionId, EventType.ANSWER_DRAWING, EventSource.MACHINE, drawingPng = png, shownId = q, via = via, reason = "evidence:skeleton")
-                    }
-                }
+                body.skeletonPng?.let { keepPng(remotePng(it), EventSource.MACHINE, q, via) }
             }
         }
         // A write dropped because the app locked is not remembered, so the stage's resend is logged later.
@@ -928,11 +928,33 @@ class SessionViewModel(
         show()
     }
 
-    /** The person's speech as the brain heard it: the app's reading for the officer, never the person's answer. */
-    fun heard(text: String, lang: String) {
-        if (text.isBlank()) return
-        viewModelScope.launch { repo.log(sessionId, EventType.NOTE, EventSource.MACHINE, lang, text = "$HEARD_PREFIX${text.trim().take(TEXT_CAP)}") }
+    /** Whether the person (or, for a child, a guardian) agreed to their voice being recorded in this session. */
+    val voiceConsented: Boolean get() = ui.value?.events.orEmpty().any { it.type == EventType.SYSTEM && it.text == SYSTEM_VOICE_CONSENT }
+
+    /** The officer confirms consent to record the person's voice; logged and sealed, once per session. */
+    fun consentToVoice() {
+        if (voiceConsented) return
+        viewModelScope.launch { repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, officerLang, text = SYSTEM_VOICE_CONSENT) }
     }
+
+    /** The person's own speech, kept in the record as their answer to the item on screen, sealed with its bytes. When the
+     * station brain answers, its text follows as the app's reading of that answer, never as the person's words. */
+    fun recordSpeech(wav: ByteArray, brain: app.signsetu.net.BrainClient?) {
+        if (!voiceConsented) return
+        val lang = ui.value?.session?.subjectLang
+        val seconds = ((wav.size - 44) / (2 * 16_000.0)).coerceAtLeast(0.0)
+        viewModelScope.launch {
+            val id = repo.log(sessionId, EventType.ANSWER_SPOKEN, EventSource.SUBJECT, lang, text = "%.1f".format(java.util.Locale.ROOT, seconds), shownId = local.value.itemId, audioWav = wav)
+            if (id < 0 || brain == null || !brain.paired) return@launch
+            brain.recognise(wav, lang, to = officerLang)?.let { h ->
+                // The words as heard, then in the officer's language when the brain translated them.
+                val note = h.text.trim().take(TEXT_CAP) + (h.translated?.let { "\n$officerLang: ${it.trim().take(TEXT_CAP)}" } ?: "")
+                repo.log(sessionId, EventType.NOTE, EventSource.MACHINE, h.lang, text = "$HEARD_PREFIX$note", shownId = id)
+            }
+        }
+    }
+
+    suspend fun audio(id: Long): ByteArray? = repo.audio(id)
 
     fun addNote(text: String) {
         if (text.isBlank()) return
@@ -948,7 +970,7 @@ class SessionViewModel(
         // Rows, digest and chain all come from the database as it is now, so the printed rows are the ones certified.
         val events = repo.eventsNow(sessionId)
         val rows = reportRows(detail, events)
-        val chain = EvidenceIntegrity.verifyChain(sessionObj, events) { repo.drawing(it) }
+        val chain = EvidenceIntegrity.verifyChain(sessionObj, events, { repo.audio(it) }) { repo.drawing(it) }
         val digest = recordDigest(rows)
         val seal = repo.currentSeal(sessionId)
         val key = withContext(Dispatchers.Default) { DeviceSeal.publicKey() }
@@ -971,7 +993,8 @@ class SessionViewModel(
                     "Device public key (X.509, base64): ${keyText ?: "none"}", "Check: rebuild the seal line from the QR code's first five fields and verify the signature with the key."),
             )
         }
-        return report.export(rows, text, { repo.drawing(it) }, section, aiSummary, certificate, chain.short, printed)
+        val audio = events.mapNotNull { e -> e.audioId?.let { id -> repo.audio(id)?.let { "audio-$id.wav" to it } } }
+        return report.export(rows, text, { repo.drawing(it) }, section, aiSummary, certificate, chain.short, printed, audio)
     }
 
     internal fun reportRows(detail: (SessionEvent) -> String, events: List<SessionEvent> = ui.value?.events.orEmpty()): List<ReportRow> {
@@ -996,12 +1019,12 @@ private const val HEAD_KEEP_MS = 30_000L
 
 /** Notes the app writes for speech it heard; RecordText shows them as a reading. */
 const val HEARD_PREFIX = "heard: "
+const val SYSTEM_VOICE_CONSENT = "voice_consent"
 
 /** Mid-sign reading for the officer: the reader's top 3 on the latest frames, and letters committed by holding. */
 @androidx.compose.runtime.Immutable
 data class LiveRead(val guesses: List<SignGuess> = emptyList(), val spelled: String = "")
 
-private const val LIVE_PEEK_MS = 400L
 private const val LIVE_MIN_FRAMES = 8
 private const val LETTER_PEEK_MS = 150L
 private const val LETTER_FRAMES = 8

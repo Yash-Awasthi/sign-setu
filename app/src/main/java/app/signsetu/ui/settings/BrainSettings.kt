@@ -35,13 +35,13 @@ internal fun BrainItems(brain: BrainClient) {
     val summary = when {
         paired == null -> stringResource(R.string.brain_not_paired)
         !checked -> stringResource(R.string.brain_checking)
-        status == null -> stringResource(R.string.brain_unreachable, paired.url)
-        else -> stringResource(R.string.brain_ok, paired.url, status!!.ms.toInt(), stringResource(if (status!!.llm) R.string.brain_llm_on else R.string.brain_llm_off))
+        status == null -> stringResource(R.string.brain_unreachable, label(paired))
+        else -> stringResource(R.string.brain_ok, label(paired), status!!.ms.toInt(), stringResource(if (status!!.llm) R.string.brain_llm_on else R.string.brain_llm_off))
     }
     Item(stringResource(R.string.brain_title), summary, note = stringResource(R.string.brain_note)) { pairing = true }
     if (paired != null) Item(stringResource(R.string.brain_forget), "", destructive = true) { brain.forget(); version++ }
     if (pairing) {
-        var url by remember { mutableStateOf(paired?.url ?: "https://") }
+        var url by remember { mutableStateOf(paired?.ticket ?: paired?.url ?: "") }
         var token by remember { mutableStateOf("") }
         var pin by remember { mutableStateOf(paired?.pin ?: "") }
         var failed by remember { mutableStateOf(false) }
@@ -54,7 +54,8 @@ internal fun BrainItems(brain: BrainClient) {
                     Text(stringResource(R.string.brain_pair_help))
                     OutlinedTextField(url, { url = it.trim() }, singleLine = true, label = { Text(stringResource(R.string.brain_url)) })
                     OutlinedTextField(token, { token = it.trim() }, singleLine = true, visualTransformation = PasswordVisualTransformation(), label = { Text(stringResource(R.string.brain_token)) })
-                    OutlinedTextField(pin, { pin = it.trim() }, singleLine = true, label = { Text(stringResource(R.string.brain_pin)) })
+                    // A ticket names the brain's key itself; only a LAN address needs the certificate pin.
+                    if (url.startsWith("https://")) OutlinedTextField(pin, { pin = it.trim() }, singleLine = true, label = { Text(stringResource(R.string.brain_pin)) })
                     if (failed) Text(stringResource(R.string.brain_pair_failed))
                 }
             },
@@ -73,3 +74,6 @@ internal fun BrainItems(brain: BrainClient) {
         )
     }
 }
+
+@Composable
+private fun label(p: BrainClient.Pairing): String = if (p.viaIroh) stringResource(R.string.brain_via_iroh, p.ticket!!.take(12)) else p.url
