@@ -4,6 +4,8 @@ import android.content.res.Resources
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.session.EventType
+import app.signsetu.data.session.SYSTEM_OPENED
+import app.signsetu.data.session.SYSTEM_RESUMED
 import app.signsetu.data.session.SessionEvent
 import java.text.DateFormat
 import java.util.Date
@@ -57,6 +59,8 @@ fun systemText(res: Resources, text: String?): String = when {
     text == SYSTEM_JJ_NOTICE -> res.getString(R.string.log_jj_notice)
     text == SYSTEM_JUVENILE -> res.getString(R.string.log_juvenile)
     text == SYSTEM_JUVENILE_OFF -> res.getString(R.string.log_juvenile_off)
+    text != null && text.startsWith(SYSTEM_OPENED) -> res.getString(R.string.log_opened, text.removePrefix(SYSTEM_OPENED))
+    text != null && text.startsWith(SYSTEM_RESUMED) -> res.getString(R.string.log_resumed, text.removePrefix(SYSTEM_RESUMED))
     text != null && text.startsWith(SYSTEM_SIGN_LANGUAGE) -> res.getString(R.string.log_sign_language, text.removePrefix(SYSTEM_SIGN_LANGUAGE))
     text != null && text.startsWith(SYSTEM_SPEAKER_GENDER) -> res.getString(R.string.log_speaker_gender, text.removePrefix(SYSTEM_SPEAKER_GENDER).lowercase())
     text != null && text.startsWith(SYSTEM_RUN_ENDED) -> text.removePrefix(SYSTEM_RUN_ENDED).split('/').mapNotNull { it.toIntOrNull() }

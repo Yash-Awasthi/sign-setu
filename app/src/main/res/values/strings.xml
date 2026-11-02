@@ -222,6 +222,8 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="officer_sign_language">Sign language</string>
     <string name="sign_isl">Indian (ISL)</string>
     <string name="sign_asl">American (ASL)</string>
+    <string name="log_opened">Session opened: %1$s</string>
+    <string name="log_resumed">Session taken up again: %1$s</string>
     <string name="log_sign_language">Sign language set to %1$s</string>
     <string name="settings_stage">Stage</string>
     <string name="settings_camera">Camera on the stage</string>
@@ -724,4 +726,15 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="qn_asl">ASL</string>
     <string name="qn_victim">Victim</string>
     <string name="qn_accused">Accused</string>
+    <string name="check_report">Check a report</string>
+    <string name="check_report_summary">Open an exported PDF and check its seal</string>
+    <string name="check_report_pass">Passphrase</string>
+    <string name="check_report_go">Check</string>
+    <string name="check_report_unopened">The file did not open. Check the passphrase and that it is a Sign Setu report.</string>
+    <string name="check_report_matches">The seal is valid and matches the session still on this phone.</string>
+    <string name="check_report_valid">The seal is valid: the signature matches the device key it names. The session is no longer on this phone.</string>
+    <string name="check_report_invalid">The seal is NOT valid: the signature does not match. Treat this report as altered.</string>
+    <string name="check_report_unsigned">The report has a seal but no device signature.</string>
+    <string name="check_report_differs">The session on this phone has changed since this report was made. Export again for the current record.</string>
+    <string name="check_report_no_seal">This report has no seal to check.</string>
 </resources>

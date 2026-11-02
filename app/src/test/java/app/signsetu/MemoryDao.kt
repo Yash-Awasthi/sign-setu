@@ -41,6 +41,8 @@ class MemoryDao : SessionDao {
     override suspend fun reopen(id: String) = edit(id) { it.copy(endedAt = null) }
     override fun saved(): Flow<List<SessionEntity>> = sessions.map { all -> all.values.filter { it.endedAt != null }.sortedByDescending { it.endedAt } }
     override suspend fun lastHash(sessionId: String): String? = rows.value.lastOrNull { it.sessionId == sessionId && it.hash != null }?.hash
+    override suspend fun seals(sessionId: String): List<String> = rows.value.filter { it.sessionId == sessionId && it.hash != null }.sortedBy { it.id }.mapNotNull { it.hash }
+    override suspend fun setRoot(id: String, root: String?, sig: String?) = edit(id) { it.copy(rootHash = root, rootSig = sig) }
     override suspend fun startedAt(id: String): Long? = sessions.value[id]?.startedAt
     override suspend fun deleteIdleBefore(cutoff: Long): Int {
         val old = sessions.value.filterValues { s ->

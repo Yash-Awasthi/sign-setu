@@ -310,7 +310,7 @@ private fun Navigation(repo: SessionRepository, content: ContentBundle, settings
                 PracticeScreen(content, onBack = { backStack.removeLastOrNull() })
             }
             entry<SettingsKey> {
-                SettingsScreen(container.settings, container.models, container.sentenceModel, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall, onRecordSigns = { backStack.add(RecordSignsKey); Unit }.takeIf { tracker != null && app.signsetu.BuildConfig.DEBUG })
+                SettingsScreen(container.settings, container.models, container.sentenceModel, onBack = { backStack.removeLastOrNull() }, onClearAll = { OfficerAuth.confirm(activity, container::clearAllData) }, onPractice = { backStack.add(PracticeKey) }, onAppearance = { backStack.add(AppearanceKey) }, onCallInterpreter = interpreterCall, onRecordSigns = { backStack.add(RecordSignsKey); Unit }.takeIf { tracker != null && app.signsetu.BuildConfig.DEBUG }, repo = repo)
             }
             entry<RecordSignsKey> {
                 app.signsetu.ui.practice.RecordSignsScreen(tracker, container.contributions, onBack = { backStack.removeLastOrNull() })
@@ -372,7 +372,7 @@ internal fun SessionRoute(
     val officerLang = if (LocalConfiguration.current.locales[0].language == "hi") "hi" else "en"
     val vm: SessionViewModel = viewModel(
         key = sessionId,
-        factory = viewModelFactory { initializer { SessionViewModel(sessionId, repo, content, officerLang, report, reader) } },
+        factory = viewModelFactory { initializer { SessionViewModel(sessionId, repo, content, officerLang, report, reader, checkOnResume = true) } },
     )
     LaunchedEffect(tracker) { tracker?.let { withContext(Dispatchers.Default) { it.warm() } } }
     val ui by vm.ui.collectAsStateWithLifecycle()

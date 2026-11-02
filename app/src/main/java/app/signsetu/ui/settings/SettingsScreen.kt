@@ -90,7 +90,7 @@ private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?, onRecordSigns: (() -> Unit)? = null) {
+fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?, onRecordSigns: (() -> Unit)? = null, repo: app.signsetu.data.session.SessionRepository? = null) {
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
@@ -193,6 +193,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                     if (s.retentionHours == 0) stringResource(R.string.settings_keep) else pluralStringResource(R.plurals.settings_hours, s.retentionHours, s.retentionHours),
                     note = stringResource(R.string.settings_retention_note),
                 ) { dialog = Dialog.RETENTION }
+                ReportCheckItem(repo)
                 Item(stringResource(R.string.settings_clear), stringResource(R.string.settings_clear_summary), destructive = true) {
                     dialog = Dialog.CLEAR
                 }

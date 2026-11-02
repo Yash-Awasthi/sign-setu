@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import androidx.room.migration.Migration
 import kotlinx.coroutines.flow.Flow
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
@@ -31,6 +32,9 @@ data class SessionEntity(
     @ColumnInfo(defaultValue = "VICTIM") val role: String = "NOT_KNOWN",
     /** The officer's name for a finished session; null while it is open. */
     val title: String? = null,
+    /** Merkle root over the session's seals when it was last ended, and the device key's signature over it. */
+    val rootHash: String? = null,
+    val rootSig: String? = null,
 )
 
 @Entity(
@@ -89,6 +93,19 @@ interface SessionDao {
 
     @Insert suspend fun insertEvent(event: EventEntity): Long
 
+    /** A drawing and the row that names it are written together or not at all, so a crash leaves no orphan. */
+    @Transaction
+    suspend fun insertSealed(event: EventEntity, drawing: DrawingEntity?): Long {
+        val drawingId = drawing?.let { insertDrawing(it) }
+        return insertEvent(event.copy(drawingId = drawingId))
+    }
+
+    @Query("SELECT hash FROM event WHERE sessionId = :sessionId AND hash IS NOT NULL ORDER BY id")
+    suspend fun seals(sessionId: String): List<String>
+
+    @Query("UPDATE session SET rootHash = :root, rootSig = :sig WHERE id = :id")
+    suspend fun setRoot(id: String, root: String?, sig: String?)
+
     @Query("SELECT hash FROM event WHERE sessionId = :sessionId AND hash IS NOT NULL ORDER BY id DESC LIMIT 1")
     suspend fun lastHash(sessionId: String): String?
 
@@ -120,7 +137,7 @@ interface SessionDao {
     suspend fun deleteIdleBefore(cutoff: Long): Int
 }
 
-@Database(entities = [SessionEntity::class, EventEntity::class, DrawingEntity::class], version = 5, exportSchema = true)
+@Database(entities = [SessionEntity::class, EventEntity::class, DrawingEntity::class], version = 6, exportSchema = true)
 abstract class SessionDatabase : RoomDatabase() {
     abstract fun dao(): SessionDao
 
@@ -154,13 +171,20 @@ abstract class SessionDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE session ADD COLUMN rootHash TEXT")
+                db.execSQL("ALTER TABLE session ADD COLUMN rootSig TEXT")
+            }
+        }
+
         fun open(context: Context, key: ByteArray, onDestructiveMigration: () -> Unit = {}): SessionDatabase {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, SessionDatabase::class.java, FILE_NAME)
                 .openHelperFactory(SupportOpenHelperFactory(key))
                 // Purged rows are overwritten in place, and no write-ahead log keeps old pages around.
                 .setJournalMode(JournalMode.TRUNCATE)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 // A downgrade drops sessions rather than failing every unlock; the officer is told (onDestructiveMigration).
                 .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
                 .addCallback(object : Callback() {

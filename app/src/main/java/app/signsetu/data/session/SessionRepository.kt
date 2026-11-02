@@ -32,6 +32,8 @@ data class Session(
     val role: Role = Role.NOT_KNOWN,
     val endedAt: Long? = null,
     val title: String? = null,
+    val rootHash: String? = null,
+    val rootSig: String? = null,
 )
 
 @Immutable
@@ -58,11 +60,19 @@ data class SessionEvent(
 
 const val TITLE_MAX = 80
 
+/** SYSTEM rows the repository writes: where a session was opened, and each time it was taken up again. */
+const val SYSTEM_OPENED = "opened:"
+const val SYSTEM_RESUMED = "resumed:"
+
 class SessionRepository(
     private val dao: SessionDao,
     /** A session started, ended or reopened at this time; retention counts from the latest. */
     private val onSessionStarted: suspend (Long) -> Unit = {},
     private val clock: () -> Long = System::currentTimeMillis,
+    /** App, content and device key, written as the session's first row so the record says what made it. */
+    private val provenance: (() -> String)? = null,
+    /** Signs a session's seal line (EventSeal.sealLine) with the device key; null leaves sessions unsigned. */
+    private val signer: ((String) -> String?)? = null,
 ) {
     /** Set when the app locks: the database closes under screens that may still be writing, and those writes are dropped. */
     @Volatile var closed = false
@@ -87,6 +97,7 @@ class SessionRepository(
         val now = clock()
         dao.insertSession(SessionEntity(id, now, null, profile.name, subjectLang, role.name))
         onSessionStarted(now)
+        provenance?.let { log(id, EventType.SYSTEM, EventSource.MACHINE, text = SYSTEM_OPENED + it()) }
         return id
     }
 
@@ -121,8 +132,8 @@ class SessionRepository(
             val ts = clock()
             val previous = dao.lastHash(sessionId) ?: EventSeal.genesis(sessionId, dao.startedAt(sessionId) ?: 0L)
             val hash = EventSeal.seal(previous, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, drawingPng, itemId, reason, shownId, via)
-            val drawingId = drawingPng?.let { dao.insertDrawing(DrawingEntity(sessionId = sessionId, png = it)) }
-            dao.insertEvent(EventEntity(0, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, drawingId, itemId, reason, shownId, via, hash))
+            val drawing = drawingPng?.let { DrawingEntity(sessionId = sessionId, png = it) }
+            dao.insertSealed(EventEntity(0, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, null, itemId, reason, shownId, via, hash), drawing)
         }
     }
 
@@ -141,11 +152,35 @@ class SessionRepository(
     suspend fun end(id: String, title: String) = unlessClosed(Unit) {
         val now = clock()
         dao.endSession(id, now, title.trim().take(TITLE_MAX))
+        seal(id)
         onSessionStarted(now)
     }
 
+    /** Merkle root over the session's seals and its signature, as the record stands now. */
+    data class Seal(val line: String, val count: Int, val head: String, val root: String, val sig: String?)
+
+    suspend fun currentSeal(id: String): Seal? = unlessClosed(null) {
+        sealing.withLock {
+            val seals = dao.seals(id)
+            val head = seals.lastOrNull() ?: EventSeal.genesis(id, dao.startedAt(id) ?: return@withLock null)
+            val root = EventSeal.merkleRoot(seals)
+            val line = EventSeal.sealLine(id, seals.size, head, root)
+            Seal(line, seals.size, head, root, signer?.invoke(line))
+        }
+    }
+
+    private suspend fun seal(id: String) {
+        val s = currentSeal(id) ?: return
+        dao.setRoot(id, s.root, s.sig)
+    }
+
+    /** A session taken up again, after a crash, a lock or the start screen: the chain check found then is logged. */
+    suspend fun logResume(id: String, status: String) = log(id, EventType.SYSTEM, EventSource.MACHINE, text = SYSTEM_RESUMED + status)
+
     suspend fun reopen(id: String) = unlessClosed(Unit) {
         dao.reopen(id)
+        // The stored root no longer covers what will be added.
+        dao.setRoot(id, null, null)
         onSessionStarted(clock())
     }
 
@@ -160,6 +195,8 @@ class SessionRepository(
         role = safeValueOf(role, Role.NOT_KNOWN),
         endedAt = endedAt,
         title = title,
+        rootHash = rootHash,
+        rootSig = rootSig,
     )
 
     private fun EventEntity.toModel() = SessionEvent(

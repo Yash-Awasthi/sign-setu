@@ -46,6 +46,10 @@ class ReportText(
 
 class ReportRow(val event: SessionEvent, val question: String?, val detail: String, val reading: Boolean = false)
 
+/** The verification page: [qr] is the payload of the printed QR code (EvidenceIntegrity.qrPayload), [lines] the same
+ * values written out for a reader without a scanner. */
+class ReportSeal(val qr: String, val lines: List<String>)
+
 /** A titled table printed before the conversation, such as the personal details the subject gave. */
 class ReportSection(val title: String, val header: List<String>, val rows: List<List<String>>)
 
@@ -61,10 +65,11 @@ class SessionReport(private val context: Context) {
         aiSummary: String? = null,
         certificateText: String? = null,
         chainDigest: String? = null,
+        seal: ReportSeal? = null,
     ): Pair<File, String> =
         withContext(Dispatchers.IO) {
             purgeStaleExports()
-            val plain = render(rows, text, drawing, section, aiSummary, certificateText, chainDigest)
+            val plain = render(rows, text, drawing, section, aiSummary, certificateText, chainDigest, seal)
             val passphrase = newPassphrase()
             PDFBoxResourceLoader.init(context)
             val dir = exportsDir(context).apply { mkdirs() }
@@ -87,6 +92,7 @@ class SessionReport(private val context: Context) {
         aiSummary: String?,
         certificateText: String?,
         chainDigest: String?,
+        seal: ReportSeal?,
     ): ByteArray {
         val pdf = PdfDocument()
         val pages = mutableListOf<PdfDocument.Page>()
@@ -269,14 +275,35 @@ class SessionReport(private val context: Context) {
             y += 12
         }
 
+        seal?.let { s ->
+            newPage()
+            val title = block("VERIFICATION SEAL", headPaint, full)
+            draw(title, MARGIN, y)
+            y += title.height + 8
+            val matrix = com.google.zxing.qrcode.QRCodeWriter().encode(
+                s.qr, com.google.zxing.BarcodeFormat.QR_CODE, 0, 0,
+                mapOf(com.google.zxing.EncodeHintType.ERROR_CORRECTION to com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M, com.google.zxing.EncodeHintType.MARGIN to 0),
+            )
+            // Drawn as vector squares, so it scans from print at any zoom.
+            val side = 220f
+            val cell = side / matrix.width
+            val ink = Paint().apply { color = 0xFF000000.toInt(); style = Paint.Style.FILL }
+            for (r in 0 until matrix.height) for (c in 0 until matrix.width) if (matrix[c, r]) {
+                canvas!!.drawRect(MARGIN + c * cell, y + r * cell, MARGIN + (c + 1) * cell, y + (r + 1) * cell, ink)
+            }
+            y += side + 12
+            val mono = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 7.5f; typeface = Typeface.MONOSPACE }
+            flow(block(s.lines.joinToString("\n"), mono, full), MARGIN)
+        }
+
         page?.let { pdf.finishPage(it) }
 
         // Page numbers need the final count, so they are written after the PDF is laid out, by PdfBox.
         val bytes = ByteArrayOutputStream().use { out -> pdf.writeTo(out); pdf.close(); out.toByteArray() }
-        return numberPages(bytes, text, recordDigest(rows), chainDigest)
+        return numberPages(bytes, text, recordDigest(rows), chainDigest, seal?.qr)
     }
 
-    private fun numberPages(bytes: ByteArray, text: ReportText, digest: String, chainDigest: String?): ByteArray {
+    private fun numberPages(bytes: ByteArray, text: ReportText, digest: String, chainDigest: String?, seal: String?): ByteArray {
         PDFBoxResourceLoader.init(context)
         val chainSuffix = if (!chainDigest.isNullOrBlank()) "   chain $chainDigest" else ""
         return PDDocument.load(bytes).use { doc ->
@@ -291,6 +318,8 @@ class SessionReport(private val context: Context) {
                     cs.endText()
                 }
             }
+            // The seal travels in the file's own metadata too, so the app can check a report without a scanner.
+            seal?.let { doc.documentInformation.setCustomMetadataValue(SEAL_KEY, it) }
             ByteArrayOutputStream().use { out -> doc.save(out); out.toByteArray() }
         }
     }
@@ -309,6 +338,8 @@ class SessionReport(private val context: Context) {
         private const val FOOTER = 30f
         // Crockford base32 without look-alike characters; 16 symbols = 80 bits.
         private const val ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
+        const val SEAL_KEY = "SignSetuSeal"
 
         /** Where exports wait for the share sheet; only needed while it hands them over. */
         fun exportsDir(context: Context) = File(context.cacheDir, "exports")

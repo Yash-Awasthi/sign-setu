@@ -20,6 +20,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import app.signsetu.data.content.ContentRepository
 import app.signsetu.data.session.DatabaseKey
+import app.signsetu.data.session.DeviceSeal
 import app.signsetu.data.session.RetentionJob
 import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
@@ -165,7 +166,10 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
                 openDatabase().also { _keyReset.value = true }
             }
             if (epoch != started) { db.close(); return@withContext }
-            val repo = SessionRepository(db.dao(), onSessionStarted = { settings.setNewestSessionAt(it) })
+            val repo = SessionRepository(
+                db.dao(), onSessionStarted = { settings.setNewestSessionAt(it) },
+                provenance = { provenanceLine(app) }, signer = { line -> DeviceSeal.sign(line) },
+            )
             repo.purgeExpired(settings.current().retentionHours)
             // Exported reports are only needed while the share sheet hands them over.
             SessionReport.exportsDir(app).deleteRecursively()
@@ -310,4 +314,13 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         const val RELOCK_IN_SESSION_MS = 30 * 60 * 1000L
         const val TAG = "SignSetu"
     }
+}
+
+/** App build, content bundle and device key, so a record names what produced it. */
+private fun provenanceLine(context: android.content.Context): String {
+    val content = runCatching {
+        context.assets.open("content/manifest.json").use { java.security.MessageDigest.getInstance("SHA-256").digest(it.readBytes()).toHexString().take(16) }
+    }.getOrDefault("none")
+    val key = DeviceSeal.fingerprint()?.take(16) ?: "none"
+    return "app ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}), content $content, device key $key"
 }

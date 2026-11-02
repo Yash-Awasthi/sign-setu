@@ -17,6 +17,8 @@ import app.signsetu.data.session.SessionRepository
 import app.signsetu.camera.Head
 import app.signsetu.gloss.DebugRecorder
 import app.signsetu.camera.LandmarkFrame
+import app.signsetu.data.session.DeviceSeal
+import app.signsetu.data.session.SYSTEM_OPENED
 import app.signsetu.sign.DominantHand
 import app.signsetu.sign.FeatureRing
 import app.signsetu.sign.HomeSigns
@@ -58,6 +60,7 @@ import app.signsetu.data.content.answerText
 import app.signsetu.data.content.reason
 import app.signsetu.export.EvidenceIntegrity
 import app.signsetu.export.ReportRow
+import app.signsetu.export.ReportSeal
 import app.signsetu.export.ReportSection
 import app.signsetu.export.ReportText
 import app.signsetu.export.SessionReport
@@ -99,6 +102,8 @@ class SessionViewModel(
     private val officerLang: String,
     private val report: SessionReport,
     reader: SignReader? = null,
+    /** Re-walk the hash chain when an earlier session is taken up again, and log what was found. */
+    checkOnResume: Boolean = false,
 ) : ViewModel() {
 
     /** Set once the reader is built off the main thread; reads before then get no machine guesses. */
@@ -143,6 +148,16 @@ class SessionViewModel(
     private val remoteLogged = mutableSetOf<Pair<Long, Int>>()
     private var remoteFrom: Any? = null
     internal var reencodePng: (ByteArray) -> ByteArray? = ::reencodeRemotePng
+
+    init {
+        if (checkOnResume) viewModelScope.launch {
+            val events = repo.eventsNow(sessionId)
+            if (events.none { it.text?.startsWith(SYSTEM_OPENED) != true }) return@launch
+            val session = repo.session(sessionId).first() ?: return@launch
+            val chain = EvidenceIntegrity.verifyChain(session, events) { repo.drawing(it) }
+            repo.logResume(sessionId, if (chain.intact) "chain intact, ${chain.sealed} entries" else "CHAIN BROKEN at entry ${chain.brokenAt}")
+        }
+    }
 
     init {
         // Keeping skeleton snapshots is the officer's choice for one session, never carried into the next.
@@ -928,14 +943,29 @@ class SessionViewModel(
         val events = repo.eventsNow(sessionId)
         val rows = reportRows(detail, events)
         val chain = EvidenceIntegrity.verifyChain(sessionObj, events) { repo.drawing(it) }
+        val digest = recordDigest(rows)
+        val seal = repo.currentSeal(sessionId)
+        val key = withContext(Dispatchers.Default) { DeviceSeal.publicKey() }
+        val fingerprint = key?.let { java.security.MessageDigest.getInstance("SHA-256").digest(it).toHexString() }
         val certificate = EvidenceIntegrity.generateSection63Certificate(
             session = sessionObj,
             events = events,
             chain = chain,
-            recordDigest = recordDigest(rows),
+            recordDigest = digest,
             signLanguage = currentUi?.signLanguage ?: SignLanguage.ISL,
+            root = seal?.root,
+            keyFingerprint = fingerprint,
+            signed = seal?.sig != null,
         )
-        return report.export(rows, text, { repo.drawing(it) }, section, aiSummary, certificate, chain.short)
+        val keyText = key?.let { android.util.Base64.encodeToString(it, android.util.Base64.NO_WRAP) }
+        val printed = seal?.let { s ->
+            ReportSeal(
+                EvidenceIntegrity.qrPayload(s.line, digest, s.sig, keyText),
+                listOf("Seal line: ${s.line}", "Record digest: $digest", "Entries sealed: ${s.count}", "Signature (ECDSA P-256, base64): ${s.sig ?: "none"}",
+                    "Device public key (X.509, base64): ${keyText ?: "none"}", "Check: rebuild the seal line from the QR code's first five fields and verify the signature with the key."),
+            )
+        }
+        return report.export(rows, text, { repo.drawing(it) }, section, aiSummary, certificate, chain.short, printed)
     }
 
     internal fun reportRows(detail: (SessionEvent) -> String, events: List<SessionEvent> = ui.value?.events.orEmpty()): List<ReportRow> {

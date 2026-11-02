@@ -215,6 +215,8 @@
     <string name="officer_sign_language">सांकेतिक भाषा</string>
     <string name="sign_isl">भारतीय (ISL)</string>
     <string name="sign_asl">अमेरिकी (ASL)</string>
+    <string name="log_opened">सत्र खुला: %1$s</string>
+    <string name="log_resumed">सत्र फिर शुरू: %1$s</string>
     <string name="log_sign_language">सांकेतिक भाषा %1$s चुनी</string>
     <string name="settings_stage">स्टेज</string>
     <string name="settings_camera">स्टेज पर कैमरा</string>
@@ -717,4 +719,15 @@
     <string name="qn_asl">ASL</string>
     <string name="qn_victim">पीड़ित</string>
     <string name="qn_accused">आरोपी</string>
+    <string name="check_report">रिपोर्ट जाँचें</string>
+    <string name="check_report_summary">निर्यात की गई PDF खोलें और उसकी मुहर जाँचें</string>
+    <string name="check_report_pass">पासफ़्रेज़</string>
+    <string name="check_report_go">जाँचें</string>
+    <string name="check_report_unopened">फ़ाइल नहीं खुली। पासफ़्रेज़ जाँचें और देखें कि यह Sign Setu रिपोर्ट है।</string>
+    <string name="check_report_matches">मुहर सही है और इस फ़ोन पर रखे सत्र से मेल खाती है।</string>
+    <string name="check_report_valid">मुहर सही है: हस्ताक्षर उसमें लिखी डिवाइस कुंजी से मेल खाता है। सत्र अब इस फ़ोन पर नहीं है।</string>
+    <string name="check_report_invalid">मुहर सही नहीं है: हस्ताक्षर मेल नहीं खाता। इस रिपोर्ट को बदली हुई मानें।</string>
+    <string name="check_report_unsigned">रिपोर्ट पर मुहर है, पर डिवाइस हस्ताक्षर नहीं है।</string>
+    <string name="check_report_differs">यह रिपोर्ट बनने के बाद इस फ़ोन का सत्र बदला है। ताज़ा रिकॉर्ड के लिए फिर से निर्यात करें।</string>
+    <string name="check_report_no_seal">इस रिपोर्ट में जाँचने को कोई मुहर नहीं है।</string>
 </resources>

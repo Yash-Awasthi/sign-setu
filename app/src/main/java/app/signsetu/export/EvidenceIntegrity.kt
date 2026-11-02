@@ -115,6 +115,30 @@ object EvidenceIntegrity {
         )
     }
 
+    /** The QR payload: the signed seal line, then the printed-rows digest, the signature ("-" when unsigned) and the
+     * device public key, so the code alone is enough to check the signature offline. */
+    fun qrPayload(line: String, recordDigest: String, sig: String?, publicKey: String?) = "$line|$recordDigest|${sig ?: "-"}|${publicKey ?: "-"}"
+
+    /** What checking a report's seal found. */
+    enum class SealCheck { MATCHES_DEVICE, SIGNATURE_VALID, SIGNATURE_INVALID, UNSIGNED, DIFFERS_FROM_DEVICE, MALFORMED }
+
+    /** Checks a seal payload: its signature with the key it carries ([verify]), then, when the session is still on
+     * this device ([current] is its line now), whether the record has changed since. */
+    fun checkSeal(payload: String, verify: (line: String, sig: String, key: String) -> Boolean, current: String?): SealCheck {
+        val f = payload.split('|')
+        if (f.size != 8 || f[0] != "SS1") return SealCheck.MALFORMED
+        val line = f.subList(0, 5).joinToString("|")
+        val sig = f[6]
+        val key = f[7]
+        if (sig == "-" || key == "-") return if (current != null && current != line) SealCheck.DIFFERS_FROM_DEVICE else SealCheck.UNSIGNED
+        if (!verify(line, sig, key)) return SealCheck.SIGNATURE_INVALID
+        return when {
+            current == null -> SealCheck.SIGNATURE_VALID
+            current == line -> SealCheck.MATCHES_DEVICE
+            else -> SealCheck.DIFFERS_FROM_DEVICE
+        }
+    }
+
     /** The certificate's text; the officer signs the printed copy. */
     fun generateSection63Certificate(
         session: Session,
@@ -123,6 +147,9 @@ object EvidenceIntegrity {
         recordDigest: String,
         signLanguage: SignLanguage = SignLanguage.ISL,
         storage: String = "SQLCipher AES-256; database key wrapped by an Android Keystore key",
+        root: String? = null,
+        keyFingerprint: String? = null,
+        signed: Boolean = false,
         deviceModel: String = "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})",
     ): String {
         val df = SimpleDateFormat("dd-MM-yyyy HH:mm:ss z", Locale.ENGLISH)
@@ -171,6 +198,9 @@ object EvidenceIntegrity {
             • Chain Head (SHA-256)     : ${chain.head}
             • Chain Status             : ${chainStatus(chain)}
             • PDF Record Digest        : $recordDigest (first 64 bits of SHA-256 over the printed rows)
+            • Merkle Root (SHA-256)    : ${root ?: "Not computed"}
+            • Device Key (SHA-256)     : ${keyFingerprint ?: "Not available"}
+            • Device Signature         : ${if (signed) "ECDSA P-256 by a key held in the Android Keystore; see the verification seal page" else "Not signed: the Keystore could not sign on this device"}
 
             5. STATUTORY SOLEMN AFFIRMATION (SECTION 63(4) BSA 2023):
             I hereby certify that this electronic record is a true reproduction of the entries made

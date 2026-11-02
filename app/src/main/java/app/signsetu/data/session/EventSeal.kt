@@ -28,6 +28,20 @@ object EventSeal {
             field(shownId?.toString()) + field(via),
     )
 
+    /** Merkle root over [seals] in write order (RFC 6962 hashing: 0x00 before a leaf, 0x01 before a node), so one
+     * row can later be shown to belong to the record by its path alone, without the other rows. */
+    fun merkleRoot(seals: List<String>): String {
+        if (seals.isEmpty()) return sha256Hex(ByteArray(0))
+        var level = seals.map { digest(byteArrayOf(0) + it.hexToByteArray()) }
+        while (level.size > 1) level = level.chunked(2).map { if (it.size == 1) it[0] else digest(byteArrayOf(1) + it[0] + it[1]) }
+        return level[0].toHexString()
+    }
+
+    /** The bytes the device key signs for a session: what a verifier rebuilds from the QR code. */
+    fun sealLine(sessionId: String, count: Int, head: String, root: String) = "SS1|$sessionId|$count|$head|$root"
+
+    private fun digest(b: ByteArray) = MessageDigest.getInstance("SHA-256").digest(b)
+
     // Length-prefixed, with null apart from empty, so no two different rows encode the same.
     private fun field(value: String?) = if (value == null) "|-" else "|${value.length}:$value"
 
