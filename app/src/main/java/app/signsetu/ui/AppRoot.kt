@@ -159,6 +159,10 @@ fun AppRoot(container: AppContainer) {
     val content by produceState<ContentBundle?>(null) { value = container.content.load() }
     val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
     val link by container.link.collectAsStateWithLifecycle()
+    LaunchedEffect(settings?.avatarStyle) {
+        app.signsetu.ui.avatar.AvatarRenderer.style.value = settings?.avatarStyle
+            ?.let { runCatching { app.signsetu.ui.avatar.AvatarStyle.valueOf(it) }.getOrNull() } ?: app.signsetu.ui.avatar.AvatarStyle.AUTO
+    }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val activity = LocalActivity.current

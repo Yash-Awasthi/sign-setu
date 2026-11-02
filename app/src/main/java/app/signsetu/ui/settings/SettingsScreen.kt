@@ -86,7 +86,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import app.signsetu.ui.components.GuardedAlertDialog
 
-private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, CLOUD, AIKEY, DEVELOPER }
+private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, CLOUD, AIKEY, DEVELOPER, CHARACTER }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,6 +155,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                 SwitchItem(R.string.settings_camera, R.string.settings_camera_summary, s.cameraEnabled) { on -> scope.launch { store.setCameraEnabled(on) } }
                 SpeedItem(s.gestureSpeed) { v -> scope.launch { store.setGestureSpeed(v) } }
                 SwitchItem(R.string.settings_isl_reorder, R.string.settings_isl_reorder_summary, s.islReorder) { on -> scope.launch { store.setIslReorder(on) } }
+                Item(stringResource(R.string.settings_character), stringResource(characterLabel(s.avatarStyle)), note = stringResource(R.string.settings_character_note)) { dialog = Dialog.CHARACTER }
             }
             Group(R.string.settings_sign_languages) {
                 LanguageItem(R.string.settings_isl_status, R.string.settings_isl_status_summary, R.string.settings_isl_badge, warn = false)
@@ -237,6 +238,14 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
             app = s.interpreterApp,
             initial = s.interpreterContact,
             onSave = { scope.launch { store.setInterpreter(s.interpreterApp, it) }; dialog = null },
+            onDismiss = { dialog = null },
+        )
+        Dialog.CHARACTER -> ChoiceDialog(
+            title = stringResource(R.string.settings_character),
+            options = listOf("AUTO", "FLAT") + (if (app.signsetu.ui.avatar.AvatarRenderer.riveAvailable(context)) listOf("RIVE") else emptyList()),
+            selected = s.avatarStyle,
+            label = { stringResource(characterLabel(it)) },
+            onPick = { scope.launch { store.setAvatarStyle(it) }; dialog = null },
             onDismiss = { dialog = null },
         )
         Dialog.RETENTION -> ChoiceDialog(
@@ -400,6 +409,12 @@ private fun LanguageItem(@StringRes title: Int, @StringRes summary: Int, @String
 }
 
 internal val ItemColors @Composable get() = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
+
+private fun characterLabel(style: String) = when (style) {
+    "FLAT" -> R.string.settings_character_flat
+    "RIVE" -> R.string.settings_character_rive
+    else -> R.string.settings_character_auto
+}
 
 @Composable
 internal fun Item(title: String, summary: String, note: String? = null, destructive: Boolean = false, onClick: () -> Unit) {

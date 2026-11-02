@@ -57,4 +57,5 @@ See [ml/README.md](ml/README.md) for data, environments and the training order. 
 | Script | What it does | Run |
 | --- | --- | --- |
 | `sbom.py` | CycloneDX SBOM of the release runtime classpath, with Syft (Apache-2.0); written to `app/build/sbom/sign-setu-release.cdx.json` | `sbom.py path/to/syft` |
+| `verify_seal.py` | Checks an exported report's verification seal away from the phone: the device signature over session, entry count, chain head and Merkle root, with the key the seal carries (optionally the certificate's key fingerprint). Exit 0 valid, 1 invalid, 2 no seal | `verify_seal.py --pdf report.pdf --passphrase XXXX-XXXX-XXXX-XXXX` or `--qr "<QR text>"`; needs `cryptography` and `pypdf` |
 | `test_paths.py` | Fails when a tracked text file carries a developer's absolute home path | `python -m unittest discover -s tools/security -p 'test_*.py'` |

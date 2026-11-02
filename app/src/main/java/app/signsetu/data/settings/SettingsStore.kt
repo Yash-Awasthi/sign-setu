@@ -62,6 +62,8 @@ data class AppSettings(
     val appLock: Boolean = !app.signsetu.BuildConfig.TEST_UNLOCKED,
     /** Reads signs with the format 3 reader (LiteRT, features in the graph) instead of format 1; read at app start. */
     val readerFormat3: Boolean = true,
+    /** AUTO, FLAT or RIVE (ui.avatar.AvatarStyle). */
+    val avatarStyle: String = "AUTO",
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -104,6 +106,7 @@ class SettingsStore(private val context: Context) {
         val blockScreenshots = booleanPreferencesKey("block_screenshots")
         val appLock = booleanPreferencesKey("app_lock")
         val readerFormat3 = booleanPreferencesKey("reader_format3")
+        val avatarStyle = stringPreferencesKey("avatar_style")
     }
 
     val settings: Flow<AppSettings> = context.store.data.map { it.toSettings() }
@@ -133,6 +136,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setBlockScreenshots(on: Boolean) = context.store.edit { it[Keys.blockScreenshots] = on }
     suspend fun setAppLock(on: Boolean) = context.store.edit { it[Keys.appLock] = on }
     suspend fun setReaderFormat3(on: Boolean) = context.store.edit { it[Keys.readerFormat3] = on }
+    suspend fun setAvatarStyle(style: String) = context.store.edit { it[Keys.avatarStyle] = style }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -160,6 +164,7 @@ class SettingsStore(private val context: Context) {
         blockScreenshots = this[Keys.blockScreenshots] ?: app.signsetu.BuildConfig.SECURE_SCREEN,
         appLock = this[Keys.appLock] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
         readerFormat3 = this[Keys.readerFormat3] ?: true,
+        avatarStyle = this[Keys.avatarStyle] ?: "AUTO",
     )
 }
 

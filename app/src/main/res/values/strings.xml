@@ -757,4 +757,9 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="part_left">left</string>
     <string name="part_right">right</string>
     <string name="cue_body">body map, %1$s: %2$s, at %3$d%% across, %4$d%% down</string>
+    <string name="settings_character">Character</string>
+    <string name="settings_character_note">The drawn character is lighter and is used by itself where 3D cannot run.</string>
+    <string name="settings_character_auto">3D character</string>
+    <string name="settings_character_flat">Drawn character (light)</string>
+    <string name="settings_character_rive">Rive character (department file)</string>
 </resources>

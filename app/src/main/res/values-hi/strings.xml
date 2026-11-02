@@ -750,4 +750,9 @@
     <string name="part_left">बायाँ</string>
     <string name="part_right">दायाँ</string>
     <string name="cue_body">शरीर का नक्शा, %1$s: %2$s, %3$d%% आड़ा, %4$d%% नीचे</string>
+    <string name="settings_character">पात्र</string>
+    <string name="settings_character_note">बना हुआ पात्र हल्का है और जहाँ 3D नहीं चलता वहाँ अपने आप आता है।</string>
+    <string name="settings_character_auto">3D पात्र</string>
+    <string name="settings_character_flat">बना हुआ पात्र (हल्का)</string>
+    <string name="settings_character_rive">Rive पात्र (विभाग की फ़ाइल)</string>
 </resources>

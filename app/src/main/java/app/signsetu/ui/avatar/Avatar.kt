@@ -21,6 +21,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import app.signsetu.data.content.Clip
 import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.QuestionKind
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -37,7 +38,7 @@ const val AVATAR_ASPECT = 220f / 258f
 /** The 3D character (assets/avatar). Plays [gesture], or [clip] when given, each time [playKey] changes; speed
  * below 1 plays slowly; [atSeconds] holds one moment. With [idle] the character breathes and blinks. */
 @Composable
-fun Avatar(
+internal fun VrmAvatar(
     gesture: Gesture?,
     playKey: Any?,
     modifier: Modifier = Modifier,
@@ -59,6 +60,8 @@ fun Avatar(
     val readySink by rememberUpdatedState(onReady)
     DisposableEffect(web) { web.onReady = { readySink() }; onDispose { web.onReady = {} } }
     DisposableEffect(web) { onDispose { web.destroy() } }
+    // A phone whose WebView never draws the model gets the drawn character from then on.
+    LaunchedEffect(web) { delay(VRM_READY_MS); if (!web.isReady) AvatarRenderer.vrmFailed.value = true }
     LaunchedEffect(view) { web.run("signsetu.view('${view.js}')") }
     // Breathing and glancing change as the person starts and stops signing; that must not restart the signs.
     LaunchedEffect(idle, glance) { web.run("signsetu.mode({\"idle\": $idle, \"glance\": $glance})") }
@@ -95,6 +98,7 @@ private val json = Json { encodeDefaults = false }
 @SuppressLint("SetJavaScriptEnabled", "ViewConstructor")
 private class AvatarWebView(context: Context) : WebView(context) {
     private var ready = false
+    val isReady get() = ready
     private var pending = linkedMapOf<String, String>()
     private var token = 0
     private var onFinished: () -> Unit = {}
@@ -125,6 +129,12 @@ private class AvatarWebView(context: Context) : WebView(context) {
             }
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) = true
+
+            // A crashed or reclaimed renderer must not take the app with it; the drawn character takes over.
+            override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {
+                AvatarRenderer.vrmFailed.value = true
+                return true
+            }
         }
         loadUrl("https://$HOST/avatar/index.html")
     }

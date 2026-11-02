@@ -1635,6 +1635,8 @@ B5 top confused pairs (true -> predicted): elephant -> colour (4); busy -> kill 
 
 B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9799, 'rkmvu': 1.0}, against the app -
 
+| 19:21 | 96 | 38, 3.9 | 16.6 | 13 | exp B5, landmark_split | under target |
+| 19:23 | 98 | 33, 3.9 | 17.6 | 13 | exp B5, landmark_split | GPU 33% under a B row: landmark workers to 13 |
 
 B5 INCLUDE test floor (0.979): 0.975 [0.963, 0.985] (n=816)
 | B5 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 402 s | + ASL Citizen co-training (join_cache.py), head per language: each clip's softmax over its own language's words (McNemar p=nan vs WF) | new signers 0.077 [0.000, 0.097] (n=546); all 0.397 [0.031, 0.983] / 0.443 | 0.170 | c22 0.031 | islrtc 0.080, kaggle 0.983, rkmvu 0.031 | 5.642, 0.127 | 4887.1, 0.904 | 1.000 | 0.386, -0.011 | - | 0.414 | - | no |
@@ -1644,6 +1646,7 @@ B5 top confused pairs (true -> predicted): elephant -> colour (3); area -> zone 
 
 B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
 
+| 19:33 | 98 | 20, 3.5 | 20.6 | 8 | exp B5, landmark_split | under target |
 
 B5 INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
 | B5 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 432 s | + ASL Citizen co-training (join_cache.py), head per language: each clip's softmax over its own language's words (McNemar p=nan vs WF) | new signers 0.077 [0.000, 0.095] (n=546); all 0.398 [0.031, 0.988] / 0.447 | 0.169 | c22 0.031 | islrtc 0.080, kaggle 0.987, rkmvu 0.031 | 5.642, 0.138 | 4896.7, 0.898 | 1.000 | 0.398, -0.001 | - | 0.410 | - | no |
@@ -1653,6 +1656,8 @@ B5 top confused pairs (true -> predicted): busy -> kill (3); area -> island (2);
 
 B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
 
+| 19:43 | 82 | 18, 0.9 | 12.2 | 9 | landmark_split | RAM used 12.2 GB: landmark workers back to 9 |
+| 19:53 | 85 | 19, 0.8 | 12.9 | 14 | landmark_split | under target |
 
 B5 INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
 | B5 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 0 s | + ASL Citizen co-training (join_cache.py), head per language: each clip's softmax over its own language's words (McNemar p=nan vs WF) | new signers 0.071 [0.000, 0.092] (n=546); all 0.397 [0.031, 0.994] / 0.460 | 0.166 | c22 0.031 | islrtc 0.074, kaggle 0.993, rkmvu 0.031 | 5.534, 0.121 | 4877.1, 0.908 | 1.000 | 0.400, +0.003 | - | 0.429 | - | no |
@@ -1662,6 +1667,7 @@ B5 top confused pairs (true -> predicted): area -> island (2); capital -> day be
 
 B5 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
 
+| 20:03 | 81 | 27, 4.1 | 17.5 | 13 | exp B5A50, landmark_split | GPU 27% under a B row: landmark workers to 13 |
 
 B5A50 INCLUDE test floor (0.979): 0.980 [0.969, 0.989] (n=816)
 | B5A50 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 407 s | B5 with ASL clips held to 50% of each batch (INCLUDE floor) (McNemar p=0.851 vs B5) | new signers 0.075 [0.000, 0.096] (n=546); all 0.395 [0.031, 0.982] / 0.448 | 0.164 | c22 0.031 | islrtc 0.078, kaggle 0.980, rkmvu 0.031 | 5.678, 0.117 | 5276.0, 0.905 | 1.000 | 0.378, -0.017 | - | 0.392 | - | no |
@@ -1671,6 +1677,7 @@ B5A50 top confused pairs (true -> predicted): busy -> kill (3); capital -> day b
 
 B5A50 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
 
+| 20:13 | 86 | 38, 3.9 | 15.6 | 13 | exp B5A25, landmark_split | under target |
 
 B5A25 INCLUDE test floor (0.979): 0.982 [0.971, 0.990] (n=816)
 | B5A25 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 428 s | B5 with ASL clips held to 25% of each batch (INCLUDE floor) (McNemar p=0.21 vs B5) | new signers 0.070 [0.000, 0.090] (n=546); all 0.390 [0.031, 0.978] / 0.449 | 0.162 | c22 0.031 | islrtc 0.072, kaggle 0.977, rkmvu 0.031 | 5.636, 0.144 | 4845.9, 0.900 | 1.000 | 0.415, +0.025 | - | 0.418 | - | no |
@@ -1680,6 +1687,7 @@ B5A25 top confused pairs (true -> predicted): busy -> kill (3); elephant -> colo
 
 B5A25 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
 
+| 20:23 | 92 | 38, 3.4 | 13.7 | 13 | exp B5A50, landmark_split | under target |
 
 B5A50 INCLUDE test floor (0.979): 0.977 [0.964, 0.987] (n=816)
 | B5A50 | asl + include + islrtc + kaggle + rkmvu, 33242 clips, 392 s | B5 with ASL clips held to 50% of each batch (INCLUDE floor) (McNemar p=0.557 vs B5) | new signers 0.071 [0.000, 0.092] (n=546); all 0.392 [0.000, 0.982] / 0.442 | 0.163 | c22 0.000 | islrtc 0.076, kaggle 0.980, rkmvu 0.000 | 5.642, 0.115 | 5258.7, 0.905 | 1.000 | 0.365, -0.027 | - | 0.407 | - | no |
@@ -1698,6 +1706,25 @@ B5A50 top confused pairs (true -> predicted): busy -> kill (3); area -> zone (2)
 
 B5A50 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9933, 'rkmvu': 1.0}, against the app -
 
+| 20:33 | 79 | 3, 1.3 | 12.8 | 14 | landmark_split | RAM used 12.8 GB: landmark workers back to 14 |
+| 20:43 | 91 | 2, 0.8 | 11.7 | 14 | landmark_split | under target |
+| 20:53 | 87 | 0, 0.9 | 11.8 | 14 | landmark_split | under target |
+| 21:03 | 79 | 12, 0.9 | 11.6 | 14 | curl, landmark_split | under target |
+| 21:13 | 84 | 0, 1.2 | 13.0 | 14 | landmark_split | under target |
+| 21:23 | 85 | 0, 0.9 | 13.1 | 14 | landmark_split | under target |
+| 21:33 | 82 | 11, 1.0 | 13.6 | 14 | landmark_split | under target |
+| 21:43 | 78 | 0, 1.0 | 12.7 | 14 | landmark_split | under target |
+| 21:53 | 80 | 0, 1.0 | 12.7 | 14 | landmark_split | under target |
+| 22:03 | 87 | 17, 1.0 | 13.2 | 14 | landmark_split | under target |
+| 22:13 | 82 | 6, 1.0 | 13.1 | 14 | landmark_split | under target |
+| 22:23 | 83 | 3, 1.0 | 12.0 | 14 | landmark_split | under target |
+| 22:33 | 81 | 2, 1.0 | 12.6 | 14 | landmark_split | under target |
+| 22:43 | 83 | 0, 1.2 | 12.6 | 14 | landmark_split | under target |
+| 22:53 | 85 | 8, 1.2 | 12.7 | 14 | landmark_split | under target |
+| 23:03 | 85 | 2, 1.1 | 12.2 | 14 | landmark_split | under target |
+| 23:13 | 85 | 0, 1.1 | 12.6 | 14 | landmark_split | under target |
+| 23:23 | 79 | 0, 1.1 | 12.6 | 14 | landmark_split | under target |
+| 23:34 | 20 | 43, 5.8 | 14.1 | 13 | exp B5A50F | GPU 43% under a B row: landmark workers to 13 |
 
 B5A50F INCLUDE test floor (0.979): 0.979 [0.968, 0.988] (n=816)
 | B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 591 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.405 vs B5A50) | new signers 0.086 [0.000, 0.108] (n=546); all 0.400 [0.031, 0.978] / 0.463 | 0.176 | c22 0.031 | islrtc 0.089, kaggle 0.977, rkmvu 0.031 | 5.599, 0.166 | 4967.3, 0.898 | 1.000 | 0.256, -0.144 | - | 0.459 | - | unclear |
@@ -1707,6 +1734,8 @@ B5A50F top confused pairs (true -> predicted): busy -> kill (3); elephant -> col
 
 B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9832, 'rkmvu': 1.0}, against the app -
 
+| 23:50 | 58 | 38, 5.3 | 15.2 | 7 | exp B5A50F, landmark_split | GPU 38% under a B row: landmark workers to 7 |
+| 23:51 | 51 | 33, 5.3 | 14.7 | 8 | exp B5A50F, landmark_split | RAM used 14.7 GB: landmark workers back to 8 |
 
 B5A50F INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
 | B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 636 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.0784 vs B5A50) | new signers 0.090 [0.000, 0.112] (n=546); all 0.405 [0.031, 0.984] / 0.464 | 0.178 | c22 0.031 | islrtc 0.093, kaggle 0.983, rkmvu 0.031 | 5.602, 0.169 | 4984.8, 0.899 | 1.000 | 0.256, -0.149 | - | 0.459 | - | unclear |
@@ -1716,6 +1745,7 @@ B5A50F top confused pairs (true -> predicted): busy -> kill (3); area -> zone (2
 
 B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
 
+| 23:59 | 78 | 46, 5.7 | 17.3 | 11 | exp B5A50F, landmark_split | GPU 46% under a B row: landmark workers to 11 |
 
 B5A50F INCLUDE test floor (0.979): 0.977 [0.966, 0.987] (n=816)
 | B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 804 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.169 vs B5A50) | new signers 0.090 [0.000, 0.112] (n=546); all 0.404 [0.031, 0.982] / 0.457 | 0.179 | c22 0.031 | islrtc 0.093, kaggle 0.980, rkmvu 0.031 | 5.575, 0.158 | 5119.9, 0.904 | 1.000 | 0.256, -0.149 | - | 0.478 | - | unclear |
@@ -1725,6 +1755,7 @@ B5A50F top confused pairs (true -> predicted): busy -> kill (3); area -> island 
 
 B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
 
+| 00:21 | 60 | 32, 5.7 | 14.8 | 7 | exp B5A50F, landmark_split | GPU 32% under a B row: landmark workers to 7 |
 
 B5A50F INCLUDE test floor (0.979): 0.978 [0.967, 0.988] (n=816)
 | B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 805 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.845 vs B5A50) | new signers 0.084 [0.000, 0.104] (n=546); all 0.397 [0.031, 0.970] / 0.460 | 0.173 | c22 0.031 | islrtc 0.087, kaggle 0.970, rkmvu 0.031 | 5.578, 0.151 | 5124.0, 0.900 | 1.000 | 0.254, -0.143 | - | 0.459 | - | unclear |
@@ -1734,6 +1765,7 @@ B5A50F top confused pairs (true -> predicted): elephant -> colour (4); busy -> k
 
 B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9765, 'rkmvu': 1.0}, against the app -
 
+| 00:31 | 60 | 39, 5.4 | 13.9 | 7 | exp B5A50F, landmark_split | under target |
 
 B5A50F INCLUDE test floor (0.979): 0.982 [0.972, 0.990] (n=816)
 | B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 519 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.189 vs B5A50) | new signers 0.084 [0.000, 0.106] (n=546); all 0.403 [0.031, 0.988] / 0.455 | 0.177 | c22 0.031 | islrtc 0.087, kaggle 0.987, rkmvu 0.031 | 5.627, 0.135 | 5233.5, 0.903 | 1.000 | 0.242, -0.160 | - | 0.429 | - | unclear |
@@ -1743,6 +1775,8 @@ B5A50F top confused pairs (true -> predicted): busy -> kill (3); area -> zone (2
 
 B5A50F as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
 
+| 00:39 | 62 | 30, 5.1 | 14.4 | 10 | exp B5A50F, landmark_split | under target |
+| 00:49 | 72 | 40, 5.3 | 12.8 | 10 | exp B5A50F, landmark_split | under target |
 
 B5A50F INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
 | B5A50F | asl + include + islrtc + kaggle + rkmvu, 55067 clips, 762 s | B5A50 on the full ASL Citizen train split; the larger clip pool needs the card to itself (McNemar p=0.678 vs B5A50) | new signers 0.082 [0.000, 0.104] (n=546); all 0.398 [0.031, 0.979] / 0.460 | 0.174 | c22 0.031 | islrtc 0.086, kaggle 0.977, rkmvu 0.031 | 5.601, 0.148 | 5119.2, 0.903 | 1.000 | 0.257, -0.142 | - | 0.455 | - | unclear |
@@ -1765,8 +1799,28 @@ B5A50F as the app shows it (logits masked to its 314 words, scored on those word
 Non-sign false-accept on val (cache_v6b, n=2437 rest and card-pause windows, a word shown at p >= 0.4 after T, app words): shipped 0.000 [0.000, 0.000] (top label a word 1.000; new-signer app-word clips shown 0.492, shown right 0.390, n=59)
 
 Non-sign false-accept on val (cache_v6b, n=2437 rest and card-pause windows, a word shown at p >= 0.4 after T, app words): b5 0.000 [0.000, 0.000] (top label a word 1.000; new-signer app-word clips shown 0.492, shown right 0.407, n=59)
+| 00:59 | 66 | 2, 0.7 | 10.4 | 11 | landmark_split | RAM used 10.4 GB: landmark workers back to 11 |
 
 B5A50F_s98 (5-seed soup, full ASL Citizen) rule 1 vs WF_s95: new-signer 0.1007 vs 0.0714 (n=546), 22:6, McNemar p=0.0037; Kaggle C 0.9933; INCLUDE 0.979 (floor). Installed: T 2.5678, non-sign FA 0, app-word shown right 0.407 vs 0.390, format 3 vs 1 agree 1.000 on 400 windows.
+| 01:09 | 63 | 0, 0.8 | 11.1 | 11 | landmark_split | under target |
+| 01:19 | 78 | 22, 1.1 | 13.0 | 11 | landmark_split | under target |
+| 01:29 | 70 | 1, 1.1 | 11.9 | 11 | landmark_split | under target |
+| 01:39 | 90 | 0, 0.8 | 14.3 | 11 | landmark_split | under target |
+| 01:49 | 92 | 4, 0.8 | 12.7 | 11 | landmark_split | under target |
+| 02:00 | 82 | 13, 0.8 | 12.0 | 11 | landmark_split | under target |
+| 02:10 | 54 | 0, 0.8 | 12.1 | 11 | landmark_split | under target |
+| 02:20 | 72 | 0, 0.8 | 12.6 | 11 | landmark_split | under target |
+| 02:30 | 74 | 0, 0.8 | 12.1 | 11 | landmark_split | under target |
+| 02:40 | 74 | 17, 0.8 | 13.1 | 11 | landmark_split | under target |
+| 02:42 | 64 | 4, 0.8 | 12.8 | 7 | landmark_split | under target |
+| 02:52 | 60 | 0, 0.8 | 14.3 | 7 | landmark_split | under target |
+| 03:02 | 50 | 1, 0.8 | 18.3 | 6 | landmark_split | RAM used 18.3 GB: landmark workers back to 6 |
+| 03:12 | 52 | 0, 0.8 | 17.6 | 7 | landmark_split | RAM used 17.6 GB: landmark workers back to 7 |
+| 03:19 | 58 | 80, 3.5 | 13.3 | 11 | landmark_split | under target |
+| 03:29 | 92 | 23, 1.0 | 13.7 | 11 | landmark_split | under target |
+| 03:39 | 81 | 35, 1.4 | 12.5 | 11 | landmark_split | under target |
+| 03:46 | 74 | 0, 0.9 | 19.6 | 12 | exp B5M, landmark_split | GPU 0% under a B row: landmark workers to 12 |
+| 03:56 | 96 | 40, 5.0 | 13.8 | 12 | exp B5M, landmark_split | under target |
 
 B5M INCLUDE test floor (0.979): 0.977 [0.964, 0.987] (n=816)
 | B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 874 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.327 vs B5A50F) | new signers 0.097 [0.000, 0.119] (n=546); all 0.412 [0.031, 0.991] / 0.473 | 0.183 | c22 0.031 | islrtc 0.101, kaggle 0.990, rkmvu 0.031 | 5.500, 0.117 | 5320.4, 0.904 | 1.000 | 0.274, -0.138 | - | 0.537 | - | unclear |
@@ -1776,6 +1830,7 @@ B5M top confused pairs (true -> predicted): area -> island (2); jackfruit -> ऑ
 
 B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.576 [0.458, 1.000] (n=59), per source {'islrtc': 0.569, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
 
+| 04:06 | 100 | 37, 5.0 | 15.3 | 12 | exp B5M, landmark_split | under target |
 
 B5M INCLUDE test floor (0.979): 0.973 [0.961, 0.984] (n=816)
 | B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 699 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.711 vs B5A50F) | new signers 0.092 [0.000, 0.114] (n=546); all 0.409 [0.031, 0.991] / 0.460 | 0.182 | c22 0.031 | islrtc 0.095, kaggle 0.990, rkmvu 0.031 | 5.547, 0.164 | 5140.4, 0.902 | 1.000 | 0.261, -0.148 | - | 0.496 | - | unclear |
@@ -1785,6 +1840,8 @@ B5M top confused pairs (true -> predicted): area -> island (2); brain -> brain t
 
 B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.576 [0.458, 1.000] (n=59), per source {'islrtc': 0.569, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
 
+| 04:16 | 86 | 5, 5.0 | 14.0 | 12 | exp B5M, landmark_split | under target |
+| 04:19 | 68 | 38, 5.0 | 13.9 | 14 | exp B5M, landmark_split | under target |
 
 B5M INCLUDE test floor (0.979): 0.969 [0.957, 0.980] (n=816)
 | B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 579 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.557 vs B5A50F) | new signers 0.079 [0.000, 0.100] (n=546); all 0.400 [0.031, 0.991] / 0.448 | 0.170 | c22 0.031 | islrtc 0.082, kaggle 0.990, rkmvu 0.031 | 5.582, 0.155 | 5065.1, 0.903 | 1.000 | 0.264, -0.136 | - | 0.466 | - | no |
@@ -1794,6 +1851,7 @@ B5M top confused pairs (true -> predicted): amritsar -> april (2); gujarat -> um
 
 B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.559 [0.441, 1.000] (n=59), per source {'islrtc': 0.5517, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
 
+| 04:29 | 94 | 34, 5.0 | 14.0 | 14 | exp B5M, landmark_split | under target |
 
 B5M INCLUDE test floor (0.979): 0.972 [0.958, 0.983] (n=816)
 | B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 641 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=0.856 vs B5A50F) | new signers 0.079 [0.000, 0.099] (n=546); all 0.403 [0.031, 0.998] / 0.460 | 0.170 | c22 0.031 | islrtc 0.082, kaggle 0.997, rkmvu 0.031 | 5.570, 0.152 | 5287.4, 0.904 | 1.000 | 0.253, -0.150 | - | 0.485 | - | no |
@@ -1803,6 +1861,8 @@ B5M top confused pairs (true -> predicted): area -> zone (2); capital -> day bef
 
 B5M as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9966, 'rkmvu': 1.0}, against the app -
 
+| 04:39 | 78 | 45, 5.0 | 13.8 | 14 | exp B5M, landmark_split | under target |
+| 04:49 | 94 | 0, 5.0 | 14.4 | 14 | exp B5M, landmark_split | under target |
 
 B5M INCLUDE test floor (0.979): 0.974 [0.963, 0.985] (n=816)
 | B5M | asl + include + isign + islrtc + kaggle + rkmvu, 55508 clips, 650 s | B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only) (McNemar p=1 vs B5A50F) | new signers 0.086 [0.000, 0.106] (n=546); all 0.405 [0.031, 0.991] / 0.462 | 0.176 | c22 0.031 | islrtc 0.089, kaggle 0.990, rkmvu 0.031 | 5.552, 0.158 | 5023.3, 0.896 | 1.000 | 0.265, -0.141 | - | 0.485 | - | no |
@@ -1838,3 +1898,39 @@ shipped.
 iSign signers (2026-10-30, 1,832 landmarked recordings, YuNet and SFace, average linkage at cosine 0.55): 44 face
 groups; 1,174 recordings near training signers, 575 near held-out signers (dropped by the mining face filter), about
 70 from new signers. More iSign landmarks add few new signers.
+| 04:59 | 92 | 0, 0.8 | 12.2 | 15 | landmark_split | RAM used 12.2 GB: landmark workers back to 15 |
+| 05:09 | 97 | 0, 0.8 | 13.2 | 15 | landmark_split | under target |
+| 05:19 | 97 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 05:29 | 97 | 0, 0.8 | 12.2 | 15 | landmark_split | under target |
+| 05:39 | 97 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 05:49 | 97 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 06:00 | 97 | 18, 0.8 | 12.2 | 15 | landmark_split | under target |
+| 06:10 | 98 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 06:20 | 97 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 06:30 | 98 | 0, 0.8 | 12.2 | 15 | landmark_split | under target |
+| 06:40 | 99 | 3, 0.8 | 12.8 | 15 | landmark_split | under target |
+| 06:50 | 99 | 4, 0.8 | 13.4 | 15 | landmark_split | under target |
+| 07:00 | 98 | 0, 0.8 | 12.7 | 15 | landmark_split | under target |
+| 07:10 | 98 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 07:20 | 98 | 0, 0.8 | 13.4 | 15 | landmark_split | under target |
+| 07:30 | 97 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 07:40 | 98 | 0, 0.8 | 12.4 | 15 | landmark_split | under target |
+| 07:50 | 98 | 0, 0.8 | 13.0 | 15 | landmark_split | under target |
+| 08:00 | 98 | 0, 0.8 | 12.6 | 15 | landmark_split | under target |
+| 08:10 | 98 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 08:20 | 97 | 4, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 08:30 | 98 | 0, 0.8 | 12.2 | 15 | landmark_split | under target |
+| 08:40 | 97 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 08:50 | 98 | 0, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 09:00 | 97 | 0, 0.8 | 12.1 | 15 | landmark_split | under target |
+| 09:10 | 97 | 0, 0.8 | 12.4 | 15 | landmark_split | under target |
+| 09:20 | 98 | 12, 0.8 | 12.3 | 15 | landmark_split | under target |
+| 09:30 | 97 | 0, 0.8 | 12.4 | 15 | landmark_split | under target |
+| 09:40 | 98 | 0, 0.8 | 12.4 | 15 | landmark_split | under target |
+| 09:50 | 98 | 15, 0.8 | 12.7 | 15 | landmark_split | under target |
+| 10:00 | 97 | 0, 0.8 | 12.7 | 15 | landmark_split | under target |
+| 10:10 | 97 | 0, 0.8 | 12.7 | 15 | landmark_split | under target |
+| 10:21 | 98 | 0, 0.8 | 12.7 | 15 | landmark_split | under target |
+| 10:31 | 97 | 0, 0.8 | 12.5 | 15 | landmark_split | under target |
+| 10:41 | 97 | 0, 0.8 | 12.5 | 15 | landmark_split | under target |
+| 10:51 | 99 | 0, 0.8 | 12.7 | 15 | landmark_split | under target |

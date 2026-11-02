@@ -72,7 +72,7 @@ Release builds use R8 with resource shrinking. `-PgatewayUrl=https://...` (or `g
 | `tools/isl/` | Retargeting recorded ISL and ASL signers onto the character ([README](tools/isl/README.md)) |
 | `tools/ml/` | Sign reader training, export and evaluation ([README](tools/ml/README.md), [EVAL](tools/ml/EVAL.md)) |
 | `tools/text2isl/` | Recorded sentence clips ([README](tools/text2isl/README.md)) |
-| `tools/security/` | CycloneDX SBOM of the release APK (`sbom.py`, needs Syft) |
+| `tools/security/` | CycloneDX SBOM of the release APK (`sbom.py`, needs Syft) and the offline report seal check (`verify_seal.py`) |
 | `content/` | Source symbols for the picture cards |
 | `render.yaml` | Render blueprint for the gateway |
 | `docs/` | Requirements, architecture, security and data protection assessment ([index](docs/README.md)) |

@@ -187,6 +187,7 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.pdfbox.android)
     implementation(libs.zxing.core)
+    implementation(libs.rive.android)
     constraints {
         // PdfBox-Android brings BouncyCastle 1.72, which has known critical vulnerabilities (OSV scan); 1.86 fixes them.
         implementation(libs.bouncycastle.prov)

@@ -158,6 +158,25 @@ Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` t
 - **Gestures avoided.** Thumb-up, thumb-down and an open palm are never used for yes, no or stop; Stop on the stage is an octagonal sign.
 - **Review.** The reviewer portal plays every motion on the same avatar module the app ships. Every entry remains a candidate until reviewed.
 
+### 5.8 Drawn and Rive characters
+
+- **Choice.** Settings, Stage, Character: the 3D character (default), the drawn character, or a Rive character when a department file is present. The drawn character also takes over by itself when the phone has no usable WebView, the model is not ready within 12 s, or the WebView renderer dies.
+- **Drawn character.** The 2D rig in `ui/avatar` plays the same keyframes as the 3D one. Recorded sentence clips play on it too: each frame keeps the signer's bone directions at the drawn character's own arm lengths, and the 21 hand points become finger curls, spread, thumb position, palm turn and hand angle.
+- **Rive file.** `avatar/signer.riv`, in the app's files (copied by the department) or in `assets/avatar/` (built in). The runtime loads only when a Rive character is first shown.
+- **Rive contract.** One state machine named `Signer`. Each frame the app writes these number inputs, in the rig's 200-unit space (y down, the character's right hand on the viewer's left):
+
+| Input | Meaning |
+| --- | --- |
+| `wristRX`, `wristRY`, `wristLX`, `wristLY` | Wrist positions |
+| `elbowRX`, `elbowRY`, `elbowLX`, `elbowLY` | Elbow minus shoulder, when the motion records one |
+| `handR`, `handL` | Hand shape, an index into the rig's named shapes in this order: RELAX, FLAT, OPEN, FIST, POINT, TWO, THREE, FOUR, PINKY, THUMB, Y, BUNCH, CUP, PINCH, CLAW, SALUTE, WALK_A, WALK_B, RUB, HOOK; measured shapes snap to the nearest |
+| `rollR`, `rollL` | Palm turn, −1 to 1: near ±1 the palm or its back faces the viewer, near 0 it is edge-on |
+| `angleR`, `angleL` | Hand angle in degrees, 0 with the fingers up |
+| `tilt`, `nod`, `turn`, `lean`, `shrug` | Head and body |
+| `browRaise`, `browFrown`, `smile`, `mouthOpen` | Face, 0 to 1 |
+
+  Boolean inputs: `idle` (breathe and blink between motions) and `headView` (frame the head alone). Inputs the file does not define are skipped.
+
 ## 6. Officer gesture lookup
 
 When the subject makes a gesture the officer does not understand:
@@ -169,7 +188,7 @@ When the subject makes a gesture the officer does not understand:
 5. Officer picks the likely one and taps **Show**: the subject sees the gesture and picture with "Is this it?" and Yes and No, or a choice among two or three pictures where the item has others.
 6. Only a confirmed match is logged as the subject's answer; unconfirmed lookups are logged as unclear.
 
-This works offline, needs no model, and works with home signs, because the confirmation step catches mismatches. Signed answers are read separately by the on-device sign reader ([hand model integration](09-hand-model-integration.md)); its readings are proposals and become the subject's only when the subject picks the meaning. The body outline is an officer tool; the subject is never shown a body map in the default flow.
+This works offline, needs no model, and works with home signs, because the confirmation step catches mismatches. Signed answers are read separately by the on-device sign reader ([hand model integration](09-hand-model-integration.md)); its readings are proposals and become the subject's only when the subject picks the meaning. This body outline is an officer tool. The subject's express board has its own front and back body map under Body: a touch answers as pain and records the side, the part, the person's left or right and the exact point.
 
 ## 7. Fallback chain
 
