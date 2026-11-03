@@ -633,8 +633,6 @@
     <string name="session_deleted">सत्र इस फ़ोन से मिटा दिया गया।</string>
     <string name="settings_keep">मिटाने तक रखें</string>
     <string name="saved_title">सहेजे गए सत्र</string>
-    <string name="saved_open">खोलें</string>
-    <string name="saved_delete_title">यह सत्र मिटाएँ?</string>
     <string name="saved_delete_body">इसका रिकॉर्ड इस फ़ोन से हमेशा के लिए हट जाएगा। ज़रूरत हो तो पहले रिपोर्ट निर्यात करें।</string>
     <string name="saved_delete_confirm">मिटाएँ</string>
     <string name="saved_finish_open_first">पहले खुला सत्र पूरा करें।</string>
@@ -759,9 +757,7 @@
     <string name="brain_note">स्टेशन कंप्यूटर पर बोली से लिखित, अनुवाद और संकेत क्रम: इसी नेटवर्क से, या उसके टिकट से कहीं से भी। इसके बिना फ़ोन अकेले काम करता है।</string>
     <string name="brain_via_iroh">स्टेशन कंप्यूटर %1$s… (कहीं से भी)</string>
     <string name="brain_not_paired">बंद। स्टेशन कंप्यूटर से जोड़ने के लिए चालू करें।</string>
-    <string name="brain_checking">जाँच रहा है…</string>
     <string name="brain_unreachable">%1$s से जुड़ा, अभी जवाब नहीं</string>
-    <string name="brain_ok">%1$s %2$d ms में जवाब देता है; %3$s</string>
     <string name="brain_llm_on">भाषा मॉडल तैयार</string>
     <string name="brain_llm_off">भाषा मॉडल नहीं</string>
     <string name="brain_forget">स्टेशन कंप्यूटर भूल जाएँ</string>
@@ -803,11 +799,12 @@
     <string name="station_off">बंद</string>
     <string name="station_connecting">चालू, स्टेशन की प्रतीक्षा</string>
     <string name="station_online">स्टेशन से जुड़ा</string>
-    <string name="station_not_paired">पहले स्टेशन कंप्यूटर जोड़ें: सेटिंग्स, लोकल AI ब्रेन।</string>
+    <string name="station_not_paired">पहले स्टेशन कंप्यूटर जोड़ें: सेटिंग्स, ऑनलाइन।</string>
     <string name="saved_chosen">%1$d चुने गए</string>
     <string name="saved_delete_chosen">चुने गए सत्र हटाएँ</string>
+    <string name="saved_choose">चुनें</string>
     <string name="saved_send">स्टेशन को भेजें</string>
-    <string name="saved_send_offline">स्टेशन जुड़ा नहीं है। सेटिंग्स, लोकल AI ब्रेन में स्टेशन कंप्यूटर चालू करें।</string>
+    <string name="saved_send_offline">स्टेशन जुड़ा नहीं है। सेटिंग्स, ऑनलाइन में स्टेशन कंप्यूटर चालू करें।</string>
     <string name="saved_send_no_inbox">यह स्टेशन बातचीत नहीं लेता।</string>
     <plurals name="saved_delete_chosen_title">
         <item quantity="one">%1$d सत्र हटाएँ?</item>
@@ -818,7 +815,7 @@
     <string name="brain_feature_isl">संकेत पढ़ना (ISL)</string>
     <string name="brain_feature_llm">AI मदद: कैप्शन, वाक्य, काउंसलर, सारांश</string>
     <string name="brain_feature_archive">बातचीत लेना</string>
-    <string name="saved_send_off">स्टेशन को बातचीत भेजना सेटिंग्स, लोकल AI ब्रेन में बंद है।</string>
+    <string name="saved_send_off">स्टेशन को बातचीत भेजना सेटिंग्स, ऑनलाइन में बंद है।</string>
     <string name="brain_feature_connect_first">पहले स्टेशन लिंक चालू करें।</string>
     <string name="station_needs_local">इस नेटवर्क के डिवाइस तक पहुँच की अनुमति दें, ताकि फ़ोन स्टेशन कंप्यूटर तक पहुँच सके।</string>
     <string name="brain_link_off">बंद: फ़ोन अकेले काम करता है।</string>
@@ -830,6 +827,8 @@
     <string name="settings_character_3d">3D पात्र</string>
     <string name="settings_character_3d_on">चालू: 3D पात्र।</string>
     <string name="settings_character_3d_off">बंद: बना हुआ पात्र, हल्का।</string>
+    <string name="settings_character_rive">चलता-फिरता पात्र</string>
+    <string name="settings_character_rive_summary">3D पात्र की जगह Rive पात्र।</string>
     <string name="saved_download">इस फ़ोन में सहेजें</string>
     <string name="saved_send_one_failed">यह पूरा नहीं भेजा जा सका। फिर कोशिश करें।</string>
     <string name="saved_download_failed">यह इस फ़ोन में सहेजा नहीं जा सका।</string>

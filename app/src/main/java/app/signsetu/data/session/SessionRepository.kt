@@ -143,8 +143,10 @@ class SessionRepository(
         landmarksJson: ByteArray? = null,
     ): Long = unlessClosed(-1L) {
         sealing.withLock {
+            // Retention may delete an open session under its screen; its later rows are dropped, not a crash.
+            val startedAt = dao.startedAt(sessionId) ?: return@withLock -1L
             val ts = clock()
-            val previous = dao.lastHash(sessionId) ?: EventSeal.genesis(sessionId, dao.startedAt(sessionId) ?: 0L)
+            val previous = dao.lastHash(sessionId) ?: EventSeal.genesis(sessionId, startedAt)
             val hash = EventSeal.seal(previous, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, drawingPng, itemId, reason, shownId, via, audioWav, landmarksJson)
             val drawing = drawingPng?.let { DrawingEntity(sessionId = sessionId, png = it) }
             val audio = audioWav?.let { AudioEntity(sessionId = sessionId, wav = it) }

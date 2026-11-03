@@ -2,7 +2,7 @@
 
 Phones reach the station brain over iroh from any network (`brain/brain/link.py`, `app/.../net/IrohBrain.kt`). Where no direct path can be punched through the two networks' NATs (mobile data, CGNAT, strict firewalls), the traffic goes through a relay. The relay is the department's own: neither the brain nor the phone ever contacts a third-party relay or address lookup.
 
-The relay forwards QUIC packets that are end-to-end encrypted to the brain's key. It sees the two IP addresses, the brain's public key, timing and byte counts, never content. A fake relay fails, because the phone checks proof of the brain's key. It is open to any endpoint; the brain's pairing token gates every request.
+The relay forwards QUIC packets that are end-to-end encrypted to the brain's key. It sees the two IP addresses, the brain's public key, timing and byte counts, never content. A fake relay fails, because the phone checks proof of the brain's key. As shipped it is open to any endpoint, and the brain's pairing token gates every request; an allowlist can limit it to the department's brains and phones (section 4).
 
 ## 1. What it needs
 
@@ -80,9 +80,30 @@ A hand start takes `--relay URL` or the `BRAIN_RELAY` environment variable. The 
 
 Without a relay the brain still binds iroh, and phones reach it only where a direct path works. If the relay is down when the brain starts, the brain waits 10 seconds, prints the ticket anyway and connects to the relay once it is back.
 
+### Letting in only listed endpoints
+
+The relay can refuse every endpoint it does not know. Each brain and each phone then needs its endpoint ID on the list: 64 hexadecimal characters, the same across restarts.
+
+1. The brain's ID is in its ticket. With the brain's Python (the venv `setup` made):
+   `python -c "import iroh; print(iroh.EndpointTicket.from_string('<ticket>').endpoint_addr().id())"`
+2. The phone's ID is in the app: Settings, Online, the row "This phone's link ID" under the station computer rows. A tap copies it (Android 13 and later confirm the copy themselves; older phones show "Link ID copied"), ready to send to whoever runs the relay. The brain's log names each phone that connects by the first 8 characters of the same ID (`phone 1a2b3c4d connected`).
+3. Add the IDs to `relay.toml` (`/etc/iroh-relay/relay.toml`, or `C:\ProgramData\SignSetuRelay\relay.toml`):
+
+   ```toml
+   [access]
+   allowlist = [
+     "6714e6633d82c6fa1a34d299ef352a8db266b3f782e2aa9d1adcb190d6f19494",   # station brain
+     "<phone link ID>",                                                    # officer, phone
+   ]
+   ```
+
+4. Restart the relay: `sudo systemctl restart iroh-relay` on Linux; on Windows, as administrator, `Get-Process iroh-relay | Stop-Process -Force`, and the task starts it again within 5 seconds. A malformed ID stops the relay from starting, with `config must be valid toml` in its log.
+
+The relay reads the list only at start, so each change needs a restart. A phone reinstalled or restored from backup has a new ID: add the new one and remove the old. Running `relay/setup.ps1` or `relay/setup.sh` again changes only `hostname`, `contact` and, on Windows, `cert_dir` in the existing `relay.toml`, so the `[access]` table and other edits stay. An endpoint left off the list can still connect directly where a path can be punched; only the relay refuses it.
+
 ## 5. On the phone
 
-- The phone keeps one iroh key for the install, encrypted with an Android Keystore key and stored in the app's no-backup folder. Its endpoint ID stays the same across launches, but a reinstall or a restore from backup makes a new one. A temporary Keystore error at boot does not reset it.
+- The phone keeps one iroh key for the install, encrypted with an Android Keystore key and stored in the app's no-backup folder. Its endpoint ID (shown as "This phone's link ID" in Settings, Online) stays the same across launches, but a reinstall or a restore from backup makes a new one. A temporary Keystore error at boot does not reset it.
 - The connection and endpoint are dropped, and dialled again when next needed, after a network change, when the station link is turned off, and when the app goes to the background.
 - Timeouts: connecting 15 seconds; the heartbeat counts the station gone after 12 seconds without a beat and retries after 2 seconds, then at most every 10 seconds; checking a pairing takes up to 20 seconds over iroh and 5 on the station network.
 - A ticket pasted with line breaks (for example copied from a wrapped terminal) is accepted.
@@ -97,6 +118,7 @@ Without a relay the brain still binds iroh, and phones reach it only where a dir
 | Setup refuses the hostname or contact | Hostname: letters, digits, dots and dashes. Contact: an email address |
 | Brain logs `iroh: relay ... not reachable yet` | The relay is down or the URL is wrong; the brain keeps going and joins the relay when it is back |
 | Phone connects on the station Wi-Fi but not on mobile data | The brain has no `--relay`, the relay is down, or the phone holds an old ticket without the relay; set the relay, restart the brain, pair again with the new ticket |
+| Phone connects on the station Wi-Fi but not on mobile data, with an allowlist set | The phone's link ID, or the brain's ID, is not in `[access]`, or the phone was reinstalled since; copy the ID from the phone's settings again, add it and restart the relay (section 4) |
 | Hole punching never succeeds | UDP is blocked at the station; the relay still carries the traffic, and UDP 7842 helps discovery |
 | Windows relay log is hard to read | `relay.log` is written as UTF-16 and is rotated only when the relay restarts |
 | The relay version differs from the apps | Install the version pinned in `brain/requirements.txt` and `gradle/libs.versions.toml` |

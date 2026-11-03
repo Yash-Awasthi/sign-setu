@@ -142,7 +142,10 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                 SwitchItem(R.string.settings_isl_reorder, if (s.islReorder) R.string.settings_isl_reorder_on else R.string.settings_isl_reorder_off, s.islReorder) { on -> scope.launch { store.setIslReorder(on) } }
                 // On is the 3D character, off the drawn one, lighter and used by itself where 3D cannot run.
                 val threeD = s.avatarStyle != "FLAT"
-                SwitchItem(R.string.settings_character_3d, if (threeD) R.string.settings_character_3d_on else R.string.settings_character_3d_off, threeD) { on -> scope.launch { store.setAvatarStyle(if (on) "AUTO" else "FLAT") } }
+                SwitchItem(R.string.settings_character_3d, if (threeD) R.string.settings_character_3d_on else R.string.settings_character_3d_off, threeD) { on -> scope.launch { store.setAvatarStyle(if (!on) "FLAT" else if (s.avatarStyle == "RIVE") "RIVE" else "AUTO") } }
+                if (threeD && app.signsetu.ui.avatar.AvatarRenderer.riveAvailable(context)) {
+                    SwitchItem(R.string.settings_character_rive, R.string.settings_character_rive_summary, s.avatarStyle == "RIVE") { on -> scope.launch { store.setAvatarStyle(if (on) "RIVE" else "AUTO") } }
+                }
             }
             Group(R.string.settings_online) {
                 if (available) ListItem(

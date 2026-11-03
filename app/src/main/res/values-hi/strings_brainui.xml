@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="brainui_phone_id">इस फ़ोन की लिंक आईडी</string>
+    <string name="brainui_phone_id_note">कॉपी करने के लिए टैप करें। जो रिले केवल सूची वाले फ़ोन को आने देता है, उसे यह आईडी चाहिए।</string>
+    <string name="brainui_phone_id_copy">लिंक आईडी कॉपी करें</string>
+    <string name="brainui_phone_id_copied">लिंक आईडी कॉपी हो गई</string>
+</resources>

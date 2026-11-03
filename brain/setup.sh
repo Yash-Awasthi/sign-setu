@@ -75,7 +75,7 @@ Description=Sign Setu station brain
 After=network-online.target
 
 [Service]
-ExecStart="$here/start.sh"
+ExecStart=/bin/bash "$here/start.sh"
 Restart=always
 RestartSec=10
 

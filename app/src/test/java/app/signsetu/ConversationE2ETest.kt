@@ -35,6 +35,10 @@ import app.signsetu.ui.session.recordDetail
 import app.signsetu.ui.session.reopensInput
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -85,7 +89,13 @@ class ConversationE2ETest {
     }
 
     @Before fun main() = Dispatchers.setMain(UnconfinedTestDispatcher())
-    @After fun unmain() = Dispatchers.resetMain()
+    private val vms = mutableListOf<SessionViewModel>()
+
+    /** Work that left Main for Dispatchers.Default comes back to Main; it must end before Main is reset, or it fails a later test. */
+    @After fun unmain() {
+        runBlocking { vms.forEach { it.viewModelScope.coroutineContext.job.cancelAndJoin() } }
+        Dispatchers.resetMain()
+    }
 
     private fun points(e: JsonElement?): List<Offset>? = (e as? JsonArray)?.map { it.jsonPrimitive.float }?.chunked(2) { Offset(it[0], it[1]) }
 
@@ -141,7 +151,7 @@ class ConversationE2ETest {
     fun somethingElsePagesThroughEveryPictureBeforeTheDrawingPad() = runTest {
         val dao = MemoryDao()
         val repo = SessionRepository(dao)
-        val vm = SessionViewModel(repo.start(Profile.ISL_USER, "hi"), repo, content, "en", SessionReport(ContextWrapper(null)), reader)
+        val vm = SessionViewModel(repo.start(Profile.ISL_USER, "hi"), repo, content, "en", SessionReport(ContextWrapper(null)), reader).also { vms += it }
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.ui.collect {} }
         waitFor("the opening on the stage") { vm.ui.value?.onStage is Pending.GroundRules }
         vm.returnToOfficer()
@@ -170,7 +180,7 @@ class ConversationE2ETest {
         val dao = MemoryDao()
         var clock = 0L
         val repo = SessionRepository(dao, clock = { clock += 1_000; clock })
-        val vm = SessionViewModel(repo.start(Profile.ISL_USER, "hi"), repo, content, "en", SessionReport(ContextWrapper(null)), reader)
+        val vm = SessionViewModel(repo.start(Profile.ISL_USER, "hi"), repo, content, "en", SessionReport(ContextWrapper(null)), reader).also { vms += it }
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.ui.collect {} }
         waitFor("the opening on the stage") { vm.ui.value?.onStage is Pending.GroundRules }
         vm.returnToOfficer()
@@ -308,7 +318,7 @@ class ConversationE2ETest {
         // Nobody presses Done: the person signs three words, lowers their hands, and the app reads what it was given.
         val dao = MemoryDao()
         val repo = SessionRepository(dao)
-        val vm = SessionViewModel(repo.start(Profile.ISL_USER, "hi"), repo, content, "en", SessionReport(ContextWrapper(null)), reader)
+        val vm = SessionViewModel(repo.start(Profile.ISL_USER, "hi"), repo, content, "en", SessionReport(ContextWrapper(null)), reader).also { vms += it }
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.ui.collect {} }
         waitFor("the opening on the stage") { vm.ui.value?.onStage is Pending.GroundRules }
         vm.returnToOfficer()
@@ -332,7 +342,7 @@ class ConversationE2ETest {
         // The officer opens a read window and the person never raises a hand: it closes, it does not sit for 20 s.
         val dao = MemoryDao()
         val repo = SessionRepository(dao)
-        val vm = SessionViewModel(repo.start(Profile.ISL_USER, "hi"), repo, content, "en", SessionReport(ContextWrapper(null)), reader)
+        val vm = SessionViewModel(repo.start(Profile.ISL_USER, "hi"), repo, content, "en", SessionReport(ContextWrapper(null)), reader).also { vms += it }
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.ui.collect {} }
         waitFor("the opening on the stage") { vm.ui.value?.onStage is Pending.GroundRules }
         vm.returnToOfficer()

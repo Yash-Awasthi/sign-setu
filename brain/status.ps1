@@ -22,9 +22,13 @@ if (Test-Path $StationConfig) {
 $tokenFile = Join-Path $StationState "token"
 if ($procs.Count -and (Test-Path $tokenFile)) {
     $token = (Get-Content $tokenFile -Raw).Trim()
-    # The brain's certificate is its own, pinned by phones; this local check skips verifying it. The header goes on
-    # stdin, so the token never shows in the process list.
-    $out = "Authorization: Bearer $token" | & curl.exe -sk --max-time 5 -H "@-" https://127.0.0.1:8000/v1/status 2>$null
+    # The brain's certificate is its own, pinned by phones; this local check skips verifying it. The header goes in a
+    # BOM-free file, not the process list; piped to curl, PowerShell may prefix a BOM that breaks the header.
+    $hdr = [IO.Path]::GetTempFileName()
+    try {
+        [IO.File]::WriteAllText($hdr, "Authorization: Bearer $token`n", (New-Object Text.UTF8Encoding $false))
+        $out = & curl.exe -sk --max-time 5 -H "@$hdr" https://127.0.0.1:8000/v1/status 2>$null
+    } finally { Remove-Item -Force $hdr -ErrorAction SilentlyContinue }
     if ($LASTEXITCODE -eq 0 -and $out) {
         $caps = ($out | ConvertFrom-Json).caps
         $on = @($caps.PSObject.Properties | Where-Object { $_.Value } | ForEach-Object { $_.Name })

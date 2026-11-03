@@ -640,8 +640,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="session_deleted">Session deleted from this phone.</string>
     <string name="settings_keep">Keep until deleted</string>
     <string name="saved_title">Saved sessions</string>
-    <string name="saved_open">Open</string>
-    <string name="saved_delete_title">Delete this session?</string>
     <string name="saved_delete_body">Its record is removed from this phone for good. Export a report first if the case file needs it.</string>
     <string name="saved_delete_confirm">Delete</string>
     <string name="saved_finish_open_first">Finish the open session first.</string>
@@ -766,9 +764,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="brain_note">Speech to text, translation and sign order on the station computer, over this network or, by its ticket, from anywhere. Without it the phone works alone.</string>
     <string name="brain_via_iroh">station computer %1$s… (from anywhere)</string>
     <string name="brain_not_paired">Off. Turn on to pair with the station computer.</string>
-    <string name="brain_checking">Checking…</string>
     <string name="brain_unreachable">Paired with %1$s, not answering now</string>
-    <string name="brain_ok">%1$s answers in %2$d ms; %3$s</string>
     <string name="brain_llm_on">language model ready</string>
     <string name="brain_llm_off">no language model</string>
     <string name="brain_forget">Forget the station computer</string>
@@ -810,11 +806,12 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="station_off">Off</string>
     <string name="station_connecting">On, waiting for the station</string>
     <string name="station_online">Connected to the station</string>
-    <string name="station_not_paired">Pair the station computer first: Settings, Local AI brain.</string>
+    <string name="station_not_paired">Pair the station computer first: Settings, Online.</string>
     <string name="saved_chosen">%1$d chosen</string>
     <string name="saved_delete_chosen">Delete the chosen sessions</string>
+    <string name="saved_choose">Choose</string>
     <string name="saved_send">Send to the station</string>
-    <string name="saved_send_offline">The station is not connected. Turn on Station computer in Settings, Local AI brain.</string>
+    <string name="saved_send_offline">The station is not connected. Turn on Station computer in Settings, Online.</string>
     <string name="saved_send_no_inbox">This station does not take conversations.</string>
     <plurals name="saved_delete_chosen_title">
         <item quantity="one">Delete %1$d session?</item>
@@ -825,7 +822,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="brain_feature_isl">Sign reading (ISL)</string>
     <string name="brain_feature_llm">AI help: captions, sentences, counsellor, summary</string>
     <string name="brain_feature_archive">Receiving conversations</string>
-    <string name="saved_send_off">Sending conversations to the station is turned off in Settings, Local AI brain.</string>
+    <string name="saved_send_off">Sending conversations to the station is turned off in Settings, Online.</string>
     <string name="brain_feature_connect_first">Turn on the station link first.</string>
     <string name="station_needs_local">Allow access to devices on this network, so the phone can reach the station computer.</string>
     <string name="brain_link_off">Off: the phone works alone.</string>
@@ -837,6 +834,8 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_character_3d">3D character</string>
     <string name="settings_character_3d_on">On: the 3D character.</string>
     <string name="settings_character_3d_off">Off: the drawn character, lighter.</string>
+    <string name="settings_character_rive">Animated character</string>
+    <string name="settings_character_rive_summary">Uses the Rive character instead of the 3D one.</string>
     <string name="saved_download">Save to this phone</string>
     <string name="saved_send_one_failed">It could not be sent whole. Try again.</string>
     <string name="saved_download_failed">It could not be saved on this phone.</string>

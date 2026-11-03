@@ -4,7 +4,7 @@
 
 Police officers find lost children and adults, and rescue people from kidnapping or trafficking, who cannot communicate in words: they are deaf, non-verbal, too traumatised to speak, or speak a language the officer does not know. Sign Setu lets the officer ask simple questions and understand the answers on one shared phone while formal support is arranged.
 
-The app is a communication aid. It does not interpret, it does not replace an ISL interpreter, special educator or counsellor, and it is not the statutory recording of a statement. It records the person's own voice only after their consent (a guardian's for a child) is logged, only while the officer holds the button, into the encrypted session record.
+The app is a communication aid. It does not interpret, it does not replace an ISL interpreter, special educator or counsellor, and it is not the statutory recording of a statement. It records the person's own voice only after their consent (a guardian's for a child) is logged, only between the officer's tap to start and tap to stop, into the encrypted session record.
 
 ## 2. Users
 

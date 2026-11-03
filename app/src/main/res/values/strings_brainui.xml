@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="brainui_phone_id">This phone\'s link ID</string>
+    <string name="brainui_phone_id_note">Tap to copy. A relay that lets in only listed phones needs this ID.</string>
+    <string name="brainui_phone_id_copy">Copy link ID</string>
+    <string name="brainui_phone_id_copied">Link ID copied</string>
+</resources>

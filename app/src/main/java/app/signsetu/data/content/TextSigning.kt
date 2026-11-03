@@ -19,6 +19,8 @@ data class WordBeat(val range: IntRange, val card: String?, val letters: List<St
 data class TextPlan(val gesture: Gesture?, val beats: List<WordBeat>, val motions: List<String> = emptyList())
 
 private const val GAP = 0.3f
+/** Leaving a spelled letter for a sign crosses the chest from the off hand, so that move gets more time. */
+private const val LETTER_GAP = 0.5f
 /** One typed word, with a possessive or contraction ("Ravi's") kept on it. */
 internal val TOKEN = Regex("[\\p{L}\\p{M}\\p{N}]+(?:['’]\\p{L}+)?")
 
@@ -110,10 +112,23 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>, order: List<Strin
         parts[parts.lastIndex] = cut
         t -= saved
     }
+    val gaps = mutableListOf<Float>()
+    var fromLetter = false
+    var wordStart = 0f
     fun add(g: Gesture) {
         settle()
+        val hands = g.keys.any { it.R != null || it.L != null }
+        val letter = g.id.startsWith("letter.") || g.id.startsWith("digit.")
+        if (hands && fromLetter && !letter && gaps.isNotEmpty()) {
+            // The word starts after the longer move, as it would after the usual gap.
+            if (wordStart == t) wordStart += LETTER_GAP - gaps.last()
+            t += LETTER_GAP - gaps.last()
+            gaps[gaps.lastIndex] = LETTER_GAP
+        }
+        if (hands) fromLetter = letter
         val next = if (parts.isNotEmpty()) g.trimmed(trail = false) else g
         parts += next
+        gaps += GAP
         t += next.keys.maxOf { it.t } + GAP
     }
     // "Ravi's" plays as Ravi: a possessive or contraction keeps only its stem.
@@ -141,7 +156,7 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>, order: List<Strin
         val (range, word) = tokens[i]
         val entry = entryOf(i)
         if (!grammar(i)) settle()
-        val start = t
+        wordStart = t
         val card = if (SignMode.PICTURES in modes) entry?.card ?: word.toIntOrNull()?.takeIf { it in 1..10 }?.let { "n$it" } else null
         val motion = if (grammar(i)) null else motionFor(word, entry, modes)
         var letters: List<String>? = null
@@ -154,15 +169,15 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>, order: List<Strin
             }
             card != null -> add(PAUSE)
         }
-        if (t > start) beats += WordBeat(range, card, letters, start, t)
+        if (t > wordStart) beats += WordBeat(range, card, letters, wordStart, t)
         if (i in sentenceEnd) add(PAUSE)
     }
     if (text.trimEnd().endsWith("?") || text.trimEnd().endsWith("\u061F")) {
         // The question mark is lit while the asking sign plays.
         val mark = text.trimEnd().lastIndex
-        if (parts.none { it.id in QUESTION_SIGNS }) gestures["ask"]?.let { g -> settle(); val start = t; add(g); beats += WordBeat(mark..mark, null, null, start, t) }
+        if (parts.none { it.id in QUESTION_SIGNS }) gestures["ask"]?.let { g -> settle(); wordStart = t; add(g); beats += WordBeat(mark..mark, null, null, wordStart, t) }
     }
-    return TextPlan(chain("text", parts, GAP).takeIf { it.keys.isNotEmpty() }, beats, parts.map { it.id })
+    return TextPlan(chain("text", parts, GAP, gaps).takeIf { it.keys.isNotEmpty() }, beats, parts.map { it.id })
 }
 
 /** Joins runs of up to three words that the lexicon knows as one ("thank you", "how many"), longest first. */

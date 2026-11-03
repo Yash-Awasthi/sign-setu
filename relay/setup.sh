@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Sets up the department's iroh relay on a Linux server, once (docs/16-relay.md). Run as root:
 #   1. the iroh-relay release binary, checked against its pinned SHA-256, into /usr/local/bin,
-#   2. a system user iroh-relay, and /etc/iroh-relay/relay.toml from this folder's template with --hostname and --contact,
+#   2. a system user iroh-relay, and /etc/iroh-relay/relay.toml from this folder's template (or the existing one) with --hostname and --contact,
 #   3. the systemd unit (iroh-relay.service here), enabled and started; it restarts the relay if it stops,
 #   4. ufw rules for TCP 443, UDP 7842 and TCP 80, when ufw is active.
 #
@@ -51,8 +51,10 @@ install -m 755 "$work/iroh-relay" /usr/local/bin/iroh-relay
 echo "2/4 /etc/iroh-relay/relay.toml"
 id iroh-relay >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin iroh-relay
 install -d /etc/iroh-relay
-sed -e "s|^hostname = .*|hostname = \"$hostname\"|" -e "s|^contact = .*|contact = \"$contact\"|" "$here/relay.toml" > /etc/iroh-relay/relay.toml
-chmod 644 /etc/iroh-relay/relay.toml
+# A re-run edits the existing file, so an [access] allowlist and other changes stay.
+src=/etc/iroh-relay/relay.toml; [ -f "$src" ] || src="$here/relay.toml"
+sed -e "s|^hostname = .*|hostname = \"$hostname\"|" -e "s|^contact = .*|contact = \"$contact\"|" "$src" > "$work/relay.toml"
+install -m 644 "$work/relay.toml" /etc/iroh-relay/relay.toml
 
 echo "3/4 systemd unit iroh-relay"
 install -m 644 "$here/iroh-relay.service" /etc/systemd/system/iroh-relay.service

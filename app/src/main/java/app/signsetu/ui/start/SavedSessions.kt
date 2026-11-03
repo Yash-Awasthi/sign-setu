@@ -26,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import app.signsetu.ui.session.clockDate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -92,7 +94,8 @@ internal fun SavedSessions(
     onOpen: (String) -> Unit,
     actions: SavedActions,
 ) {
-    val saved by repo.saved().collectAsStateWithLifecycle(emptyList())
+    // Null until Room answers, so the first pass does not clear a selection restored after rotation.
+    val loaded by repo.saved().collectAsStateWithLifecycle<List<Session>?>(null)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -103,7 +106,8 @@ internal fun SavedSessions(
     var where by remember { mutableStateOf<Where?>(null) }
     var savedHere by remember { mutableStateOf<Pair<String, String>?>(null) }
     var all by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(saved) { chosen.retainAll(saved.map { it.id }.toSet()) }
+    LaunchedEffect(loaded) { loaded?.let { list -> chosen.retainAll(list.map { it.id }.toSet()) } }
+    val saved = loaded ?: return
     if (saved.isEmpty()) return
     val choosing = chosen.isNotEmpty()
     BackHandler(enabled = choosing) { chosen.clear() }
@@ -161,12 +165,16 @@ internal fun SavedSessions(
                         .combinedClickable(
                             onClick = { if (choosing) { if (picked) chosen.remove(s.id) else chosen.add(s.id) } else onOpen(s.id) },
                             onLongClick = { if (!picked) chosen.add(s.id) },
-                            onLongClickLabel = stringResource(R.string.saved_delete_chosen),
-                        ),
+                            onLongClickLabel = stringResource(R.string.saved_choose),
+                        )
+                        .semantics { if (choosing) selected = picked },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (choosing) Checkbox(checked = picked, onCheckedChange = null, modifier = Modifier.padding(end = Spacing.sm))
-                    Text(s.title.orEmpty(), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Column(Modifier.weight(1f)) {
+                        Text(s.title.orEmpty(), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(clockDate(s.endedAt ?: s.startedAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     if (!choosing) {
                         if (busy == s.id) {
                             androidx.compose.material3.CircularProgressIndicator(progress = { progress.coerceAtLeast(0.05f) }, modifier = Modifier.padding(12.dp).size(24.dp))

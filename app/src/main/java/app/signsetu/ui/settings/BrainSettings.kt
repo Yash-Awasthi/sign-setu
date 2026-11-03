@@ -14,6 +14,12 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.runtime.produceState
+import android.content.ClipData
+import android.os.Build
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -97,6 +103,7 @@ internal fun BrainItems(brain: BrainClient, off: Set<String>, onOff: (Set<String
         Item(stringResource(R.string.brain_paired_with), label(paired)) { pairing = true }
         Item(stringResource(R.string.brain_forget), "", destructive = true) { onLink(false); brain.forget(); version++ }
     }
+    PhoneIdItem()
     if (pairing) {
         var url by remember { mutableStateOf(paired?.ticket ?: paired?.url ?: "") }
         var token by remember { mutableStateOf("") }
@@ -139,12 +146,40 @@ internal fun BrainItems(brain: BrainClient, off: Set<String>, onOff: (Set<String
     }
 }
 
+/** This phone's iroh endpoint ID, which a relay's `[access]` allowlist names (docs/16-relay.md); a tap copies it. */
+@Composable
+private fun PhoneIdItem() {
+    val id by produceState<String?>(null) { value = app.signsetu.net.IrohBrain.phoneId() }
+    val shown = id ?: return
+    val context = LocalContext.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    val label = stringResource(R.string.brainui_phone_id)
+    ListItem(
+        headlineContent = { Text(label) },
+        supportingContent = {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(shown, fontFamily = FontFamily.Monospace)
+                Text(stringResource(R.string.brainui_phone_id_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        colors = ItemColors,
+        modifier = Modifier.clickable(onClickLabel = stringResource(R.string.brainui_phone_id_copy)) {
+            scope.launch {
+                clipboard.setClipEntry(ClipData.newPlainText(label, shown).toClipEntry())
+                // Android 13 and later confirm a copy themselves.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) Toast.makeText(context, R.string.brainui_phone_id_copied, Toast.LENGTH_SHORT).show()
+            }
+        },
+    )
+}
+
 /** One of the station's services, nested under the Station computer row: indented, compact, with
  * its text dimmed (never the row: the card would show through as a band) when the station lacks it. */
 @Composable
 private fun ServiceRow(name: String, has: Boolean, sent: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable(role = Role.Switch, onClick = onClick)
+        Modifier.fillMaxWidth().heightIn(min = 44.dp).toggleable(value = sent, role = Role.Switch) { onClick() }
             .padding(start = 40.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -18,7 +18,7 @@ department's relay from anywhere else. Without the station link a phone works on
 The link is off by default and stays off until the officer turns it on: an open connection and its heartbeat keep
 the phone's radio awake, which costs battery for nothing when no station is needed.
 
-- The switch is the Station computer row in Settings, Local AI brain, like the online assistant's. Turned on with no
+- The switch is the Station computer row in Settings, Online, like the online assistant's. Turned on with no
   station paired, it opens the pairing first; on Android 17 it asks for access to devices on this network, without
   which Android drops every connection to a LAN address. While on, the row says Connecting or Connected, and the
   station's services are listed under it.
@@ -26,7 +26,9 @@ the phone's radio awake, which costs battery for nothing when no station is need
   it again when the officer comes back.
 - Turning it off closes the iroh endpoint at once. A change of network does the same, and the phone dials again when
   it next needs the station.
-- The phone's iroh identity is kept for the install and survives restarts ([16](16-relay.md), section 5). It uses the
+- The phone's iroh identity is kept for the install and survives restarts ([16](16-relay.md), section 5). Its ID
+  shows in Settings, Online, as "This phone's link ID", in a fixed-width font, whether or not a station is
+  paired; a tap copies it. A relay that lets in only listed endpoints needs it ([16](16-relay.md), section 4). It uses the
   relay its pairing ticket names; there is no relay setting on the phone. To pair, paste the ticket (line breaks are
   fine) and the token, or the station network's `https://` address, token and pin. Replies larger than 8 MB are refused
   on both paths.
@@ -62,7 +64,7 @@ phone, one failed call (a 503, any other refusal, or no reply in time) stops tha
 heartbeat, which then says whether it is back. So a service that breaks mid-conversation costs one request, and the
 phone does that job alone from the next one.
 
-Settings, Local AI brain, lists the station's services (the in-app Help, under Station computer, walks through pairing). Those the station has are on, with a switch to keep one on
+Settings, Online, lists the station's services (the in-app Help, under Station computer, walks through pairing). Those the station has are on, with a switch to keep one on
 this phone instead; those it does not have, or all of them while the link is off, are dimmed and off, and a tap says
 why.
 
@@ -201,4 +203,5 @@ relay only:
 | Sign reading is slower than usual | The station answers after the 2.5 second limit; the phone's own reading then stands. Check the station's load |
 | `status` shows a Reader line "none" | Put the reader's `.json` and `.bin` in `brain/isl/` and restart the brain |
 | Nothing pairs after a rotated token | Every phone must enter the new token from `status` |
+| Connects on the station network but never from elsewhere, with a relay allowlist | This phone's link ID is not on the relay's list; copy it from Settings and have it added ([16](16-relay.md), section 4) |
 | Android drops LAN connections | Allow access to devices on this network when the phone asks (Android 17) |

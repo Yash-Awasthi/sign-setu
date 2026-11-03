@@ -17,7 +17,7 @@ import kotlin.math.hypot
  *     JOIN_SCAN_OUT=joins.md gradlew :app:testStandardDebugUnitTest --tests app.signsetu.JoinScan
  */
 class JoinScan {
-    private class Join(val sentence: String, val from: String, val to: String, val at: Float, val speed: Float, val flags: List<String>) {
+    private class Join(val sentence: String, val from: String, val to: String, val at: Float, val speed: Float, val peakAt: Float, val flags: List<String>) {
         val score get() = speed / SPEED_OK + flags.size
     }
 
@@ -40,6 +40,7 @@ class JoinScan {
                 val t0 = a.end - 0.1f
                 val t1 = c.start + 0.1f
                 var peak = 0f
+                var peakAt = t0
                 val flags = mutableSetOf<String>()
                 val startPose = tl.pose(Timeline.LEAD_IN + t0)
                 val endPose = tl.pose(Timeline.LEAD_IN + t1)
@@ -50,7 +51,8 @@ class JoinScan {
                 while (t <= t1) {
                     val p = tl.pose(Timeline.LEAD_IN + t)
                     for ((side, h, q) in listOf(Triple("right", p.r, prev.r), Triple("left", p.l, prev.l))) {
-                        peak = maxOf(peak, hypot(h.x - q.x, h.y - q.y) / DT)
+                        val v = hypot(h.x - q.x, h.y - q.y) / DT
+                        if (v > peak) { peak = v; peakAt = t }
                         if (h.y < chinY && abs(h.x - 100f) < 25f && q.y >= chinY) flags += "$side through face"
                         // A drop is a hand raised on both sides of the join that dips to the waist between; going to rest is not one.
                         if (h.y > waistY + 12f && startY(side) < waistY && endY(side) < waistY) flags += "$side drops below waist"
@@ -61,13 +63,13 @@ class JoinScan {
                     t += DT
                 }
                 val word = { w: app.signsetu.data.content.WordBeat -> s.substring(w.range.first, minOf(s.length, w.range.last + 1)) }
-                Join(s, word(a), word(c), a.end, peak, flags.toList())
+                Join(s, word(a), word(c), a.end, peak, peakAt, flags.toList())
             }
         }.sortedByDescending { it.score }
         val lines = listOf(
-            "| Score | Sentence | Join | At (s) | Peak wrist speed (units/s) | Flags |",
-            "| --- | --- | --- | --- | --- | --- |",
-        ) + joins.map { j -> "| %.2f | %s | %s → %s | %.2f | %.0f | %s |".format(j.score, j.sentence, j.from, j.to, j.at, j.speed, j.flags.joinToString()) }
+            "| Score | Sentence | Join | At (s) | Peak wrist speed (units/s) | Peak at (s) | Flags |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        ) + joins.map { j -> "| %.2f | %s | %s → %s | %.2f | %.0f | %.2f | %s |".format(j.score, j.sentence, j.from, j.to, j.at, j.speed, j.peakAt, j.flags.joinToString()) }
         File(out!!).writeText(lines.joinToString("\n") + "\n")
         println("joins: ${joins.size} in ${sentences.size} sentences, ${joins.count { it.score >= 1f }} over the line -> $out")
     }

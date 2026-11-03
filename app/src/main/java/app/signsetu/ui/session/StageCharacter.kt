@@ -172,11 +172,12 @@ private fun OfficerHandle(onClick: () -> Unit, hold: Animatable<Float, Animation
                     val down = awaitFirstDown()
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     val ring = scope.launch {
-                        // Timed on the wall clock, not by an animation spec: the phone's animation-speed setting must not shorten the hold.
-                        val started = System.nanoTime()
+                        // Frame time, not an animation spec: the animation-speed setting must not shorten the hold, and a
+                        // test clock that skips ahead holds for exactly as long as its injected press.
+                        val started = withFrameNanos { it }
                         do {
-                            withFrameNanos { }
-                            hold.snapTo(((System.nanoTime() - started) / 1_000_000f / HANDLE_HOLD_MS).coerceAtMost(1f))
+                            val now = withFrameNanos { it }
+                            hold.snapTo(((now - started) / 1_000_000f / HANDLE_HOLD_MS).coerceAtMost(1f))
                         } while (hold.value < 1f)
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         current()

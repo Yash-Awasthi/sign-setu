@@ -140,7 +140,10 @@ fun OfficerPane(
     val cloud = LocalOnlineAssistant.current
     val autoConv by vm.auto.conv.collectAsStateWithLifecycle()
     // The station's own model offers the same help as the gateway, without data leaving the department.
-    val aiOffer by produceState(false, cloud) { value = cloud.stationUp() || cloud.sendsSessionData() }
+    val brain = app.signsetu.ui.components.LocalBrain.current
+    // Read here so the offers follow the station's heartbeat; stationUp() alone is not observed by Compose.
+    val station = brain?.state?.collectAsStateWithLifecycle()?.value
+    val aiOffer by produceState(false, cloud, station) { value = cloud.stationUp() || cloud.sendsSessionData() }
     // The AI draft summary joins the export only when the officer ticks it in the finish dialog.
     var includeSummary by rememberSaveable { mutableStateOf(false) }
     // Session data leaves the phone only after the officer allows it once for this session.
@@ -161,7 +164,6 @@ fun OfficerPane(
     var logNote by rememberSaveable { mutableStateOf("") }
     var boardDraft by rememberSaveable { mutableStateOf<String?>(null) }
     var ownText by rememberSaveable { mutableStateOf("") }
-    val brain = app.signsetu.ui.components.LocalBrain.current
     // The brain's sign order for the text being typed, asked for once typing pauses; the phone's order stands without it.
     var glossed by remember { mutableStateOf<Pair<String, List<String>>?>(null) }
     LaunchedEffect(ownText, brain, islReorder) {
@@ -332,7 +334,7 @@ fun OfficerPane(
                 onTool = onTool,
                 onSecondScreen = onSecondScreen,
                 onFinish = { askEnd = true },
-                onCounsel = if (cloud.stationUp() || (cloud.available && cloud.enrolled)) startCounsel else null,
+                onCounsel = if ((station?.online == true && cloud.stationUp()) || (cloud.available && cloud.enrolled)) startCounsel else null,
                 auto = vm.auto,
                 modifier = Modifier.weight(1f),
             )

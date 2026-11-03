@@ -182,7 +182,7 @@ so the words appear in larger steps), and noisy rooms.
 
 | Symptom | Cause and fix |
 | --- | --- |
-| The voice sheet records but shows no words | The station link is off, or the heartbeat does not offer `live`: the speech model (`--asr`) is still loading, or speech to text is switched off for this phone in Settings, Local AI brain. `status` shows what the station offers |
+| The voice sheet records but shows no words | The station link is off, or the heartbeat does not offer `live`: the speech model (`--asr`) is still loading, or speech to text is switched off for this phone in Settings, Online. `status` shows what the station offers |
 | Words appear in large, late steps | The station is slower than the test machine; a pass takes longer, so words arrive less often. Use a smaller `--asr` model or a faster computer |
 | Hindi or another Indian language reads badly | The model is too small for that language; use a larger `--asr` model or an Indian-language speech model |
 | The take ends while the person is still thinking | A pause over 1.5 seconds ends a take. Tap again to record the next part |

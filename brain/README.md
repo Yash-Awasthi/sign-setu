@@ -66,7 +66,7 @@ Pair a phone: https://192.168.1.20:8000  token …  pin …
 Pair a phone from anywhere: ticket endpoint…  token …
 ```
 
-5. On each phone: Settings, Local AI brain, Station computer: paste the ticket and the token. The ticket works on the station Wi-Fi and from any other network, and survives the computer's address changing; the `https://` address with its pin works on the station network only.
+5. On each phone: Settings, Online, Station computer: paste the ticket and the token. The ticket works on the station Wi-Fi and from any other network, and survives the computer's address changing; the `https://` address with its pin works on the station network only.
 
 `.\start.ps1 --rotate-token` (or `./start.sh --rotate-token`) issues a new token; every phone must enter it again. The state folder (`%USERPROFILE%\.signsetu-brain` or `~/.signsetu-brain`) holds the certificate, the token and the iroh key: copy it to keep the same ticket on a new computer, and keep it private.
 

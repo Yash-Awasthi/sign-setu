@@ -17,6 +17,7 @@ import app.signsetu.data.session.SessionRepository
 import app.signsetu.gloss.DebugRecorder
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.data.session.SYSTEM_OPENED
+import app.signsetu.data.session.SYSTEM_RESUMED
 import app.signsetu.sign.SignGuess
 import app.signsetu.sign.SignChoice
 import app.signsetu.sign.SignConfirm
@@ -152,7 +153,8 @@ class SessionViewModel(
             val session = repo.session(sessionId).first() ?: return@launch
             // Starting a session is the officer's confirmation of its opening: the stage greets the person first,
             // or, for someone who speaks another language, lets them find it.
-            if (repo.events(sessionId).first().all { it.type == EventType.SYSTEM && (it.text in StartRows || it.text?.startsWith(SYSTEM_SIGN_LANGUAGE) == true || it.text?.startsWith(SYSTEM_SPEAKER_GENDER) == true) }) {
+            // The repository's own opened/resumed rows come first in every session; they are not an item shown.
+            if (repo.events(sessionId).first().all { it.type == EventType.SYSTEM && (it.text in StartRows || listOf(SYSTEM_SIGN_LANGUAGE, SYSTEM_SPEAKER_GENDER, SYSTEM_OPENED, SYSTEM_RESUMED).any { p -> it.text?.startsWith(p) == true }) }) {
                 val opening = if (session.profile == Profile.OTHER_LANGUAGE) Pending.LanguageFinder
                 else Pending.GroundRules().takeIf { content.question(RuleSteps.first().key) != null }
                 opening?.let { present(it, session.subjectLang) }
@@ -828,6 +830,7 @@ class SessionViewModel(
         auto.halt()
         val reopened = ui.value?.session?.takeIf { it.savedThrough != null }?.title
         viewModelScope.launch {
+            auto.drain()
             when {
                 title != null -> repo.end(sessionId, title)
                 reopened != null -> repo.discardUnsaved(sessionId, reopened)

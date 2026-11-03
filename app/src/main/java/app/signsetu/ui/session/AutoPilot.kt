@@ -129,14 +129,19 @@ class AutoPilot(
 
     /** The session is closing: every timer stops and nothing more is proposed, shown or logged. */
     fun halt() {
+        halted = true
         pace++
         turnOff()
     }
 
+    /** Waits out an action already running, so nothing it logs lands after the session is sealed. */
+    suspend fun drain() = lock.withLock { }
+    @Volatile private var halted = false
+
     /** Called before a manual Show is logged, so the record says the officer chose something else. */
     suspend fun onManualShow(pending: Pending) = lock.withLock {
         guarded {
-            if (state.value == Conv.Off) return@guarded
+            if (halted || state.value == Conv.Off) return@guarded
             skipProposed("officer_chose_other")
             val q = (pending as? Pending.Ask)?.question
             // Typed words and show-backs can ask about events, and Auto covers welfare triage only.
@@ -298,7 +303,7 @@ class AutoPilot(
     }
 
     private fun act(block: suspend () -> Unit) {
-        scope.launch { lock.withLock { guarded(block) } }
+        scope.launch { lock.withLock { if (!halted) guarded(block) } }
     }
 
     /** A lock can close the database under a running action; auto mode then stops instead of crashing in a subject's hands. */

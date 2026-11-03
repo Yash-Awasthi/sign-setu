@@ -41,8 +41,8 @@ class Inbox:
     def __init__(self, folder: Path):
         self.folder = Path(folder)
         self.folder.mkdir(parents=True, exist_ok=True)
-        for old in self.folder.glob("*.part"):
-            old.unlink(missing_ok=True)  # a transfer cut by a restart starts again
+        for old in self.folder.glob("*.signsetu-part"):
+            old.unlink(missing_ok=True)  # a transfer cut by a restart starts again; own suffix spares others' .part files
         self._open: dict[str, _Transfer] = {}
         self._lock = threading.Lock()
         # One save at a time: the dedupe scan and the free-name search must not race another transfer's.
@@ -56,7 +56,7 @@ class Inbox:
         with self._lock:
             self._expire()
             tid = secrets.token_urlsafe(18)
-            part = self.folder / f"{tid}.part"
+            part = self.folder / f"{tid}.signsetu-part"
             part.write_bytes(b"")
             self._open[tid] = _Transfer(part, _safe(name), size, sha256)
         return tid

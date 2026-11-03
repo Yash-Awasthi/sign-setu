@@ -1,7 +1,7 @@
 <#
 Sets up the department's iroh relay on a Windows server, once (docs/16-relay.md). Run as administrator:
   1. the iroh-relay release binary, checked against its pinned SHA-256, into -Dir,
-  2. relay.toml from this folder's template, with -Hostname, -Contact and the certificate folder,
+  2. relay.toml from this folder's template (or the existing one), with -Hostname, -Contact and the certificate folder,
   3. inbound firewall rules: TCP 443, UDP 7842 and TCP 80, for the relay program only,
   4. a scheduled task SignSetuRelay that runs it as SYSTEM from boot and restarts it if it stops.
 
@@ -39,22 +39,32 @@ if ($Remove) {
     return
 }
 New-Item -ItemType Directory -Force -Path $Dir, (Join-Path $Dir "certs") | Out-Null
+# ProgramData lets any user add files here, and SYSTEM runs what is in it: only administrators and SYSTEM may hold it.
+icacls $Dir /setowner *S-1-5-32-544 /T /C /Q | Out-Null; if ($LASTEXITCODE) { throw "could not lock down $Dir" }
+icacls $Dir /reset /T /C /Q | Out-Null; if ($LASTEXITCODE) { throw "could not lock down $Dir" }
+icacls $Dir /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" /C /Q | Out-Null; if ($LASTEXITCODE) { throw "could not lock down $Dir" }
 $config = Join-Path $Dir "relay.toml"
 
 Write-Host "1/4 iroh-relay $Version in $Dir"
+$local = Join-Path $Dir "iroh-relay-$Version.zip"
 if (-not $Zip) {
-    $Zip = Join-Path $Dir "iroh-relay-$Version.zip"
+    $Zip = $local
     $url = "https://github.com/n0-computer/iroh/releases/download/$Version/iroh-relay-$Version-x86_64-pc-windows-msvc.zip"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $Zip
 }
+# Hashed and unpacked from the locked folder, so the checked file is the one unpacked.
+if ((Resolve-Path $Zip).Path -ne $local) { Copy-Item -Force $Zip $local }
+$Zip = $local
 if ((Get-FileHash -Algorithm SHA256 $Zip).Hash -ne $Sha256) { throw "$Zip is not the iroh-relay $Version release (SHA-256 differs)." }
 Stop-Relay
 Expand-Archive -Force -Path $Zip -DestinationPath $Dir
 & $exe --version
 
 Write-Host "2/4 $config"
-$toml = (Get-Content -Raw (Join-Path $PSScriptRoot "relay.toml")) `
+# A re-run edits the existing file, so an [access] allowlist and other changes stay.
+$src = if (Test-Path $config) { $config } else { Join-Path $PSScriptRoot "relay.toml" }
+$toml = (Get-Content -Raw $src) `
     -replace '(?m)^hostname = .*$', "hostname = `"$Hostname`"" `
     -replace '(?m)^contact = .*$', "contact = `"$Contact`"" `
     -replace '(?m)^cert_dir = .*$', "cert_dir = '$(Join-Path $Dir "certs")'"

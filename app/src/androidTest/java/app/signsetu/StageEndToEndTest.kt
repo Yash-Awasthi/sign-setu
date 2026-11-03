@@ -2,23 +2,26 @@ package app.signsetu
 
 import android.Manifest
 import android.graphics.Bitmap
+import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.printToLog
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -39,6 +42,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -81,6 +85,8 @@ class StageEndToEndTest {
 
     @After
     fun tearDown() {
+        // The session pins the screen; a pinned task cannot be finished, so the rule could not close the activity.
+        shell("am task lock stop")
         SkeletonOverlay.on.value = true
         db.close()
         shell("settings put global animator_duration_scale 1")
@@ -92,7 +98,31 @@ class StageEndToEndTest {
 
     private fun count(matcher: SemanticsMatcher) = rule.onAllNodes(matcher).fetchSemanticsNodes().size
 
-    private fun waitFor(matcher: SemanticsMatcher, timeout: Long = 15_000) = rule.waitUntil(timeout) { count(matcher) > 0 }
+    /** Waits on the wall clock and moves the frame clock along with it: the camera feed and the character's frame
+     * loops never let an auto-advancing clock report the stage idle (ComposeNotIdle). */
+    private fun until(timeout: Long = 15_000, condition: () -> Boolean) {
+        val end = SystemClock.uptimeMillis() + timeout
+        var last = SystemClock.uptimeMillis()
+        while (!condition()) {
+            val now = SystemClock.uptimeMillis()
+            if (now > end) {
+                rule.onRoot(useUnmergedTree = true).printToLog("E2E")
+                throw AssertionError("condition not met within $timeout ms")
+            }
+            rule.mainClock.advanceTimeBy(maxOf(now - last, 16L))
+            last = now
+            SystemClock.sleep(10)
+        }
+    }
+
+    private fun waitFor(matcher: SemanticsMatcher, timeout: Long = 15_000) = until(timeout) { count(matcher) > 0 }
+
+    /** Taps once the node is there and enabled, then lets the screen recompose. */
+    private fun tap(matcher: SemanticsMatcher) {
+        waitFor(matcher and isEnabled())
+        rule.onNode(matcher).performClick()
+        rule.mainClock.advanceTimeBy(100)
+    }
 
     @Test
     fun aQuestionTheNodAndTheRecordOnTheRealScreens() {
@@ -103,6 +133,7 @@ class StageEndToEndTest {
         fun answers() = runBlocking { repo.eventsNow(id) }.filter { it.type == EventType.ANSWER_CARD }
         val tracker = NoddingTracker()
         val settings = AppSettings(firstRunDone = true)
+        rule.mainClock.autoAdvance = false
         rule.setContent {
             CompositionLocalProvider(LocalContentRepository provides container.content, LocalOnlineAssistant provides container.onlineAssistant) {
                 SignSetuTheme {
@@ -118,55 +149,58 @@ class StageEndToEndTest {
 
         // 1. The officer finds "Does it hurt anywhere?" by searching the More page and shows it.
         val h1 = content.question("h1")!!
-        rule.onNodeWithText(str(R.string.officer_tab_more)).performClick()
+        tap(hasText(str(R.string.officer_tab_more)))
+        waitFor(hasSetTextAction())
         rule.onNode(hasSetTextAction()).performTextInput("hurt")
-        waitFor(hasText(h1.text.getValue("en")))
-        rule.onNodeWithText(h1.text.getValue("en")).performClick()
-        rule.onNodeWithContentDescription(str(R.string.officer_show)).performClick()
+        tap(hasText(h1.text.getValue("en")))
+        tap(hasContentDescription(str(R.string.officer_show)))
 
-        // 2. On the stage the subject taps a picture, then No; neither follows a gesture. Four of six pictures show, shuffled.
+        // 2. On the stage the subject taps two pictures; neither follows a gesture.
         val pictures = h1.cards.associateWith { hasContentDescription(content.cards.getValue(it).label.get("en")!!) }
-        rule.waitUntil(15_000) { pictures.values.any { count(it) == 1 } }
-        val (picked, picture) = pictures.entries.first { count(it.value) == 1 }
-        rule.onNode(picture).performClick()
-        val no = hasContentDescription(content.subjectText("no", "en")!!)
-        rule.onNode(no).performClick()
-        rule.waitUntil(5_000) { answers().size == 2 }
+        // While the character signs, the answers wait folded under a strip the person can tap.
+        val strip = hasContentDescription(str(R.string.stage_show_answers))
+        until { pictures.values.any { count(it) == 1 } || count(strip) > 0 }
+        if (count(strip) > 0) tap(strip)
+        until { pictures.values.any { count(it) == 1 } }
+        // A where-question has no Yes or No; several pictures may be true, and each tap is logged.
+        val shown = pictures.entries.filter { count(it.value) == 1 }.take(2)
+        assertEquals(2, shown.size)
+        shown.forEach { tap(it.value) }
+        until(5_000) { answers().size == 2 }
 
-        // 3. A nod on camera only offers Yes; the tap on the offer is the answer, and its line names the nod.
-        val offer = hasText(content.subjectText("is_this_it", "en")!!)
-        rule.waitUntil(15_000) { tracker.frames > 10 }
-        assertEquals(0, count(offer))
-        assertEquals("nothing is logged for a gesture", 2, answers().size)
+        // 3. A nod on camera goes to the officer as the app's reading, never to the person and never as their answer.
+        fun reads() = runBlocking { repo.eventsNow(id) }.filter { it.type == EventType.ANSWER_SIGNED && it.via == "nod" }
+        until { tracker.frames > 10 }
+        assertEquals("nothing is read before the nod", 0, reads().size)
         tracker.nodding = true
-        waitFor(offer)
+        until(40_000) { reads().isNotEmpty() }
         tracker.nodding = false
-        rule.onNode(offer).performClick()
-        rule.waitUntil(5_000) { answers().size == 3 }
-        val taps = answers()
-        assertEquals(listOf(picked, "no", "yes"), taps.map { it.cardId })
-        assertEquals(listOf(null, null, "cue:nod"), taps.map { it.reason })
+        assertEquals("yes", reads().first().cardId)
+        assertEquals("a reading is not an answer", shown.map { it.key }, answers().map { it.cardId })
+        assertEquals(listOf(null, null), answers().map { it.reason })
 
-        // 4. Back on the officer pane, each answer carries its grade, and the Yes says it came after a nod.
+        // 4. Back on the officer pane: the pictures are graded Said (one row, or two when the taps are far apart), the nod is the app's reading.
         rule.onNode(handle).performTouchInput { longClick(durationMillis = 1_500) }
         waitFor(hasText(str(R.string.officer_tab_more)))
-        val cue = "(${str(R.string.cue_nod)})"
-        waitFor(hasText(cue, substring = true))
-        assertEquals(1, rule.onAllNodesWithText(cue, substring = true).fetchSemanticsNodes().size)
-        assertEquals(3, rule.onAllNodesWithText(str(R.string.grade_said)).fetchSemanticsNodes().size)
+        waitFor(hasText(str(R.string.grade_machine_read)))
+        assertTrue(rule.onAllNodesWithText(str(R.string.grade_said)).fetchSemanticsNodes().size in 1..2)
 
         // 5. Skeleton off from the officer menu: the stage's camera keeps running, the picture stays and only the overlay goes.
-        rule.onNodeWithContentDescription(str(R.string.officer_more)).performClick()
-        rule.onNodeWithText(str(R.string.officer_skeleton_show)).performClick()
+        tap(hasContentDescription(str(R.string.officer_more)))
+        tap(hasText(str(R.string.officer_skeleton_show)))
         assertFalse(SkeletonOverlay.on.value)
         instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        rule.mainClock.advanceTimeBy(500)
         // Back closes the menu on the More page; the water quick question lives on Transcribe.
-        rule.onNodeWithText(str(R.string.officer_tab_transcribe)).performClick()
+        tap(hasText(str(R.string.officer_tab_transcribe)))
         val water = content.question("n1")!!.text.getValue("en")
-        rule.onNodeWithText(water).performClick()
-        rule.onNodeWithContentDescription(str(R.string.officer_show)).performClick()
+        tap(hasText(water))
+        tap(hasContentDescription(str(R.string.officer_show)))
         waitFor(handle)
         val seen = tracker.frames
-        rule.waitUntil(15_000) { tracker.frames > seen + 5 }
+        until { tracker.frames > seen + 5 }
+        // Leave the screen before the rule closes the activity, so the camera and frame loops are gone.
+        rule.runOnUiThread { rule.activity.setContent {} }
+        rule.mainClock.advanceTimeBy(500)
     }
 }

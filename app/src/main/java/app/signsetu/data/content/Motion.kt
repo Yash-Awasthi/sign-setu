@@ -64,12 +64,12 @@ enum class QuestionKind { YES_NO, WH }
 
 internal val RestKey = HandKey()
 
-/** Plays [parts] one after another as a single gesture. Each part's first key spells out everything it leaves
- * out. */
-fun chain(id: String, parts: List<Gesture>, gap: Float = 0.3f): Gesture {
+/** Plays [parts] one after another as a single gesture, [gaps] (by part index) overriding [gap] after a part.
+ * Each part's first key spells out everything it leaves out. */
+fun chain(id: String, parts: List<Gesture>, gap: Float = 0.3f, gaps: List<Float>? = null): Gesture {
     var offset = 0f
     var last: Key? = null
-    val keys = parts.filter { it.keys.isNotEmpty() }.flatMap { part ->
+    val keys = parts.withIndex().filter { it.value.keys.isNotEmpty() }.flatMap { (index, part) ->
         val sorted = part.keys.sortedBy { it.t }
         // A part with no hands (a picture beat) holds the previous pose; dropping to rest mid-sentence reads as an end.
         val hold = last?.takeIf { sorted.all { k -> k.R == null && k.L == null } }
@@ -85,7 +85,7 @@ fun chain(id: String, parts: List<Gesture>, gap: Float = 0.3f): Gesture {
             }
             (listOf(first) + sorted.drop(1)).map { it.copy(t = it.t + offset) }
         }
-        offset += sorted.last().t + gap
+        offset += sorted.last().t + (gaps?.getOrNull(index) ?: gap)
         last = shifted.last()
         shifted
     }
