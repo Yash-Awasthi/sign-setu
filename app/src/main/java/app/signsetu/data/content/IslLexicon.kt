@@ -96,9 +96,11 @@ fun ContentBundle.dictionary(): List<DictionaryEntry> {
     }
     val authored = words.values.distinct().filter { it.sign?.startsWith("sign.") == true && it.sign in gestures }
         .groupBy { it.sign!! }
-        .map { (id, entries) ->
+        .mapNotNull { (id, entries) ->
             val forms = entries.flatMap { it.w }
-            DictionaryEntry(id, forms.first { !it.isDevanagari() }, forms.firstOrNull { it.isDevanagari() }.orEmpty(), DRAFT_CATEGORY, false, forms = forms)
+            // A word written only in Devanagari shows that form as its headword instead of failing the whole list.
+            val en = forms.firstOrNull { !it.isDevanagari() } ?: forms.firstOrNull() ?: return@mapNotNull null
+            DictionaryEntry(id, en, forms.firstOrNull { it.isDevanagari() }.orEmpty(), DRAFT_CATEGORY, false, forms = forms)
         }
     return recorded + authored.sortedBy { it.en }
 }

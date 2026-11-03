@@ -11,7 +11,9 @@ the reviewer's browser.
 
 - **ISL review**: every gesture, letter, digit and sign, played on the app's 3D character by the same avatar
   module the app ships (`../avatar`), with play, pause, speed (0.25x to 1x) and a scrub bar. A link ending in `#<gesture id>` opens that gesture, and
-  `#<gesture id>@<seconds>` holds it at that moment, for example `#letter.b@0.6`.
+  `#<gesture id>@<seconds>` holds it at that moment, for example `#letter.b@0.6`. A malformed link opens the first
+  gesture instead. The page keeps one 3D renderer per canvas however many gestures are played, and shows a message
+  if the character cannot be loaded.
 - **Language review**: every prepared question, phrase-bank sentence, subject-screen word and language-finder
   greeting, with its caption in each language and the recording beside it.
 - **Child-welfare review**: the prepared questions by group and the phrase-bank sentences, with their picture cards.
@@ -19,7 +21,10 @@ the reviewer's browser.
   sensitive question, gestures that read as thumb or open-palm signals) carries a hint. The hints only point at
   wording to check; they are not a safety check.
 
-Each item has Approve, Change and Reject, a notes box and the reviewer role chosen at the top. Verdicts are kept in
+- **Clip review**: the recorded sentences the app plays from its clip file, as the app plays them, with the frame count and
+  frame rate.
+
+Each item has Approve, Change and Reject, a notes box and the reviewer role chosen at the top. Tabs follow the keyboard pattern: arrow keys move between them, Home and End jump to the first and last. Verdicts are kept in
 the browser's local storage, per role, and **Export JSON** downloads them all.
 
 ## Run
@@ -36,6 +41,17 @@ Needs Node 22.18+, 24.11+ or 26+ (the range `vite-plus` declares). Run `npm inst
 
 The built `dist/` folder can be copied to any machine and served by any static file server. Content changes in the
 app need a rebuild.
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+| --- | --- |
+| `npx vp` fails to start | Node is older than the range above; check `node --version` |
+| The build cannot find the avatar module | Run `npm install` in `../avatar` first |
+| The page says the character could not be loaded | Reload the page; if it persists, rebuild after `npm install` in `../avatar` |
+| New app content is not shown | The portal reads content at build time; run `npx vp build` again |
+| Verdicts are gone | They live in this browser's local storage, per role; clearing site data or using another browser or profile starts empty. Export JSON before clearing. Damaged stored data is ignored and the page starts empty |
+| A shared link opens the wrong gesture | The id after `#` must match a gesture id exactly; an unknown or malformed one opens the first gesture |
 
 ## Key files
 

@@ -12,8 +12,13 @@ data class Suggestion(val caption: String, val meaning: String?)
 /** The on-device assistant. It only translates the officer's own words into the subject's language and back; it
  * never answers, judges or adds anything, and the officer decides whether the caption is used. */
 class Assistant(private val models: ModelStore, private val cloud: OnlineAssistant? = null) {
+    /** The station's model first, then this phone's, then the gateway (docs/18-station.md). */
     suspend fun suggest(text: String, language: Language): Suggestion? {
         if (!needsTranslation(text, language.code)) return null
+        cloud?.let { c ->
+            val caption = c.askStation(toLanguage(language), text, 120, CAPTION_WAIT_MS)?.firstLine()
+            if (caption != null) return Suggestion(caption, c.askStation(BACK_TO_ENGLISH, caption, 120, CAPTION_WAIT_MS)?.firstLine())
+        }
         val local = models.use { model ->
             val caption = model.chat(toLanguage(language), text, 120).firstLine() ?: return@use null
             val meaning = model.chat(BACK_TO_ENGLISH, caption, 120).firstLine() ?: return@use null
@@ -21,8 +26,8 @@ class Assistant(private val models: ModelStore, private val cloud: OnlineAssista
         }
         if (local != null) return local
         // Only the officer's own sentence goes out; it holds no subject details.
-        val caption = cloud?.ask(toLanguage(language), text, emptyList(), 200, timeoutMs = CAPTION_WAIT_MS, retry = false)?.firstLine() ?: return null
-        return Suggestion(caption, cloud.ask(BACK_TO_ENGLISH, caption, emptyList(), 120, timeoutMs = CAPTION_WAIT_MS, retry = false)?.firstLine())
+        val caption = cloud?.ask(toLanguage(language), text, emptyList(), 200, timeoutMs = CAPTION_WAIT_MS, retry = false, viaStation = false)?.firstLine() ?: return null
+        return Suggestion(caption, cloud.ask(BACK_TO_ENGLISH, caption, emptyList(), 120, timeoutMs = CAPTION_WAIT_MS, retry = false, viaStation = false)?.firstLine())
     }
 
     private fun toLanguage(language: Language) = translatePrompt(language)

@@ -218,7 +218,7 @@ class SessionReport(private val context: Context) {
             val detail = block(row.detail, bodyPaint, detailWidth)
             val reply = row.question?.takeIf { it != row.detail }?.let { block("${text.inReplyTo}: $it", smallPaint, detailWidth) }
             val eventLayout = block(text.eventLabel(row.event.type), bodyPaint, 104)
-            val image = row.event.drawingId?.let { id -> drawing(id)?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } }
+            val image = row.event.drawingId?.let { id -> drawing(id)?.let { decodeForPage(it, detailWidth) } }
             val imageHeight = image?.let { (detailWidth.toFloat() / it.width * it.height).coerceAtMost(260f) } ?: 0f
             val rowHeight = maxOf(detail.height + (reply?.height?.plus(2) ?: 0), eventLayout.height) + imageHeight + 10
             if (rowHeight > PAGE_H - 2 * MARGIN - FOOTER - 40) {
@@ -364,6 +364,16 @@ class SessionReport(private val context: Context) {
             return (1..16).map { ALPHABET[random.nextInt(ALPHABET.length)] }.chunked(4).joinToString("-") { it.joinToString("") }
         }
     }
+}
+
+/** Decodes a drawing at no more than twice the printed width: a full-size phone drawing can exceed the heap. */
+private fun decodeForPage(bytes: ByteArray, width: Int): android.graphics.Bitmap? {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+    var sample = 1
+    while (bounds.outWidth / (sample * 2) >= width * 2) sample *= 2
+    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
 }
 
 /** Re-exporting the same session on the device gives the same digest, so an edited copy of the PDF shows. */

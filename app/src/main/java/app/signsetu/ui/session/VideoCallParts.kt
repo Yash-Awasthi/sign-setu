@@ -1,5 +1,21 @@
 package app.signsetu.ui.session
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import app.signsetu.ui.theme.LocalAnswerColors
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -35,9 +51,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,8 +67,7 @@ internal fun CallActionButton(icon: String, label: String, backgroundColor: Colo
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
-            .clickable(onClick = onClick)
-            .semantics { role = Role.Button; contentDescription = label },
+            .clickable(role = Role.Button, onClick = onClick),
     ) {
         Surface(
             shape = CircleShape,
@@ -80,5 +92,73 @@ internal fun CallActionButton(icon: String, label: String, backgroundColor: Colo
             fontWeight = FontWeight.Bold,
             color = LocalCall.current.text,
         )
+    }
+}
+
+/** The folded answer panel: a bar that opens it at once when tapped. */
+@Composable
+internal fun PanelStrip(onClick: () -> Unit, modifier: Modifier) {
+    val label = stringResource(R.string.stage_show_answers)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = LocalCall.current.surface.copy(alpha = 0.93f),
+        border = BorderStroke(1.dp, LocalCall.current.line),
+        modifier = modifier.height(48.dp).semantics { contentDescription = label },
+    ) {
+        Box(contentAlignment = Alignment.Center) { Text("︿", fontSize = 22.sp, color = LocalCall.current.text) }
+    }
+}
+
+/** Stop in a corner on every item: a small red octagon, the one way out that never hides. */
+@Composable
+internal fun StopOctagon(label: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val answers = LocalAnswerColors.current
+    PressableSurface(
+        onClick = onClick,
+        shape = Octagon,
+        color = answers.pause,
+        border = if (chosen) BorderStroke(3.dp, answers.onPause) else null,
+        modifier = modifier.size(56.dp).semantics { role = Role.Button; contentDescription = label },
+    ) {
+        Box(contentAlignment = Alignment.Center) { CardImage("stop", Modifier.size(30.dp)) }
+    }
+}
+
+private val Octagon = GenericShape { size, _ ->
+    val c = 0.29f
+    moveTo(size.width * c, 0f)
+    lineTo(size.width * (1 - c), 0f)
+    lineTo(size.width, size.height * c)
+    lineTo(size.width, size.height * (1 - c))
+    lineTo(size.width * (1 - c), size.height)
+    lineTo(size.width * c, size.height)
+    lineTo(0f, size.height * (1 - c))
+    lineTo(0f, size.height * c)
+    close()
+}
+
+/** The call's caption: the word being signed is lit, and a tap replays the line or that word. */
+@Composable
+internal fun CallCaption(text: String, highlight: IntRange?, onWordTap: ((Int) -> Unit)?) {
+    val styled = litWord(text, highlight)
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val replayName = stringResource(R.string.word_replay)
+    // The caller's lambda changes every frame of typed-text playback; the tap detector must not restart with it.
+    val onTap by rememberUpdatedState(onWordTap)
+    val tap = if (onWordTap == null) Modifier else Modifier
+        .pointerInput(Unit) { detectTapGestures { p -> layout?.let { onTap?.invoke(it.getOffsetForPosition(p)) } } }
+        .semantics { onClick(replayName) { onTap?.invoke(0); true } }
+    Text(
+        styled, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
+        onTextLayout = { layout = it }, modifier = tap,
+    )
+}
+
+@Composable
+internal fun litWord(text: String, highlight: IntRange?) = buildAnnotatedString {
+    append(text)
+    highlight?.takeIf { it.last < text.length }?.let {
+        addStyle(SpanStyle(color = LocalCall.current.bg, background = LocalCall.current.accent), it.first, it.last + 1)
     }
 }

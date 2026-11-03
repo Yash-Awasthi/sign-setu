@@ -16,6 +16,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Whether the network is up before calling the gateway or the station brain; a normal permission, no prompt. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Android 17 drops an app's sockets to LAN addresses without it: the station computer and a station-network relay. -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <!-- The video player library asks for it, but the app never holds the phone awake to play a clip. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove" />
     <!-- Push-to-talk to the station's local brain only; asked for when the officer first opens the voice sheet. -->

@@ -40,7 +40,7 @@ class NameResolver(
         val scored = (beams.map { it.first } + near).distinct().mapNotNull { c ->
             ctcLogProb(logp, c)?.let { lp -> c to lp + LAMBDA * ln(prior(c) ?: UNLISTED) }
         }.sortedByDescending { it.second }
-        val best = scored.first()
+        val best = scored.firstOrNull() ?: return null
         val margin = (best.second - (scored.getOrNull(1)?.second ?: Float.NEGATIVE_INFINITY)).coerceAtMost(99f)
         val sure = prior(best.first) != null && margin >= MARGIN
         val text = if (sure) best.first else raw

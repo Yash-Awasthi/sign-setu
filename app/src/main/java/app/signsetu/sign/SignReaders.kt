@@ -41,7 +41,8 @@ object SignReaders {
         val v3 = if (format3 || shadow) runCatching {
             LiteRtSignReader(verified("${lang.reader}_v3.json")!!.decodeToString(), verified("${lang.reader}_v3.tflite")!!, signWords, signCards)
         }.getOrNull() else null
-        val shown = (if (format3) v3 ?: format1 else format1) ?: return null
+        // A shadow-only format 3 reader without a format 1 one to shadow is closed, not left holding its native graph.
+        val shown = (if (format3) v3 ?: format1 else format1) ?: run { v3?.close(); return null }
         val other = if (shown === v3) format1 else v3
         val words = when {
             shadow && other != null -> ShadowReader(shown, other, if (shown === v3) 3 else 1)
@@ -49,23 +50,29 @@ object SignReaders {
             shown === v3 && format1 != null -> ArbiterReader(v3, format1)
             else -> shown.also { if (other !== shown) other?.close() }
         }
-        val spell = lang.spell?.let { base ->
-            val spec = verified("$base.json")?.decodeToString()
-            if (spec != null && Json.parseToJsonElement(spec).jsonObject["format"]?.jsonPrimitive?.content == "2") {
-                runCatching { CtcSpell(CtcSpellReader(spec, verified("$base.bin")!!)) }.getOrNull()
-            } else model(base, emptyMap())?.let(::SpellReader)
+        try {
+            val spell = lang.spell?.let { base ->
+                val spec = verified("$base.json")?.decodeToString()
+                if (spec != null && Json.parseToJsonElement(spec).jsonObject["format"]?.jsonPrimitive?.content == "2") {
+                    runCatching { CtcSpell(CtcSpellReader(spec, verified("$base.bin")!!)) }.getOrNull()
+                } else model(base, emptyMap())?.let(::SpellReader)
+            }
+            // The CTC reader gates itself and has no softmax over words to weigh against, so any read it gives wins.
+            val read = if (spell != null) CombinedReader(words, spell, if (spell is CtcSpell) 0f else words.spellOdds ?: SPELL_ODDS) else words
+            // ISL keeps its letter and digit reader for single signs and adds the continuous one for spelled names.
+            val lexicon = verified(NAMES)?.decodeToString()?.let(NameResolver::parseLexicon)
+            val names = lang.names?.let { base ->
+                runCatching {
+                    val reader = CtcSpellReader(verified("$base.json")!!.decodeToString(), verified("$base.bin")!!)
+                    CtcSpell(reader, lexicon?.let { NameResolver(it, reader.alphabet) })
+                }.getOrNull()
+            }
+            if (names != null) CombinedReader(read, names, 0f) else read
+        } catch (e: Exception) {
+            // A malformed spelling or names file fails the whole load, as before, but frees the word readers first.
+            words.close()
+            throw e
         }
-        // The CTC reader gates itself and has no softmax over words to weigh against, so any read it gives wins.
-        val read = if (spell != null) CombinedReader(words, spell, if (spell is CtcSpell) 0f else words.spellOdds ?: SPELL_ODDS) else words
-        // ISL keeps its letter and digit reader for single signs and adds the continuous one for spelled names.
-        val lexicon = verified(NAMES)?.decodeToString()?.let(NameResolver::parseLexicon)
-        val names = lang.names?.let { base ->
-            runCatching {
-                val reader = CtcSpellReader(verified("$base.json")!!.decodeToString(), verified("$base.bin")!!)
-                CtcSpell(reader, lexicon?.let { NameResolver(it, reader.alphabet) })
-            }.getOrNull()
-        }
-        if (names != null) CombinedReader(read, names, 0f) else read
     }.getOrNull()
 }
 

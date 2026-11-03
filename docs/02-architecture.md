@@ -72,7 +72,7 @@ Versions are pinned in `gradle/libs.versions.toml`, locked in `app/gradle.lockfi
 | Authentication | Platform `BiometricPrompt` and `KeyguardManager`; Android Keystore |
 | Serialization | kotlinx.serialization JSON 1.12.0; coroutines 1.11.0 |
 
-Not used: dependency injection frameworks, Firebase, analytics or crash SDKs, camera capture or recording. The microphone is used only by the voice sheet (`voice/VoiceCapture.kt`): the person's speech after logged consent, while the officer holds the button, 16 kHz WAV kept in the `audio` table and sealed with its row, played back from memory (`voice/WavPlayer.kt`), embedded in the export, and sent to the paired station brain for its text (`net/BrainClient.kt`, over the LAN or `net/IrohBrain.kt` from any network) and wiped. The only WebView is the character's (`ui/avatar/Avatar.kt`), which loads the bundled avatar page and blocks every network request.
+Not used: dependency injection frameworks, Firebase, analytics or crash SDKs, camera capture or recording. The microphone is used only by the voice sheet (`voice/VoiceCapture.kt`): the person's speech after logged consent, from the officer's tap until the brain hears them stop or the officer taps again, sent to the brain in pieces as they talk for live text ([17](17-live-speech.md)), 16 kHz WAV kept in the `audio` table and sealed with its row, played back from memory (`voice/WavPlayer.kt`), embedded in the export, and sent to the paired station brain for its text (`net/BrainClient.kt`, over the LAN or `net/IrohBrain.kt` from any network) and wiped. The only WebView is the character's (`ui/avatar/Avatar.kt`), which loads the bundled avatar page and blocks every network request.
 
 ## 4. Runtime structure
 
@@ -164,20 +164,22 @@ One module, `app.signsetu`, organised by feature.
 | --- | --- |
 | (root) | `MainActivity`, `SignSetuApp` and `AppContainer` (wiring, unlock and relock, link ownership), `Policy` (build expiry, locked-time wipe rule) |
 | `data.content` | `Content.kt` loads and verifies the bundle; `IslLexicon.kt` sign lookup, dictionary and sign languages; `TextSigning.kt` plans typed text and turns read glosses back into text; `Translate.kt` the rule-based English to Hindi caption; `Lesson.kt` answer types and validation; `Completion.kt` word completions; `Motion.kt` the keyframe types every motion file uses |
-| `data.session` | Room entities and DAO, `SessionRepository` (sealed event log), `EventSeal` (hash chain), `DatabaseKey`, `RetentionJob` |
+| `data.session` | `SessionEntities` (the five Room entities), `SessionDao`, `SessionDatabase` (database class, migrations 1 to 9, `open`), `SessionRepository` (sealed event log), `EventSeal` (hash chain), `DatabaseKey` (wrapped database key), `DeviceSeal` (the phone's signing key for report seals), `RetentionJob` |
 | `data.settings` | `SettingsStore` (DataStore) and `OfficerLocale` |
-| `camera` | `CameraMirror` (Preview plus ImageAnalysis), `LandmarkTracker` and `LandmarkFrame`, `SplitTracker` (with `HolisticTracker` as its fallback), the per-frame cue detectors, `Stabilizer` |
-| `sign` | `SignCapture` and `SignWindow` (segmentation), readers (`LandmarkSignReader`, `LiteRtSignReader`, `CtcSpellReader`, `SignReaders`), `ReadPolicy` and `SignChoices` (ranking and choices), `HomeSigns`, `SkeletonPlayer` |
+| `camera` | `CameraMirror` (Preview plus ImageAnalysis) and `SkeletonSheet` (the skeleton and signs PNG sheets), `LandmarkTracker` (interface, `LandmarkFrame`, bones, face outlines), `Gestures` (the per-frame cue detectors: face cues, head, thumb, pointing, palm, shrug, wave, bow, open fingers), `SplitTracker` (with `HolisticTracker` as its fallback), `FramePipeline`, `YuvFrames`, `Stabilizer` |
+| `sign` | `SignCapture` and `SignWindow` (segmentation), readers (`LandmarkSignReader`, `LiteRtSignReader`, `CtcSpellReader`, `SignReaders`), `ReadPolicy` and `SignChoices` (ranking and choices), `HomeSigns`, `NameResolver`, `SkeletonPlayer` |
 | `gloss` | From read signs to a checked sentence ([gloss to text](15-gloss-to-text.md)): `GlossLattice` (tokens with calibrated candidates), `Phrasebook` (intents matched against the lattice), `Ladder` (the faithfulness check and four output rungs), `SentenceHelper` (the optional imported sentence model), `DebugRecorder` (debug builds: sign windows, decisions and reader agreement as JSON), `Contributions` (debug builds: guided sign recordings and opt-in upload) |
 | `pair` | The second-screen protocol with no Android UI: `PairCrypto`, `StageWire` messages, `StageTransport` and `BluetoothTransport`, `StageLink` state machine, `Drawings` |
 | `assistant` | `Assistant`, `LocalModel` and `ModelStore` (llama.cpp), `OnlineAssistant`, `Pseudonymizer`, `OfflineReport` |
-| `net` | `UrlHttp` (HTTPS only) and `KeystoreVault` |
+| `net` | `UrlHttp` (HTTPS only), `KeystoreVault` (in `TokenVault.kt`: the gateway token, the officer's service key and the phone's iroh key), `BrainClient` (the station link: state, heartbeat, LAN and iroh calls) and `IrohBrain` (the iroh endpoint and its one connection) |
+| `voice` | `VoiceCapture` (16 kHz recording) and `WavPlayer` (16-bit PCM WAV playback) |
 | `export` | `SessionReport` (PDF and encryption), `EvidenceIntegrity` (chain check and certificate) |
-| `ui` | `AppRoot`, `LockScreen`, the session route |
-| `ui.session` | Officer page, stage, view model, auto mode, counsellor, record text and grades |
+| `ui` | `AppRoot` (navigation keys and screens), `LockScreen`, `SessionRoute` (pinning, screen-on and immersive helpers, report sharing), `InterpreterCall` (WhatsApp and Sandes hand-off) |
+| `ui.session` | Officer page (`OfficerPane`, `OfficerPaneParts`, `OfficerMenu`, `OfficerMorePage`, `OfficerDock`), stage (`Stage`, `StageText`, `VideoCallStage`, `VideoCallParts`), `SessionViewModel` with its helpers `SignReading` (camera side: frames, sign windows, live peeks, station-or-phone reads, home signs), `SessionRecord` (rows for shown items and checked answers) and `SessionExport` (report, chain check, certificate, seal), `SessionEventRows`, auto mode, counsellor, record text and grades |
 | `ui.pair` | Pairing sheet, paired bar, stage-device screens, `StageBridge` and the wire mapping of what is on stage |
-| `ui.avatar` | The 3D character's WebView host (`Avatar.kt`) and the profile still (`MiniFace.kt`); the character itself is the avatar module (`avatar/`) |
-| `ui.start`, `ui.settings`, `ui.practice`, `ui.theme`, `ui.components` | Home and first run, settings, type-to-sign practice and (debug builds) Record signs, colours and type, shared widgets |
+| `ui.avatar` | The 3D character's WebView host (`Avatar.kt`), the drawn fallback character (`FlatAvatar`, `FlatAvatarBody`), the rig and its timeline (`Rig`, `RigTimeline`, `ClipRig`) and the profile still (`MiniFace.kt`); the 3D character itself is the avatar module (`avatar/`) |
+| `ui.help` | `HelpScreen` and `HelpContent`: the in-app walkthrough, eight topics, searchable ([19](19-walkthrough.md)) |
+| `ui.start`, `ui.settings`, `ui.practice`, `ui.theme`, `ui.components` | Home (`StartScreen`, `SavedSessions`, `LanguagePicker`) and first run; settings (`SettingsScreen`, `SettingsItems`, `SettingsDialogs`, `ModelImport`, `BrainSettings`, `DeveloperAiDialog`, `ReportCheck`, `AppearanceScreen`); type-to-sign practice, Sign to Type and (debug builds) Record signs; colours and type; shared widgets |
 | Flavor and build-type source sets | `src/standard` and `src/nearby` each provide `pair/StageTransports`; `src/debug` and `src/release` each provide `camera/LandmarkTrackers` (debug adds a stand-in hand and a gesture gallery) |
 
 ```mermaid
@@ -400,8 +402,8 @@ flowchart TB
     OPEN["KEK signsetu.kek.open<br/>only while the phone has no secure lock"]:::sec
     DEK["DEK, 32 random bytes<br/>noBackupFilesDir/dek.bin, wrapped"]:::sec
     DB["SQLCipher session store"]:::data
-    TOK["signsetu.gateway.token, signsetu.assist.key<br/>Keystore AES-256-GCM"]:::sec
-    GWT["gateway token gw.bin, or officer's service key assist.bin<br/>noBackupFilesDir, wrapped"]:::data
+    TOK["signsetu.gateway.token, signsetu.assist.key, signsetu.iroh.key<br/>Keystore AES-256-GCM"]:::sec
+    GWT["gateway token gw.bin, officer's service key assist.bin, phone's iroh key iroh.bin<br/>noBackupFilesDir, wrapped"]:::data
     PASS["Export passphrase<br/>80 bits, shown once"]:::sec
     PDF["Encrypted PDF, AES-256"]:::data
     ECDH["Link keys<br/>P-256 ECDH + HKDF-SHA256, memory only"]:::sec
@@ -420,6 +422,8 @@ flowchart TB
 
 *Figure 11. Key hierarchy (`DatabaseKey`, `KeystoreVault`, `SessionReport`, `PairCrypto`).*
 
+- The device signing key for report seals prefers StrongBox, then the TEE; on a phone that refuses attestation it is made without an attestation chain, so the chain is the key's own certificate (`DeviceSeal`).
+- A key file that is truncated, or that opens with no key, is treated as lost: the encrypted database is reset, as when the screen lock is removed.
 - The KEK needs no prompt but works only while the phone is unlocked. If Android invalidates it (the screen lock was removed or reset) or the wrapped DEK no longer opens, the database is deleted, new keys are made, and the officer is told once.
 - `OfficerAuth` asks for the screen lock (`BIOMETRIC_STRONG or DEVICE_CREDENTIAL` on API 30 and later, device credential on API 29) before the store opens, a session is left, ended, exported or deleted, and before Clear all data. One confirmation covers the next 60 seconds. A phone with no secure lock skips the prompt.
 
@@ -568,7 +572,13 @@ Inside a window, hand kinetic energy (weighted squared point speeds in shoulder 
 
 ## 11a. Station brain
 
-`brain/` is an optional service for one station computer: speech to text (faster-whisper), translation (IndicTrans2, NLLB-200), sign order (rules, refined by a local language model through Ollama) and chat. It serves HTTPS on port 8000 to private addresses, with a self-signed certificate the phone pins and a bearer token, and binds an iroh endpoint so phones reach it from any network by its ticket, QUIC end-to-end encrypted to its key (`link.py`). `BrainClient` calls it over either path; `IrohBrain` keeps one iroh connection per process and redials after a failure. Typed text asks it for sign order after a typing pause, and a recorded answer gets its text and translation as the app's reading. With the brain unreachable each feature falls back to the phone alone. `setup.ps1` and `setup.sh` install it ([brain/README.md](../brain/README.md)).
+`brain/` is an optional service for one station computer: speech to text (faster-whisper), translation (IndicTrans2, NLLB-200), sign order (rules, refined by a local language model through Ollama), chat and an inbox for whole conversations. Its modules are `app.py` (HTTPS routes and the guard), `link.py` (the iroh bridge), `security.py` (token, rate limit, address check, private file writes), `models.py`, `live.py`, `gloss.py`, `signs.py`, `inbox.py`, `languages.py` and `fetch.py`. It serves HTTPS on port 8000 to private addresses (IPv4-mapped IPv6 addresses are judged by their IPv4 range), with a self-signed certificate the phone pins and a bearer token, and binds an iroh endpoint so phones reach it from any network by its ticket, QUIC end-to-end encrypted to its key (`link.py`).
+
+The relay is the department's own. With `--relay` (or `BRAIN_RELAY`) the brain uses only that relay and the ticket names it; with none it uses no relay at all and no n0 service, so phones reach it by a direct path only. If the relay is down at start the brain logs a warning, carries on, and the ticket still names the relay. If iroh cannot bind, the brain serves the station network only and `pairing.txt` has no ticket line ([16](16-relay.md)). Over iroh the bridge adds the phone's endpoint id as `x-signsetu-peer`, so the rate limit is kept per phone; wrong-token guesses are still counted per address. The brain's key lives in `iroh.key`, written owner-only.
+
+On the phone, `BrainClient` calls the brain over either path and `IrohBrain` keeps one iroh connection per process. The phone uses the relay named in the ticket; if the ticket names an n0 relay (`*.iroh.link`) it uses no relay and dials direct only, and it has no relay setting of its own. Its iroh key is made once per install and stored encrypted under a Keystore key (`noBackupFilesDir/iroh.bin`, alias `signsetu.iroh.key`), so its endpoint id, which a relay allowlist names, survives restarts but not reinstalls or backup restores. After a network change, turning the link off, or the app going to the background, the connection and endpoint are dropped and dialled again later. Timeouts: connect 15 s; a heartbeat counts as lost after 12 s; pairing check 20 s over iroh and 5 s on the LAN; cleanup 3 s; heartbeat retry from 2 s up to 10 s. Replies are capped at 8 MB on both paths. A pasted ticket may contain line breaks; LAN pairing accepts IPv6 unique-local addresses.
+
+Typed text asks the brain for sign order after a typing pause, and a recorded answer gets its text and translation as the app's reading. With the brain unreachable each feature falls back to the phone alone. `setup.ps1` and `setup.sh` install it ([brain/README.md](../brain/README.md), [18](18-station.md)).
 
 ## 12. Export
 

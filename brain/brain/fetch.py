@@ -1,6 +1,6 @@
 """Downloads the brain's models once, so it can then run with no internet.
 
-    python -m brain.fetch [--asr small] [--translator indictrans2|nllb|both]
+    python -m brain.fetch --asr MODEL [--translator indictrans2|nllb|both]
 
 Models go to HF_HOME (Hugging Face's cache folder). IndicTrans2 is gated on Hugging Face: accept its licence on the model
 pages with the department's account, then log in once (`hf auth login`) or set HF_TOKEN before running this. NLLB-200
@@ -15,7 +15,7 @@ NLLB = "facebook/nllb-200-distilled-600M"
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--asr", default="small", help="faster-whisper size")
+    ap.add_argument("--asr", required=True, help="faster-whisper model: a size (small, medium, large-v3) or a model folder; the department chooses")
     ap.add_argument("--translator", default="both", choices=["indictrans2", "nllb", "both"])
     a = ap.parse_args()
     failed = 0

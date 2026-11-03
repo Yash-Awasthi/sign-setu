@@ -30,6 +30,7 @@ class PairAbort(val reason: Abort) : IOException(reason.name)
 
 private const val PLAIN_CAP = 4 * 1024
 const val FRAME_CAP = 1 shl 20
+internal const val GCM_TAG = 16
 private const val MAX_FRAMES = 1L shl 32
 
 /** RFC 5869 over HmacSHA256; the same construction as Ping's CryptoUtils, with any output length. */

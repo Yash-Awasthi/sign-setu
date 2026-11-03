@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shell_help_group">मदद</string>
+    <string name="shell_help_title">मदद और परिचय</string>
+    <string name="shell_help_summary">हर स्क्रीन, सेटिंग और कॉल का हर कदम समझाया गया</string>
+    <string name="shell_take_tour">ऐप का परिचय देखें</string>
+    <string name="shell_take_tour_summary">सत्र, चैट और कॉल का छोटा परिचय</string>
+</resources>

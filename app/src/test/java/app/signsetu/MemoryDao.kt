@@ -39,9 +39,19 @@ class MemoryDao : SessionDao {
     private val audios = mutableMapOf<Long, ByteArray>()
     override suspend fun insertAudio(audio: app.signsetu.data.session.AudioEntity) = synchronized(this) { next++.also { audios[it] = audio.wav } }
     override suspend fun audio(id: Long): ByteArray? = synchronized(this) { audios[id] }
+    private val landmarkFiles = mutableMapOf<Long, ByteArray>()
+    override suspend fun insertLandmarks(landmarks: app.signsetu.data.session.LandmarksEntity) = synchronized(this) { next++.also { landmarkFiles[it] = landmarks.json } }
+    override suspend fun landmarks(id: Long): ByteArray? = synchronized(this) { landmarkFiles[id] }
     override suspend fun deleteSession(id: String) = sessions.update { it - id }.also { rows.update { all -> all.filter { e -> e.sessionId != id } } }
     override suspend fun endSession(id: String, endedAt: Long, title: String) = edit(id) { it.copy(endedAt = endedAt, title = title) }
-    override suspend fun reopen(id: String) = edit(id) { it.copy(endedAt = null) }
+    override suspend fun reopen(id: String) = edit(id) { s -> s.copy(endedAt = null, savedThrough = rows.value.filter { it.sessionId == id }.maxOfOrNull { it.id }) }
+    override suspend fun clearSavedThrough(id: String) = edit(id) { it.copy(savedThrough = null) }
+    override suspend fun setStationExport(id: String, file: String, head: String) = edit(id) { it.copy(stationFile = file, stationHead = head) }
+    override suspend fun setPhoneExport(id: String, folder: String, head: String) = edit(id) { it.copy(phoneFolder = folder, phoneHead = head) }
+    override suspend fun deleteDrawingsAfter(sessionId: String, after: Long) = Unit
+    override suspend fun deleteAudioAfter(sessionId: String, after: Long) = Unit
+    override suspend fun deleteLandmarksAfter(sessionId: String, after: Long) = Unit
+    override suspend fun deleteEventsAfter(sessionId: String, after: Long) = rows.update { all -> all.filterNot { it.sessionId == sessionId && it.id > after } }
     override fun saved(): Flow<List<SessionEntity>> = sessions.map { all -> all.values.filter { it.endedAt != null }.sortedByDescending { it.endedAt } }
     override suspend fun lastHash(sessionId: String): String? = rows.value.lastOrNull { it.sessionId == sessionId && it.hash != null }?.hash
     override suspend fun seals(sessionId: String): List<String> = rows.value.filter { it.sessionId == sessionId && it.hash != null }.sortedBy { it.id }.mapNotNull { it.hash }

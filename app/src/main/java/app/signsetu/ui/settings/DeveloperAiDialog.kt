@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -52,14 +53,15 @@ internal fun DeveloperAiDialog(
 ) {
     val scope = rememberCoroutineScope()
     var url by rememberSaveable { mutableStateOf(initialUrl) }
-    var key by rememberSaveable { mutableStateOf("") }
+    // Key and its load flag stay out of saved state; busy too, as its coroutine does not survive a recreation.
+    var key by remember { mutableStateOf("") }
     var model by rememberSaveable { mutableStateOf(initialModel) }
     var models by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var menu by rememberSaveable { mutableStateOf(false) }
     var status by rememberSaveable { mutableStateOf("") }
     var failed by rememberSaveable { mutableStateOf(false) }
-    var busy by rememberSaveable { mutableStateOf(false) }
-    var keyLoaded by rememberSaveable { mutableStateOf(false) }
+    var busy by remember { mutableStateOf(false) }
+    var keyLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (!keyLoaded) { keyLoaded = true; if (key.isEmpty()) key = withContext(Dispatchers.IO) { loadKey() }.orEmpty() }

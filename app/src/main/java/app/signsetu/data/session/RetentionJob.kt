@@ -9,19 +9,26 @@ import android.content.Context
 import app.signsetu.SignSetuApp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 /** The hourly retention sweep, run by the platform scheduler even when the app is never opened again, so records on a
  * lost or seized phone still go once they are past retention. */
 class RetentionJob : JobService() {
+    private val scope = MainScope()
     private var work: Job? = null
 
     override fun onStartJob(params: JobParameters): Boolean {
         val container = (application as SignSetuApp).container
-        work = MainScope().launch {
-            container.sweepRetention().join()
-            jobFinished(params, false)
+        work = scope.launch {
+            try {
+                container.sweepRetention().join()
+            } finally {
+                // A stopped job is rescheduled by onStopJob's answer; only a finished one reports.
+                if (isActive) jobFinished(params, false)
+            }
         }
         return true
     }
@@ -29,6 +36,11 @@ class RetentionJob : JobService() {
     override fun onStopJob(params: JobParameters): Boolean {
         work?.cancel()
         return true
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
     }
 
     companion object {

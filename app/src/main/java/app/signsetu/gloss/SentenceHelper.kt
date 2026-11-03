@@ -18,7 +18,7 @@ fun rerankPrompt(question: String?, signs: List<List<String>>, candidates: List<
  * it left out keep their place after the ones it ranked. */
 fun parseOrder(reply: String, count: Int): List<Int>? {
     val picked = Regex("\\d+").findAll(reply.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty())
-        .map { it.value.toInt() - 1 }.filter { it in 0 until count }.distinct().toList()
+        .mapNotNull { it.value.toIntOrNull()?.minus(1) }.filter { it in 0 until count }.distinct().toList()
     if (picked.isEmpty()) return null
     return picked + (0 until count).filter { it !in picked }
 }

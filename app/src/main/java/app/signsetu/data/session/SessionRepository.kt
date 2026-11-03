@@ -36,6 +36,12 @@ data class Session(
     val title: String? = null,
     val rootHash: String? = null,
     val rootSig: String? = null,
+    /** Set while a saved session is open again: rows after it are not saved yet. */
+    val savedThrough: Long? = null,
+    val stationFile: String? = null,
+    val stationHead: String? = null,
+    val phoneFolder: String? = null,
+    val phoneHead: String? = null,
 )
 
 @Immutable
@@ -58,6 +64,8 @@ data class SessionEvent(
     val via: String? = null,
     /** The person's recorded speech, when this row holds some. */
     val audioId: Long? = null,
+    /** The raw landmarks of the signs this row was read from, when it holds some. */
+    val landmarksId: Long? = null,
     /** The row's seal in the session's hash chain (EventSeal); null on rows from before sealing. */
     val hash: String? = null,
 )
@@ -132,20 +140,24 @@ class SessionRepository(
         shownId: Long? = null,
         via: String? = null,
         audioWav: ByteArray? = null,
+        landmarksJson: ByteArray? = null,
     ): Long = unlessClosed(-1L) {
         sealing.withLock {
             val ts = clock()
             val previous = dao.lastHash(sessionId) ?: EventSeal.genesis(sessionId, dao.startedAt(sessionId) ?: 0L)
-            val hash = EventSeal.seal(previous, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, drawingPng, itemId, reason, shownId, via, audioWav)
+            val hash = EventSeal.seal(previous, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, drawingPng, itemId, reason, shownId, via, audioWav, landmarksJson)
             val drawing = drawingPng?.let { DrawingEntity(sessionId = sessionId, png = it) }
             val audio = audioWav?.let { AudioEntity(sessionId = sessionId, wav = it) }
-            dao.insertSealed(EventEntity(0, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, null, itemId, reason, shownId, via, hash), drawing, audio)
+            val landmarks = landmarksJson?.let { LandmarksEntity(sessionId = sessionId, json = it) }
+            dao.insertSealed(EventEntity(0, sessionId, ts, type.name, source.name, lang, text, cardId, lexiconId, null, itemId, reason, shownId, via, hash), drawing, audio, landmarks)
         }
     }
 
     suspend fun drawing(id: Long): ByteArray? = unlessClosed(null) { dao.drawing(id) }
 
     suspend fun audio(id: Long): ByteArray? = unlessClosed(null) { dao.audio(id) }
+
+    suspend fun landmarks(id: Long): ByteArray? = unlessClosed(null) { dao.landmarks(id) }
 
     /** Ending a session purges it; there is no archive. */
     suspend fun purge(sessionId: String) = unlessClosed(Unit) { dao.deleteSession(sessionId) }
@@ -160,9 +172,24 @@ class SessionRepository(
     suspend fun end(id: String, title: String) = unlessClosed(Unit) {
         val now = clock()
         dao.endSession(id, now, title.trim().take(TITLE_MAX))
+        dao.clearSavedThrough(id)
         seal(id)
         onSessionStarted(now)
     }
+
+    /** A saved session opened again goes back to how it was saved: the rows written since are deleted, with what they
+     * hold, and it is sealed as before under its title. The hash chain only lost its tail, so it still verifies. */
+    suspend fun discardUnsaved(id: String, title: String) = unlessClosed(Unit) {
+        val after = dao.session(id).first()?.savedThrough ?: return@unlessClosed
+        sealing.withLock { dao.discardAfter(id, after) }
+        end(id, title)
+    }
+
+    /** The hash-chain head now: an export made at this head still holds the whole record. */
+    suspend fun head(id: String): String? = unlessClosed(null) { dao.lastHash(id) }
+
+    suspend fun markStationExport(id: String, file: String, head: String) = unlessClosed(Unit) { dao.setStationExport(id, file, head) }
+    suspend fun markPhoneExport(id: String, folder: String, head: String) = unlessClosed(Unit) { dao.setPhoneExport(id, folder, head) }
 
     /** Merkle root over the session's seals and its signature, as the record stands now. */
     data class Seal(val line: String, val count: Int, val head: String, val root: String, val sig: String?)
@@ -205,6 +232,11 @@ class SessionRepository(
         title = title,
         rootHash = rootHash,
         rootSig = rootSig,
+        savedThrough = savedThrough,
+        stationFile = stationFile,
+        stationHead = stationHead,
+        phoneFolder = phoneFolder,
+        phoneHead = phoneHead,
     )
 
     private fun EventEntity.toModel() = SessionEvent(
@@ -223,5 +255,6 @@ class SessionRepository(
         via = via,
         hash = hash,
         audioId = audioId,
+        landmarksId = landmarksId,
     )
 }

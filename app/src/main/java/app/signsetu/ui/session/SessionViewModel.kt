@@ -14,20 +14,10 @@ import app.signsetu.data.session.Role
 import app.signsetu.data.session.Session
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
-import app.signsetu.camera.Head
 import app.signsetu.gloss.DebugRecorder
 import app.signsetu.camera.LandmarkFrame
-import app.signsetu.data.session.DeviceSeal
 import app.signsetu.data.session.SYSTEM_OPENED
-import app.signsetu.sign.DominantHand
-import app.signsetu.sign.FeatureRing
-import app.signsetu.sign.LIVE_PEEK_MS
-import app.signsetu.sign.HomeSigns
-import app.signsetu.sign.LetterCommitter
-import app.signsetu.sign.MotionGate
 import app.signsetu.sign.SignGuess
-import app.signsetu.sign.handEnergy
-import app.signsetu.sign.SignCapture
 import app.signsetu.sign.SignChoice
 import app.signsetu.sign.SignConfirm
 import app.signsetu.sign.SignReader
@@ -38,8 +28,8 @@ import app.signsetu.pair.reencodeRemotePng
 import app.signsetu.sign.SignWindow
 import app.signsetu.sign.glossOf
 import app.signsetu.sign.glossTranscript
-import app.signsetu.sign.decideRead
 import app.signsetu.sign.signChoices
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -61,11 +51,10 @@ import app.signsetu.data.content.answerText
 import app.signsetu.data.content.reason
 import app.signsetu.export.EvidenceIntegrity
 import app.signsetu.export.ReportRow
-import app.signsetu.export.ReportSeal
+import app.signsetu.export.StationExport
 import app.signsetu.export.ReportSection
 import app.signsetu.export.ReportText
 import app.signsetu.export.SessionReport
-import app.signsetu.export.recordDigest
 import java.io.File
 import java.util.Base64
 import app.signsetu.camera.renderSignsPng
@@ -105,32 +94,30 @@ class SessionViewModel(
     reader: SignReader? = null,
     /** Re-walk the hash chain when an earlier session is taken up again, and log what was found. */
     checkOnResume: Boolean = false,
+    /** Only reads the session, to export a saved one from the history: nothing is presented or written. */
+    quiet: Boolean = false,
 ) : ViewModel() {
 
-    /** Set once the reader is built off the main thread; reads before then get no machine guesses. */
-    @Volatile var reader: SignReader? = reader
-    private val confirmedNames: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
-    private val homeSigns = HomeSigns { frames -> reader?.let { r -> runCatching { r.embed(frames) }.getOrNull() } }
-    // The leading hand, learnt over the session: home signs are kept and matched as if signed with the right hand.
-    private val dominant = DominantHand()
-    private val ring = FeatureRing()
-    private val gate = MotionGate()
-    private val letters = LetterCommitter()
-    @Volatile private var prevFrame: LandmarkFrame? = null
-    @Volatile private var peeking = false
-    private var lastPeekMs = 0L
-    private var lastLetterMs = 0L
-    private val liveFlow = MutableStateFlow(LiveRead())
-    /** Officer side only: what the reader sees mid-sign and the letters spelled so far. Never logged as a reading. */
-    val live: StateFlow<LiveRead> = liveFlow
-
     private val local = MutableStateFlow(Local())
-    @Volatile private var capture: SignCapture? = null
-    // Cards that answer the item shown when the window opened: the reader's guesses that match them come first.
-    @Volatile private var context: Set<String> = emptySet()
-    // Added to on the camera's analysis thread, drained on the main thread when the window closes.
-    private val reads = java.util.concurrent.CopyOnWriteArrayList<Job>()
-    private val readDispatcher = Dispatchers.Default.limitedParallelism(2)
+
+    private val signs = SignReading(
+        viewModelScope, content, reader,
+        onSegment = { segment -> local.update { it.copy(reading = it.reading?.plus(segment)) } },
+        onRead = { segment, read -> local.update { l -> l.copy(reading = l.reading?.map { if (it === segment) read else it }) } },
+    )
+
+    /** Set once the reader is built off the main thread; reads before then get no machine guesses. */
+    var reader: SignReader?
+        get() = signs.reader
+        set(value) { signs.reader = value }
+
+    /** The station, when paired: it reads each sign first once its heartbeat says it has a reader. */
+    var station: app.signsetu.net.BrainClient?
+        get() = signs.station
+        set(value) { signs.station = value }
+
+    /** Officer side only: what the reader sees mid-sign and the letters spelled so far. Never logged as a reading. */
+    val live: StateFlow<LiveRead> = signs.live
 
     val auto = AutoPilot(
         sessionId, repo, content, officerLang, viewModelScope,
@@ -155,13 +142,13 @@ class SessionViewModel(
             val events = repo.eventsNow(sessionId)
             if (events.none { it.text?.startsWith(SYSTEM_OPENED) != true }) return@launch
             val session = repo.session(sessionId).first() ?: return@launch
-            val chain = EvidenceIntegrity.verifyChain(session, events, { repo.audio(it) }) { repo.drawing(it) }
+            val chain = EvidenceIntegrity.verifyChain(session, events, { repo.audio(it) }, { repo.landmarks(it) }) { repo.drawing(it) }
             repo.logResume(sessionId, if (chain.intact) "chain intact, ${chain.sealed} entries" else "CHAIN BROKEN at entry ${chain.brokenAt}")
         }
     }
 
     init {
-        viewModelScope.launch {
+        if (!quiet) viewModelScope.launch {
             val session = repo.session(sessionId).first() ?: return@launch
             // Starting a session is the officer's confirmation of its opening: the stage greets the person first,
             // or, for someone who speaks another language, lets them find it.
@@ -252,142 +239,59 @@ class SessionViewModel(
     fun readSigns(window: SignWindow = SignWindow.ANSWER) {
         val state = ui.value ?: return
         val pending = local.value.pending
+        // Shares show()'s guard: a double tap would log the item, or the read request, twice.
+        if (showing) return
+        showing = true
         ShowTiming.start()
         viewModelScope.launch {
-            if (pending != null) {
-                auto.onManualShow(pending)
-                present(pending, state.session.subjectLang)
-            } else {
-                repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = if (window == SignWindow.NARRATIVE) SYSTEM_TELL_ME else SYSTEM_READ_SIGNS)
-                local.update { it.copy(mode = Mode.SHOW, answeredCard = null, answeredYes = null, chosenLanguage = null) }
+            try {
+                if (pending != null) {
+                    auto.onManualShow(pending)
+                    present(pending, state.session.subjectLang)
+                } else {
+                    repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = if (window == SignWindow.NARRATIVE) SYSTEM_TELL_ME else SYSTEM_READ_SIGNS)
+                    local.update { it.copy(mode = Mode.SHOW, answeredCard = null, answeredYes = null, chosenLanguage = null) }
+                }
+                startReading(window)
+            } finally {
+                showing = false
             }
-            startReading(window)
         }
-    }
-
-    /** Every nod and shake by camera time, kept for [HEAD_KEEP_MS]: a head answer often comes before the hands are up
-     * or after they drop, so a reading takes those from [HEAD_MARGIN_MS] either side of its window. */
-    private val heads = ArrayDeque<Pair<Long, Head>>()
-    @Volatile private var lastFrameMs = 0L
-    @Volatile private var lastBody: LandmarkFrame? = null
-    @Volatile private var windowStartMs = 0L
-    @Volatile private var windowEndMs = Long.MIN_VALUE / 2
-
-    private fun headsAround(from: Long, to: Long): Set<Head> = synchronized(heads) {
-        heads.filter { (ms, _) -> ms in (from - HEAD_MARGIN_MS)..(to + HEAD_MARGIN_MS) }.map { it.second }.toSet()
     }
 
     fun startReading(window: SignWindow = SignWindow.ANSWER) {
-        if (capture != null) return
-        context = local.value.pending.answerCards()
-        capture = SignCapture(window)
-        windowStartMs = lastFrameMs
+        if (signs.capturing) return
+        // The list exists before the window opens, so the first segment cut is never dropped.
         local.update { it.copy(reading = emptyList(), signWindow = window, confirm = null) }
-        synchronized(ring) { ring.clear(); letters.clear(); gate.reset() }
-        liveFlow.value = LiveRead()
-    }
-
-    /** On the analysis thread, inside a window: the last [RING_FRAMES] frames are read while the hands move, at most
-     * every [LIVE_PEEK_MS], and a still handshape is read as a letter every [LETTER_PEEK_MS]. */
-    private fun peek(frame: LandmarkFrame) {
-        val r = reader ?: return
-        val moving: Boolean
-        val window: List<LandmarkFrame>
-        synchronized(ring) {
-            moving = gate.update(handEnergy(prevFrame, frame).total)
-            ring.push(frame)
-            val ms = frame.timestampMs
-            val hands = frame.leftHand != null || frame.rightHand != null
-            val wordDue = moving && ms - lastPeekMs >= LIVE_PEEK_MS && ring.size >= LIVE_MIN_FRAMES
-            val letterDue = !moving && hands && ms - lastLetterMs >= LETTER_PEEK_MS && ring.size >= LETTER_FRAMES
-            if (peeking || !(wordDue || letterDue)) {
-                // Moving or lowering the hand ends a held letter, so the same letter may follow it.
-                if (!hands || moving) letters.see(ms, null)
-                return
-            }
-            if (wordDue) lastPeekMs = ms else lastLetterMs = ms
-            window = ring.frames(if (wordDue) ring.size else LETTER_FRAMES)
-            peeking = true
-        }
-        viewModelScope.launch(readDispatcher) {
-            try {
-                if (moving) {
-                    val top = runCatching { r.read(window) }.getOrNull().orEmpty().sortedByDescending { it.score }.take(3)
-                    liveFlow.update { it.copy(guesses = top) }
-                } else {
-                    val g = runCatching { r.letter(window) }.getOrNull()
-                    val committed = synchronized(ring) { letters.see(window.last().timestampMs, g) }
-                    if (committed != null) liveFlow.update { it.copy(spelled = it.spelled + committed) }
-                }
-            } finally { peeking = false }
-        }
+        signs.start(window, local.value.pending.answerCards())
     }
 
     /** Every tracked camera frame, on the analysis thread. */
     fun onSignFrame(frame: LandmarkFrame) {
-        lastFrameMs = frame.timestampMs
-        if (frame.pose != null || frame.leftHand != null || frame.rightHand != null) lastBody = frame
-        frame.head?.let { h ->
-            synchronized(heads) {
-                heads.addLast(frame.timestampMs to h)
-                while (frame.timestampMs - heads.first().first > HEAD_KEEP_MS) heads.removeFirst()
-            }
-            if (app.signsetu.BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "head $h at ${frame.timestampMs}")
-        }
-        val c = capture
-        if (c != null) dominant.see(handEnergy(prevFrame, frame))
-        if (c != null) peek(frame)
-        prevFrame = frame
-        c ?: return
-        // Three seconds with nothing raised, or two since the hands stopped: what was given is ingested, no tap needed.
-        val (segments, done) = synchronized(c) {
-            val wasFull = c.full
-            val closed = c.add(frame)
-            closed to (!wasFull && c.full || c.settled())
-        }
-        segments.forEach(::readSegment)
-        if (done) viewModelScope.launch { finishReading() }
-    }
-
-    private fun readSegment(frames: List<LandmarkFrame>) {
-        val cards = context
-        val segment = SignSegment(frames, context = cards)
-        local.update { it.copy(reading = it.reading?.plus(segment)) }
-        reads += viewModelScope.launch(readDispatcher) {
-            val all = reader?.let { r -> runCatching { r.read(frames) }.getOrNull() }.orEmpty().sortedByDescending { it.score }
-            val read = decideRead(frames, all, homeSigns.match(dominant.canonical(frames)), cards, reader?.words.orEmpty(), content.words, reader?.cards.orEmpty(), reader?.conformal)
-            local.update { l -> l.copy(reading = l.reading?.map { if (it === segment) read else it }) }
-        }
+        if (signs.onFrame(frame)) viewModelScope.launch { finishReading() }
     }
 
     /** The subject is done signing: the words read are logged as the app's reading, never as confirmed. */
     fun finishReading() {
-        val c = capture ?: return
-        capture = null
-        val pending = synchronized(c) {
-            c.finish().forEach(::readSegment)
-            reads.toList().also { reads.clear() }
-        }
-        val start = windowStartMs
-        val end = lastFrameMs
-        windowEndMs = end
+        val pending = signs.close() ?: return
+        val start = signs.windowStartMs
+        val end = signs.windowEndMs
         viewModelScope.launch {
             pending.joinAll()
-            val segments = local.value.reading.orEmpty().map { it.withWindowHead(headsAround(start, end)) }
+            val segments = local.value.reading.orEmpty().map { it.withWindowHead(signs.headsAround(start, end)) }
             val narrative = local.value.signWindow == SignWindow.NARRATIVE
             local.update { it.copy(reading = null, signWindow = null) }
-            val spelled = liveFlow.value.spelled
-            liveFlow.value = LiveRead()
+            val spelled = signs.takeSpelled()
             // Letters held one by one are kept as the app's note; the officer still decides what was said.
             if (spelled.length >= 2) repo.log(sessionId, EventType.NOTE, EventSource.MACHINE, "en", text = "Spelled, letter by letter: ${spelled.uppercase()}")
-            if (segments.isEmpty()) { windowEndMs = Long.MIN_VALUE / 2; return@launch }
+            if (segments.isEmpty()) { signs.windowEndMs = Long.MIN_VALUE / 2; return@launch }
             val words = segments.map { it.word ?: "?" }
             val id = logSigned(segments, words, EventSource.MACHINE, "en")
-            DebugRecorder.window(id, (local.value.pending as? Pending.Ask)?.question?.id, segments, app.signsetu.BuildConfig.VERSION_NAME)
+            DebugRecorder.window(id, ((local.value.onStage ?: local.value.pending) as? Pending.Ask)?.question?.id, segments, app.signsetu.BuildConfig.VERSION_NAME)
             // A nod or shake just after the hands drop still belongs to this answer: look again once the margin has passed.
             viewModelScope.launch {
                 delay(HEAD_MARGIN_MS)
-                val later = headsAround(start, end)
+                val later = signs.headsAround(start, end)
                 if (later != segments.firstOrNull()?.windowHead) {
                     local.update { l -> l.signed[id]?.let { segs -> l.copy(signed = l.signed + (id to segs.map { it.withWindowHead(later) })) } ?: l }
                 }
@@ -405,13 +309,13 @@ class SessionViewModel(
      * the person's answer, for the officer to accept from the chat like a signed reading. */
     fun cameraRead(card: String, cue: String?) {
         // A nod or shake in a sign window's margin is already in that reading; logged apart it would hide the reading.
-        if ((cue == "nod" || cue == "shake") && (capture != null || lastFrameMs - windowEndMs <= HEAD_MARGIN_MS)) return
+        if ((cue == "nod" || cue == "shake") && signs.inHeadMargin()) return
         val label = content.cards[card]?.label?.get(officerLang) ?: content.subjectText(card, officerLang) ?: card
         viewModelScope.launch {
             val shownId = local.value.itemId
             val id = repo.log(sessionId, EventType.ANSWER_SIGNED, EventSource.MACHINE, officerLang, text = label, cardId = card, shownId = shownId, via = cue)
             local.update { it.copy(signed = it.signed + (id to emptyList())) }
-            keepSkeleton(lastBody, EventSource.MACHINE, shownId)
+            keepSkeleton(signs.lastBody, EventSource.MACHINE, shownId)
         }
     }
 
@@ -420,9 +324,9 @@ class SessionViewModel(
         DebugRecorder.decision(eventId, "accepted", sentence ?: words.joinToString(" "))
         // A spelled name the officer accepted is this person's: it ranks first the next time it is spelled.
         local.value.signed[eventId]?.zip(words)?.filter { (s, w) -> s.guesses?.firstOrNull()?.spelled == true && w.isNotBlank() && w != "?" }
-            ?.forEach { (_, w) -> confirmedNames += w.lowercase(); reader?.sessionNames(confirmedNames.toSet()) }
+            ?.forEach { (_, w) -> signs.confirmName(w) }
         val segments = local.value.signed[eventId] ?: return
-        segments.zip(words).forEach { (s, w) -> if (w.isNotBlank() && w != "?" && w != s.word) homeSigns.teach(dominant.canonical(s.frames), w) }
+        segments.zip(words).forEach { (s, w) -> if (w.isNotBlank() && w != "?" && w != s.word) signs.teach(s.frames, w) }
         val shownId = ui.value?.events?.firstOrNull { it.id == eventId }?.shownId
         viewModelScope.launch { logSigned(segments, words, EventSource.OFFICER, officerLang, shownId, sentence) }
     }
@@ -442,7 +346,9 @@ class SessionViewModel(
     }
 
     private suspend fun logSigned(segments: List<SignSegment>, words: List<String>, source: EventSource, lang: String, shownId: Long? = local.value.itemId, sentence: String? = null): Long {
-        val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = sentence ?: words.joinToString(" "), shownId = shownId)
+        // The app's own reading keeps the raw landmarks it read from, sealed with the row (docs/18-station.md).
+        val raw = if (source == EventSource.MACHINE) withContext(Dispatchers.Default) { runCatching { StationExport.signsJson(segments.map { it.frames }, words) }.getOrNull() } else null
+        val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = sentence ?: words.joinToString(" "), shownId = shownId, landmarksJson = raw)
         local.update { it.copy(signed = it.signed + (id to segments)) }
         // The app's own reading is the moment the signs were seen; the officer's later reading of them adds no new picture.
         if (source == EventSource.MACHINE) keepSigns(segments.map { it.frames }, words, shownId)
@@ -455,8 +361,8 @@ class SessionViewModel(
     }
 
     /** Each sign's movement as a strip of stick figures, one row per sign, headed by the word read for it. */
-    private suspend fun keepSigns(signs: List<List<LandmarkFrame>>, words: List<String>, shownId: Long?) =
-        keepPng(withContext(Dispatchers.Default) { runCatching { renderSignsPng(signs, words) }.getOrNull() }, EventSource.MACHINE, shownId)
+    private suspend fun keepSigns(frames: List<List<LandmarkFrame>>, words: List<String>, shownId: Long?) =
+        keepPng(withContext(Dispatchers.Default) { runCatching { renderSignsPng(frames, words) }.getOrNull() }, EventSource.MACHINE, shownId)
 
     private suspend fun keepPng(png: ByteArray?, source: EventSource, shownId: Long?, via: String? = null) {
         if (png == null) return
@@ -519,19 +425,12 @@ class SessionViewModel(
 
     /** Landmarks are biometric: they go when the session ends, the app locks or this model is cleared. */
     fun wipeSigns() {
-        capture = null
-        lastBody = null
-        prevFrame = null
-        synchronized(ring) { ring.clear(); letters.clear() }
-        liveFlow.value = LiveRead()
-        reads.forEach { it.cancel() }
-        reads.clear()
+        signs.wipe()
         local.update { it.copy(reading = null, signed = emptyMap(), signWindow = null, confirm = null) }
     }
 
     override fun onCleared() {
-        // The reader outlives the session; the names learned in it must not.
-        reader?.sessionNames(emptySet())
+        signs.forgetNames()
         wipeSigns()
     }
 
@@ -555,42 +454,7 @@ class SessionViewModel(
             else -> null
         }
         if (!paired) local.update { it.copy(pending = pending) }
-        val id = when (pending) {
-            is Pending.FreeText if pending.ref != null -> repo.log(
-                sessionId, EventType.QUESTION_SHOWN, EventSource.SHOW_BACK, lang,
-                text = pending.text, cardId = pending.cardIds.firstOrNull(), lexiconId = REF_PREFIX + pending.ref,
-            )
-            is Pending.Ask -> repo.log(
-                sessionId, EventType.QUESTION_SHOWN, EventSource.PRESET, lang,
-                text = pending.question.text.get(officerLang), lexiconId = pending.question.lexicon,
-                itemId = pending.question.id, reason = shownReason(content, pending.question, lang),
-            )
-            // A machine-made caption is logged next to the officer's own words, so the record shows both.
-            is Pending.FreeText -> repo.log(
-                sessionId, EventType.QUESTION_SHOWN, if (pending.byAi) EventSource.MACHINE else EventSource.TEXT, lang,
-                text = listOfNotNull(pending.text, pending.caption).joinToString("\n"), reason = SHOWN_AI.takeIf { pending.byAi },
-            )
-            is Pending.Cards -> repo.log(
-                sessionId, EventType.QUESTION_SHOWN, EventSource.BOARD, lang,
-                text = pending.cardIds.joinToString { id -> content.cards[id]?.label?.get(officerLang) ?: id },
-            )
-            is Pending.ShowBack -> repo.log(
-                sessionId, EventType.QUESTION_SHOWN, EventSource.SHOW_BACK, lang,
-                text = pending.entry.label.get(officerLang), cardId = pending.entry.card, lexiconId = pending.entry.id,
-            )
-            is Pending.PhraseAsk -> repo.log(
-                sessionId, EventType.QUESTION_SHOWN, EventSource.PHRASE, lang,
-                text = pending.slot.text.get(officerLang), cardId = pending.slot.card,
-            )
-            Pending.LanguageFinder -> repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_LANGUAGE_FINDER)
-            Pending.Drawing -> repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_DRAWING)
-            is Pending.GroundRules -> repo.log(
-                sessionId, EventType.QUESTION_SHOWN, EventSource.PRESET, lang,
-                text = ruleStep(pending)?.let { ruleText(content, it.key, officerLang) },
-                // The introduction is a bank question; naming it lets auto mode see it was asked.
-                itemId = ruleStep(pending)?.key?.takeIf { content.question(it) != null }, reason = SHOWN_OPENING,
-            )
-        }
+        val id = repo.logShown(sessionId, content, officerLang, pending, lang)
         repo.log(sessionId, EventType.PROMPT, EventSource.OFFICER, lang, text = content.promptFor(pending, lang).encode())
         shown[id] = pending
         local.update {
@@ -617,13 +481,13 @@ class SessionViewModel(
             is AnswerBody.Card if body.id in NeedCards && !shown[itemId].offers(body.id) ->
                 repo.log(sessionId, EventType.REQUEST, EventSource.SUBJECT, lang, text = content.cards[body.id]?.label?.get(lang), cardId = body.id, via = via)
             is AnswerBody.Card -> {
-                if (!logChecked(shown[itemId], body.id, null, q, via)) {
+                if (!repo.logChecked(sessionId, content, officerLang, shown[itemId], body.id, null, q, via)) {
                     repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, lang, text = content.cards[body.id]?.label?.get(lang), cardId = body.id, shownId = q, via = via, reason = body.cue?.let { "cue:$it" })
                 }
                 if (current) local.update { it.copy(answeredCard = body.id, answeredYes = null) }
             }
             is AnswerBody.YesNo -> {
-                if (!logChecked(shown[itemId], null, body.yes, q, via)) {
+                if (!repo.logChecked(sessionId, content, officerLang, shown[itemId], null, body.yes, q, via)) {
                     val id = if (body.yes) "yes" else "no"
                     repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, lang, text = content.cards[id]?.label?.get(lang), cardId = id, shownId = q, via = via, reason = body.cue?.let { "cue:$it" })
                 }
@@ -705,7 +569,7 @@ class SessionViewModel(
         local.update { it.copy(answeredCard = cardId, answeredYes = null) }
         val item = local.value.pending
         viewModelScope.launch {
-            if (!logChecked(item, cardId, null, local.value.itemId)) {
+            if (!repo.logChecked(sessionId, content, officerLang, item, cardId, null, local.value.itemId)) {
                 repo.log(
                     sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, officerLang,
                     text = content.cards[cardId]?.label?.get(officerLang), cardId = cardId, shownId = local.value.itemId,
@@ -737,36 +601,12 @@ class SessionViewModel(
         val cue = cue.also { cue = null }
         local.update { it.copy(answeredYes = yes, answeredCard = null) }
         viewModelScope.launch {
-            if (!logChecked(pending, null, yes, local.value.itemId)) {
+            if (!repo.logChecked(sessionId, content, officerLang, pending, null, yes, local.value.itemId)) {
                 val id = if (yes) "yes" else "no"
                 repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, officerLang, text = content.cards[id]?.label?.get(officerLang), cardId = id, shownId = local.value.itemId, reason = cue?.let { "cue:$it" })
             }
             if (advancesRun(pending, yes)) advanceRun()
         }
-    }
-
-    /** Answers to a show-back or say-back. A meaning becomes the subject's only when they pick it among two or more
-     * pictures; a Yes to a single reading is logged as their Yes, and the reading stays the officer's. */
-    private suspend fun logChecked(item: Pending?, card: String?, yes: Boolean?, shownId: Long?, via: String? = null): Boolean {
-        val meant: String?
-        val text: String?
-        val lexiconId: String?
-        when (item) {
-            is Pending.ShowBack -> { meant = item.entry.card; text = item.entry.label.get(officerLang); lexiconId = item.entry.id }
-            is Pending.FreeText if item.ref != null -> { meant = item.meant; text = item.text; lexiconId = REF_PREFIX + item.ref }
-            else -> return false
-        }
-        val choices = if (item is Pending.ShowBack) item.choices else (item as Pending.FreeText).cardIds
-        val picked = item.asksChoice && card != null && card in choices
-        when {
-            yes == true -> repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, officerLang, text = content.cards["yes"]?.label?.get(officerLang), cardId = "yes", lexiconId = lexiconId, shownId = shownId, via = via)
-            yes == false || (picked && card == SOMETHING_ELSE) ->
-                repo.log(sessionId, EventType.ANSWER_UNCLEAR, EventSource.SUBJECT, officerLang, text = text, cardId = "no", lexiconId = lexiconId, shownId = shownId, via = via)
-            picked && card == meant -> repo.log(sessionId, EventType.ANSWER_GESTURE, EventSource.SUBJECT, officerLang, text = text, cardId = card, lexiconId = lexiconId, shownId = shownId, via = via)
-            picked -> repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, officerLang, text = content.cards[card]?.label?.get(officerLang), cardId = card, lexiconId = lexiconId, shownId = shownId, via = via)
-            else -> return false
-        }
-        return true
     }
 
     /** The subject moves the opening on; after the last rule the stage waits for the officer. */
@@ -946,7 +786,9 @@ class SessionViewModel(
         viewModelScope.launch {
             val id = repo.log(sessionId, EventType.ANSWER_SPOKEN, EventSource.SUBJECT, lang, text = "%.1f".format(java.util.Locale.ROOT, seconds), shownId = local.value.itemId, audioWav = wav)
             if (id < 0 || brain == null || !brain.paired) return@launch
-            brain.recognise(wav, lang, to = officerLang)?.let { h ->
+            // The recording is already kept; a failed transcription only means no "heard" note.
+            val heard = try { brain.recognise(wav, lang, to = officerLang) } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+            heard?.let { h ->
                 // The words as heard, then in the officer's language when the brain translated them.
                 val note = h.text.trim().take(TEXT_CAP) + (h.translated?.let { "\n$officerLang: ${it.trim().take(TEXT_CAP)}" } ?: "")
                 repo.log(sessionId, EventType.NOTE, EventSource.MACHINE, h.lang, text = "$HEARD_PREFIX$note", shownId = id)
@@ -966,35 +808,8 @@ class SessionViewModel(
     /** Builds the encrypted report from everything logged so far; returns the file and its one-time passphrase. */
     suspend fun exportReport(text: ReportText, detail: (SessionEvent) -> String, section: ReportSection? = null, aiSummary: String? = null): Pair<File, String> {
         val currentUi = ui.value
-        val sessionObj = currentUi?.session ?: Session(sessionId, System.currentTimeMillis(), Profile.NOT_SURE, "en")
-        // Rows, digest and chain all come from the database as it is now, so the printed rows are the ones certified.
-        val events = repo.eventsNow(sessionId)
-        val rows = reportRows(detail, events)
-        val chain = EvidenceIntegrity.verifyChain(sessionObj, events, { repo.audio(it) }) { repo.drawing(it) }
-        val digest = recordDigest(rows)
-        val seal = repo.currentSeal(sessionId)
-        val key = withContext(Dispatchers.Default) { DeviceSeal.publicKey() }
-        val fingerprint = key?.let { java.security.MessageDigest.getInstance("SHA-256").digest(it).toHexString() }
-        val certificate = EvidenceIntegrity.generateSection63Certificate(
-            session = sessionObj,
-            events = events,
-            chain = chain,
-            recordDigest = digest,
-            signLanguage = currentUi?.signLanguage ?: SignLanguage.ISL,
-            root = seal?.root,
-            keyFingerprint = fingerprint,
-            signed = seal?.sig != null,
-        )
-        val keyText = key?.let { android.util.Base64.encodeToString(it, android.util.Base64.NO_WRAP) }
-        val printed = seal?.let { s ->
-            ReportSeal(
-                EvidenceIntegrity.qrPayload(s.line, digest, s.sig, keyText),
-                listOf("Seal line: ${s.line}", "Record digest: $digest", "Entries sealed: ${s.count}", "Signature (ECDSA P-256, base64): ${s.sig ?: "none"}",
-                    "Device public key (X.509, base64): ${keyText ?: "none"}", "Check: rebuild the seal line from the QR code's first five fields and verify the signature with the key."),
-            )
-        }
-        val audio = events.mapNotNull { e -> e.audioId?.let { id -> repo.audio(id)?.let { "audio-$id.wav" to it } } }
-        return report.export(rows, text, { repo.drawing(it) }, section, aiSummary, certificate, chain.short, printed, audio)
+        val session = currentUi?.session ?: Session(sessionId, System.currentTimeMillis(), Profile.NOT_SURE, "en")
+        return repo.exportSession(sessionId, report, session, currentUi?.signLanguage ?: SignLanguage.ISL, text, section, aiSummary) { reportRows(detail, it) }
     }
 
     internal fun reportRows(detail: (SessionEvent) -> String, events: List<SessionEvent> = ui.value?.events.orEmpty()): List<ReportRow> {
@@ -1002,20 +817,26 @@ class SessionViewModel(
         return events.withQuestions().map { (e, q) -> ReportRow(e, q, detail(e), reading = grades[e.id]?.isReading == true) }
     }
 
-    /** Saves the session under [title], or deletes it when [title] is null. */
+    /** Saves the session under [title]. Null deletes a new session; a saved one opened again is never deleted this
+     * way: only what was added since it was opened is discarded, and it is saved as it was. */
     fun endSession(title: String?, onDone: () -> Unit) {
         wipeSigns()
         counsellor.takeOver()
+        // A run step, language pick or auto timer firing now would log a new item into the closing session.
+        step?.cancel()
+        languageSettle?.cancel()
+        auto.halt()
+        val reopened = ui.value?.session?.takeIf { it.savedThrough != null }?.title
         viewModelScope.launch {
-            if (title == null) repo.purge(sessionId) else repo.end(sessionId, title)
+            when {
+                title != null -> repo.end(sessionId, title)
+                reopened != null -> repo.discardUnsaved(sessionId, reopened)
+                else -> repo.purge(sessionId)
+            }
             onDone()
         }
     }
 }
-
-/** How long before a sign window opens and after it closes a nod or shake still counts for its reading. */
-private const val HEAD_MARGIN_MS = 5_000L
-private const val HEAD_KEEP_MS = 30_000L
 
 /** Notes the app writes for speech it heard; RecordText shows them as a reading. */
 const val HEARD_PREFIX = "heard: "
@@ -1024,7 +845,3 @@ const val SYSTEM_VOICE_CONSENT = "voice_consent"
 /** Mid-sign reading for the officer: the reader's top 3 on the latest frames, and letters committed by holding. */
 @androidx.compose.runtime.Immutable
 data class LiveRead(val guesses: List<SignGuess> = emptyList(), val spelled: String = "")
-
-private const val LIVE_MIN_FRAMES = 8
-private const val LETTER_PEEK_MS = 150L
-private const val LETTER_FRAMES = 8

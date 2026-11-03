@@ -54,6 +54,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -112,7 +113,7 @@ import kotlinx.coroutines.withContext
 fun UseAsStageButton(container: AppContainer) {
     if (container.pairTransport == null) return
     val context = LocalContext.current
-    var checklist by remember { mutableStateOf(false) }
+    var checklist by rememberSaveable { mutableStateOf(false) }
     val enable = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { if (bluetoothOn(context)) container.startStage() }
     val proceed = { if (bluetoothOn(context)) container.startStage() else enable.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)) }
     // The stage never passes the start screen, where the camera is otherwise asked for. Without the link it cannot
@@ -148,7 +149,7 @@ fun StageDeviceScreen(link: StageLink, content: ContentBundle, container: AppCon
     val activity = LocalActivity.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var everLive by remember { mutableStateOf(false) }
+    var everLive by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state) {
         if (state == LinkState.Live && !everLive) {

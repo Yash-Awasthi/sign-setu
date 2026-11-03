@@ -11,7 +11,9 @@ Preconditions: two phones with the same release APK from the [latest release](ht
 
 Pass: no location permission is asked on either phone (only Nearby devices: `BLUETOOTH_CONNECT`, and `BLUETOOTH_SCAN` when Find a nearby phone is used); the stage phone shows a 6-digit code.
 
-In-app pairing (Android 12 and later): unpair the two phones in system settings. On the stage phone tap Make this phone visible; on the officer phone tap Find a nearby phone, pick the stage phone and confirm on both. Pass: the pairing confirmation appears on both phones, the link starts at once and the 6-digit code follows.
+In-app pairing (Android 12 and later): unpair the two phones in system settings. On the stage phone tap Make this phone visible; on the officer phone tap Find a nearby phone, pick the stage phone and confirm on both. Pass: the pairing confirmation appears on both phones, the link starts at once and the 6-digit code follows. If the phones were already bonded, no confirmation appears and the link starts at once.
+
+Bluetooth off: with Bluetooth off on the officer phone, open the Second screen sheet, turn Bluetooth on from quick settings or system Settings and return to the app. Pass: the sheet notices on return and lists the paired devices.
 
 ## 2. Code and check number
 
@@ -44,4 +46,4 @@ Pass: no `session.db`, no drawings, reports or answers; the only stored item is 
 2. Turn it back on within 120 s and tap **Reconnect**.
 3. Repeat, and this time tap **Use this phone**.
 
-Pass: a broken link shows at once, a silent one after 30 s without a frame (pings every 10 s); Reconnect within 120 s resumes without a new code; Use this phone moves the item to the officer phone's own stage and no logged event is lost. After 120 s the phones must pair again.
+Frames larger than 1 MiB minus 16 bytes are never sent; the sender logs "frame dropped" and the link stays up. Pass: a broken link shows at once, a silent one after 30 s without a frame (pings every 10 s); Reconnect within 120 s resumes without a new code; Use this phone moves the item to the officer phone's own stage and no logged event is lost. After 120 s the phones must pair again.

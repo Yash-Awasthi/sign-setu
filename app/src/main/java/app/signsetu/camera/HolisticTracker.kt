@@ -94,7 +94,7 @@ class HolisticTracker(private val context: Context) : LandmarkTracker {
 
     private fun findsPerson(model: HolisticLandmarker): Boolean {
         val probe = context.assets.open("content/$PROBE").use(BitmapFactory::decodeStream) ?: return false
-        return model.detectForVideo(BitmapImageBuilder(probe).build(), 0).poseLandmarks().isNotEmpty()
+        return try { model.detectForVideo(BitmapImageBuilder(probe).build(), 0).poseLandmarks().isNotEmpty() } finally { probe.recycle() }
     }
 
     private fun open(model: ByteBuffer, delegate: Delegate): HolisticLandmarker = HolisticLandmarker.createFromOptions(

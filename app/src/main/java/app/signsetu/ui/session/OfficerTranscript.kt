@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -266,7 +267,7 @@ private fun DrawingThumb(id: Long, load: suspend (Long) -> ByteArray?) {
         // Half size is plenty for the bubble and its dialog, and a quarter of the memory.
         value = withContext(Dispatchers.Default) { load(id)?.let { BitmapFactory.decodeByteArray(it, 0, it.size, BitmapFactory.Options().apply { inSampleSize = 2 })?.asImageBitmap() } }
     }
-    var open by remember { mutableStateOf(false) }
+    var open by rememberSaveable { mutableStateOf(false) }
     val name = stringResource(R.string.report_drawing)
     image?.let { img ->
         Image(

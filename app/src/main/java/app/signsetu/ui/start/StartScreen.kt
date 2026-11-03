@@ -3,10 +3,9 @@ package app.signsetu.ui.start
 import android.Manifest
 import android.app.Activity
 import android.widget.Toast
-import androidx.activity.compose.LocalActivity
+import app.signsetu.net.BrainClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,23 +22,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +43,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -77,18 +68,15 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.signsetu.R
 import app.signsetu.camera.hasCameraPermission
 import app.signsetu.data.content.ContentBundle
@@ -99,10 +87,7 @@ import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.avatar.MiniFace
 import app.signsetu.ui.components.BrandButton
-import app.signsetu.ui.components.GuardedAlertDialog
-import app.signsetu.ui.components.OfficerAuth
 import app.signsetu.ui.components.OfficerCard
-import app.signsetu.ui.session.clockDate
 import app.signsetu.ui.session.clockTime
 import app.signsetu.ui.session.defaultTitle
 import app.signsetu.ui.theme.Baloo
@@ -111,11 +96,11 @@ import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
 
-/** Home: the character greets on top; below, one quick choice of who is being helped and in which language. The
- * session itself opens on the stage, with the camera mirror. */
 /** Once per process: coming back from a session the name is already in place. */
 private var introPlayed = false
 
+/** Home: the character greets on top; below, one quick choice of who is being helped and in which language. The
+ * session itself opens on the stage, with the camera mirror. */
 @Composable
 fun StartScreen(
     repo: SessionRepository,
@@ -128,6 +113,10 @@ fun StartScreen(
     onSecondScreen: (() -> Unit)? = null,
     onCallInterpreter: (() -> Unit)? = null,
     interpreterSummary: String = "",
+    /** The station link's state (switched in Settings), for sending saved sessions there. */
+    station: BrainClient.Station = BrainClient.Station(),
+    savedActions: SavedActions = SavedActions({ null }, { _, _ -> null }),
+    onTour: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -232,6 +221,17 @@ fun StartScreen(
                             }
                         }
                     }
+                    onTour?.let { tour ->
+                        OfficerCard {
+                            Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = tour), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                                Icon(Icons.Filled.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Column(Modifier.weight(1f)) {
+                                    Text(stringResource(R.string.shell_take_tour), style = MaterialTheme.typography.titleMedium)
+                                    Text(stringResource(R.string.shell_take_tour_summary), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
                     open?.let { session ->
                         ResumeCard(
                             session = session,
@@ -256,10 +256,10 @@ fun StartScreen(
                         }
                     }
                     // Below the start card: starting a session is the main job of this screen. A rooted phone lists no history.
-                    if (!rooted) SavedSessions(repo, onOpen = { id ->
+                    if (!rooted) SavedSessions(repo, station, onOpen = { id ->
                         if (open != null) Toast.makeText(context, R.string.saved_finish_open_first, Toast.LENGTH_SHORT).show()
                         else scope.launch { repo.reopen(id); onOpenSession(id) }
-                    })
+                    }, actions = savedActions)
                 }
                 BrandButton(
                     onClick = onStart,
@@ -314,129 +314,6 @@ private fun ResumeCard(session: Session, languageName: String, onResume: () -> U
     }
 }
 
-private const val SAVED_SHOWN = 5
-
-/** Finished sessions under the officer's names for them: open one to read, export or finish again, or delete it. */
-@Composable
-private fun SavedSessions(repo: SessionRepository, onOpen: (String) -> Unit) {
-    val saved by repo.saved().collectAsStateWithLifecycle(emptyList())
-    if (saved.isEmpty()) return
-    val scope = rememberCoroutineScope()
-    var deleting by remember { mutableStateOf<Session?>(null) }
-    var all by rememberSaveable { mutableStateOf(false) }
-    OfficerCard {
-        Text(stringResource(R.string.saved_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-        (if (all) saved else saved.take(SAVED_SHOWN)).forEach { s ->
-            key(s.id) {
-                Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(s.title.orEmpty(), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            clockDate(s.endedAt ?: s.startedAt),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    IconButton(onClick = { deleting = s }) {
-                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.saved_delete_confirm), tint = MaterialTheme.colorScheme.error)
-                    }
-                    FilledTonalButton(onClick = { onOpen(s.id) }, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.saved_open))
-                    }
-                }
-            }
-        }
-        if (saved.size > SAVED_SHOWN) {
-            TextButton(onClick = { all = !all }, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text(if (all) stringResource(R.string.saved_fewer) else stringResource(R.string.saved_all, saved.size))
-            }
-        }
-    }
-    deleting?.let { s ->
-        val activity = LocalActivity.current
-        GuardedAlertDialog(
-            onDismissRequest = { deleting = null },
-            title = { Text(stringResource(R.string.saved_delete_title)) },
-            text = { Text(stringResource(R.string.saved_delete_body)) },
-            confirmButton = {
-                TextButton(onClick = { deleting = null; OfficerAuth.confirm(activity, { scope.launch { repo.purge(s.id) } }) }) {
-                    Text(stringResource(R.string.saved_delete_confirm), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.cancel)) } },
-        )
-    }
-}
-
-/** The subject's language: a field that opens a list. A dialog, not a dropdown menu, so seventeen languages
- * never open upward over the header or misplace inside a bottom sheet. With [onUnknown], "Do not know" heads the list. */
-@Composable
-fun LanguagePicker(
-    content: ContentBundle,
-    selected: String,
-    onPick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    label: String? = null,
-    unknown: Boolean = false,
-    onUnknown: (() -> Unit)? = null,
-) {
-    var open by remember { mutableStateOf(false) }
-    val current = content.language(selected)
-    val unknownText = stringResource(R.string.start_language_unknown)
-    val text = if (unknown) unknownText else current?.let { "${it.name}  ·  ${it.english}" } ?: selected
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).clip(MaterialTheme.shapes.medium)
-            .clickable(role = Role.Button, onClickLabel = label) { open = true }
-            .semantics { label?.let { stateDescription = text } },
-    ) {
-        Row(Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-            Icon(painterResource(R.drawable.ic_translate), contentDescription = null)
-            Column(Modifier.weight(1f).padding(horizontal = Spacing.md)) {
-                label?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) }
-                Text(text, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-        }
-    }
-    if (open) {
-        GuardedAlertDialog(
-            onDismissRequest = { open = false },
-            title = label?.let { { Text(it) } },
-            text = {
-                LazyColumn(Modifier.heightIn(max = 420.dp)) {
-                    onUnknown?.let { pick ->
-                        item(key = "unknown") {
-                            Row(
-                                Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(MaterialTheme.shapes.small)
-                                    .selectable(unknown, role = Role.RadioButton) { pick(); open = false }
-                                    .padding(horizontal = Spacing.sm),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(unknownText, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
-                                if (unknown) Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                    }
-                    items(content.languages, key = { it.code }) { l ->
-                        Row(
-                            Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(MaterialTheme.shapes.small)
-                                .selectable(!unknown && l.code == selected, role = Role.RadioButton) { onPick(l.code); open = false }
-                                .padding(horizontal = Spacing.sm),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("${l.name}  ·  ${l.english}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                            if (!unknown && l.code == selected) Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { open = false }) { Text(stringResource(R.string.cancel)) } },
-        )
-    }
-}
-
 /** Shown for every accused person: the Juvenile Justice rules if they may be under 18, and the officer's mark
  * that they may be, which leaves out adult arrest rights. */
 fun roleTitle(r: SessionRole) = when (r) {
@@ -451,4 +328,3 @@ fun profileTitle(p: Profile) = when (p) {
     Profile.OTHER_LANGUAGE -> R.string.profile_other
     Profile.NOT_SURE -> R.string.profile_unsure
 }
-

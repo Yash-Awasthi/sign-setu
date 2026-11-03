@@ -38,6 +38,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -144,7 +147,7 @@ fun FullChildMuteCommunicationBoard(
     onBodyTouch: ((BodyTouch) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    var tab by remember { mutableStateOf(Tabs.first()) }
+    var tab by rememberSaveable { mutableStateOf(Tabs.first()) }
     var said by remember { mutableStateOf<ExpressCard?>(null) }
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -172,7 +175,7 @@ fun FullChildMuteCommunicationBoard(
                 Surface(
                     shape = CircleShape,
                     color = Color(0xFFEFE3D3),
-                    modifier = Modifier.padding(start = 8.dp).size(40.dp).clickable { onDismiss() }.semantics { role = Role.Button; contentDescription = closeName },
+                    modifier = Modifier.padding(start = 8.dp).size(48.dp).clickable { onDismiss() }.semantics { role = Role.Button; contentDescription = closeName },
                 ) {
                     Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Close, contentDescription = null, tint = Color(0xFF4F4539)) }
                 }
@@ -189,7 +192,7 @@ fun FullChildMuteCommunicationBoard(
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         color = fill,
-                        modifier = Modifier.clickable { tab = id }.semantics { role = Role.Tab; contentDescription = title },
+                        modifier = Modifier.minimumInteractiveComponentSize().clickable { tab = id }.semantics { role = Role.Tab; contentDescription = title; this.selected = selected },
                     ) {
                         Text(
                             title,

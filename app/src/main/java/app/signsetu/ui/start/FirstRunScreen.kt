@@ -27,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,7 +70,7 @@ private val STEPS = listOf(
 
 /** Shown once, before the first unlock. */
 @Composable
-fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit) {
+fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit, onTour: (() -> Unit)? = null) {
     var index by rememberSaveable { mutableIntStateOf(0) }
     val step = STEPS[index]
     val last = index == STEPS.lastIndex
@@ -146,6 +147,12 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit) {
                 modifier = Modifier.semantics { heading() },
             )
             Text(stringResource(step.body), style = MaterialTheme.typography.bodyLarge)
+            if (last) onTour?.let { tour ->
+                OutlinedButton(onClick = tour) {
+                    Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.padding(end = Spacing.sm).size(18.dp))
+                    Text(stringResource(R.string.shell_take_tour))
+                }
+            }
             if (index == 0) {
                 // the officer picks the language of the app before anything else.
                 val current = OfficerLocale.get(context)

@@ -101,7 +101,7 @@ fun ContentBundle.answerText(type: AnswerType?, g: Given, lang: String): String 
     AnswerType.STATE, AnswerType.DISTRICT, AnswerType.PLACE -> placeText(g.picks, g.value, lang)
     AnswerType.PHONE -> groupPhone(g.value)
     AnswerType.CLASS -> g.value.toIntOrNull()?.let { n -> subjectUi["class_n"]?.or(lang)?.format(n) } ?: subjectUi[g.value]?.or(lang) ?: g.value
-    AnswerType.SIBLINGS -> g.value.split('/').let { p -> "${subjectUi["brothers"]?.or(lang)} ${p.getOrNull(0)}, ${subjectUi["sisters"]?.or(lang)} ${p.getOrNull(1)}" }
+    AnswerType.SIBLINGS -> g.value.split('/').let { p -> "${subjectUi["brothers"]?.or(lang).orEmpty()} ${p.getOrNull(0).orEmpty()}, ${subjectUi["sisters"]?.or(lang).orEmpty()} ${p.getOrNull(1).orEmpty()}".trim() }
     null -> question(g.question)?.text?.or(lang) ?: g.value
     else -> g.value.trim()
 }

@@ -74,6 +74,9 @@ internal fun WrapUpDialog(
     onSave: () -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
+    /** A saved session opened again: no export here (the history row saves it), and the destructive choice only
+     * discards what was added since it was opened. */
+    reopened: Boolean = false,
 ) {
     GuardedAlertDialog(
         onDismissRequest = onDismiss,
@@ -112,11 +115,21 @@ internal fun WrapUpDialog(
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 onThank?.let { OutlinedButton(onClick = it, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wrap_thank)) } }
                 if (!historyOff) Button(onClick = onSave, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wrap_save)) }
-                OutlinedButton(onClick = onExport, enabled = historyOff || title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.end_export)) }
+                if (historyOff || !reopened) OutlinedButton(onClick = onExport, enabled = historyOff || title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.end_export)) }
                 // Deleting is a second, deliberate step: the first tap only arms it.
                 var sure by remember { mutableStateOf(false) }
                 TextButton(onClick = { if (sure) onDelete() else sure = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(if (sure) R.string.wrap_delete_sure else R.string.wrap_delete), color = MaterialTheme.colorScheme.error)
+                    Text(
+                        stringResource(
+                            when {
+                                reopened && sure -> R.string.wrap_discard_sure
+                                reopened -> R.string.wrap_discard
+                                sure -> R.string.wrap_delete_sure
+                                else -> R.string.wrap_delete
+                            },
+                        ),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
                 TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wrap_keep_going)) }
             }

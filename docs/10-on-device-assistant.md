@@ -1,6 +1,6 @@
 # 10. On-Device Assistant
 
-The assistant translates what the officer types into the subject's language and back into English, so the officer can see a wrong translation before showing it. It runs on the phone when a model is installed, and otherwise through the online path (§6) when the officer has switched that on. It never answers, judges or signs, plays no part in Auto mode, and never sees camera frames or landmarks.
+The assistant translates what the officer types into the subject's language and back into English, so the officer can see a wrong translation before showing it. Captions and replies are tried in this order: the station computer's model when the station link is on and offers it ([18-station.md](18-station.md)), the model on the phone, then the online path (§6) when the officer has switched that on. A station error or blank reply falls through to the next step. It never answers, judges or signs, plays no part in Auto mode, and never sees camera frames or landmarks.
 
 ## 1. What the officer sees
 
@@ -8,6 +8,8 @@ The assistant translates what the officer types into the subject's language and 
 2. A card shows the caption in the subject's language, marked "machine translation, not checked", and below it "Which means" with the caption translated back into English. If the back-translation failed, that line is left out; the officer's own words are never shown in its place.
 3. If the meaning is right, Send shows the caption on the stage; the character still signs, gestures or spells the officer's own words. If it is wrong, the officer closes the card and the text is shown as typed.
 4. The log keeps the officer's words and the caption that was shown.
+
+The card can also offer what an answer may mean and non-leading follow-up questions; nothing it writes reaches the stage until the officer shows it. If the officer keeps typing while a caption loads, the old caption is dropped. A failure of the assistant ends the loading state and shows nothing.
 
 The assistant is skipped when the subject's language is English, or Hindi typed in Devanagari, since nothing needs translating.
 
@@ -25,7 +27,7 @@ The Gemma licence is free for government use but is not an OSI open-source licen
 ## 3. Installing the model
 
 - The department downloads the model once and hands it to officers as a file (SD card, USB, or a shared drive).
-- Settings, **Offline**, **Import model file**: the app copies the file into its private storage and computes its SHA-256 while copying.
+- Settings, **Offline**, **On-device assistant**, **Import model file**: the app copies the file into its private storage and computes its SHA-256 while copying.
 - Only files whose hash is in `ModelStore.KNOWN_MODELS` are kept; any other file is deleted before it is parsed, so a swapped or damaged file never reaches the native parser.
 - The app never downloads the model, even when it has a gateway.
 - **Remove the model** deletes it.
@@ -58,5 +60,7 @@ The Gemma licence is free for government use but is not an OSI open-source licen
 | When | Only with the online switch on (Settings, after a notice), the phone on a validated network, and, for the gateway, the device enrolled with a one-time department code |
 | Masking | `Pseudonymizer` replaces the subject's names and written details from the session, and email addresses, links, PAN-like ids and long numbers, with stand-ins before sending, and restores them in the reply |
 | Consent | Session text (counsellor history, draft report) goes only after the officer allows it once for the session |
+| Counsellor | Each line request has a 150 s limit; a thrown error or a timeout pauses the counsellor with the "no reply" notice, and the officer can Resume or Take over |
 | Failure | One retry when the service is unreachable, rate-limited (429) or failing (5xx), except a typed-text caption, which waits at most 3 s once so the officer can send their own words; a session start pings a gateway's `/healthz` to wake it; a 401 clears the token; the officer is told once per change (offline, error, revoked, back online) |
+| Gateway limits | A provider 429 reaches the phone as 429 "assistant busy", so the phone waits 6 s before its one retry; every gateway request has a 70 s deadline and a speech stream 60 s |
 | Prompts | The gateway accepts only the app's own system prompts, listed in `gateway/app_prompts.json` and written by `GatewayPromptContractTest` |

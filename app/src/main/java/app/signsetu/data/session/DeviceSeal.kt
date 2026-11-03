@@ -24,19 +24,23 @@ object DeviceSeal {
     @Synchronized
     private fun key(): PrivateKey {
         (store().getKey(ALIAS, null) as? PrivateKey)?.let { return it }
-        fun spec(strongBox: Boolean) = KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_SIGN)
+        fun spec(strongBox: Boolean, attest: Boolean) = KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_SIGN)
             .setAlgorithmParameterSpec(java.security.spec.ECGenParameterSpec("secp256r1"))
             .setDigests(KeyProperties.DIGEST_SHA256)
-            .setAttestationChallenge(CHALLENGE)
+            .apply { if (attest) setAttestationChallenge(CHALLENGE) }
             .apply { if (strongBox && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) setIsStrongBoxBacked(true) }
             .build()
         val gen = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore")
-        try {
-            gen.initialize(spec(strongBox = true)); gen.generateKeyPair()
-        } catch (_: StrongBoxUnavailableException) {
-            gen.initialize(spec(strongBox = false)); gen.generateKeyPair()
-        } catch (_: java.security.ProviderException) {
-            gen.initialize(spec(strongBox = false)); gen.generateKeyPair()
+        // StrongBox first, then the TEE; a phone whose Keystore refuses attestation still gets a signing key.
+        val attempts = listOf(true to true, false to true, false to false)
+        for ((i, attempt) in attempts.withIndex()) {
+            try {
+                gen.initialize(spec(attempt.first, attempt.second)); gen.generateKeyPair()
+                break
+            } catch (e: Exception) {
+                if (e !is StrongBoxUnavailableException && e !is java.security.ProviderException &&
+                    e !is java.security.InvalidAlgorithmParameterException || i == attempts.lastIndex) throw e
+            }
         }
         return store().getKey(ALIAS, null) as PrivateKey
     }

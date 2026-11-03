@@ -21,50 +21,68 @@ class VoiceCapture(private val context: Context) {
         private set
     @Volatile private var running = false
     private var record: AudioRecord? = null
+    private var suppressor: NoiseSuppressor? = null
     private var thread: Thread? = null
     private val pcm = ByteArrayOutputStream()
+    private val fresh = ByteArrayOutputStream()
 
     fun permitted() = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     @SuppressLint("MissingPermission")
+    @Synchronized
     fun start(): Boolean {
         if (running || !permitted()) return false
+        // A take that ended itself at the limit still holds the mic until stopped; a new take frees it first.
+        if (record != null) stop()?.fill(0)
         val min = AudioRecord.getMinBufferSize(RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         // VOICE_RECOGNITION: no automatic gain, the input speech models are trained on.
         val r = runCatching { AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, RATE)) }.getOrNull()
             ?.takeIf { it.state == AudioRecord.STATE_INITIALIZED } ?: return false
-        if (NoiseSuppressor.isAvailable()) runCatching { NoiseSuppressor.create(r.audioSessionId)?.enabled = true }
-        synchronized(pcm) { pcm.reset() }
+        // Permission revoked or the mic held by a call: startRecording throws, and the native recorder must still be freed.
+        if (runCatching { r.startRecording() }.isFailure || r.recordingState != AudioRecord.RECORDSTATE_RECORDING) { r.release(); return false }
+        if (NoiseSuppressor.isAvailable()) suppressor = runCatching { NoiseSuppressor.create(r.audioSessionId)?.apply { enabled = true } }.getOrNull()
+        synchronized(pcm) { pcm.reset(); fresh.reset() }
         record = r
         running = true
-        r.startRecording()
         thread = Thread({
             val buf = ShortArray(RATE / 10)
             val bytes = ByteBuffer.allocate(buf.size * 2).order(ByteOrder.LITTLE_ENDIAN)
             while (running) {
                 val n = r.read(buf, 0, buf.size)
-                if (n <= 0) continue
+                // A negative count is a dead or invalid recorder that will never read again; retrying would spin a core.
+                if (n < 0) { running = false; break }
+                if (n == 0) continue
                 var sum = 0.0
                 bytes.clear()
                 for (i in 0 until n) { sum += buf[i] * buf[i].toDouble(); bytes.putShort(buf[i]) }
                 level = (sqrt(sum / n) / 6000.0).coerceIn(0.0, 1.0).toFloat()
                 synchronized(pcm) {
-                    if (pcm.size() < MAX_SECONDS * RATE * 2) pcm.write(bytes.array(), 0, n * 2) else running = false
+                    if (pcm.size() < MAX_SECONDS * RATE * 2) { pcm.write(bytes.array(), 0, n * 2); fresh.write(bytes.array(), 0, n * 2) } else running = false
                 }
             }
+            level = 0f
         }, "voice").apply { start() }
         return true
     }
 
+    /** The PCM recorded since the last call, for live speech to text; the caller wipes it once sent. */
+    fun fresh(): ByteArray = synchronized(pcm) { fresh.toByteArray().also { fresh.reset() } }
+
+    /** Whether the take is still recording; it stops by itself at [MAX_SECONDS]. */
+    val recording: Boolean get() = running
+
     /** Stops and returns the take as a WAV, or null when it is shorter than half a second. */
+    @Synchronized
     fun stop(): ByteArray? {
         running = false
         thread?.join(500)
         thread = null
+        suppressor?.let { runCatching { it.release() } }
+        suppressor = null
         record?.run { runCatching { stop() }; release() }
         record = null
         level = 0f
-        val data = synchronized(pcm) { pcm.toByteArray().also { pcm.reset() } }
+        val data = synchronized(pcm) { fresh.reset(); pcm.toByteArray().also { pcm.reset() } }
         if (data.size < RATE) { data.fill(0); return null }
         return wav(data).also { data.fill(0) }
     }

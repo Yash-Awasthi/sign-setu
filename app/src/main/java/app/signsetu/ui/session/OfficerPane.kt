@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,7 +31,6 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +55,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -69,12 +66,10 @@ import androidx.core.view.WindowCompat
 import app.signsetu.R
 import androidx.compose.runtime.mutableIntStateOf
 import app.signsetu.ui.components.LocalOnlineAssistant
-import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.isDevanagari
 import app.signsetu.data.content.Phrase
 import app.signsetu.data.content.Question
 import app.signsetu.data.content.SignLanguage
-import app.signsetu.data.content.SignMode
 import app.signsetu.data.content.forSignLanguage
 import app.signsetu.data.content.toHindi
 import androidx.compose.runtime.LaunchedEffect
@@ -82,9 +77,7 @@ import kotlinx.coroutines.delay
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
 import app.signsetu.ui.avatar.MiniFace
-import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.GuardedAlertDialog
-import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalInk
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
@@ -135,10 +128,10 @@ fun OfficerPane(
     var sheet by rememberSaveable { mutableStateOf<Sheet?>(null) }
     var page by rememberSaveable { mutableIntStateOf(0) }
     var replaying by rememberSaveable { mutableStateOf<Long?>(null) }
-    var askSensitive by remember { mutableStateOf(false) }
-    var askEnd by remember { mutableStateOf(false) }
+    var askSensitive by rememberSaveable { mutableStateOf(false) }
+    var askEnd by rememberSaveable { mutableStateOf(false) }
     var saveAs by rememberSaveable { mutableStateOf("") }
-    var askLeave by remember { mutableStateOf(false) }
+    var askLeave by rememberSaveable { mutableStateOf(false) }
     // Sheets and dialogs take Back first; on the page it steps to the first tab, then leaves with the session still
     // open, to resume from the start screen. With a second screen it asks first. Finishing is always a deliberate tap.
     val backAction = backAction(page, paired != null)
@@ -146,9 +139,10 @@ fun OfficerPane(
     var export by remember { mutableStateOf<ExportState?>(null) }
     val cloud = LocalOnlineAssistant.current
     val autoConv by vm.auto.conv.collectAsStateWithLifecycle()
-    val aiOffer by produceState(false, cloud) { value = cloud.sendsSessionData() }
+    // The station's own model offers the same help as the gateway, without data leaving the department.
+    val aiOffer by produceState(false, cloud) { value = cloud.stationUp() || cloud.sendsSessionData() }
     // The AI draft summary joins the export only when the officer ticks it in the finish dialog.
-    var includeSummary by remember { mutableStateOf(false) }
+    var includeSummary by rememberSaveable { mutableStateOf(false) }
     // Session data leaves the phone only after the officer allows it once for this session.
     var cloudConsent by rememberSaveable { mutableStateOf(false) }
     var awaitingConsent by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -170,9 +164,10 @@ fun OfficerPane(
     val brain = app.signsetu.ui.components.LocalBrain.current
     // The brain's sign order for the text being typed, asked for once typing pauses; the phone's order stands without it.
     var glossed by remember { mutableStateOf<Pair<String, List<String>>?>(null) }
-    LaunchedEffect(ownText, brain) {
+    LaunchedEffect(ownText, brain, islReorder) {
         val t = ownText.trim()
-        if (brain == null || !brain.paired || t.length < 3 || glossed?.first == t) return@LaunchedEffect
+        // Asked only when the phone reorders typed text at all (Sign in ISL order); off, the order is as typed.
+        if (!islReorder || brain == null || !brain.paired || t.length < 3 || glossed?.first == t) return@LaunchedEffect
         kotlinx.coroutines.delay(GLOSS_PAUSE_MS)
         brain.gloss(t, if (t.isDevanagari()) "hi" else "en", content.words.keys)?.let { glossed = t to it }
     }
@@ -188,7 +183,7 @@ fun OfficerPane(
         val english = subjectLang == "hi" && officerLang != "hi" && t.any { it in 'a'..'z' || it in 'A'..'Z' } && t.none { it in 'ऀ'..'ॿ' }
         return if (english) content.toHindi(t)?.hi else null
     }
-    LaunchedEffect(ownText, subjectLang, content) {
+    LaunchedEffect(ownText, subjectLang, officerLang, content) {
         delay(250)
         draft = withContext(Dispatchers.Default) { hindi(ownText) }
     }
@@ -240,7 +235,7 @@ fun OfficerPane(
         when {
             ui.session.role == app.signsetu.data.session.Role.ACCUSED -> Toast.makeText(context, R.string.ai_not_for_accused, Toast.LENGTH_LONG).show()
             ui.session.role != app.signsetu.data.session.Role.VICTIM -> Toast.makeText(context, R.string.ai_needs_victim, Toast.LENGTH_LONG).show()
-            !cloud.available || !cloud.enrolled -> Toast.makeText(context, R.string.ai_needs_online, Toast.LENGTH_LONG).show()
+            !cloud.stationUp() && (!cloud.available || !cloud.enrolled) -> Toast.makeText(context, R.string.ai_needs_online, Toast.LENGTH_LONG).show()
             else -> withConsent {
                 page = 0
                 vm.counsellor.start(
@@ -337,7 +332,7 @@ fun OfficerPane(
                 onTool = onTool,
                 onSecondScreen = onSecondScreen,
                 onFinish = { askEnd = true },
-                onCounsel = if (cloud.available && cloud.enrolled) startCounsel else null,
+                onCounsel = if (cloud.stationUp() || (cloud.available && cloud.enrolled)) startCounsel else null,
                 auto = vm.auto,
                 modifier = Modifier.weight(1f),
             )
@@ -381,10 +376,22 @@ fun OfficerPane(
                 val language = content.language(subjectLang)
                 if (assistant != null && language != null && !thinking) {
                     thinking = true
+                    val asked = ownText.trim()
                     scope.launch {
-                        suggestion = assistant.suggest(ownText.trim(), language)
-                        noHelp = suggestion == null
-                        thinking = false
+                        // A caption for text since edited would go out with the new words on Send.
+                        val got = try {
+                            assistant.suggest(asked, language)
+                        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            null
+                        } finally {
+                            thinking = false
+                        }
+                        if (ownText.trim() == asked) {
+                            suggestion = got
+                            noHelp = got == null
+                        }
                     }
                 }
             },
@@ -485,6 +492,8 @@ fun OfficerPane(
     }
     if (voiceOpen) VoiceSheet(
         consented = ui.events.any { it.type == EventType.SYSTEM && it.text == SYSTEM_VOICE_CONSENT },
+        brain = brain,
+        lang = subjectLang,
         onConsent = vm::consentToVoice,
         onRecorded = { wav -> vm.recordSpeech(wav, brain) },
         onDismiss = { voiceOpen = false },
@@ -521,6 +530,7 @@ fun OfficerPane(
             onExport = startExport,
             onSave = { askEnd = false; onEndSession(saveAs) },
             onDelete = { askEnd = false; onEndSession(null) },
+            reopened = ui.session.savedThrough != null,
             onDismiss = { askEnd = false },
         )
     }
@@ -544,76 +554,6 @@ fun OfficerPane(
             onDismiss = { export = null },
         )
     }
-}
-
-@Composable
-private fun StopBanner(onOk: () -> Unit) {
-    val answer = LocalAnswerColors.current
-    Surface(shape = MaterialTheme.shapes.large, color = answer.pause, contentColor = answer.onPause, shadowElevation = 4.dp, modifier = Modifier.padding(top = Spacing.md)) {
-        Row(Modifier.padding(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-            CardImage("stop", Modifier.size(40.dp))
-            Column(Modifier.weight(1f).padding(horizontal = Spacing.md)) {
-                Text(stringResource(R.string.officer_stop_title), style = MaterialTheme.typography.titleSmall)
-                Text(stringResource(R.string.officer_stop_body), style = MaterialTheme.typography.bodySmall)
-            }
-            TextButton(onClick = onOk, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ok), color = answer.onPause) }
-        }
-    }
-}
-
-internal fun typedModes(modes: List<SignMode>, islReorder: Boolean) = if (islReorder) modes.toSet() else modes.toSet() + SignMode.TYPED_ORDER
-
-@Composable
-internal fun describe(p: Pending, content: ContentBundle, lang: String): String = when (p) {
-    is Pending.Ask -> p.question.text.get(lang) ?: p.question.id
-    is Pending.FreeText -> if (p.cardIds.isEmpty()) p.text else "${p.text}  ·  ${pluralStringResource(R.plurals.officer_pictures, p.cardIds.size, p.cardIds.size)}"
-    is Pending.Cards -> p.cardIds.joinToString { content.cards[it]?.label?.get(lang) ?: it }
-    is Pending.ShowBack -> "${stringResource(R.string.officer_gesture)}: ${p.entry.label.get(lang) ?: p.entry.id}"
-    is Pending.PhraseAsk -> p.slot.text.get(lang) ?: p.slot.card
-    Pending.LanguageFinder -> stringResource(R.string.officer_find_language)
-    Pending.Drawing -> stringResource(R.string.officer_draw)
-    is Pending.GroundRules -> stringResource(R.string.officer_rules)
-}
-
-/** Profiles that sign get ISL signs and spelling; everyone else gets everyday gestures. Both get pictures. */
-internal fun defaultModes(profile: Profile) =
-    if (profile == Profile.ISL_USER) listOf(SignMode.SIGNS, SignMode.SPELL, SignMode.PICTURES) else listOf(SignMode.GESTURES, SignMode.PICTURES)
-
-@Composable
-private fun AslExperimentalBanner(modifier: Modifier = Modifier) {
-    Surface(
-        color = MaterialTheme.colorScheme.errorContainer,
-        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-        shape = RoundedCornerShape(12.dp),
-        modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
-    ) {
-        Row(
-            Modifier.padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    stringResource(R.string.asl_experimental_title),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Text(
-                    stringResource(R.string.asl_experimental_advisory),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-    }
-}
-
-enum class BackAction { FIRST_TAB, ASK_LEAVE, LEAVE }
-
-/** What Back does on the officer page: step to the first tab, ask before dropping a second screen, or just leave. */
-fun backAction(page: Int, secondScreenShowing: Boolean) = when {
-    page != 0 -> BackAction.FIRST_TAB
-    secondScreenShowing -> BackAction.ASK_LEAVE
-    else -> BackAction.LEAVE
 }
 
 /** Typing pause after which the station brain is asked for the text's sign order. */

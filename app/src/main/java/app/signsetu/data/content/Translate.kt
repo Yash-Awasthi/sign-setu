@@ -28,10 +28,15 @@ private val ARTICLES = setOf("a", "an", "the")
 
 /** "Don't worry!" and "do not worry" are one key: lower case, contractions open, no articles or punctuation. */
 internal fun normalise(text: String): String = text.lowercase().replace('’', '\'')
-    .replace(Regex("\\p{L}+'\\p{L}+")) { CONTRACTIONS[it.value] ?: it.value }
-    .replace(Regex("\\bcannot\\b"), "can not")
-    .replace(Regex("[^\\p{L}\\p{M}\\p{N}']+"), " ")
+    .replace(CONTRACTION) { CONTRACTIONS[it.value] ?: it.value }
+    .replace(CANNOT, "can not")
+    .replace(NOT_WORD, " ")
     .split(' ').map { it.trim('\'') }.filter { it.isNotEmpty() && it !in ARTICLES }.joinToString(" ")
+
+// Compiled once: normalise runs on every typed caption.
+private val CONTRACTION = Regex("\\p{L}+'\\p{L}+")
+private val CANNOT = Regex("\\bcannot\\b")
+private val NOT_WORD = Regex("[^\\p{L}\\p{M}\\p{N}']+")
 
 @Volatile private var cached: Pair<ContentBundle, Bank>? = null
 
@@ -226,7 +231,7 @@ private val FIXED = mapOf(
 )
 
 private fun lastWord(s: String) = s.substringAfterLast(' ')
-private fun consonantEnd(w: String) = w.last().let { it in 'क'..'ह' || it in 'क़'..'य़' || it == '़' }
+private fun consonantEnd(w: String) = w.isNotEmpty() && w.last().let { it in 'क'..'ह' || it in 'क़'..'य़' || it == '़' }
 private fun swapLast(stem: String, f: (String) -> String) = stem.dropLast(lastWord(stem).length) + f(lastWord(stem))
 
 private val IMP = mapOf("दे" to "दीजिए", "ले" to "लीजिए", "कर" to "कीजिए", "पी" to "पीजिए", "हो" to "होइए")

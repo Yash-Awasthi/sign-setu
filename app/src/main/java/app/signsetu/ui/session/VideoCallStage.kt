@@ -7,7 +7,6 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -17,6 +16,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -81,12 +81,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.buildAnnotatedString
 import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.components.CardImage
@@ -149,7 +143,7 @@ fun VideoCallStage(
 
     var pipOffsetX by remember { mutableFloatStateOf(0f) }
     var pipOffsetY by remember { mutableFloatStateOf(0f) }
-    var swapped by remember { mutableStateOf(false) }
+    var swapped by rememberSaveable { mutableStateOf(false) }
 
     // A string resource and its optional argument, resolved where it is drawn so a language change is followed.
     var recentReaction by remember { mutableStateOf<Reaction?>(null) }
@@ -360,7 +354,7 @@ fun VideoCallStage(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(6.dp)
-                        .clickable { showVictimSkeleton = !showVictimSkeleton },
+                        .toggleable(value = showVictimSkeleton, role = Role.Switch) { showVictimSkeleton = it },
                 ) {
                     Text(
                         text = stringResource(if (showVictimSkeleton) R.string.call_skeleton_on else R.string.call_skeleton_off),
@@ -430,7 +424,7 @@ fun VideoCallStage(
                             pipOffsetY += dragAmount.y
                         }
                     }
-                    .clickable { swapped = !swapped },
+                    .clickable(onClickLabel = stringResource(R.string.stage_swap_views)) { swapped = !swapped },
             ) {
                 if (swapped && panel == null) avatarView() else cameraView()
             }
@@ -564,53 +558,8 @@ fun VideoCallStage(
     }
 }
 
-/** The folded answer panel: a bar that opens it at once when tapped. */
-@Composable
-private fun PanelStrip(onClick: () -> Unit, modifier: Modifier) {
-    val label = stringResource(R.string.stage_show_answers)
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
-        color = LocalCall.current.surface.copy(alpha = 0.93f),
-        border = BorderStroke(1.dp, LocalCall.current.line),
-        modifier = modifier.height(48.dp).semantics { contentDescription = label },
-    ) {
-        Box(contentAlignment = Alignment.Center) { Text("︿", fontSize = 22.sp, color = LocalCall.current.text) }
-    }
-}
-
-/** Stop in a corner on every item: a small red octagon, the one way out that never hides. */
-@Composable
-private fun StopOctagon(label: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
-    val answers = LocalAnswerColors.current
-    PressableSurface(
-        onClick = onClick,
-        shape = Octagon,
-        color = answers.pause,
-        border = if (chosen) BorderStroke(3.dp, answers.onPause) else null,
-        modifier = modifier.size(56.dp).semantics { role = Role.Button; contentDescription = label },
-    ) {
-        Box(contentAlignment = Alignment.Center) { CardImage("stop", Modifier.size(30.dp)) }
-    }
-}
-
-private val Octagon = GenericShape { size, _ ->
-    val c = 0.29f
-    moveTo(size.width * c, 0f)
-    lineTo(size.width * (1 - c), 0f)
-    lineTo(size.width, size.height * c)
-    lineTo(size.width, size.height * (1 - c))
-    lineTo(size.width * (1 - c), size.height)
-    lineTo(size.width * c, size.height)
-    lineTo(0f, size.height * (1 - c))
-    lineTo(0f, size.height * c)
-    close()
-}
-
 private const val CONTROLS_MS = 5_000L
 
-/** Whether the subject's own camera picture shows the traced skeleton; kept outside the screen so it survives the
- * handover between items, where the stage is built again. */
 /** One idle beat: the subject line shown ("hint_answer" lights the hint) and for how long. */
 private class IdleStep(val line: String, val ms: Long)
 // Long enough for each line to be spoken and signed in full.
@@ -627,31 +576,6 @@ private val FINGERS = Regex("n\\d+")
 
 private fun cardLabel(content: ContentBundle, card: String, lang: String): String =
     content.cards[card]?.label?.or(lang) ?: card.removePrefix("n").takeIf { card.matches(FINGERS) } ?: card
-
-/** The call's caption: the word being signed is lit, and a tap replays the line or that word. */
-@Composable
-private fun CallCaption(text: String, highlight: IntRange?, onWordTap: ((Int) -> Unit)?) {
-    val styled = litWord(text, highlight)
-    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
-    val replayName = stringResource(R.string.word_replay)
-    // The caller's lambda changes every frame of typed-text playback; the tap detector must not restart with it.
-    val onTap by rememberUpdatedState(onWordTap)
-    val tap = if (onWordTap == null) Modifier else Modifier
-        .pointerInput(Unit) { detectTapGestures { p -> layout?.let { onTap?.invoke(it.getOffsetForPosition(p)) } } }
-        .semantics { onClick(replayName) { onTap?.invoke(0); true } }
-    Text(
-        styled, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
-        onTextLayout = { layout = it }, modifier = tap,
-    )
-}
-
-@Composable
-private fun litWord(text: String, highlight: IntRange?) = buildAnnotatedString {
-    append(text)
-    highlight?.takeIf { it.last < text.length }?.let {
-        addStyle(SpanStyle(color = LocalCall.current.bg, background = LocalCall.current.accent), it.first, it.last + 1)
-    }
-}
 
 private const val HANDS_HOLD_MS = 800L
 private const val REOPEN_MS = 10_000L

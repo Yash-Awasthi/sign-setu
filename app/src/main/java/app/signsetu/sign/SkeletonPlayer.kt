@@ -99,7 +99,7 @@ class ReplayState(segments: List<SignSegment>) {
             if (time >= total) time = 0f
             until = total
         } else {
-            time = starts[segment]
+            time = starts.getOrNull(segment) ?: return
             until = starts.getOrNull(segment + 1)?.minus(GAP_MS) ?: total
         }
         playing = true

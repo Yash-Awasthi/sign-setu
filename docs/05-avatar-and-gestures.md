@@ -33,7 +33,7 @@ The avatar never improvises. It plays entries from reviewed lexicons.
 | | ISL lexicon | Gesture lexicon |
 | --- | --- | --- |
 | For | Deaf people who know ISL (adults, older students) | Young children, deaf children without ISL, anyone non-verbal |
-| Source | 517 recorded signs: 262 retargeted from INCLUDE's Deaf signers, 208 from the ISLRTC dictionary clips and 47 from the Kaggle ISL videos; authored drafts for lesson words neither has; 112 recorded sentences from the ISL-CSLTR corpus and the team [ISLRTC permission to confirm] | Special educators, child-welfare staff and parents' common gestures; cross-checked against ISL, since many iconic gestures overlap ISL signs |
+| Source | 517 recorded signs: 262 retargeted from INCLUDE's Deaf signers, 208 from the ISLRTC dictionary clips and 47 from the Kaggle ISL videos; authored drafts for lesson words neither has; 112 recorded sentences from the ISL-CSLTR corpus and the team; use of the ISLRTC clips needs ISLRTC's written permission before release | Special educators, child-welfare staff and parents' common gestures; cross-checked against ISL, since many iconic gestures overlap ISL signs |
 | Reviewer | Qualified Deaf ISL reviewer; regional reviewer per state | Child-welfare reviewer plus educators from at least three regions and different communities |
 | Variants | Regional variant tagged per entry | Several variants per concept, tagged by community and region; never one variant alone |
 | Grammar | Phrase bank of reviewed sentences with slots; typed text in draft ISL order | Single concepts; the question is carried by pointing, the pictures and the character's face |
@@ -134,7 +134,7 @@ The character is rendered live by the avatar module (`avatar/`, three.js and thr
 
 ### 5.5 Size
 
-Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` together are a small fraction of the APK. Pre-rendered clips would cost about 75 KB each (480 by 480, H.264, about 400 kbit/s, 1.5 s), so the roughly 1,000 current motions (42 gestures, 156 authored, 517 ISL and 286 ASL) would add well over 60 MB; the character model itself is 12 MB.
+Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` together are a small fraction of the APK. Pre-rendered clips would cost about 75 KB each (480 by 480, H.264, about 400 kbit/s, 1.5 s), so the roughly 1,000 current motions (42 gestures, 156 authored, 517 ISL and 286 ASL) would add well over 60 MB; the character model itself is 11 MB.
 
 ### 5.6 Playback rules
 
@@ -161,8 +161,9 @@ Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` t
 ### 5.8 Drawn and Rive characters
 
 - **Choice.** Settings, Stage, Character: the 3D character (default), the drawn character, or a Rive character when a department file is present. The drawn character also takes over by itself when the phone has no usable WebView, the model is not ready within 12 s, or the WebView renderer dies.
+- **Type-to-Sign list.** The word chips on the practice screen wrap onto new lines and scroll inside their box, so a long sentence stays in view.
 - **Drawn character.** The 2D rig in `ui/avatar` plays the same keyframes as the 3D one. Recorded sentence clips play on it too: each frame keeps the signer's bone directions at the drawn character's own arm lengths, and the 21 hand points become finger curls, spread, thumb position, palm turn and hand angle.
-- **Rive file.** `avatar/signer.riv`, in the app's files (copied by the department) or in `assets/avatar/` (built in). The runtime loads only when a Rive character is first shown.
+- **Rive file.** `avatar/signer.riv`, in the app's files (copied by the department) or in `assets/avatar/` (built in). The runtime loads only when a Rive character is first shown. A pooled avatar WebView drops its callbacks when it is given back, so it never keeps the last screen alive. A recorded frame that is cut short of a hand's points counts that hand as absent.
 - **Rive contract.** One state machine named `Signer`. Each frame the app writes these number inputs, in the rig's 200-unit space (y down, the character's right hand on the viewer's left):
 
 | Input | Meaning |
@@ -203,7 +204,7 @@ This works offline, needs no model, and works with home signs, because the confi
 
 ## 8. Validation
 
-| What | Who | Pass mark [confirm with reviewers] |
+| What | Who | Pass mark (set with the reviewers) |
 | --- | --- | --- |
 | Each ISL sign and phrase | Deaf ISL reviewer; then 5 or more Deaf adults from at least two regions | 80% understand the phrase without the caption |
 | Each gesture entry | Child-welfare reviewer and educators; then children in deaf and hearing schools | 70% of children pick the right picture after seeing the gesture |

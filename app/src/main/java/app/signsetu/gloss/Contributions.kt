@@ -46,7 +46,8 @@ class Contributions(
 
     val consented: Boolean get() = consentFile.exists() && consentFile.readText().trim() == CONSENT_VERSION
 
-    fun setConsent(on: Boolean) {
+    // Same monitor as save's write, so a queued record cannot land after withdrawal clears the queue.
+    fun setConsent(on: Boolean) = synchronized(this) {
         root.mkdirs()
         if (on) {
             consentFile.writeText(CONSENT_VERSION)
@@ -60,7 +61,7 @@ class Contributions(
     }
 
     /** Saves one record locally, and queues it when the signer has opted in. */
-    fun save(kind: String, session: JsonObject, window: JsonObject, gloss: List<String>, correction: String? = null) {
+    fun save(kind: String, session: JsonObject, window: JsonObject, gloss: List<String>, correction: String? = null): Job {
         val record = buildJsonObject {
             put("kind", kind)
             put("session", session)
@@ -68,20 +69,43 @@ class Contributions(
             put("gloss", JsonArray(gloss.map(::JsonPrimitive)))
             correction?.let { put("correction", it) }
         }
-        val name = "${System.currentTimeMillis()}_${kind}.json"
-        runCatching { sessions.mkdirs(); File(sessions, name).writeText(record.toString()) }
-        if (consented) {
-            runCatching { queue.mkdirs(); File(queue, name).writeText(record.toString()) }
-            kick()
+        val text = record.toString()
+        // Off the caller's (often the main) thread; one writer at a time keeps names unique.
+        return scope.launch(Dispatchers.IO) {
+            synchronized(this@Contributions) {
+                val name = uniqueName(kind)
+                runCatching { writeAtomic(File(sessions, name), text) }
+                if (consented) runCatching { writeAtomic(File(queue, name), text) }
+            }
+            if (consented) kick()
         }
     }
 
-    /** Local records, for the export that tools/ml/import_contrib.py reads. */
-    fun saved(): List<File> = sessions.listFiles()?.sortedBy { it.name }.orEmpty()
+    private fun uniqueName(kind: String): String {
+        val ms = System.currentTimeMillis()
+        var name = "${ms}_${kind}.json"
+        var n = 1
+        while (File(sessions, name).exists()) name = "${ms}_${kind}_${n++}.json"
+        return name
+    }
 
-    fun pending(): Int = queue.listFiles()?.size ?: 0
+    /** Written beside and renamed over, so the uploader never reads (and then deletes) a half-written record. */
+    private fun writeAtomic(target: File, text: String) {
+        target.parentFile?.mkdirs()
+        val tmp = File(target.parentFile, target.name + ".part")
+        tmp.writeText(text)
+        if (!tmp.renameTo(target)) { tmp.delete(); error("rename") }
+    }
+
+    private fun queued(): List<File> = queue.listFiles { f -> f.name.endsWith(".json") }?.sortedBy { it.name }.orEmpty()
+
+    /** Local records, for the export that tools/ml/import_contrib.py reads. */
+    fun saved(): List<File> = sessions.listFiles { f -> f.name.endsWith(".json") }?.sortedBy { it.name }.orEmpty()
+
+    fun pending(): Int = queued().size
 
     /** Starts sending in the background unless already sending; waits longer after each failure, up to an hour. */
+    @Synchronized
     fun kick() {
         if (flusher?.isActive == true || base.isEmpty()) return
         flusher = scope.launch(Dispatchers.IO) {
@@ -96,7 +120,7 @@ class Contributions(
     private fun sendBatch(): Boolean {
         val token = vault.get() ?: return false
         if (!online() || !consented) return false
-        val files = queue.listFiles()?.sortedBy { it.name }?.take(BATCH).orEmpty()
+        val files = queued().take(BATCH)
         if (files.isEmpty()) return true
         val records = files.mapNotNull { f -> runCatching { kotlinx.serialization.json.Json.parseToJsonElement(f.readText()) }.getOrNull() }
         val body = buildJsonObject {

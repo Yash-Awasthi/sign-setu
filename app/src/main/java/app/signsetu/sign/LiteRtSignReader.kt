@@ -27,12 +27,20 @@ class LiteRtSignReader(spec: String, model: ByteArray, override val words: Map<S
     override val spellOdds: Float? = s.spellOdds
     private val interpreter = Interpreter(ByteBuffer.allocateDirect(model.size).order(ByteOrder.nativeOrder()).also { it.put(model); it.rewind() })
     // onnx2tf may reorder the two inputs; the raw one is told apart by its width.
-    private val rawInput = (0 until interpreter.inputTensorCount).first { interpreter.getInputTensor(it).shape().last() == RAW }
+    private val rawInput = guarded {
+        (0 until interpreter.inputTensorCount).firstOrNull { interpreter.getInputTensor(it).shape().last() == RAW } ?: error("inputs")
+    }
 
     init {
-        require(s.format == 3 && s.facePoints.size * 2 == RAW - 154) { "format" }
-        require(interpreter.getOutputTensor(0).shape().last() == labels.size) { "labels" }
+        guarded {
+            // rawFrames divides by frames - 1.
+            require(s.format == 3 && s.frames >= 2 && s.facePoints.size * 2 == RAW - 154) { "format" }
+            require(interpreter.getOutputTensor(0).shape().last() == labels.size) { "labels" }
+        }
     }
+
+    /** A spec that does not fit the model is rejected without leaking the native interpreter. */
+    private inline fun <T> guarded(check: () -> T): T = try { check() } catch (e: Throwable) { interpreter.close(); throw e }
 
     override fun read(frames: List<LandmarkFrame>): List<SignGuess> {
         val z = logits(frames) ?: return emptyList()
@@ -54,6 +62,8 @@ class LiteRtSignReader(spec: String, model: ByteArray, override val words: Map<S
         return out[0]
     }
 
+    // Under the same lock as [logits]: closing mid-inference frees the native graph while it runs.
+    @Synchronized
     override fun close() = interpreter.close()
 }
 

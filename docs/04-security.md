@@ -6,7 +6,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 
 1. Subject data cannot be read from a lost, stolen or shared phone without the officer's credential.
 2. Subject data does not leak through backups, screenshots (in the final release build), logs, notifications, the clipboard or other apps.
-3. Data leaves the phone only as an encrypted report or a contact link on the officer's action, as encrypted frames to a bonded stage device, or as masked text to the assistant service after the officer switched it on and allowed it for the session. Debug builds add one more path: a volunteer's Record signs landmarks, sent to the gateway only with their opt-in.
+3. Data leaves the phone only as an encrypted report or a contact link on the officer's action, as encrypted frames to a bonded stage device, or as masked text to the assistant service after the officer switched it on and allowed it for the session, or to the department's own station over iroh while the officer has the station link on: audio, signs, text for its model, and conversations the officer sends ([18](18-station.md)). Debug builds add one more path: a volunteer's Record signs landmarks, sent to the gateway only with their opt-in.
 4. Every release is built from reviewed code, scanned and traceable to an audited build.
 
 ## 2. Controls
@@ -21,7 +21,8 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | No personal data in Logcat; release builds strip `android.util.Log` calls (`proguard-rules.pro`); the four remaining log lines carry exception classes or timings only; no crash SDK. | CERT-In 6.2.5 |
 | Every text field asks the keyboard for no personalised learning (`AppRoot.NoPersonalisedLearning`); the enrolment code field is a password field. | MASVS-STORAGE-2 |
 | Only the interpreter's contact ever reaches the clipboard, on the officer's tap. | MASVS-STORAGE-2 |
-| DataStore `settings` and the plain preference files `locale` and `clock` hold settings only. The gateway token and the officer's custom endpoint key are each wrapped by their own Keystore key (`KeystoreVault`) in `noBackupFilesDir`. | MASVS-STORAGE-1 |
+| DataStore `settings` and the plain preference files `locale` and `clock` hold settings only. The gateway token, the officer's custom endpoint key and the phone's iroh key are each wrapped by their own Keystore key (`KeystoreVault`) in `noBackupFilesDir`. A temporary Keystore error (typical just after boot) never deletes a stored file; a truncated one is caught explicitly. The wrapped database key is flushed to disk before it replaces the old file. | MASVS-STORAGE-1 |
+| Keys and secrets typed in a dialog (the access key, the developer AI key) are held in memory only, never in saved instance state. The report's drawings are decoded downsampled, so a hostile drawing cannot exhaust memory. | MASVS-STORAGE-2 |
 | Retention purge with `PRAGMA secure_delete` on and a truncated journal; while the app is locked the whole store is destroyed once even the newest session is past retention (the retention sweep, also run hourly by `RetentionJob`). | DPDP s.8(7) |
 
 ### 2.2 Cryptography
@@ -40,7 +41,8 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | `OfficerAuth`: platform `BiometricPrompt` with `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` (API 30+), device credential on API 29, before the store opens, before a session is left, ended, exported or deleted, and before Clear all data. One confirmation covers the next 60 s; a lock forgets it. A phone with no secure lock skips the prompt. | MASVS-AUTH-2, AUTH-3 |
 | Relock after 5 minutes in the background, 30 inside a session; a relock, crash or restart always asks again. | MASVS-AUTH-2 |
 | The KEK needs no prompt but is created with `setUnlockedDeviceRequired(true)`; Android invalidating it (lock removed or reset) deletes the unreadable store and tells the officer once. | MASVS-AUTH-2 |
-| Gateway: one-time enrolment codes (stored as SHA-256 on the server), per-address and global wrong-code limits, a random 256-bit bearer token (stored as SHA-256 on the server), optional token life (`TOKEN_TTL_DAYS`, 0 in production: tokens do not expire), admin revocation; admin and reviewer routes need an OIDC token with the right realm role. | MASVS-AUTH-1 |
+| A key file that is truncated or opens with no key counts as lost: the store is reset and the officer told once, rather than failing every unlock. The report's device signing key prefers StrongBox, then the TEE, then a TEE key without attestation, so reports are always sealed (`DeviceSeal`). | MASVS-AUTH-2 |
+| Gateway: one-time enrolment codes (stored as SHA-256 on the server), per-address and global wrong-code limits, a random 256-bit bearer token (stored as SHA-256 on the server), optional token life (`TOKEN_TTL_DAYS`, 0 in production: tokens do not expire), admin revocation; admin and reviewer routes need an OIDC token with the right realm role (30 s clock leeway). The `Bearer` scheme is matched case-insensitively and any other scheme is refused with 401. Per-address rate limits treat an IPv6 /64 as one address. | MASVS-AUTH-1 |
 
 ### 2.4 Network
 
@@ -48,7 +50,9 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | --- | --- |
 | INTERNET is used only by the online assistant client (`UrlHttp`): HTTPS only, cleartext refused by the network security config and by `UrlHttp`, system trust anchors only, validated networks only. Nothing connects unless the build has a gateway, or the officer has saved their own service, and the officer has switched the assistant on. | MASVS-NETWORK-1 |
 | Session text goes only after the officer allows it once per session; names, details, emails, links, PAN-like ids and long numbers are masked first (`Pseudonymizer`). The gateway accepts only the app's own system prompts. Speaking typed text (`OnlineAssistant.speak`) sends the officer's own words, up to 500 characters and not masked, to the gateway's `/v1/speak` under the same switch and permission. | MASVS-NETWORK-1, PRIVACY-1 |
-| No certificate pinning; the design depends on the production host and CA ([14](14-attestation-and-pinning.md)). | MASVS-NETWORK-2 (gap) |
+| Gateway replies carry `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`; every request has a 70 s deadline and speech streams 60 s; the header limit is 64 KiB. Logs record the matched route pattern, never the raw path, so a signer id in `DELETE /v1/contrib/{signer}` is never logged. | MASVS-NETWORK-1 |
+| Station computer, section 2.9: its own certificate is pinned by the phone, and iroh traffic is end-to-end encrypted to the brain's key. No relay other than the department's is ever contacted. | MASVS-NETWORK-1, NETWORK-2 |
+| No certificate pinning for the gateway; the design depends on the production host and CA ([14](14-attestation-and-pinning.md)). | MASVS-NETWORK-2 (gap for the gateway) |
 
 ### 2.5 Platform interaction
 
@@ -91,6 +95,18 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | The resume secret is memory only and zeroed on Bye, window expiry, lock and end; the peer address is pinned for resume. | MASVS-CRYPTO-2 |
 | The stage device stores nothing about a session, never opens the store, reads signs itself and sends words only; the officer phone re-encodes drawings. LINK rows hold the peer model, version, content hash prefix and 4 hex of the hashed address, never the Bluetooth name. | MASVS-STORAGE-1; JJ Act s.74 |
 
+### 2.9 Station computer
+
+| Control | Source |
+| --- | --- |
+| Off by default; the officer turns it on. Over iroh the phone and brain are authenticated by key and the traffic is QUIC, end-to-end encrypted to the brain's key. A relay sees the two addresses, the brain's public key, timing and sizes, never content ([16](16-relay.md)). | MASVS-NETWORK-1 |
+| The brain uses only the department's relay (`--relay`); with none configured it uses no relay and no n0 service. The phone uses the relay named in the ticket and uses no relay when the ticket names an n0 relay (`*.iroh.link`, matched by host; an unparsable URL counts as n0). | MASVS-NETWORK-1, PRIVACY-2 |
+| On the station network the brain serves HTTPS with a self-signed P-256 certificate; the phone trusts that certificate's SHA-256 pin and nothing else. Only private addresses are served (IPv4-mapped IPv6 addresses are judged by their IPv4 range). LAN pairing accepts IPv6 unique-local addresses. | MASVS-NETWORK-2 |
+| Every request needs the bearer token, checked on each heartbeat. An empty or damaged token file gets a new token and an empty token is never accepted. Per-address wrong-token counting, and a per-phone rate limit over iroh (`x-signsetu-peer`). Rotating the token (`--rotate-token`) makes every phone pair again. | MASVS-AUTH-1 |
+| The brain's certificate, token, `pairing.txt` and `iroh.key` are written owner-only (0600) from the start and replaced in one step, so a crash cannot leave a broken `iroh.key` (which would change the brain's identity). `status.sh` and `status.ps1` pass the token on stdin, not on a command line. | MASVS-STORAGE-1 |
+| Input to the brain is bounded: request paths are decoded and rejected if they contain `..`, backslashes or control characters; chat messages carry only role and content (system, user or assistant; content up to 32 KB); WAV headers with zero channels or rate are refused; a stored file is read back at most 256 MB; inbox names that are Windows device names are prefixed. | MASVS-CODE-4 |
+| The phone caps station replies at 8 MB on both paths, bounds every stream with timeouts and closes only the connection a failed call used. The phone's iroh key is made once per install in `noBackupFilesDir/iroh.bin` under the Keystore key `signsetu.iroh.key`; a relay `[access]` allowlist names its endpoint id. | MASVS-CODE-4, CRYPTO-2 |
+
 ## 3. MASVS v2 checklist
 
 Status from code and configuration; dynamic testing by the empanelled auditor confirms it (§7).
@@ -105,7 +121,7 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | AUTH-2 Local authentication | Partial: the prompt gates actions; the DEK is not bound to the prompt by a CryptoObject (accepted: officers share no device credential, and the KEK still needs an unlocked phone) | `OfficerAuth`, `DatabaseKey` | 0018, 0326 |
 | AUTH-3 Step-up for sensitive actions | Implemented for leave, end, export, delete, clear; switching the online assistant on is gated by a notice, not the prompt | `OfficerAuth` call sites | 0327 |
 | NETWORK-1 Secure traffic | Implemented | `UrlHttp`, `network_security_config.xml` | 0019, 0217, 0233 |
-| NETWORK-2 Identity pinning | Gap until the production host is fixed | [14](14-attestation-and-pinning.md) | 0020, 0021 |
+| NETWORK-2 Identity pinning | Gap for the gateway until the production host is fixed; the station's certificate is pinned | [14](14-attestation-and-pinning.md) | 0020, 0021 |
 | PLATFORM-1 IPC | Implemented | Merged manifest (§2.5) | 0007, 0250, 0251 |
 | PLATFORM-2 WebViews | Implemented: bundled page only, no network, no file access, two-method bridge | `ui/avatar/Avatar.kt` | 0028 |
 | PLATFORM-3 UI | Implemented in the final release build | FLAG_SECURE (`secureScreen`), overlay filter, pinning | 0035, 0289 |
@@ -117,7 +133,7 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | RESILIENCE-2 Anti-tampering | Partial: signing only | | 0040, 0224 |
 | RESILIENCE-3 Anti-static analysis | Implemented: R8 | `app/build.gradle.kts` | 0045 |
 | RESILIENCE-4 Anti-dynamic analysis | Gap | NOTE E-5 | 0039, 0263 |
-| PRIVACY-1 Minimisation | Implemented | Landmarks memory only; no identity columns; masked online text | 0254, 0255 |
+| PRIVACY-1 Minimisation | Implemented | Landmarks only from sign windows, no face mesh, deleted with the session; no identity columns; masked online text | 0254, 0255 |
 | PRIVACY-2 No identification | Implemented | No identifiers; no analytics; MediaPipe statistics stubbed | 0318 |
 | PRIVACY-3 Transparency | Implemented | First run, online notice, per-session consent, not-a-statement notice | 0256 |
 | PRIVACY-4 Control | Implemented | Retention, delete, Clear all data | 0319 |
@@ -130,6 +146,8 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | KEK `signsetu.kek.unlocked` | Android Keystore, non-exportable, unlocked-device only | On reinstall, or when Android drops it | Store deleted, new keys made, officer told once |
 | KEK `signsetu.kek.open` | Keystore, only while the phone has no secure lock | Moved under the unlocked-only key at the first unlock with a lock | Same |
 | Gateway token key `signsetu.gateway.token` | Keystore, wraps `gw.bin` | On Clear of the token (401) | Device enrols again with a new code |
+| Phone iroh key `signsetu.iroh.key` | Keystore, wraps `iroh.bin` (the phone's station-link identity) | Never, unless the file is lost; reinstall or a backup restore makes a new one | The phone gets a new endpoint id; the relay allowlist, if any, is updated |
+| Brain keys (`iroh.key`, certificate, token) | The brain's state folder, owner-only | `--rotate-token` for the token; delete `iroh.key` for a new identity | Every phone pairs again |
 | Service key key `signsetu.assist.key` | Keystore, wraps `assist.bin` (custom API endpoint) | When the officer removes or replaces the service | Officer enters the key again |
 | Export passphrase | Shown once | Per export | Report unreadable; export again |
 | Link keys | ECDH and HKDF per link, memory only | Every link and resume | Link closes; pair again |
@@ -151,6 +169,7 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | OS and apps | Malicious intent or provider access | E | Nothing exported beyond the launcher and the job service | |
 | Bluetooth | Rogue, relayed or wrong stage device | S, T | Bonded only, commit-then-reveal, code and check number, AEAD, strict counters | Officer misreads the check number |
 | Network | Traffic read or altered | I, T | TLS, validated networks, masking | User-installed CA until pinning |
+| Station link | Rogue or relayed brain, token guessing, a hostile relay | S, I | Key-authenticated end-to-end QUIC, certificate pin on the LAN, bearer token on every request, rate limits, the department's own relay only | A copied state folder impersonates the brain; keep it private |
 | Network | Stolen enrolment code or token used elsewhere | S | Single-use codes, rate limits, revocation, optional token life | Attestation not built |
 | Gateway | Prompt injection through the assist proxy | E | System prompts allow-listed; size limits | User text is still free text |
 | Build | Compromised dependency or signing key | T | Lockfile, verification, scans, SBOM, key only in repository secrets and offline copies | A compromised GitHub account could sign a release |
@@ -167,9 +186,10 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | F-3 | No debugger or hook detection | Medium | Open; a department MASVS-R decision (NOTE E-5) |
 | F-4 | Root check is a heuristic | Low | Warn-only by design, so an emergency is never blocked |
 | F-5 | An assistant key compiled into an APK | Closed | The build no longer has a key field; keys live on the gateway or in the officer's Keystore |
-| F-6 | The record digest joins fields without a separator | Low | The hash chain (length-prefixed fields) is the integrity control; the digest only matches re-exports |
+| F-6 | The record digest joins fields without a separator | Low | The hash chain (length-prefixed fields) is the integrity control; the digest only matches re-exports. Left unchanged so digests on reports already handed out stay valid |
 | F-7 | Testing builds allow screenshots | Medium until the final build | `secureScreen=true` for the final release APK |
 | F-8 | Bundled BouncyCastle ships a trust-all `X509TrustManager` class (lint) | Info | Unused by the app; R8 keeps it only if referenced |
+| F-9 | The event-log tree carries an odd leaf up to the next level; it is not RFC 6962's tree shape, though it uses its 0x00 and 0x01 prefixes | Info | Left unchanged: changing it would break existing reports; the verifier and the station use the same rule |
 
 ## 7. Testing plan
 

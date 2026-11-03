@@ -46,6 +46,8 @@ Pass: janky frames at most 5%; 90th percentile frame time at most 16.6 ms on tie
 
 Pass: temperature rise at most 5 °C; battery drop at most 6% in 15 minutes; thermal status never `SEVERE`. Under severe heat the app itself drops analysis to one frame per 250 ms.
 
+Run it with the station link off (the default). Repeat once with the link on and a station paired: the open connection and its heartbeat keep the radio awake, so record that battery drop separately; it is not a pass criterion.
+
 ### 2.4 Memory
 
 Requirement: under 300 MB during a session.
@@ -54,7 +56,7 @@ Requirement: under 300 MB during a session.
 adb shell dumpsys meminfo in.signsetu
 ```
 
-Read `TOTAL PSS` with the stage camera on and the on-device assistant model not loaded. Pass: under 300 MB; leaving the stage for the start screen frees at least 40 MB within 5 s.
+Read `TOTAL PSS` with the stage camera on, the on-device assistant model not loaded and the station link off. Pass: under 300 MB; leaving the stage for the start screen frees at least 40 MB within 5 s.
 
 ## 3. Record
 

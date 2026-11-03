@@ -39,3 +39,11 @@ __pycache__/
 brain/brain.json
 brain/brain.env
 brain/.venv/
+# The department's sign reader is placed on each station, never committed.
+brain/isl/*
+!brain/isl/README.txt
+
+# Gateway build output
+/gateway/*.exe
+/gateway/gateway
+/gateway/*.exe

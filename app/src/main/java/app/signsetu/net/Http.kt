@@ -29,28 +29,10 @@ class UrlHttp : Http {
     override fun call(method: String, url: String, body: String?, bearer: String?, timeoutMs: Int): Reply? {
         if (!url.startsWith("https://")) return null
         val bytes = body?.toByteArray()
-        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = method
-            // The bearer token is for this host alone; an API has no reason to redirect.
-            instanceFollowRedirects = false
-            connectTimeout = minOf(10_000, timeoutMs)
-            // A full report from the free gateway model takes 30 to 45 s; the officer waits behind a progress dialog.
-            readTimeout = timeoutMs
-            setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            // The configured service can insist on a particular client; the value comes from the build, not from here.
-            setRequestProperty("User-Agent", BuildConfig.ASSIST_UA)
-            // Anthropic-style services read the key from x-api-key and want an API version; everything else takes a bearer token.
-            if (bearer != null && (url.endsWith("/messages") || "://api.anthropic.com/" in url)) {
-                setRequestProperty("x-api-key", bearer)
-                setRequestProperty("anthropic-version", "2023-06-01")
-            } else bearer?.let { setRequestProperty("Authorization", "Bearer $it") }
-            if (bytes != null) {
-                doOutput = true
-                // A declared length lets the gateway refuse an oversized body before reading it, and avoids chunked uploads.
-                setFixedLengthStreamingMode(bytes.size)
-            }
-        }
+        // A mistyped address or a key pasted with a line break fails here, as no reply rather than a crash.
+        val conn = try { URL(url).openConnection() as HttpURLConnection } catch (e: java.io.IOException) { return null }
         return try {
+            conn.setup(method, url, bearer, timeoutMs, bytes)
             bytes?.let { conn.outputStream.use { o -> o.write(it) } }
             val stream = if (conn.responseCode in 200..299) conn.inputStream else conn.errorStream
             // Replies are a line of text or a short JSON object; a larger body is cut rather than filling memory.
@@ -58,8 +40,32 @@ class UrlHttp : Http {
             Reply(conn.responseCode, raw.decodeToString(), raw)
         } catch (e: java.io.IOException) {
             null
+        } catch (e: IllegalArgumentException) {
+            null
         } finally {
             conn.disconnect()
+        }
+    }
+
+    private fun HttpURLConnection.setup(method: String, url: String, bearer: String?, timeoutMs: Int, bytes: ByteArray?) {
+        requestMethod = method
+        // The bearer token is for this host alone; an API has no reason to redirect.
+        instanceFollowRedirects = false
+        connectTimeout = minOf(10_000, timeoutMs)
+        // A full report from the free gateway model takes 30 to 45 s; the officer waits behind a progress dialog.
+        readTimeout = timeoutMs
+        setRequestProperty("Content-Type", "application/json; charset=utf-8")
+        // The configured service can insist on a particular client; the value comes from the build, not from here.
+        setRequestProperty("User-Agent", BuildConfig.ASSIST_UA)
+        // Anthropic-style services read the key from x-api-key and want an API version; everything else takes a bearer token.
+        if (bearer != null && (url.endsWith("/messages") || "://api.anthropic.com/" in url)) {
+            setRequestProperty("x-api-key", bearer)
+            setRequestProperty("anthropic-version", "2023-06-01")
+        } else bearer?.let { setRequestProperty("Authorization", "Bearer $it") }
+        if (bytes != null) {
+            doOutput = true
+            // A declared length lets the gateway refuse an oversized body before reading it, and avoids chunked uploads.
+            setFixedLengthStreamingMode(bytes.size)
         }
     }
 }

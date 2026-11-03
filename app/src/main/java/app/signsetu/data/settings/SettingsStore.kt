@@ -14,8 +14,10 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 
 enum class InterpreterApp { NONE, WHATSAPP, SANDES }
 
@@ -62,6 +64,10 @@ data class AppSettings(
     val appLock: Boolean = !app.signsetu.BuildConfig.TEST_UNLOCKED,
     /** AUTO, FLAT or RIVE (ui.avatar.AvatarStyle). */
     val avatarStyle: String = "AUTO",
+    /** The station link (iroh): off until the officer turns it on, so the phone holds no connection for nothing. */
+    val stationLink: Boolean = false,
+    /** Station features the officer keeps on this phone (BrainClient.Feature keys); empty sends all the station has. */
+    val stationOff: Set<String> = emptySet(),
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -80,6 +86,9 @@ private val Context.store by preferencesDataStore(
 
 /** Zero means keep until deleted and must survive; any other value is held to the choices on offer. */
 fun storedRetention(hours: Int): Int = if (hours <= 0) 0 else hours.coerceIn(4, 72)
+
+/** The signing speed range the stage offers; a non-finite value falls back to normal speed. */
+fun storedGestureSpeed(speed: Float): Float = if (speed.isFinite()) speed.coerceIn(0.25f, 1.5f) else 1f
 
 class SettingsStore(private val context: Context) {
     private object Keys {
@@ -104,9 +113,14 @@ class SettingsStore(private val context: Context) {
         val blockScreenshots = booleanPreferencesKey("block_screenshots")
         val appLock = booleanPreferencesKey("app_lock")
         val avatarStyle = stringPreferencesKey("avatar_style")
+        val stationLink = booleanPreferencesKey("station_link")
+        val stationOff = stringSetPreferencesKey("station_off")
     }
 
-    val settings: Flow<AppSettings> = context.store.data.map { it.toSettings() }
+    // A read error (not corruption, which the handler repairs) falls back to defaults instead of crashing collectors.
+    val settings: Flow<AppSettings> = context.store.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it.toSettings() }
 
     suspend fun current(): AppSettings = settings.first()
 
@@ -118,7 +132,7 @@ class SettingsStore(private val context: Context) {
     }
     suspend fun setNewestSessionAt(time: Long) = context.store.edit { it[Keys.newestSession] = time }
     suspend fun setCameraEnabled(on: Boolean) = context.store.edit { it[Keys.camera] = on }
-    suspend fun setGestureSpeed(speed: Float) = context.store.edit { it[Keys.gestureSpeed] = speed }
+    suspend fun setGestureSpeed(speed: Float) = context.store.edit { it[Keys.gestureSpeed] = storedGestureSpeed(speed) }
     suspend fun setStageDevice() = context.store.edit { it[Keys.stageDevice] = true }
     suspend fun setIslReorder(on: Boolean) = context.store.edit { it[Keys.islReorder] = on }
     suspend fun setOnlineAssistant(on: Boolean) = context.store.edit { it[Keys.onlineAssistant] = on }
@@ -133,6 +147,8 @@ class SettingsStore(private val context: Context) {
     suspend fun setBlockScreenshots(on: Boolean) = context.store.edit { it[Keys.blockScreenshots] = on }
     suspend fun setAppLock(on: Boolean) = context.store.edit { it[Keys.appLock] = on }
     suspend fun setAvatarStyle(style: String) = context.store.edit { it[Keys.avatarStyle] = style }
+    suspend fun setStationLink(on: Boolean) = context.store.edit { it[Keys.stationLink] = on }
+    suspend fun setStationOff(keys: Set<String>) = context.store.edit { it[Keys.stationOff] = keys }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -140,12 +156,12 @@ class SettingsStore(private val context: Context) {
 
     private fun Preferences.toSettings() = AppSettings(
         firstRunDone = this[Keys.firstRun] ?: false,
-        retentionHours = this[Keys.retention] ?: AppSettings.DEFAULT_RETENTION_HOURS,
+        retentionHours = this[Keys.retention]?.let(::storedRetention) ?: AppSettings.DEFAULT_RETENTION_HOURS,
         interpreterApp = this[Keys.interpreterApp]?.let { runCatching { InterpreterApp.valueOf(it) }.getOrNull() } ?: InterpreterApp.NONE,
         interpreterContact = this[Keys.interpreterContact] ?: "",
         newestSessionAt = this[Keys.newestSession] ?: 0L,
         cameraEnabled = this[Keys.camera] ?: true,
-        gestureSpeed = this[Keys.gestureSpeed] ?: 1f,
+        gestureSpeed = this[Keys.gestureSpeed]?.let(::storedGestureSpeed) ?: 1f,
         favourites = this[Keys.favourites].orEmpty(),
         stageDevice = this[Keys.stageDevice] ?: false,
         islReorder = this[Keys.islReorder] ?: true,
@@ -160,6 +176,8 @@ class SettingsStore(private val context: Context) {
         blockScreenshots = this[Keys.blockScreenshots] ?: app.signsetu.BuildConfig.SECURE_SCREEN,
         appLock = this[Keys.appLock] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
         avatarStyle = this[Keys.avatarStyle] ?: "AUTO",
+        stationLink = this[Keys.stationLink] ?: false,
+        stationOff = this[Keys.stationOff] ?: emptySet(),
     )
 }
 

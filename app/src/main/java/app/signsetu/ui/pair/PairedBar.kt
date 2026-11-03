@@ -1,5 +1,8 @@
 package app.signsetu.ui.pair
 
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import app.signsetu.ui.session.clockTime
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -96,7 +99,8 @@ fun PairedBar(pane: PairedPane, ui: SessionUi, content: ContentBundle, officerLa
 @Composable
 private fun Alert(text: String, vararg actions: Pair<String, () -> Unit>) {
     val colors = MaterialTheme.colorScheme
-    Surface(shape = MaterialTheme.shapes.medium, color = colors.errorContainer, contentColor = colors.onErrorContainer) {
+    // Announced as it appears: a lost or ended second screen must reach an officer using TalkBack.
+    Surface(shape = MaterialTheme.shapes.medium, color = colors.errorContainer, contentColor = colors.onErrorContainer, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
         Column(Modifier.fillMaxWidth().padding(start = Spacing.md, end = Spacing.xs, top = Spacing.sm)) {
             Text(text, style = MaterialTheme.typography.titleSmall)
             Row(Modifier.align(Alignment.End)) {

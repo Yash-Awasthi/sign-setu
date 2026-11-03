@@ -4,6 +4,7 @@ import app.signsetu.data.content.SignLanguage
 import app.signsetu.net.Http
 import app.signsetu.net.Reply
 import app.signsetu.net.TokenVault
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -69,6 +70,21 @@ class OnlineAssistant(
     /** The service the officer saved in Settings; it replaces the gateway and the build's default until removed. */
     @Volatile var custom: Direct? = null
     private val direct: Direct? get() = custom ?: builtIn
+
+    /** The station's local model (BrainClient.chat), asked before the gateway or a custom service. It is the
+     * department's own computer, reached end-to-end encrypted, so the text goes to it unmasked. */
+    @Volatile var station: (suspend (system: String, user: String, maxTokens: Int, timeoutMs: Int) -> String?)? = null
+
+    /** The station's reply, or null when it has no model up, failed or threw: the caller then falls through. */
+    suspend fun askStation(system: String, user: String, maxTokens: Int, timeoutMs: Int): String? {
+        val ask = station?.takeIf { stationUp() } ?: return null
+        return try {
+            ask(system, user, maxTokens, timeoutMs)?.takeIf { it.isNotBlank() }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+    }
+
+    /** Whether the station's latest heartbeat offered its model. */
+    @Volatile var stationUp: () -> Boolean = { false }
 
     /** Called on any thread; the UI shows it as a toast. */
     var onNotice: (Notice) -> Unit = {}
@@ -159,7 +175,8 @@ class OnlineAssistant(
         withContext(Dispatchers.IO) { runCatching { http.call("GET", "$base/healthz", null, null, WARM_TIMEOUT_MS) } }
     }
 
-    suspend fun ask(system: String, user: String, names: Collection<String>, maxTokens: Int = 800, details: Collection<String> = emptyList(), timeoutMs: Int = 60_000, retry: Boolean = true): String? {
+    suspend fun ask(system: String, user: String, names: Collection<String>, maxTokens: Int = 800, details: Collection<String> = emptyList(), timeoutMs: Int = 60_000, retry: Boolean = true, viaStation: Boolean = true): String? {
+        if (viaStation && stationUp()) askStation(system, user, maxTokens, timeoutMs)?.let { return it }
         if (!available || !enabled()) return null
         // Keystore decryption and the token file are disk work; never do them on the caller's UI thread.
         val d = direct

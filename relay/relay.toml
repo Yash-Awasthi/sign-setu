@@ -1,0 +1,10 @@
+# The department's iroh relay for Sign Setu; set up as in docs/16-relay.md. Linux: copy to /etc/iroh-relay/relay.toml; Windows: setup.ps1 fills it in.
+# Open to any endpoint: it forwards ciphertext only, and the brain's token gates every request.
+enable_quic_addr_discovery = true
+enable_metrics = false
+
+[tls]
+cert_mode = "LetsEncrypt"
+hostname = "relay.example.gov.in"
+contact = "it-cell@example.gov.in"
+cert_dir = "/var/lib/iroh-relay"

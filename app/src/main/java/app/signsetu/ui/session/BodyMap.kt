@@ -1,5 +1,7 @@
 package app.signsetu.ui.session
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.aspectRatio
@@ -51,6 +53,8 @@ fun BodyMap(selected: BodyLocation?, onSelect: (BodyLocation) -> Unit, selectedL
     val fill = MaterialTheme.colorScheme.surfaceContainerHigh
     val highlight = MaterialTheme.colorScheme.primary
     val description = stringResource(R.string.gl_body_map)
+    // The tap detector lives across recompositions; it must call the caller's latest handler.
+    val select by rememberUpdatedState(onSelect)
     Canvas(
         modifier
             .widthIn(max = 260.dp)
@@ -60,7 +64,7 @@ fun BodyMap(selected: BodyLocation?, onSelect: (BodyLocation) -> Unit, selectedL
                 selectedLabel?.let { stateDescription = it }
             }
             .pointerInput(Unit) {
-                detectTapGestures { p -> hit(p.x / size.width, p.y / size.height * USED)?.let(onSelect) }
+                detectTapGestures { p -> hit(p.x / size.width, p.y / size.height * USED)?.let(select) }
             },
     ) {
         drawFigure(outline, fill)

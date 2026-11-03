@@ -9,6 +9,7 @@ import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,16 +85,25 @@ class AutoPilot(
         }
     }
 
-    fun approve() = act {
-        val p = (state.value as? Conv.Proposed)?.p ?: return@act
+    // Both act only on the proposal on screen at the tap: a double tap must not approve or drop the next one too.
+    fun approve() {
+        val seen = proposedId()
+        act { if (proposedId() == seen) approveNow() }
+    }
+
+    fun skip() {
+        val seen = proposedId() ?: return
+        act { if (proposedId() == seen && skipProposed(SKIP_OFFICER)) propose() }
+    }
+
+    private fun proposedId(): String? = (state.value as? Conv.Proposed)?.p?.q?.id
+
+    private suspend fun approveNow() {
+        val p = (state.value as? Conv.Proposed)?.p ?: return
         mark(EventType.APPROVED, EventSource.OFFICER, p.q)
         // Showing a held proposal sends the phone back to the subject, so auto mode carries on from there.
         running = handsOff
         show(p.q)
-    }
-
-    fun skip() = act {
-        if (skipProposed(SKIP_OFFICER)) propose()
     }
 
     fun pause() = act {
@@ -115,6 +125,12 @@ class AutoPilot(
         if (state.value == Conv.Off) return@act
         system(AutoKey.WRAP_UP)
         propose()
+    }
+
+    /** The session is closing: every timer stops and nothing more is proposed, shown or logged. */
+    fun halt() {
+        pace++
+        turnOff()
     }
 
     /** Called before a manual Show is logged, so the record says the officer chose something else. */
@@ -289,6 +305,9 @@ class AutoPilot(
     private suspend fun guarded(block: suspend () -> Unit) {
         try {
             block()
+        } catch (e: CancellationException) {
+            // A CancellationException is an IllegalStateException; swallowing it would keep a cancelled action running.
+            throw e
         } catch (_: IllegalStateException) {
             turnOff()
         } catch (_: SQLException) {

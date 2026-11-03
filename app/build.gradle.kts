@@ -33,8 +33,8 @@ android {
         applicationId = "in.signsetu"
         minSdk = 29
         targetSdk = 37
-        versionCode = 20
-        versionName = "0.8.4"
+        versionCode = 21
+        versionName = "0.8.4.iroh"
         buildConfigField("long", "BUILD_EPOCH_DAY", "${providers.of(EpochDay::class.java) {}.get()}L")
         buildConfigField("boolean", "SECURE_SCREEN", "$secureScreen")
         buildConfigField("boolean", "TEST_UNLOCKED", "false")

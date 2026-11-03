@@ -1,5 +1,6 @@
 package app.signsetu.ui.session
 
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -106,12 +108,13 @@ internal fun bodyHit(side: BodySide, x: Float, y: Float): BodyTouch? {
  * is kept with its exact place, so the record shows where the finger went, not only a named part. */
 @Composable
 fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier) {
-    var side by remember { mutableStateOf(BodySide.FRONT) }
+    var side by rememberSaveable { mutableStateOf(BodySide.FRONT) }
     val marks = remember { mutableStateListOf<BodyTouch>() }
     val ink = Color(0xFF4F4539)
     val skin = Color(0xFFFFE8D2)
     val mark = Color(0xFFD32F2F)
     val description = stringResource(R.string.hurt_map)
+    val touch by rememberUpdatedState(onTouch)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(side == BodySide.FRONT, { side = BodySide.FRONT }, { Text(stringResource(R.string.hurt_front)) }, shape = RoundedCornerShape(14.dp))
@@ -122,7 +125,7 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier) {
                 .semantics { contentDescription = description }
                 .pointerInput(side) {
                     detectTapGestures { p ->
-                        bodyHit(side, p.x / size.width, p.y / size.height)?.let { t -> marks += t; onTouch(t) }
+                        bodyHit(side, p.x / size.width, p.y / size.height)?.let { t -> marks += t; touch(t) }
                     }
                 },
         ) {

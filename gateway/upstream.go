@@ -78,6 +78,10 @@ func upstreamAssist(c Config, client *http.Client) Assist {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode >= 300 {
+			// A provider out of quota is busy, not broken; on 429 the phone waits longer before its one retry.
+			if resp.StatusCode == http.StatusTooManyRequests {
+				return "", &upstreamError{http.StatusTooManyRequests, "assistant busy"}
+			}
 			return "", &upstreamError{http.StatusBadGateway, "assistant failed"}
 		}
 		raw, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
@@ -170,16 +174,31 @@ func upstreamSpeak(c Config, client *http.Client) Speak {
 			"voice":         map[string]string{"mode": "id", "id": voice},
 			"output_format": map[string]any{"container": "mp3", "sample_rate": 22050, "bit_rate": 32000}}
 		headers := map[string]string{"X-API-Key": c.CartesiaKey, "Cartesia-Version": "2025-04-16"}
+		// The whole stream, not only the headers, ends inside the server's write timeout.
+		ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 		resp, err := post(ctx, client, "https://api.cartesia.ai/tts/bytes", body, headers)
 		if err != nil {
+			cancel()
 			return nil, transportError(err, "speech")
 		}
 		if resp.StatusCode >= 300 {
 			resp.Body.Close()
+			cancel()
 			return nil, &upstreamError{http.StatusBadGateway, "speech failed"}
 		}
-		return resp.Body, nil
+		return cancelOnClose{resp.Body, cancel}, nil
 	}
+}
+
+type cancelOnClose struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (c cancelOnClose) Close() error {
+	err := c.ReadCloser.Close()
+	c.cancel()
+	return err
 }
 
 // newUpstreamClient is shared by every call, so connections and TLS sessions to the providers are reused.

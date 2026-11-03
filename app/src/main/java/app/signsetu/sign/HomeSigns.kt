@@ -43,6 +43,8 @@ class HomeSigns(private val embed: (List<LandmarkFrame>) -> FloatArray? = { null
 }
 
 private fun cosine(a: FloatArray, b: FloatArray): Float {
+    // A sign taught under another reader (a language or format switch) has another width: no match, not a crash.
+    if (a.size != b.size) return 0f
     var ab = 0f; var aa = 0f; var bb = 0f
     for (i in a.indices) { ab += a[i] * b[i]; aa += a[i] * a[i]; bb += b[i] * b[i] }
     return if (aa > 0f && bb > 0f) ab / sqrt(aa * bb) else 0f

@@ -2,6 +2,7 @@ package app.signsetu.gloss
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -138,7 +139,7 @@ class Phrasebook(json: String) {
             val field = fields.firstOrNull { it != "cap" } ?: lang
             val value = when (slot) {
                 "NAME", "NUM" -> f.label.replaceFirstChar(Char::uppercase)
-                else -> slots[slot]?.get(f.label)?.get(field)?.jsonPrimitive?.content ?: f.label
+                else -> (slots[slot]?.get(f.label)?.get(field) as? JsonPrimitive)?.content ?: f.label
             }
             (if (cap) value.replaceFirstChar(Char::uppercase) else value) + sep
         }

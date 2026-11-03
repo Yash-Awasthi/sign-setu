@@ -264,6 +264,8 @@ class StageLink(
     }
 
     private fun send(bytes: ByteArray) {
+        // The peer drops the link on an oversize frame, and a resume would resend it forever.
+        if (bytes.size > FRAME_CAP - GCM_TAG) { log("frame dropped: ${bytes.size} bytes"); return }
         outgoing?.trySend(bytes)
     }
 

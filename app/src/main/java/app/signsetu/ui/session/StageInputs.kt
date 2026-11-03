@@ -219,9 +219,10 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
         }
         val stage = LocalStageColors.current
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-            InkColors.forEach { c ->
+            InkColors.forEachIndexed { i, c ->
+                val name = stringResource(R.string.stage_ink_colour, i + 1, InkColors.size)
                 Box(
-                    Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.RadioButton) { ink = c }.semantics { selected = ink == c },
+                    Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.RadioButton) { ink = c }.semantics { selected = ink == c; contentDescription = name },
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(Modifier.size(if (ink == c) 40.dp else 32.dp).background(c, CircleShape).border(if (ink == c) 3.dp else 0.dp, Color.White, CircleShape))

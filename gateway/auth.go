@@ -16,6 +16,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,7 @@ type RateLimiter struct {
 	now       func() time.Time
 	mu        sync.Mutex
 	hits      map[string][]time.Time
+	swept     time.Time
 }
 
 func newRateLimiter(perMinute int, now func() time.Time) *RateLimiter {
@@ -94,7 +96,9 @@ func (l *RateLimiter) Take(key string) (ok, filled bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := l.now()
-	if len(l.hits) > maxTrackedKeys {
+	// A full sweep is O(keys), so a flood of distinct keys pays for it at most once a second.
+	if len(l.hits) > maxTrackedKeys && now.Sub(l.swept) >= time.Second {
+		l.swept = now
 		for k := range l.hits {
 			l.recent(k, now)
 		}
@@ -115,7 +119,7 @@ func clientKey(r *http.Request, trustedHops int) string {
 		peer = r.RemoteAddr
 	}
 	if trustedHops <= 0 {
-		return peer
+		return addrKey(peer)
 	}
 	var parts []string
 	for _, h := range r.Header.Values("X-Forwarded-For") {
@@ -126,13 +130,29 @@ func clientKey(r *http.Request, trustedHops int) string {
 		}
 	}
 	if len(parts) < trustedHops {
-		return peer
+		return addrKey(peer)
 	}
-	return parts[len(parts)-trustedHops]
+	return addrKey(parts[len(parts)-trustedHops])
 }
 
+// addrKey folds an IPv6 address to its /64, which one subscriber usually holds whole, so rotating addresses inside it
+// does not dodge a per-address limit. IPv4 and anything unparsable is kept as given.
+func addrKey(s string) string {
+	a, err := netip.ParseAddr(s)
+	if err != nil || !a.Is6() || a.Is4In6() {
+		return s
+	}
+	p, _ := a.WithZone("").Prefix(64)
+	return p.String()
+}
+
+// bearer is the token after an RFC 7235 "Bearer" scheme, matched case-insensitively; empty for any other scheme.
 func bearer(r *http.Request) string {
-	return strings.TrimSpace(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
+	scheme, token, ok := strings.Cut(strings.TrimSpace(r.Header.Get("Authorization")), " ")
+	if !ok || !strings.EqualFold(scheme, "Bearer") {
+		return ""
+	}
+	return strings.TrimSpace(token)
 }
 
 // KeySource returns the public key that signed a token; production fetches it from the issuer's JWKS.
@@ -155,7 +175,10 @@ func jwksSource(issuer string, client *http.Client) KeySource {
 			return nil, errors.New("unknown signing key")
 		}
 		fetched = time.Now()
-		fresh, err := fetchJWKS(ctx, client, url)
+		// Detached from the caller, so one admin closing the page does not leave every admin without keys for a minute.
+		fctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		defer cancel()
+		fresh, err := fetchJWKS(fctx, client, url)
 		if err != nil {
 			return nil, err
 		}
@@ -225,7 +248,8 @@ func roleClaims(ctx context.Context, keys KeySource, c Config, token, role strin
 	claims := jwt.MapClaims{}
 	_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (any, error) { return keys(ctx, t) },
 		jwt.WithValidMethods([]string{"RS256", "ES256"}), jwt.WithAudience(c.OIDCAudience), jwt.WithIssuer(c.OIDCIssuer),
-		jwt.WithExpirationRequired())
+		// A little leeway, so a few seconds of clock drift from the identity provider is not a refused token.
+		jwt.WithExpirationRequired(), jwt.WithLeeway(30*time.Second))
 	if err != nil {
 		return http.StatusUnauthorized, "invalid token"
 	}

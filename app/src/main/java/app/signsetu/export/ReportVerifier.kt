@@ -22,11 +22,11 @@ suspend fun checkReport(context: Context, uri: Uri, passphrase: String, repo: Se
     }.getOrNull() ?: return@withContext null
     val sessionId = payload.split('|').getOrNull(1)
     val current = sessionId?.let { repo?.currentSeal(it)?.line }
-    val check = EvidenceIntegrity.checkSeal(payload, { line, sig, key -> DeviceSeal.verify(line, sig, Base64.decode(key, Base64.NO_WRAP)) }, current)
+    val check = EvidenceIntegrity.checkSeal(payload, { line, sig, key -> runCatching { DeviceSeal.verify(line, sig, Base64.decode(key, Base64.NO_WRAP)) }.getOrDefault(false) }, current)
     // Stored seals can stand while a row under them was edited: with the session still here, its rows are re-walked.
     if (check == EvidenceIntegrity.SealCheck.MATCHES_DEVICE && repo != null && sessionId != null) {
         val session = repo.session(sessionId).first()
-        if (session != null && !EvidenceIntegrity.verifyChain(session, repo.eventsNow(sessionId), { repo.audio(it) }) { repo.drawing(it) }.intact) {
+        if (session != null && !EvidenceIntegrity.verifyChain(session, repo.eventsNow(sessionId), { repo.audio(it) }, { repo.landmarks(it) }) { repo.drawing(it) }.intact) {
             return@withContext EvidenceIntegrity.SealCheck.RECORD_ALTERED
         }
     }

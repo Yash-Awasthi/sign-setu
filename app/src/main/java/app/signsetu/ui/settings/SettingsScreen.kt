@@ -2,32 +2,20 @@ package app.signsetu.ui.settings
 
 import androidx.compose.runtime.remember
 import app.signsetu.ui.components.OfficerAuth
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
 import app.signsetu.assistant.ModelStore
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.material3.ListItemDefaults
-import app.signsetu.ui.components.OfficerCard
-import app.signsetu.ui.session.SectionLabel
-import androidx.compose.foundation.layout.ColumnScope
 import android.app.Activity
 import app.signsetu.data.settings.OfficerLocale
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -39,10 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import kotlin.math.roundToInt
 import androidx.compose.material3.Switch
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Text
@@ -55,7 +40,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -67,8 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.signsetu.BuildConfig
 import app.signsetu.R
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import app.signsetu.assistant.AiProbe
 import app.signsetu.net.UrlHttp
@@ -76,9 +58,6 @@ import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.data.settings.AppSettings
 import app.signsetu.data.settings.InterpreterApp
 import app.signsetu.data.settings.SettingsStore
-import app.signsetu.data.settings.ThemeMode
-import app.signsetu.data.settings.ColorTheme
-import app.signsetu.data.settings.interpreterUrl
 import app.signsetu.ui.theme.Spacing
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -86,11 +65,11 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import app.signsetu.ui.components.GuardedAlertDialog
 
-private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, CLOUD, AIKEY, DEVELOPER, CHARACTER }
+private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, CLOUD, AIKEY, DEVELOPER }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onSignToType: (() -> Unit)? = null, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?, onRecordSigns: (() -> Unit)? = null, repo: app.signsetu.data.session.SessionRepository? = null) {
+fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: ModelStore, onBack: () -> Unit, onClearAll: () -> Unit, onPractice: () -> Unit, onSignToType: (() -> Unit)? = null, onAppearance: () -> Unit, onCallInterpreter: (() -> Unit)?, onRecordSigns: (() -> Unit)? = null, repo: app.signsetu.data.session.SessionRepository? = null, onHelp: (() -> Unit)? = null) {
     val loaded by store.settings.collectAsStateWithLifecycle(initialValue = null)
     val s = loaded ?: return
     val scope = rememberCoroutineScope()
@@ -133,6 +112,11 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding(),
         ) {
+            onHelp?.let { help ->
+                Group(R.string.shell_help_group) {
+                    Item(stringResource(R.string.shell_help_title), stringResource(R.string.shell_help_summary), onClick = help)
+                }
+            }
             Group(R.string.practice_title) {
                 Item(stringResource(R.string.practice_title), stringResource(R.string.practice_settings_summary), onClick = onPractice)
                 onSignToType?.let { Item(stringResource(R.string.sign_to_type), stringResource(R.string.sign_to_type_summary), onClick = it) }
@@ -155,8 +139,10 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
             Group(R.string.settings_stage) {
                 SwitchItem(R.string.settings_camera, R.string.settings_camera_summary, s.cameraEnabled) { on -> scope.launch { store.setCameraEnabled(on) } }
                 SpeedItem(s.gestureSpeed) { v -> scope.launch { store.setGestureSpeed(v) } }
-                SwitchItem(R.string.settings_isl_reorder, R.string.settings_isl_reorder_summary, s.islReorder) { on -> scope.launch { store.setIslReorder(on) } }
-                Item(stringResource(R.string.settings_character), stringResource(characterLabel(s.avatarStyle)), note = stringResource(R.string.settings_character_note)) { dialog = Dialog.CHARACTER }
+                SwitchItem(R.string.settings_isl_reorder, if (s.islReorder) R.string.settings_isl_reorder_on else R.string.settings_isl_reorder_off, s.islReorder) { on -> scope.launch { store.setIslReorder(on) } }
+                // On is the 3D character, off the drawn one, lighter and used by itself where 3D cannot run.
+                val threeD = s.avatarStyle != "FLAT"
+                SwitchItem(R.string.settings_character_3d, if (threeD) R.string.settings_character_3d_on else R.string.settings_character_3d_off, threeD) { on -> scope.launch { store.setAvatarStyle(if (on) "AUTO" else "FLAT") } }
             }
             Group(R.string.settings_online) {
                 if (available) ListItem(
@@ -176,7 +162,9 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                     stringResource(R.string.settings_developer_mode),
                     if (s.devAiUrl.isBlank()) stringResource(R.string.settings_developer_summary) else "${s.devAiModel} · ${s.devAiUrl.removePrefix("https://")}",
                 ) { dialog = Dialog.DEVELOPER }
-                app.signsetu.ui.components.LocalBrain.current?.let { b -> BrainItems(b) }
+                app.signsetu.ui.components.LocalBrain.current?.let { b ->
+                    BrainItems(b, s.stationOff, onOff = { off -> scope.launch { store.setStationOff(off) } }, onLink = { on -> b.setOn(on); scope.launch { store.setStationLink(on) } })
+                }
             }
             Group(R.string.settings_offline) {
                 ModelImport(models, ModelLabels.ASSISTANT)
@@ -236,14 +224,6 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
             onSave = { scope.launch { store.setInterpreter(s.interpreterApp, it) }; dialog = null },
             onDismiss = { dialog = null },
         )
-        Dialog.CHARACTER -> ChoiceDialog(
-            title = stringResource(R.string.settings_character),
-            options = listOf("AUTO", "FLAT") + (if (app.signsetu.ui.avatar.AvatarRenderer.riveAvailable(context)) listOf("RIVE") else emptyList()),
-            selected = s.avatarStyle,
-            label = { stringResource(characterLabel(it)) },
-            onPick = { scope.launch { store.setAvatarStyle(it) }; dialog = null },
-            onDismiss = { dialog = null },
-        )
         Dialog.RETENTION -> ChoiceDialog(
             title = stringResource(R.string.settings_retention),
             options = AppSettings.RETENTION_CHOICES,
@@ -281,7 +261,8 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
             },
         )
         Dialog.AIKEY -> {
-            var key by rememberSaveable { mutableStateOf("") }
+            // Not saveable: the access key must not outlive the dialog in saved instance state.
+            var key by remember { mutableStateOf("") }
             GuardedAlertDialog(
                 onDismissRequest = { dialog = null },
                 title = { Text(stringResource(R.string.settings_online_assistant_key)) },
@@ -334,298 +315,4 @@ fun languageName(tag: String) = when (tag) {
     "en" -> R.string.lang_english
     "hi" -> R.string.lang_hindi
     else -> R.string.settings_lang_system
-}
-
-
-@StringRes
-private fun appName(app: InterpreterApp) = when (app) {
-    InterpreterApp.NONE -> R.string.settings_not_set
-    InterpreterApp.WHATSAPP -> R.string.settings_whatsapp
-    InterpreterApp.SANDES -> R.string.settings_sandes
-}
-
-@Composable
-internal fun Group(@StringRes title: Int, content: @Composable ColumnScope.() -> Unit) {
-    SectionLabel(stringResource(title), Modifier.padding(start = Spacing.xxl, end = Spacing.lg, top = Spacing.xl, bottom = Spacing.sm))
-    OfficerCard(Modifier.padding(horizontal = Spacing.lg), padding = 0.dp) {
-        val divider = MaterialTheme.colorScheme.outlineVariant
-        // Opaque items 1 dp apart over a line drawn from 16 dp: inset dividers without one per call site.
-        Column(
-            Modifier.drawBehind { drawRect(divider, topLeft = Offset(Spacing.lg.toPx(), 0f)) },
-            verticalArrangement = Arrangement.spacedBy(1.dp),
-            content = content,
-        )
-    }
-}
-
-@Composable
-private fun SpeedItem(speed: Float, onChange: (Float) -> Unit) {
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_gesture_speed, speed)) },
-        supportingContent = {
-            Slider(
-                value = speed,
-                onValueChange = { onChange((it * 4).roundToInt() / 4f) },
-                valueRange = 0.25f..1.5f,
-                steps = 4,
-            )
-        },
-        colors = ItemColors,
-    )
-}
-
-@Composable
-internal fun SwitchItem(@StringRes title: Int, @StringRes summary: Int, checked: Boolean, onChange: (Boolean) -> Unit) {
-    ListItem(
-        headlineContent = { Text(stringResource(title)) },
-        supportingContent = { Text(stringResource(summary)) },
-        colors = ItemColors,
-        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
-        modifier = Modifier.toggleable(checked, role = Role.Switch, onValueChange = onChange),
-    )
-}
-
-@Composable
-private fun LanguageItem(@StringRes title: Int, @StringRes summary: Int, @StringRes badge: Int, warn: Boolean) {
-    val colors = MaterialTheme.colorScheme
-    ListItem(
-        headlineContent = { Text(stringResource(title)) },
-        supportingContent = { Text(stringResource(summary)) },
-        colors = ItemColors,
-        trailingContent = {
-            Surface(
-                shape = RoundedCornerShape(4.dp),
-                color = if (warn) colors.errorContainer else colors.primaryContainer,
-                contentColor = if (warn) colors.onErrorContainer else colors.onPrimaryContainer,
-            ) {
-                Text(stringResource(badge), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-            }
-        },
-    )
-}
-
-internal val ItemColors @Composable get() = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
-
-private fun characterLabel(style: String) = when (style) {
-    "FLAT" -> R.string.settings_character_flat
-    "RIVE" -> R.string.settings_character_rive
-    else -> R.string.settings_character_auto
-}
-
-@Composable
-internal fun Item(title: String, summary: String, note: String? = null, destructive: Boolean = false, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    ListItem(
-        headlineContent = { Text(title, color = if (destructive) colors.error else colors.onSurface) },
-        supportingContent = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                if (summary.isNotEmpty()) Text(summary)
-                note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
-            }
-        },
-        colors = ItemColors,
-        modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
-    )
-}
-
-@Composable
-private fun <T> ChoiceDialog(
-    title: String,
-    options: List<T>,
-    selected: T,
-    label: @Composable (T) -> String,
-    onPick: (T) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    GuardedAlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column(Modifier.selectableGroup()) {
-                options.forEach { option ->
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 52.dp)
-                            .selectable(selected = option == selected, onClick = { onPick(option) }, role = Role.RadioButton),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = option == selected, onClick = null)
-                        Text(label(option), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = Spacing.lg))
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
-}
-
-@Composable
-private fun ContactDialog(app: InterpreterApp, initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
-    var value by rememberSaveable { mutableStateOf(initial) }
-    val phone = app == InterpreterApp.WHATSAPP
-    // A WhatsApp entry may also be an https link, which opens as given; nothing else is saved.
-    val valid = if (phone) interpreterUrl(value) != null else value.isNotBlank()
-    GuardedAlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_interpreter_contact)) },
-        text = {
-            OutlinedTextField(
-                value = value,
-                onValueChange = { value = it },
-                singleLine = true,
-                label = {
-                    Text(stringResource(if (phone) R.string.settings_contact_whatsapp_hint else R.string.settings_contact_sandes_hint))
-                },
-                isError = phone && value.isNotBlank() && !valid,
-                supportingText = if (phone && value.isNotBlank() && !valid) {
-                    { Text(stringResource(R.string.settings_contact_invalid)) }
-                } else {
-                    null
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        },
-        confirmButton = { TextButton(onClick = { onSave(value.trim()) }, enabled = valid) { Text(stringResource(R.string.save)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
-}
-
-/** Names and licences stay in English: they are legal identifiers, not interface text. */
-private val LICENCES = listOf(
-    "OpenMoji 17.0.0" to "CC BY-SA 4.0. HfG Schwäbisch Gmünd, openmoji.org",
-    "Mulberry Symbols" to "CC BY-SA 4.0. Steve Lee, mulberrysymbols.org",
-    "Indic Parler-TTS (recorded prompts)" to "Apache 2.0. AI4Bharat, IIT Madras",
-    "INCLUDE (sign reader training data)" to "CC BY 4.0. \"INCLUDE: A Large Scale Dataset for Indian Sign Language Recognition\", " +
-        "A. Sridhar, R. G. Ganesan, P. Kumar, M. Khapra (IIT Madras, AI4Bharat), doi:10.5281/zenodo.4010759. " +
-        "Changed: a sign classifier was trained on its landmarks.",
-    "OpenHands pose release" to "CC BY 4.0. AI4Bharat, \"OpenHands v1: Labelled ISLR datasets, Poses\", zenodo.org/records/6674324. " +
-        "Changed: poses resampled and normalised.",
-    "PopSign ASL v1.0 (ASL reader training data, ASL signs)" to "CC BY 4.0. Starner, Forbes, So, Martin, Sridhar, Deshpande et al. (Georgia Tech, NTID), " +
-        "NeurIPS 2023 Datasets and Benchmarks, signdata.cc.gatech.edu; frames from huggingface.co/datasets/sign/popsign-images. " +
-        "Changed: landmarks extracted, a sign classifier trained, signers retargeted as keyframes on the app's characters, mirrored to right-hand dominant where the left hand led.",
-    "Multimodal ISL alphabet dataset (ISL letter reader training data)" to "CC BY 4.0. Hambir, Khandagale, Cherian, Gaikwad " +
-        "(Vishwakarma Institute of Information Technology, Pune), Mendeley Data, doi:10.17632/2tj6c7pzfk.1. " +
-        "Changed: hand landmarks extracted from the English and number photographs, a letter classifier trained.",
-    "ISLAN (ISL letter reader test data)" to "CC BY 4.0. Mendeley Data, doi:10.17632/rc349j45m5.1. " +
-        "Changed: photographs turned upright and hand landmarks extracted to measure the letter reader; not shipped.",
-    "ISL-CSLTR (ISL sentence clips)" to "CC BY 4.0. \"ISL-CSLTR: Indian Sign Language Dataset for Continuous Sign Language Translation and Recognition\", " +
-        "Elakkiya R., Natarajan B. (SASTRA), Mendeley Data 2021, doi:10.17632/kcmpdxky7p.1. " +
-        "Changed: sentence videos converted to landmark clips.",
-    "ASLNow! fingerspelling landmarks" to "MIT. sid220, huggingface.co/datasets/sid220/asl-now-fingerspelling. " +
-        "Changed: letters chained into synthetic spelling to train a reader, and posed as the ASL alphabet.",
-    "MediaPipe and the Holistic landmarker model" to "Apache 2.0. Google LLC",
-    "Sign Setu symbols (original drawings)" to "CC BY-SA 4.0. Drawn in OpenMoji style for this app",
-    "SQLCipher for Android" to "BSD 3-Clause. Zetetic LLC",
-    "PdfBox-Android" to "Apache 2.0. Tom Roush; Apache PDFBox",
-    "AndroidX, Jetpack Compose, Media3" to "Apache 2.0. The Android Open Source Project",
-    "Kotlin, kotlinx.coroutines, kotlinx.serialization" to "Apache 2.0. JetBrains",
-    "CameraX" to "Apache 2.0. The Android Open Source Project",
-    "Protocol Buffers for Java (protobuf-java)" to "BSD 3-Clause. Google LLC",
-    "BouncyCastle" to "MIT-style Bouncy Castle licence. The Legion of the Bouncy Castle Inc.",
-    "llama.cpp" to "MIT. Georgi Gerganov and contributors, ggml-org/llama.cpp",
-    "Baloo 2 font" to "SIL Open Font Licence 1.1. Ek Type",
-    "INCLUDE sign retargeting" to "CC BY 4.0. Motions retargeted from the INCLUDE landmark samples; see INCLUDE above.",
-    "ISLRTC Indian Sign Language Dictionary" to "Government Open Data License - India. Indian Sign Language Research and Training Centre, " +
-        "Government of India, data.gov.in. Changed: motions of words missing from INCLUDE retargeted onto the app's characters; no video is included.",
-    "Indian Sign Language video dataset (sign reader training data)" to "MIT. Prasad Shet, kaggle.com/datasets/prasadshet/indian-sign-language-video-dataset. " +
-        "Changed: landmarks extracted from the videos to train the reader; no video is included.",
-    "ISL-Fingerspelling (ISL name spelling reader training data)" to "CC BY-NC 4.0. \"Continuous Fingerspelling Dataset for Indian Sign Language\", " +
-        "WSLP at AACL-IJCNLP 2025. Changed: landmarks extracted from the videos to train the reader; no video is included. Non-commercial use only.",
-    "Google Isolated Sign Language Recognition (ASL reader training data)" to "CC BY 4.0. Google, kaggle.com/competitions/asl-signs.",
-    "Google ASL Fingerspelling (ASL spelling reader training data)" to "CC BY 4.0. Google, kaggle.com/competitions/asl-fingerspelling.",
-)
-
-@Composable
-private fun LicencesDialog(onDismiss: () -> Unit) {
-    GuardedAlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_licences)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                LICENCES.forEach { (name, licence) ->
-                    Column {
-                        Text(name, style = MaterialTheme.typography.titleSmall)
-                        Text(licence, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                Text(
-                    "Symbols are converted to bitmaps for this app; the converted symbol set is shared under CC BY-SA 4.0.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
-    )
-}
-
-/** The words one model import uses: its state, the import and the removal. */
-internal enum class ModelLabels(
-    /** Headline once installed, and while not: the offline assistant's row is its import action until then. */
-    @StringRes val title: Int, @StringRes val emptyTitle: Int,
-    @StringRes val ready: Int, @StringRes val missing: Int, @StringRes val memory: Int, @StringRes val unsupported: Int,
-    @StringRes val importing: Int, @StringRes val bad: Int, @StringRes val remove: Int,
-) {
-    ASSISTANT(
-        R.string.settings_assistant, R.string.settings_assistant_import,
-        R.string.settings_assistant_ready, R.string.settings_assistant_missing, R.string.settings_assistant_memory, R.string.settings_assistant_unsupported,
-        R.string.settings_assistant_importing, R.string.settings_assistant_bad, R.string.settings_assistant_remove,
-    ),
-    SENTENCE(
-        R.string.settings_sentence_helper, R.string.settings_sentence_helper,
-        R.string.settings_sentence_ready, R.string.settings_sentence_missing, R.string.settings_assistant_memory, R.string.settings_assistant_unsupported,
-        R.string.settings_assistant_importing, R.string.settings_assistant_bad, R.string.settings_sentence_remove,
-    ),
-}
-
-/** One model file's state with its own import and removal. The department hands out the file; it is copied in and
- * checked against the store's known hashes, never downloaded. */
-@Composable
-internal fun ModelImport(models: ModelStore, labels: ModelLabels) {
-    val scope = rememberCoroutineScope()
-    var modelState by remember { mutableStateOf(models.state()) }
-    var importing by remember { mutableStateOf(false) }
-    var badModel by remember { mutableStateOf(false) }
-    val pickModel = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            importing = true
-            badModel = false
-            scope.launch {
-                badModel = !models.import(uri)
-                modelState = models.state()
-                importing = false
-            }
-        }
-    }
-    val missing = modelState == ModelStore.State.NOT_INSTALLED
-    val status = when {
-        importing -> labels.importing
-        badModel -> labels.bad
-        else -> when (modelState) {
-            ModelStore.State.READY -> labels.ready
-            ModelStore.State.NOT_INSTALLED -> labels.missing
-            ModelStore.State.TOO_LITTLE_MEMORY -> labels.memory
-            ModelStore.State.UNSUPPORTED -> labels.unsupported
-        }
-    }
-    val canImport = !importing && missing
-    ListItem(
-        headlineContent = { Text(stringResource(if (missing) labels.emptyTitle else labels.title)) },
-        supportingContent = {
-            Text(
-                stringResource(status),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (badModel) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        },
-        colors = ItemColors,
-        modifier = if (canImport) Modifier.clickable(role = Role.Button) { pickModel.launch(arrayOf("*/*")) } else Modifier,
-    )
-    if (!importing && modelState == ModelStore.State.READY) {
-        Item(stringResource(labels.remove), "", destructive = true) {
-            scope.launch { models.remove(); modelState = models.state() }
-        }
-    }
 }

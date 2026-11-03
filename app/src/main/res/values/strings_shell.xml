@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shell_help_group">Help</string>
+    <string name="shell_help_title">Help and walkthrough</string>
+    <string name="shell_help_summary">Every screen, setting and call step explained</string>
+    <string name="shell_take_tour">Take the tour</string>
+    <string name="shell_take_tour_summary">A short walk through a session, the chat and the call</string>
+</resources>

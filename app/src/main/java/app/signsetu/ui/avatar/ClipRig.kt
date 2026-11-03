@@ -60,7 +60,8 @@ internal fun framePose(v: FloatArray, build: Build): Pose {
         val (fx, fy) = unit(cx(wrist) - cx(elbow), cy(wrist) - cy(elbow))
         val wx = ex + fx * build.foreArm
         val wy = ey + fy * build.foreArm
-        val present = (0 until 21).any { k -> x(base + k) != 0f || y(base + k) != 0f }
+        // A clip frame cut short of this hand's block would index past its end in shapeOf and rollOf.
+        val present = v.size >= (base + 21) * 3 && (0 until 21).any { k -> x(base + k) != 0f || y(base + k) != 0f }
         val shape = if (present) shapeOf(v, base) else HandShape.ALL.getValue("RELAX")
         val angle = if (present) {
             val dx = cx(base + 9) - cx(base)

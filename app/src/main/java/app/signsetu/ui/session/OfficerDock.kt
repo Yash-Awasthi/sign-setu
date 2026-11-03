@@ -174,11 +174,9 @@ internal fun Dock(
             val lastAnswerEvent = remember(ui.events) { ui.events.lastOrNull { it.type in AnswerEvents } }
             // Keyed on the answer, not the log size: rows logged after an answer must not drop its suggestions.
             var aiFollowUps by remember(lastAnswerEvent?.id) { mutableStateOf<List<String>>(emptyList()) }
-            var aiLoadingFollowUps by remember { mutableStateOf(false) }
 
             LaunchedEffect(lastAnswerEvent?.id) {
                 if (lastAnswerEvent != null && !typing) {
-                    aiLoadingFollowUps = true
                     val suggestions = cloud.followUps(
                         lastAnswerEvent.text ?: lastAnswerEvent.cardId ?: "answered",
                         ui.session.profile == Profile.YOUNG_CHILD,
@@ -186,7 +184,6 @@ internal fun Dock(
                         subjectDetails(ui.events, content, officerLang),
                     )
                     aiFollowUps = suggestions.distinct()
-                    aiLoadingFollowUps = false
                 }
             }
 
@@ -211,6 +208,7 @@ internal fun Dock(
                                 color = MaterialTheme.colorScheme.tertiaryContainer,
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f)),
                                 modifier = Modifier
+                                    .minimumInteractiveComponentSize()
                                     .clickable { onText(prompt) }
                                     .semantics { role = Role.Button; contentDescription = prompt },
                             ) {

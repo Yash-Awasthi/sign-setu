@@ -96,7 +96,10 @@ func openStore(ctx context.Context, url string) (*pgStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := pool.Exec(ctx, schema); err != nil {
+	// An unreachable database fails the start in bounded time, so the host restarts it instead of waiting on TCP.
+	setup, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	if _, err := pool.Exec(setup, schema); err != nil {
 		pool.Close()
 		return nil, err
 	}

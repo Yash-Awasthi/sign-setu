@@ -79,6 +79,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.window.DialogProperties
+import app.signsetu.ui.help.HelpScreen
 import app.signsetu.data.content.Localized
 
 internal enum class Tool { GESTURE, BOARD, DRAW, LANGUAGE, ATTACH, RULES, DICTIONARY }
@@ -103,6 +109,12 @@ internal fun MorePage(
     val pending = ui.pending
     val subjectLang = ui.session.subjectLang
     val wide = LocalDensity.current.fontScale > 1.3f
+    var help by rememberSaveable { mutableStateOf(false) }
+    if (help) {
+        Dialog(onDismissRequest = { help = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            Surface(Modifier.fillMaxSize()) { HelpScreen(onBack = { help = false }, startTopic = "call") }
+        }
+    }
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(vertical = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         auto?.let { AutoPanel(it, ui, content, officerLang, showSwitch = true) }
         SectionLabel(stringResource(R.string.more_questions), Modifier.padding(horizontal = Spacing.lg))
@@ -132,7 +144,7 @@ internal fun MorePage(
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).clickable(role = Role.Button) { query = label },
+                            modifier = Modifier.minimumInteractiveComponentSize().clip(RoundedCornerShape(20.dp)).clickable(role = Role.Button) { query = label },
                         ) {
                             Text(
                                 label,
@@ -199,6 +211,7 @@ internal fun MorePage(
             MoreRow(rememberVectorPainter(Icons.Filled.Search), stringResource(if (ui.signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary), null, first = onCounsel == null) { onTool(Tool.DICTIONARY) }
             onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, onClick = it) }
             MoreRow(rememberVectorPainter(Icons.Filled.Refresh), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
+            MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.stage_help), null) { help = true }
         }
         OfficerCard(Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.sm), padding = 0.dp) {
             MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.ExitToApp), stringResource(R.string.officer_end), null, first = true, onClick = onFinish)

@@ -79,6 +79,7 @@ carries `"enabled": false`.
 | Checker and ladder | `gloss/Ladder.kt`: the faithfulness check, four rungs, alternatives, and a confirmation for risky intents |
 | Speaker gender | Set on the start card and logged as a system row; Hindi shows one form, or both while unset |
 | Sentence helper | `gloss/SentenceHelper.kt`: an optional model imported in Settings (`ModelStore` "sentence"), Qwen2.5 0.5B Instruct Q4_K_M (491 MB, Apache-2.0, hash in `KNOWN_SENTENCE_MODELS`); it only reorders sentences that already passed the checker, when the ladder is unsure |
+| Station reading | With the station link on, the station's sign reader reads a closed window first (about 2.5 s at most, then the phone's own reading stands); the phone's own reader runs beside it ([18-station.md](18-station.md)) |
 | Camera reads | Nods, shakes, thumbs, points at the body, held fingers, palm, shrug and courtesies reach the officer as "Camera read" on the phone and a paired second screen; the person is never asked to confirm |
 | Face and mouth | `camera/SplitTracker.kt` gives head rotation (nods and shakes) and 19 mouth blendshapes per frame to the recorder |
 | Debug recorder | `gloss/DebugRecorder.kt`, debug builds only: each sign window as landmarks and top-5 logits, the decisions taken, and the agreement of the two reader formats; never video |

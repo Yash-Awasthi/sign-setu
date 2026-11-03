@@ -119,6 +119,7 @@ fun RecordSignsScreen(tracker: LandmarkTracker?, contributions: Contributions, o
     var deleted by remember { mutableStateOf<Boolean?>(null) }
     val frames = remember { CopyOnWriteArrayList<LandmarkFrame>() }
     val sessionId = remember { System.currentTimeMillis() }
+    var lastSave by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     Scaffold(topBar = {
         TopAppBar(title = { Text(stringResource(R.string.record_title)) }, navigationIcon = {
@@ -166,7 +167,12 @@ fun RecordSignsScreen(tracker: LandmarkTracker?, contributions: Contributions, o
             val prompt = prompts.getOrNull(index)
             if (prompt == null || phase == "done") {
                 Text(stringResource(R.string.record_done, index), style = MaterialTheme.typography.titleMedium)
-                if (contributions.consented) Text(stringResource(R.string.record_queued, contributions.pending()))
+                // Saves write in the background; counted once the last one has landed.
+                val queued by produceState<Int?>(null, lastSave) {
+                    lastSave?.join()
+                    value = withContext(Dispatchers.IO) { contributions.pending().takeIf { contributions.consented } }
+                }
+                queued?.let { Text(stringResource(R.string.record_queued, it)) }
                 Button(onClick = onBack) { Text(stringResource(R.string.back)) }
                 return@Column
             }
@@ -205,7 +211,7 @@ fun RecordSignsScreen(tracker: LandmarkTracker?, contributions: Contributions, o
                             if (gloss.isNotEmpty() && taken.isNotEmpty()) {
                                 val eventId = sessionId * 100 + index
                                 val window = DebugRecorder.record(eventId, null, listOf(SignSegment(taken)), BuildConfig.VERSION_NAME)
-                                contributions.save("prompt", sessionMeta(contributions, sessionId, index, prompt, hand, light), window, gloss)
+                                lastSave = contributions.save("prompt", sessionMeta(contributions, sessionId, index, prompt, hand, light), window, gloss)
                             }
                             index++
                             phase = if (index >= prompts.size) "done" else "ready"

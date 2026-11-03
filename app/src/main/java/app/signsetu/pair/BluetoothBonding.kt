@@ -78,7 +78,9 @@ class BluetoothBonding(private val context: Context) {
                 }
             }
             ContextCompat.registerReceiver(context, r, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED), ContextCompat.RECEIVER_EXPORTED)
-            if (!d.createBond()) trySend(BluetoothDevice.BOND_NONE)
+            // A bond that completed before the receiver registered sends no broadcast.
+            if (d.bondState == BluetoothDevice.BOND_BONDED) trySend(BluetoothDevice.BOND_BONDED)
+            else if (!d.createBond()) trySend(BluetoothDevice.BOND_NONE)
             awaitClose { context.unregisterReceiver(r) }
         }
         return withTimeoutOrNull(timeoutMs) { states.first { it != BluetoothDevice.BOND_BONDING } == BluetoothDevice.BOND_BONDED } ?: false

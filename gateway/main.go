@@ -71,6 +71,8 @@ func serve(log *slog.Logger) error {
 		// The assistant may take its whole 30 s; the phone itself waits up to 60 s.
 		WriteTimeout: 75 * time.Second,
 		IdleTimeout:  120 * time.Second,
+		// Room for an administrator's access token; the default megabyte only helps a flood.
+		MaxHeaderBytes: 64 << 10,
 	}
 	errc := make(chan error, 1)
 	go func() { errc <- srv.ListenAndServe() }()

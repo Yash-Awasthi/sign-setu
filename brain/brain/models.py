@@ -14,14 +14,27 @@ from .languages import INDICTRANS2, WHISPER, flores
 class Asr:
     """faster-whisper with INT8 weights on the CPU."""
 
-    def __init__(self, size: str = "small"):
+    def __init__(self, size: str):
         self.size = size
         self._model = None
         self._lock = threading.Lock()
+        self.error: str | None = None
 
     @property
     def loaded(self) -> bool:
         return self._model is not None
+
+    def warm(self) -> None:
+        """Loads the model in the background, so the station offers speech to text only once it can do it."""
+        def load():
+            try:
+                with self._lock:
+                    self._get()
+                print(f"Speech to text: faster-whisper {self.size} loaded", flush=True)
+            except Exception as e:  # missing or broken model files: phones keep the recordings without text
+                self.error = f"{type(e).__name__}: {e}"
+                print(f"Speech to text unavailable: faster-whisper {self.size} did not load ({self.error})", flush=True)
+        threading.Thread(target=load, name="asr-load", daemon=True).start()
 
     def _get(self):
         if self._model is None:
@@ -31,17 +44,31 @@ class Asr:
         return self._model
 
     def transcribe(self, audio: bytes, lang: str | None) -> dict:
-        """[audio] is a WAV (decoded here, no ffmpeg) or any format PyAV reads; returns text, detected language and
-        seconds of speech."""
-        seconds = _wav_seconds(audio)
+        """[audio] is a 16-bit PCM WAV, as the phone sends (decoded here, no ffmpeg); returns text, detected language
+        and seconds of speech. Anything else is a ValueError: bad input, not a broken model."""
         samples = _wav_samples(audio)
+        if samples is None:
+            raise ValueError("not a 16-bit PCM WAV")
+        seconds = _wav_seconds(audio)
         with self._lock:
             segments, info = self._get().transcribe(
-                samples if samples is not None else io.BytesIO(audio), language=lang if lang in WHISPER else None, beam_size=1, vad_filter=True,
+                samples, language=lang if lang in WHISPER else None, beam_size=1, vad_filter=True,
                 condition_on_previous_text=False,
             )
             text = " ".join(s.text.strip() for s in segments).strip()
         return {"text": text, "lang": info.language, "lang_probability": round(info.language_probability, 3), "seconds": seconds or info.duration}
+
+    def words(self, samples, lang: str | None, prompt: str = "") -> tuple[list[tuple[float, float, str]], str]:
+        """Words with their start and end in seconds, for 16 kHz float32 [samples]; and the language heard. One greedy
+        decode: the retries at higher temperatures can take ten times as long, too slow for words shown live. Without
+        them a decode can loop on one word; no 6-token run repeats, which still lets a word double ("धीरे धीरे")."""
+        with self._lock:
+            segments, info = self._get().transcribe(
+                samples, language=lang if lang in WHISPER else None, beam_size=1, temperature=(0.0, 0.4), no_repeat_ngram_size=6, vad_filter=True,
+                condition_on_previous_text=False, word_timestamps=True, initial_prompt=prompt or None,
+            )
+            out = [(w.start, w.end, w.word.strip()) for seg in segments for w in (seg.words or []) if w.word.strip()]
+        return out, info.language
 
 
 def _wav_samples(audio: bytes):
@@ -50,15 +77,16 @@ def _wav_samples(audio: bytes):
 
     try:
         with wave.open(io.BytesIO(audio)) as w:
-            if w.getsampwidth() != 2:
+            ch, rate = w.getnchannels(), w.getframerate()
+            # A header claiming no channels or no rate would divide by zero below and read as a broken model.
+            if w.getsampwidth() != 2 or not 1 <= ch <= 8 or not 1000 <= rate <= 384000:
                 return None
             x = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2").astype(np.float32) / 32768.0
-            ch, rate = w.getnchannels(), w.getframerate()
     except (wave.Error, EOFError):
         return None
     if ch > 1:
-        x = x.reshape(-1, ch).mean(axis=1)
-    if rate != 16000:
+        x = x[: len(x) // ch * ch].reshape(-1, ch).mean(axis=1)
+    if rate != 16000 and len(x):
         n = int(len(x) * 16000 / rate)
         x = np.interp(np.linspace(0, len(x) - 1, n), np.arange(len(x)), x).astype(np.float32)
     return x
@@ -68,7 +96,7 @@ def _wav_seconds(audio: bytes) -> float | None:
     try:
         with wave.open(io.BytesIO(audio)) as w:
             return w.getnframes() / float(w.getframerate())
-    except (wave.Error, EOFError):
+    except (wave.Error, EOFError, ZeroDivisionError):
         return None
 
 

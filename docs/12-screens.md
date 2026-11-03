@@ -1,6 +1,6 @@
 # 12. Screen Catalogue
 
-Every screen of the application, captured from the 0.8.1 `standard` debug build on an Android 14 emulator (Pixel 9 profile, 1080 by 2424 pixels, scaled to 720 wide) in a session for a victim who signs, with Hindi as the subject language unless stated. The emulator camera shows its test scene. The final release build blocks screenshots (`secureScreen`, [security](04-security.md) §2.5).
+Every screen of the application, captured from the 0.8.1 `standard` debug build (screens added since are marked No capture yet) on an Android 14 emulator (Pixel 9 profile, 1080 by 2424 pixels, scaled to 720 wide) in a session for a victim who signs, with Hindi as the subject language unless stated. The emulator camera shows its test scene. The final release build blocks screenshots (`secureScreen`, [security](04-security.md) §2.5).
 
 ## 1. Before a session
 
@@ -13,6 +13,7 @@ Every screen of the application, captured from the 0.8.1 `standard` debug build 
 | Home, Signs profile | [05-home-signs.png](screens/05-home-signs.png) | Indian (ISL) or American (ASL) chosen before start |
 | Home, saved sessions | [06-home-saved-sessions.png](screens/06-home-saved-sessions.png) | A finished session listed to open again or delete |
 | Practice | [07-practice-type-and-sign.png](screens/07-practice-type-and-sign.png) | Settings, Type and sign: any sentence signed outside a session, nothing recorded |
+| Take the tour | No capture yet | The last first-run step and the Start screen offer Take the tour, which opens the guided walkthrough |
 | Sign to Type | No capture yet | Settings, Practice: signing to the camera builds a sentence in English and Hindi from read words and held letters; a word's other guesses are a tap away; nothing is recorded |
 
 ## 2. The stage
@@ -33,7 +34,7 @@ These 0.8.1 captures show the earlier stage, every button in view. The stage now
 | Phrase board | [17-stage-phrase-board.png](screens/17-stage-phrase-board.png) | Eight everyday phrases the person can say |
 | Help | [18-stage-help-board.png](screens/18-stage-help-board.png) | The full picture board by category |
 | Pause | [19-stage-pause.png](screens/19-stage-pause.png) | Breathing circle (in 4 s, hold 2 s, out 6 s) and bubbles; only "I'm ready" ends it |
-| Body map | No capture yet | Help, Body: front and back figure; a touch answers as pain with its exact place |
+| Body map | No capture yet | Help, Body: front and back figure; a touch answers as pain with its exact place. The picture board, and this map, turn with the stage when it is rotated; Back closes the board |
 | Sign window | [20-stage-signing.png](screens/20-stage-signing.png) | "Signing…", one dot per sign seen, Done; the character is still loading in this capture |
 | Language finder | [21-stage-language-finder.png](screens/21-stage-language-finder.png) | Seventeen languages in their own scripts |
 
@@ -53,7 +54,8 @@ These 0.8.1 captures show the earlier stage, every button in view. The stage now
 | ASL dictionary | [31-officer-asl-dictionary.png](screens/31-officer-asl-dictionary.png) | Shown when the session signs in ASL |
 | ASL notice | [32-officer-asl-advisory.png](screens/32-officer-asl-advisory.png) | The officer is told how well ASL is read |
 | Session log | [33-officer-session-log.png](screens/33-officer-session-log.png) | Every row with time and kind; notes |
-| Session menu | [34-officer-menu.png](screens/34-officer-menu.png) | Sign language, sitting opposite, skeleton on camera, Finish |
+| Session menu | [34-officer-menu.png](screens/34-officer-menu.png) | Sign language, sitting opposite, skeleton on camera, Help, Finish. The capture predates Help |
+| In-call Help | No capture yet | Menu, Help (or More, Session, Help): the call topic of the in-app guide, full screen |
 | Change profile | [35-officer-change-profile.png](screens/35-officer-change-profile.png) | Role and profile |
 | Second screen | [36-officer-second-screen.png](screens/36-officer-second-screen.png) | Pairing a department device; Find a nearby phone pairs one from inside the app on Android 12 and later |
 | Record their voice | No capture yet | The microphone in the dock: consent first, then hold while the person speaks; the recording joins the record |
@@ -68,7 +70,8 @@ These 0.8.1 captures show the earlier stage, every button in view. The stage now
 | Settings, stage and sign languages | [40-settings-2.png](screens/40-settings-2.png) | Camera, signing speed, ISL order; what ISL and ASL read and sign, and how well |
 | Settings, assistants | [41-settings-3.png](screens/41-settings-3.png) | Online assistant, on-device assistant, records |
 | Settings, records and about | [42-settings-4.png](screens/42-settings-4.png) | Retention, delete all data, appearance, language, licences, version |
-| Settings, newer items | No capture yet | Stage, Character (3D, drawn or Rive); Local AI brain, Station computer (ticket or address); Records, Check a report; Practice, Sign to Type |
+| Settings, newer items | No capture yet | Help, Help and walkthrough (top group); Stage, Character (3D, drawn or Rive); Online, Station computer (ticket or address) with a switch per service; Records, Check a report; Practice, Sign to Type |
+| Help and walkthrough | No capture yet | Searchable topic list: tour, call, chat, settings, records, practice, station computer, privacy; the tour has Next, Back, Done and step dots. Text in [19-walkthrough.md](19-walkthrough.md) |
 | Appearance | [43-settings-appearance.png](screens/43-settings-appearance.png) | Light or dark and the ten colour themes |
 
 ## 5. Not captured

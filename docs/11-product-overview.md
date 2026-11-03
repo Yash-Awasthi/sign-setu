@@ -9,7 +9,7 @@ Sign Setu is an offline Android application that helps a police officer communic
 | Property | Value |
 | --- | --- |
 | Platform | Android 10 (API 29) and later; sign reading on 64-bit phones |
-| Network | Optional: the department gateway, or the officer's own custom API endpoint chosen in the same dialog, only when the officer switches the online assistant on and the phone is online; everything works without it |
+| Network | Optional: the department gateway, or the officer's own custom API endpoint chosen in the same dialog, only when the officer switches the online assistant on and the phone is online; and the station computer, only once paired and switched on (station network, or iroh through the ticket's relay). Everything works without any of them |
 | Languages for the subject | 17 in the language finder, including Chhattisgarhi, Gondi and Halbi; every stage word, question, phrase and picture label in all 17 (drafts beyond English and Hindi); typed English captioned in Hindi on the phone; sign languages ISL and ASL |
 | Officer interface languages | English, Hindi |
 | Release APK | arm64-v8a phone APK and universal APK (arm64-v8a and x86_64); nothing compressed for size |
@@ -58,10 +58,13 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Draw, language finder | A drawing pad for the subject; a grid of greetings in every language |
 | Interpreter call | Opens the department's Sandes or WhatsApp contact; no session data is passed |
 | Second screen | Pairs a department phone or tablet as the subject's screen (§3.3) |
+| Session menu | The three-dot menu: Sign language (ISL or ASL for the rest of the session, after a check), They sit opposite me, Show skeleton on camera, Help (the in-call guide) and Finish session |
 | Notes and log | Officer notes and the full session record |
 | Export | A PDF communication note encrypted with AES-256 under a one-time 16-character password shown once |
-| Settings | Interpreter app and contact; Pin the app, Block screenshots and Ask for fingerprint (each turned off only with the officer's credential); camera mirror, signing speed, ISL word order; the two sign languages with what each reads and signs and how accurately, the sign reader engine; online assistant and its enrolment, assistant model; retention period (4 to 72 hours or keep), delete all data; appearance and colour theme, app language, licences |
-| Practice | Type to sign: any English or Hindi sentence played by the character outside a session, with nothing recorded |
+| Settings | Interpreter app and contact; Pin the app, Block screenshots and Ask for fingerprint (each turned off only with the officer's credential); camera mirror, signing speed (0.25× to 1.5×, 1× by default), ISL word order, 3D or drawn character; the two sign languages with what each reads and signs and how accurately, the sign reader engine; online assistant and its enrolment, station computer and its services, assistant model; retention period (4 to 72 hours or keep), delete all data; appearance and colour theme, app language, licences, Help and walkthrough |
+| Practice | Type to sign: any English or Hindi sentence played by the character outside a session, with nothing recorded. Sign to Type: the person signs to the camera and words build into an English and Hindi sentence; nothing is recorded |
+| Help and walkthrough | An in-app guide in English and Hindi with search: a guided tour, the call, the conversation, every setting, records, practice, the station computer, privacy. Opened from Settings, Help (topic list), the Start screen's Take the tour card, the last first-run step (before unlock), and in the session from the menu, Help, or More, Session (call topic). The text is also in [19-walkthrough.md](19-walkthrough.md) |
+| Station computer | Settings, Online, Station computer: pair by iroh ticket and token (anywhere) or by address, token and pin (station network), then switch on speech to text, sign reading (ISL), AI help and receiving conversations separately. AI captions and replies are tried on the station first, then the phone's model, then the gateway or saved service; a station error falls through, and the phone's own sign reading stands when the station is slow. Ending a session stops any pending auto-mode, question-run or language timer |
 
 ### 3.2 Subject side (the stage)
 
@@ -85,8 +88,9 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Requests | Water and Food sit on the call's answer bar whenever no panel is open; a tap is logged as the subject's request ("Asked for"), not as an answer to what is on screen, and does not move a question run on |
 | Pause | After Stop a calm night-sky layer with a breathing circle and bubbles to pop covers the whole stage, with no score, sound or timer. Only the subject's "I'm ready" ends it; the officer's lock stays reachable. The log records "Pause ended after N s". Stop is also the way to ask for a breather |
 | Vibration codes | Felt by whoever holds the phone: Yes one long buzz; No two buzzes; Stop, Break, "I don't know", "I don't understand" or "That's wrong" three short pulses; a picture a tick. Never for the young-child profile |
-| Rotate | The stage turns 180 degrees for a subject sitting opposite |
-| Staying on the stage | The app is pinned for the session (lifted only for the interpreter call or a share, and set again on return); Back does nothing; the small handle held for 1/3 s returns to the officer |
+| Accessibility | Every touch target on the stage is at least 56 dp (the officer's chips and close buttons 48 dp); the skeleton badge is an on/off switch; tapping the small camera picture in a video call swaps camera and signer, kept through rotation; stop banners and second-screen alerts are announced by screen readers; with a screen reader on, the stage buttons stay visible |
+| Rotate | The stage turns 180 degrees for a subject sitting opposite; the picture board turns with it |
+| Staying on the stage | The app is pinned for the session (lifted only for the interpreter call or a share, and set again on return); Back does nothing except close the picture board; the small handle held for 1/3 s returns to the officer |
 
 Subject-screen words, questions, phrases and card labels exist in English, Hindi, Chhattisgarhi, Gondi, Halbi and the other twelve languages of the language finder; everything beyond English and Hindi is marked draft.
 
@@ -107,11 +111,11 @@ With the online assistant on, a paired stage can host the **AI counsellor** for 
 | Screen | Screenshots blocked in the final release build (`secureScreen`); taps through another app's overlay ignored; no backup or device transfer |
 | Keyboard | Every text field asks the keyboard not to learn from what is typed |
 | Integrity | Every content file, the vision and sign-reader models and the assistant model are checked by SHA-256 before use |
-| Landmarks | Biometric data: kept only from sign windows, in memory for the session, never stored or exported, except the skeleton drawing kept with every signed answer |
+| Landmarks | Biometric data: kept only from sign windows; the points of each signed answer are stored encrypted and sealed with it, deleted with the session, and go only to the department's station ([18](18-station.md)); never in the report |
 | Record integrity | Every row sealed into a SHA-256 hash chain, recorded audio included; an ended session's Merkle root is signed by a key that never leaves the Keystore; export re-checks the chain, adds a QR verification page and a draft BSA s.63 certificate; Check a report and `verify_seal.py` check a report later |
-| Voice | The person's own voice only, after consent is logged for the session, only while the officer holds the button; kept and exported like any answer; never the officer's voice |
+| Voice | The person's own voice only, after consent is logged for the session, from the officer's tap until they stop speaking, with their words shown live when the station brain is paired; kept and exported like any answer; never the officer's voice |
 | Expiry | A build refuses new sessions 180 days after it was made; rooted phones are warned, list no saved sessions and delete a session when it is finished |
-| Excluded by design | Identity columns in the database (personal details exist only as the subject's own logged answers, purged with the session), statements, video recording, recording in the background, identity recognition, thumb or open-palm signals for yes, no or stop, body maps for the subject |
+| Excluded by design | Identity columns in the database (personal details exist only as the subject's own logged answers, purged with the session), statements, video recording, recording in the background, identity recognition, thumb or open-palm signals for yes, no or stop |
 
 ## 4. Mechanisms
 
@@ -185,7 +189,7 @@ Export works without a network. The PDF is written on the phone and handed to An
 | Mode, who chose each item, suggestions not acted on | Yes | Auto accountability |
 | Role | Only when set | "Not known yet" is not a fact about the person |
 | Answers from a second screen | Yes, marked "from second screen" | Provenance |
-| Landmarks and replays | Never | Biometric data |
+| Landmarks and replays | Never; a conversation sent to the station carries the landmarks ([18](18-station.md)) | Biometric data |
 | Skeleton drawing of a signed answer | Always | Each sign's movement as stick figures, one row per sign with its word; no picture of the person |
 | Hash-chain status and certificate | Yes: chain head, record digest on every page, draft BSA s.63 certificate | Integrity of the record |
 | Machine draft summary | Only when the officer attaches it, marked not part of the record | A draft, not evidence |

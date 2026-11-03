@@ -20,6 +20,9 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
+# Set by the iroh bridge (link.py) to name the dialling phone, so each phone has its own rate limit on loopback.
+PEER_HEADER = "x-signsetu-peer"
+
 
 def lan_addresses() -> list[str]:
     """IPv4 addresses this machine has on private networks, for the pairing line and the certificate."""
@@ -50,10 +53,9 @@ class Secrets:
         self.token_file = state / "token"
         if not (self.cert.exists() and self.key.exists()):
             self._make_cert()
-        if not self.token_file.exists():
-            self.token_file.write_text(secrets.token_urlsafe(32), encoding="ascii")
-            _private(self.token_file)
-        self.token = self.token_file.read_text(encoding="ascii").strip()
+        token = self.token_file.read_text(encoding="ascii", errors="replace").strip() if self.token_file.exists() else ""
+        # An empty or damaged token file (a crash mid-write, a hand edit) gets a new token, never an open door.
+        self.token = token if token and token.isascii() and token.isprintable() else self.rotate_token()
 
     def _make_cert(self) -> None:
         key = ec.generate_private_key(ec.SECP256R1())
@@ -68,8 +70,7 @@ class Secrets:
             .add_extension(x509.SubjectAlternativeName(alt), critical=False)
             .sign(key, hashes.SHA256())
         )
-        self.key.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
-        _private(self.key)
+        write_private(self.key, key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
         self.cert.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
 
     @property
@@ -79,8 +80,7 @@ class Secrets:
         return hashlib.sha256(der).hexdigest()
 
     def rotate_token(self) -> str:
-        self.token_file.write_text(secrets.token_urlsafe(32), encoding="ascii")
-        _private(self.token_file)
+        write_private(self.token_file, secrets.token_urlsafe(32).encode("ascii"))
         self.token = self.token_file.read_text(encoding="ascii").strip()
         return self.token
 
@@ -92,8 +92,18 @@ def _private(p: Path) -> None:
         pass
 
 
+def write_private(path: Path, data: bytes) -> None:
+    """Owner-only from creation and replaced whole, so a secret is never briefly readable by others or torn."""
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0), 0o600)
+    with os.fdopen(fd, "wb") as f:
+        f.write(data)
+    _private(tmp)
+    os.replace(tmp, path)
+
+
 def bearer_ok(header: str | None, token: str) -> bool:
-    if not header or not header.startswith("Bearer "):
+    if not token or not header or not header.startswith("Bearer "):
         return False
     return hmac.compare_digest(header[7:].strip().encode(), token.encode())
 
@@ -106,6 +116,9 @@ def client_allowed(host: str | None) -> bool:
         ip = ipaddress.ip_address(host)
     except ValueError:
         return False
+    # An IPv4 address seen through a dual-stack socket is judged as itself, not by the mapped range.
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
     return ip.is_private or ip.is_loopback
 
 
@@ -119,6 +132,9 @@ class RateLimit:
 
     def allow(self, host: str) -> bool:
         now = time.monotonic()
+        if len(self.seen) > 4096:  # forget clients idle a whole window, so the table stays small
+            for k in [k for k, q in self.seen.items() if not q or now - q[-1] > self.window]:
+                del self.seen[k]
         q = self.seen[host]
         while q and now - q[0] > self.window:
             q.popleft()

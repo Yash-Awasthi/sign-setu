@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import {
   audioUrl,
   cardUrl,
@@ -68,17 +68,64 @@ function ReviewBox({
 
 const langName = (code: string) => (code === "en" ? "English" : (languages.find((l) => l.code === code)?.english ?? code));
 
-function Character({ gesture, seconds }: { gesture: Gesture; seconds: number }) {
+// One stage per canvas: StrictMode runs effects twice, and a second renderer on one canvas would fight the first.
+const stages = new WeakMap<HTMLCanvasElement, Promise<AvatarStage>>();
+
+/** The character on a canvas, loaded once; the canvas must stay mounted while items change, or WebGL contexts pile up. */
+function useStage() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [stage, setStage] = useState<AvatarStage | null>(null);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     const canvas = ref.current!;
-    const s = new AvatarStage(canvas);
-    s.resize(canvas.clientWidth, canvas.clientHeight);
-    void s.load(modelUrl).then(() => setStage(s));
+    let loading = stages.get(canvas);
+    if (!loading) {
+      const s = new AvatarStage(canvas);
+      s.resize(canvas.clientWidth, canvas.clientHeight);
+      loading = s.load(modelUrl).then(() => s);
+      stages.set(canvas, loading);
+    }
+    let live = true;
+    loading.then(
+      (s) => live && setStage(s),
+      (e: unknown) => {
+        console.error("character failed to load", e);
+        if (live) setFailed(true);
+      },
+    );
+    return () => {
+      live = false;
+    };
   }, []);
+  return { ref, stage, failed };
+}
+
+function Stage({ canvas, failed }: { canvas: RefObject<HTMLCanvasElement | null>; failed: boolean }) {
+  return (
+    <div className="stage">
+      <canvas ref={canvas} className="character" />
+      {failed && <p className="note missing">The character could not be loaded; reload the page to try again.</p>}
+    </div>
+  );
+}
+
+function Character({ gesture, seconds }: { gesture: Gesture; seconds: number }) {
+  const { ref, stage, failed } = useStage();
   useEffect(() => stage?.play({ keys: gesture.keys, at: seconds, idle: false }), [stage, gesture, seconds]);
-  return <canvas ref={ref} className="character" />;
+  return <Stage canvas={ref} failed={failed} />;
+}
+
+/** A link ending in #<gesture id> opens that gesture, and #<gesture id>@<seconds> holds it at that moment. */
+function linkTarget(): { id: string; at?: number } {
+  let hash = location.hash.slice(1);
+  try {
+    hash = decodeURIComponent(hash);
+  } catch {
+    // A hand-edited link with a stray % is read as written.
+  }
+  const [id, at] = hash.split("@");
+  const seconds = at ? Number(at) : NaN;
+  return { id, at: Number.isFinite(seconds) && seconds >= 0 ? seconds : undefined };
 }
 
 function Player({ gesture, start }: { gesture: Gesture; start?: number }) {
@@ -86,6 +133,13 @@ function Player({ gesture, start }: { gesture: Gesture; start?: number }) {
   const [seconds, setSeconds] = useState(start ?? 0);
   const [playing, setPlaying] = useState(start === undefined);
   const [speed, setSpeed] = useState(0.5);
+  // A new gesture restarts playback in place rather than remounting, which would leave a WebGL context behind each time.
+  const [shown, setShown] = useState(gesture);
+  if (shown !== gesture) {
+    setShown(gesture);
+    setSeconds(start ?? 0);
+    setPlaying(start === undefined);
+  }
 
   useEffect(() => {
     if (!playing) return;
@@ -107,9 +161,7 @@ function Player({ gesture, start }: { gesture: Gesture; start?: number }) {
 
   return (
     <div>
-      <div className="stage">
-        <Character gesture={gesture} seconds={seconds} />
-      </div>
+      <Character gesture={gesture} seconds={seconds} />
       <div className="controls">
         <button
           onClick={() => {
@@ -150,14 +202,7 @@ function Player({ gesture, start }: { gesture: Gesture; start?: number }) {
 export function ClipReview(props: ReviewProps) {
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(clips[0].sentence);
-  const ref = useRef<HTMLCanvasElement>(null);
-  const [stage, setStage] = useState<AvatarStage | null>(null);
-  useEffect(() => {
-    const canvas = ref.current!;
-    const s = new AvatarStage(canvas);
-    s.resize(canvas.clientWidth, canvas.clientHeight);
-    void s.load(modelUrl).then(() => setStage(s));
-  }, []);
+  const { ref, stage, failed } = useStage();
   const shown = clips.filter((c) => c.sentence.includes(filter.trim().toLowerCase()));
   const clip = clips.find((c) => c.sentence === selected)!;
   useEffect(() => stage?.clip(clip as Clip), [stage, clip]);
@@ -184,9 +229,7 @@ export function ClipReview(props: ReviewProps) {
         <p className="muted">
           {clip.frames.length} frames at {clip.fps} fps
         </p>
-        <div className="stage">
-          <canvas ref={ref} className="character" />
-        </div>
+        <Stage canvas={ref} failed={failed} />
         <ReviewBox {...props} section="clip" id={clip.sentence} />
       </section>
     </div>
@@ -196,9 +239,8 @@ export function ClipReview(props: ReviewProps) {
 export function IslReview(props: ReviewProps & { items?: Gesture[] }) {
   const gestures = props.items ?? allGestures;
   const [filter, setFilter] = useState("");
-  // A link ending in #<gesture id> opens that gesture, and #<gesture id>@<seconds> holds it at that moment.
-  const [linkId, linkAt] = decodeURIComponent(location.hash.slice(1)).split("@");
-  const [selected, setSelected] = useState(gestures.find((g) => g.id === linkId)?.id ?? gestures[0].id);
+  const [link] = useState(linkTarget);
+  const [selected, setSelected] = useState(gestures.find((g) => g.id === link.id)?.id ?? gestures[0].id);
   const shown = gestures.filter((g) => `${g.id} ${meaning(g.id).label}`.toLowerCase().includes(filter.toLowerCase()));
   const gesture = gestures.find((g) => g.id === selected)!;
   const m = meaning(selected);
@@ -232,7 +274,7 @@ export function IslReview(props: ReviewProps & { items?: Gesture[] }) {
             </a>
           </p>
         )}
-        <Player key={selected} gesture={gesture} start={selected === linkId && linkAt ? Number(linkAt) : undefined} />
+        <Player gesture={gesture} start={selected === link.id ? link.at : undefined} />
         <ReviewBox {...props} section="gesture" id={selected} />
       </section>
     </div>

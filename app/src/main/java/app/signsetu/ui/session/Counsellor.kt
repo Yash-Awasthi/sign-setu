@@ -4,6 +4,7 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.SessionEvent
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -59,7 +60,11 @@ class Counsellor(
                 if (turns++ >= maxTurns) { state.value = Counsel.Paused(Counsel.Why.LIMIT); return@launch }
                 state.value = Counsel.Thinking
                 val events = ui.value?.events.orEmpty()
-                val line = write(system, transcript(events))?.let(::parseCounselLine)
+                // A thrown or stalled request ends in a notice, never a crash or a counsellor stuck thinking.
+                val reply = try {
+                    withTimeoutOrNull(WRITE_MS) { write(system, transcript(events)) }
+                } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+                val line = reply?.let(::parseCounselLine)
                 if (line == null) { state.value = Counsel.Paused(Counsel.Why.NO_REPLY); return@launch }
                 decided.value = null
                 state.value = Counsel.Holding(line, System.currentTimeMillis() + holdMs)
@@ -90,6 +95,9 @@ class Counsellor(
         state.value = Counsel.Off
     }
 }
+
+/** Longer than the assistant's own 60 s wait with its one retry, so this only catches a request that never returns. */
+private const val WRITE_MS = 150_000L
 
 private val lenient = Json { ignoreUnknownKeys = true; isLenient = true }
 

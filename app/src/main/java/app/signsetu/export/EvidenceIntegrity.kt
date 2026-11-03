@@ -42,7 +42,10 @@ object EvidenceIntegrity {
 
     /** Recomputes every seal in write order from the rows and drawings as they are now; the first row whose seal
      * no longer matches is reported. Rows from before sealing are counted and left out of the chain. */
-    suspend fun verifyChain(session: Session, events: List<SessionEvent>, audio: suspend (Long) -> ByteArray? = { null }, drawing: suspend (Long) -> ByteArray?): ChainCheck {
+    suspend fun verifyChain(
+        session: Session, events: List<SessionEvent>, audio: suspend (Long) -> ByteArray? = { null },
+        signs: suspend (Long) -> ByteArray? = { null }, drawing: suspend (Long) -> ByteArray?,
+    ): ChainCheck {
         var running = EventSeal.genesis(session.id, session.startedAt)
         var sealed = 0
         var unsealed = 0
@@ -53,6 +56,7 @@ object EvidenceIntegrity {
             val expected = EventSeal.seal(
                 running, session.id, e.ts, e.type.name, e.source.name, e.lang, e.text, e.cardId, e.lexiconId,
                 e.drawingId?.let { drawing(it) }, e.itemId, e.reason, e.shownId, e.via, e.audioId?.let { audio(it) },
+                e.landmarksId?.let { signs(it) },
             )
             if (expected != stored && broken == null) broken = e.id
             sealed++

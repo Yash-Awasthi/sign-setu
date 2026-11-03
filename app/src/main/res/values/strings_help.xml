@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="help_title">Help and walkthrough</string>
+    <string name="help_search">Search help</string>
+    <string name="help_search_clear">Clear search</string>
+    <string name="help_no_results">Nothing matches. Try another word.</string>
+    <string name="help_next">Next</string>
+    <string name="help_previous">Back</string>
+    <string name="help_done">Done</string>
+    <string name="help_step">Step %1$d of %2$d</string>
+
+    <!-- Topics -->
+    <string name="help_topic_tour">First walkthrough</string>
+    <string name="help_topic_tour_sum">A short guided tour of a whole session, step by step</string>
+    <string name="help_topic_call">During a session</string>
+    <string name="help_topic_call_sum">The stage and the officer page, asking, signing, pausing, recording and finishing</string>
+    <string name="help_topic_chat">The conversation</string>
+    <string name="help_topic_chat_sum">Transcript, typing, say it back, the assistant and the AI counsellor</string>
+    <string name="help_topic_settings">Every setting</string>
+    <string name="help_topic_settings_sum">What each setting does, its default and when to change it</string>
+    <string name="help_topic_records">Records and reports</string>
+    <string name="help_topic_records_sum">Saved sessions, exporting a report and checking one</string>
+    <string name="help_topic_practice">Practice</string>
+    <string name="help_topic_practice_sum">Type and sign, Sign to Type and recording signs for training</string>
+    <string name="help_topic_brain">Station computer</string>
+    <string name="help_topic_brain_sum">Pairing the local AI brain by ticket or address, and the relay</string>
+    <string name="help_topic_privacy">Privacy and safety</string>
+    <string name="help_topic_privacy_sum">What stays on the phone, what can go online, and how records are protected</string>
+
+    <!-- Tour -->
+    <string name="help_tour_1_h">What Sign Setu is</string>
+    <string name="help_tour_1_b">Sign Setu helps an officer talk with a person who is deaf or hard of hearing, a young child, or someone who speaks another language. It is an aid, not an interpreter. The phone works with no internet, and the record stays on this phone unless you switch on an online service.</string>
+    <string name="help_tour_2_h">Start a session</string>
+    <string name="help_tour_2_b">On the home screen answer Who are you helping?: pick their role (or leave Not known yet) and their profile: young child, signs, other language or not sure. Choose Their language, or Do not know · find their language to let them choose on the next screen. Then tap Start session.</string>
+    <string name="help_tour_3_h">The stage faces the person</string>
+    <string name="help_tour_3_b">The phone now faces the person. The stage is a video call: the character, a caption in their language, and their own camera window. At first only the character and the caption show; one tap shows every button for 5 seconds. The Stop octagon is always in the corner.</string>
+    <string name="help_tour_4_h">Take the phone back</string>
+    <string name="help_tour_4_b">To return to your side, hold the small officer handle in the top corner of the stage for a third of a second, until its ring closes. Back does nothing on the stage, and the app stays pinned so the person cannot leave it.</string>
+    <string name="help_tour_5_h">Ask something</string>
+    <string name="help_tour_5_b">On the officer page, tap a quick question or type in Type anything to show them, then tap Show to them. The character signs, gestures, spells or holds up pictures, as set by the Signs, Gestures, Spell and Pictures toggles.</string>
+    <string name="help_tour_6_h">Get the answer</string>
+    <string name="help_tour_6_b">The person answers with Yes, No, pictures, drawing, writing, or by signing to the camera. The answer appears in the conversation with how it was given. A reading made by the app is marked as not checked; only the person\'s own Yes confirms a meaning.</string>
+    <string name="help_tour_7_h">If they need a break</string>
+    <string name="help_tour_7_b">If the person taps Stop, a calm breathing screen covers the stage and you see a banner asking you to pause and check they are comfortable. Only their I\'m ready ends the pause.</string>
+    <string name="help_tour_8_h">Finish and save</string>
+    <string name="help_tour_8_b">Finish session is at the foot of More options and in the menu. Name the session, then tap Save and finish or Export report. The report password is shown only once. Help is always in Settings and in the session menu.</string>
+
+    <!-- During a session -->
+    <string name="help_call_1_h">Two sides, one phone</string>
+    <string name="help_call_1_b">The phone is never split between two people. It is either on the stage, facing the person, or on the officer page, held by you. The stage never shows notes, the log, or anything typed but not sent.</string>
+    <string name="help_call_2_h">The stage buttons</string>
+    <string name="help_call_2_b">Tap anywhere on the stage to show its buttons; they fade 5 seconds after the last touch. Left: replay and signing speed (½×, ¾×, 1×). Right: the person\'s camera window, which can be dragged or tapped to enlarge. Below: Next, Yes, No, the honest answers (I don\'t know, I don\'t understand, That\'s wrong), Draw and Write when offered, Water, Food and Help. With a screen reader on, the buttons stay.</string>
+    <string name="help_call_3_h">The officer handle</string>
+    <string name="help_call_3_b">Hold the small handle in the top corner of the stage for a third of a second to return to the officer page. A screen reader user can use its long-press action.</string>
+    <string name="help_call_4_h">The officer page</string>
+    <string name="help_call_4_b">The top bar shows the profile, language and role, with Call (interpreter), the session log and the menu. Below is the conversation, then quick questions, the Ready to show strip, and the composer at the foot (the dock).</string>
+    <string name="help_call_5_h">Asking a question</string>
+    <string name="help_call_5_b">Tap a quick question to prepare it in Ready to show, check its marks for sign, gesture, audio and caption, then tap Show to them. Ask next suggests the next welfare question. Long-press quick questions to queue them with Add to run, or tap Safety basics: up to five go in one handover.</string>
+    <string name="help_call_6_h">More options</string>
+    <string name="help_call_6_b">The More page holds every question group and phrase (Personal, Family, Address, School and others), They gestured, the picture board, Draw, the language finder, Tell me, the ISL dictionary, the session log with notes, Second screen, profile, role and language. Picking something returns you to the conversation.</string>
+    <string name="help_call_7_h">The menu</string>
+    <string name="help_call_7_b">The three-dot menu has Sign language (switch between ISL and ASL for the rest of the session, after a check), They sit opposite me (turns the stage 180 degrees), Show skeleton on camera, Help and Finish session.</string>
+    <string name="help_call_8_h">Sign windows</string>
+    <string name="help_call_8_b">When the person raises their hands, taps the camera button, or you tap Read signs, a sign window opens for up to 20 seconds. One dot appears per sign seen; the stage never shows what was read. Quiet hands for 2 seconds, Done, or the time limit close it. Your page shows the app\'s reading per sign, marked not checked. You can replay at ¼× or ½×, pick one of the top four guesses per sign, or use Ask them to choose so the person picks a picture.</string>
+    <string name="help_call_9_h">The express board</string>
+    <string name="help_call_9_b">Help on the stage opens the full picture board grouped as Feelings, Needs, Urgent, Safety, People, Places, Answers and Body. Water and Food are requests the person can make at any time. Every card a person touches is at least 56 dp.</string>
+    <string name="help_call_10_h">The body map</string>
+    <string name="help_call_10_b">Help, Body shows a front and back figure. A touch answers as pain and records the side, the body part, the person\'s own left or right and the exact point, for example: body map, front: left chest.</string>
+    <string name="help_call_11_h">Stop and the pause</string>
+    <string name="help_call_11_b">Stop ends nothing by itself. It covers the stage with a night-sky pause: a breathing circle that grows for 4 seconds, holds for 2 and shrinks for 6, and bubbles to pop, with no score, sound or timer. You get a banner to pause and check on the person. Only their I\'m ready ends it, and its length is logged.</string>
+    <string name="help_call_12_h">Recording their voice</string>
+    <string name="help_call_12_b">The microphone in the dock opens Record their voice. Consent comes first: ask the person, or for a child their parent or guardian, then tap They agreed to recording; their answer is logged. Tap, and the person speaks; it stops by itself when they finish, or tap again. The voice is kept encrypted in this session\'s record and goes in the export. With the station computer, live words appear marked not confirmed.</string>
+    <string name="help_call_13_h">Second screen</string>
+    <string name="help_call_13_b">More, Second screen lets the person see a second department phone or tablet while you keep this one. Pick a device paired in Bluetooth settings, or Find a nearby phone, type the 6 digits it shows, check both show the same check number, and tap Match on the other screen. A bar shows the device, its battery and the last answer. If the link drops you get Reconnect and Use this phone.</string>
+    <string name="help_call_14_h">Auto</string>
+    <string name="help_call_14_b">With Auto on, a card proposes the next welfare item and why. Each goes to the stage by itself after a short gap; you can pause, skip or choose something else at any time. Stop pauses Auto; a second Stop ends it. Ask again on any asked question puts it back on the stage.</string>
+    <string name="help_call_15_h">Calling an interpreter</string>
+    <string name="help_call_15_b">Call in the officer bar opens the messaging app set in Settings with the interpreter contact. The app unpins only for that call, then returns.</string>
+    <string name="help_call_16_h">Ending and saving</string>
+    <string name="help_call_16_b">Finish session shows a summary: the time taken, what was shown and answered, and anything left open. Thank them on the stage closes the conversation for the person. Name the session and tap Save and finish, or Export report. Delete without saving needs a second tap. Back never finishes a session: it returns home with the session still open, and Continue resumes it.</string>
+
+    <!-- Conversation -->
+    <string name="help_chat_1_h">The transcript</string>
+    <string name="help_chat_1_b">Every question you show appears on the right; every answer on the left, with how it was given (tap, sign, picture, drawing, writing, voice) and how long it took. Grades show how sure the record is: an answer the person confirmed, one they said, or one the app read and nobody checked.</string>
+    <string name="help_chat_2_h">Typing to them</string>
+    <string name="help_chat_2_b">Type in Type anything to show them and tap Send. While you type, the suggestions give way to the Signs, Gestures, Spell and Pictures toggles. The character signs known words, fingerspells the rest and holds up each word\'s picture. Add pictures (the + button) attaches answer pictures first.</string>
+    <string name="help_chat_3_h">Ready to show</string>
+    <string name="help_chat_3_b">A prepared item waits in the Ready to show strip with marks for what it has: sign, gesture, audio, caption. Tap Show to them to send it, or the cross to drop it.</string>
+    <string name="help_chat_4_h">Say it back</string>
+    <string name="help_chat_4_b">Under any answer, Say it back lets you edit your reading and show it. The person sees the words and answers Yes or No. Only their Yes confirms the meaning; No marks it Said no.</string>
+    <string name="help_chat_5_h">The assistant</string>
+    <string name="help_chat_5_b">Assistant in the dock offers a caption in the person\'s language, marked machine translation, not checked, what an answer may mean, and Suggested follow-up questions (non-leading). It uses the on-device model, the station computer, or the online assistant, whichever is set up. Nothing it writes reaches the stage until you show it.</string>
+    <string name="help_chat_6_h">The AI counsellor</string>
+    <string name="help_chat_6_b">With the online assistant enrolled, the AI counsellor can hold a gentle conversation. Each line sends on its own after two seconds: Send now, Another line, or Take over to stop it. It pauses and hands back to you if the person asks to stop, may be at risk, or the assistant does not answer, and after thirty turns. Start again resumes it.</string>
+    <string name="help_chat_7_h">Session log and notes</string>
+    <string name="help_chat_7_b">The log icon opens every row with its time and kind. Notes you add stay on the officer page and in the record; they are never shown on the stage.</string>
+    <string name="help_chat_8_h">Translate app</string>
+    <string name="help_chat_8_b">When the person\'s language has no captions, a Translate app chip opens the phone\'s translation app. Nothing from the session is passed to it.</string>
+
+    <!-- Settings -->
+    <string name="help_set_1_h">Practice: Type and sign</string>
+    <string name="help_set_1_b">Type any sentence and watch it signed word by word, outside a session. Nothing is recorded.</string>
+    <string name="help_set_2_h">Practice: Sign to Type</string>
+    <string name="help_set_2_b">Sign to the camera and see the words build into a sentence. Shown when the phone can read signs.</string>
+    <string name="help_set_3_h">Practice: Record signs for training</string>
+    <string name="help_set_3_b">Sign 10 words and sentences to help the sign reader learn new signers. Shown only in development builds on phones that can read signs.</string>
+    <string name="help_set_4_h">Interpreter call: Messaging app</string>
+    <string name="help_set_4_b">WhatsApp or Sandes, used by the Call button. Default: Not set. Set it once to the app your department uses for interpreters.</string>
+    <string name="help_set_5_h">Interpreter call: Interpreter contact</string>
+    <string name="help_set_5_b">For WhatsApp, the 10-digit mobile number or full number with country code; for Sandes, the contact name. Default: empty.</string>
+    <string name="help_set_6_h">Interpreter call: Call interpreter now</string>
+    <string name="help_set_6_b">Opens the messaging app with the saved contact, to test it. The same button is on the home screen and in a session.</string>
+    <string name="help_set_7_h">Security: Pin the app during a session</string>
+    <string name="help_set_7_b">The person cannot leave the app while holding the phone. Default: on. Turning any security switch off asks for your fingerprint or screen lock, so the person cannot.</string>
+    <string name="help_set_8_h">Security: Block screenshots</string>
+    <string name="help_set_8_b">Screenshots and screen recording show a blank screen. Default: on in the release build. Keep it on for real cases.</string>
+    <string name="help_set_9_h">Security: Ask for fingerprint</string>
+    <string name="help_set_9_b">Asks for your fingerprint or screen lock before opening the app, leaving a session or deleting. Default: on.</string>
+    <string name="help_set_10_h">Stage: Camera on the stage</string>
+    <string name="help_set_10_b">The person sees their own hands and signs can be read. Nothing is recorded or saved. Default: on. Turn off only if the person is uncomfortable with a camera.</string>
+    <string name="help_set_11_h">Stage: Gesture speed</string>
+    <string name="help_set_11_b">How fast the character signs, from 0.25× to 1.5×. Default: 1.00×. Slow it for a young child or a new signer; the stage also has its own ½× and ¾×.</string>
+    <string name="help_set_12_h">Stage: Sign in ISL order</string>
+    <string name="help_set_12_b">On: typed sentences are reordered into ISL grammar, time first and the question word last. Off: words are signed as typed. Default: on.</string>
+    <string name="help_set_13_h">Stage: 3D character</string>
+    <string name="help_set_13_b">On: the 3D character. Off: the drawn character, lighter, for slower phones. Default: on; the drawn one is used by itself where 3D cannot run.</string>
+    <string name="help_set_14_h">Online: Online assistant</string>
+    <string name="help_set_14_b">When online, sends masked text to the department gateway (or an outside AI service) for reports and suggestions. Default: off. A notice explains what is sent before it turns on. The phone works the same without it.</string>
+    <string name="help_set_15_h">Online: Enrolment code</string>
+    <string name="help_set_15_b">Shown with the department gateway. Enter the code your department gives you; it then reads Enrolled.</string>
+    <string name="help_set_16_h">Online: Custom key</string>
+    <string name="help_set_16_b">Points the assistant at any OpenAI-style service: Address, API key and Model, with Find models, Test and Remove. The key is kept encrypted on this phone. Shown as Custom API endpoint when a gateway exists.</string>
+    <string name="help_set_17_h">Online: Station computer</string>
+    <string name="help_set_17_b">Pairs the phone with the station\'s local AI brain for speech to text, sign reading, AI help and receiving conversations. Default: off. Each service has its own switch. See the Station computer topic.</string>
+    <string name="help_set_18_h">Offline: On-device assistant</string>
+    <string name="help_set_18_b">An optional model that translates typed text into the person\'s language and back with no internet. Import model file installs the file your department gives you; Remove the model deletes it. Needs at least 3 GB of memory.</string>
+    <string name="help_set_19_h">Offline: Offline sentence helper</string>
+    <string name="help_set_19_b">An optional small model that puts the likeliest checked sentence first when a signed answer is unclear. It never adds words. Imported and removed the same way.</string>
+    <string name="help_set_20_h">Records: Delete automatically after</string>
+    <string name="help_set_20_b">Sessions older than this are deleted even if nobody ended them. Choices: 4, 8, 12, 24, 48 or 72 hours, or Keep until deleted. Default: 24 hours. Follow your department\'s rule.</string>
+    <string name="help_set_21_h">Records: Check a report</string>
+    <string name="help_set_21_b">Open an exported PDF with its passphrase and check its seal. See Records and reports.</string>
+    <string name="help_set_22_h">Records: Delete all data</string>
+    <string name="help_set_22_b">Destroys the encryption key, so every session on this phone becomes unreadable and cannot be recovered. Settings are kept. Needs a second confirmation.</string>
+    <string name="help_set_23_h">About: Appearance</string>
+    <string name="help_set_23_b">Light or dark (Device default, Light, Dark; default Device default), Pure black (AMOLED) for dark mode (default off), and Colour theme: Emerald (default), Mocha, Cerulean, Amethyst, High contrast, Teal and turquoise, Tidal wave, Tokyo night, Yin and yang, Yotsuba. High contrast also turns the stage black, white and yellow.</string>
+    <string name="help_set_24_h">About: App language</string>
+    <string name="help_set_24_b">Same as the phone (default), English or Hindi, for the officer\'s screens. The person\'s language is chosen per session on the home screen.</string>
+    <string name="help_set_25_h">About: Open-source licences and version</string>
+    <string name="help_set_25_b">Lists the symbols, voices and libraries in the app, and shows the version and build date.</string>
+    <string name="help_set_26_h">About: ISL and ASL</string>
+    <string name="help_set_26_b">Shows what the phone reads and signs in Indian Sign Language (the main language) and American Sign Language (experimental), and how well. Choose the sign language on the home screen; switch it in a session from the menu.</string>
+
+    <!-- Records -->
+    <string name="help_rec_1_h">Saved sessions</string>
+    <string name="help_rec_1_b">Saved sessions are listed on the home screen to Open again or Delete. Long-press to choose several, then Delete the chosen sessions. An unfinished session shows at the top with Continue and End it. Sessions are deleted after the time set in Settings.</string>
+    <string name="help_rec_2_h">Export a report</string>
+    <string name="help_rec_2_b">Export report makes an encrypted, sealed PDF of the session. Its password is shown only once: give it separately from the file, for example by reading it out. Then Share report and Done.</string>
+    <string name="help_rec_3_h">Send or save a saved session</string>
+    <string name="help_rec_3_b">An open saved session can be sent to the station computer (Send to the station) or written to this phone (Save to this phone). Its PDF opens with the passphrase shown; give it only to whoever needs the report.</string>
+    <string name="help_rec_4_h">Check a report</string>
+    <string name="help_rec_4_b">Settings, Check a report: open the PDF, enter its passphrase and tap Check. It says whether the seal is valid, whether it matches the session still on this phone, or whether the record was altered after it was sealed.</string>
+
+    <!-- Practice -->
+    <string name="help_prac_1_h">Type and sign</string>
+    <string name="help_prac_1_b">Settings, Practice, Type and sign: type any sentence and watch the character sign it word by word. Use it to learn what the person will see. Nothing is recorded.</string>
+    <string name="help_prac_2_h">Sign to Type</string>
+    <string name="help_prac_2_b">Sign to the camera and see the words build into a sentence in English and Hindi from read words and held letters. A word\'s other guesses are a tap away. Nothing is recorded.</string>
+    <string name="help_prac_3_h">Record signs for training</string>
+    <string name="help_prac_3_b">Sign 10 words and sentences to the camera to help the sign reader learn new signers.</string>
+
+    <!-- Station computer -->
+    <string name="help_brain_1_h">What it is</string>
+    <string name="help_brain_1_b">The station computer runs a local AI brain: speech to text, translation and sign order, AI help and an inbox for conversations. It stays at the station; without it the phone works alone.</string>
+    <string name="help_brain_2_h">Start it</string>
+    <string name="help_brain_2_b">On the station computer run start.ps1 (Windows) or ./start.sh. It prints a ticket, a token, an https address and a certificate pin. ./start.sh --rotate-token issues a new token, and every phone must pair again.</string>
+    <string name="help_brain_3_h">Pair the phone</string>
+    <string name="help_brain_3_b">Settings, Station computer, turn it on and enter what the computer shows. The ticket and token work on the station Wi-Fi and from anywhere. The https address, token and pin work on the station network only. Allow access to devices on this network when asked.</string>
+    <string name="help_brain_4_h">From anywhere: ticket and relay</string>
+    <string name="help_brain_4_b">The ticket reaches the computer over an end-to-end encrypted link: directly where possible, otherwise through the department\'s own relay, which forwards data it cannot read. No port is opened at the station.</string>
+    <string name="help_brain_5_h">Status and services</string>
+    <string name="help_brain_5_b">The setting shows Off, Connecting, or Connected with how many services are in use. Turn each service off on its own: Speech to text, Sign reading (ISL), AI help, Receiving conversations. Forget the station computer removes the pairing.</string>
+
+    <!-- Privacy -->
+    <string name="help_priv_1_h">Stays on this phone</string>
+    <string name="help_priv_1_b">Every session is encrypted on this phone and deleted after the retention time. The camera picture is never recorded or saved. Voice is kept only after consent is logged.</string>
+    <string name="help_priv_2_h">What can go online</string>
+    <string name="help_priv_2_b">Nothing, unless you switch on the online assistant or pair a station computer. The online assistant receives masked text only. The station computer keeps nothing except a conversation you send to its inbox.</string>
+    <string name="help_priv_3_h">Protecting the screen</string>
+    <string name="help_priv_3_b">The app is pinned in a session, screenshots are blocked, and leaving a session or deleting asks for your fingerprint or screen lock. Turning these off needs you, not the person.</string>
+    <string name="help_priv_4_h">Reports</string>
+    <string name="help_priv_4_b">A report is encrypted with a one-time password and sealed with this phone\'s key, so any change can be found with Check a report.</string>
+    <string name="help_priv_5_h">An aid, not an interpreter</string>
+    <string name="help_priv_5_b">Readings by the app are marked not checked. For rights and anything that matters in law, use a qualified interpreter; the record says shown, not understood.</string>
+</resources>

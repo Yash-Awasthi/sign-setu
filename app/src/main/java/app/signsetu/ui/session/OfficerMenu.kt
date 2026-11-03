@@ -14,6 +14,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.runtime.saveable.rememberSaveable
+import app.signsetu.ui.help.HelpScreen
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -62,7 +68,8 @@ internal fun OfficerMenu(
     onEnd: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
-    var askSwitch by remember { mutableStateOf(false) }
+    var askSwitch by rememberSaveable { mutableStateOf(false) }
+    var help by rememberSaveable { mutableStateOf(false) }
     val signLanguage = ui.signLanguage
     val langs = SignLanguage.entries.filter { it == SignLanguage.ISL || !vm.content.aslDisabled }
     val next = langs[(langs.indexOf(signLanguage) + 1) % langs.size]
@@ -74,6 +81,14 @@ internal fun OfficerMenu(
             confirmButton = { TextButton(onClick = { askSwitch = false; vm.setSignLanguage(next) }) { Text(stringResource(R.string.switch_sign_confirm)) } },
             dismissButton = { TextButton(onClick = { askSwitch = false }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+    if (help) {
+        Dialog(
+            onDismissRequest = { help = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(Modifier.fillMaxSize()) { HelpScreen(onBack = { help = false }, startTopic = "call") }
+        }
     }
     Box {
         IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.officer_more)) }
@@ -113,6 +128,11 @@ internal fun OfficerMenu(
                 modifier = Modifier.toggleState(ui.rotated, Role.Checkbox),
             )
             SwitchMenuItem(R.string.officer_skeleton_show, painterResource(R.drawable.ic_videocam), SkeletonOverlay.on.value) { SkeletonOverlay.on.value = !SkeletonOverlay.on.value }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.stage_help)) },
+                leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },
+                onClick = { menu = false; help = true },
+            )
             HorizontalDivider()
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.officer_end)) },

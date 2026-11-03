@@ -4,7 +4,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Field | Value |
 | --- | --- |
-| Version | 0.8.4 (version code 20), applicationId `in.signsetu` |
+| Version | 0.8.4.iroh (version code 21), applicationId `in.signsetu` |
 | Classification | Internal |
 | Source of truth | This repository; the code wins over any document, and documents are corrected when they drift |
 
@@ -46,6 +46,10 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | [13-dpia.md](13-dpia.md) | Data protection impact assessment |
 | [14-attestation-and-pinning.md](14-attestation-and-pinning.md) | Certificate pinning and Key Attestation design for the gateway |
 | [15-gloss-to-text.md](15-gloss-to-text.md) | From read signs to a checked English or Hindi sentence: lattice, calibration, names, phrasebook, checker and output ladder |
+| [16-relay.md](16-relay.md) | The department's iroh relay: what it needs, install, check, and pointing the brain at it |
+| [17-live-speech.md](17-live-speech.md) | The person's words shown live as they speak: flow, local agreement, the seam, end of speech, protocol, privacy, tests and limits |
+| [18-station.md](18-station.md) | The station: the link switch, heartbeat and capabilities, sign reading and AI help in order, sending conversations, the zip format, setup |
+| [19-walkthrough.md](19-walkthrough.md) | Walkthrough of the app, matching the in-app Help: a session step by step, the call and the stage, the conversation, every setting, records, practice, station computer, privacy |
 | [models/sign_reader_v4.md](models/sign_reader_v4.md) | Model card of the ISL word reader |
 | [models/sign_reader_v3.md](models/sign_reader_v3.md) | Model card of the previous ISL word reader |
 | [../portal/README.md](../portal/README.md) | Reviewer portal for content sign-off |
@@ -58,9 +62,9 @@ Conventions: **[confirm]** marks anything that depends on a person or body outsi
 
 ### 2.1 Scope
 
-**In scope:** officer page; subject-facing stage with an animated character; questions, phrases and pictures in 17 languages; answers by touch, drawing, writing and signing to the camera; on-device sign reading for Indian (ISL) and American (ASL) sign language; an encrypted, hash-chained session record; a password-protected report with a draft BSA s.63 certificate; an optional second screen over Bluetooth; an optional online assistant through the department gateway; a reviewer portal for content sign-off.
+**In scope:** officer page; subject-facing stage with an animated character; questions, phrases and pictures in 17 languages; answers by touch, drawing, writing and signing to the camera; on-device sign reading for Indian (ISL) and American (ASL) sign language; an encrypted, hash-chained session record; a password-protected report with a draft BSA s.63 certificate; an optional second screen over Bluetooth; voice recorded only with logged consent; the in-app Help and guided tour in English and Hindi; an optional station computer (speech to text, translation, sign reading, inbox) reached on the station network or over iroh; an optional online assistant through the department gateway; a reviewer portal for content sign-off.
 
-**Out of scope:** statement recording, case management, identity capture, audio or video recording.
+**Out of scope:** statement recording, case management, identity capture, video recording, and any recording of the officer's voice.
 
 ### 2.2 Users
 
@@ -97,12 +101,12 @@ flowchart LR
 | Devices | Android 10 (API 29) or later, 64-bit, 3 GB RAM or more, 5 to 6.9 inch portrait |
 | Flavors | `standard` (reference, Bluetooth RFCOMM) and `nearby` (adds Google Nearby Connections) |
 | Release packages | Universal (arm64-v8a and x86_64) and arm64-v8a phone APKs, signed by CI; native libraries and models stored uncompressed |
-| Permissions (standard) | `CAMERA`, `BLUETOOTH_CONNECT` (`BLUETOOTH` up to API 30), `BLUETOOTH_SCAN` (never for location, to pair a second screen), `USE_BIOMETRIC`, `VIBRATE`, `INTERNET` (online assistant only), `RECEIVE_BOOT_COMPLETED` (keeps the hourly retention job scheduled), `RECORD_AUDIO` (push-to-talk to the station brain only). No location: a build gate fails the build otherwise |
+| Permissions (standard) | `CAMERA`, `BLUETOOTH_CONNECT` (`BLUETOOTH` up to API 30), `BLUETOOTH_SCAN` (never for location, to pair a second screen), `USE_BIOMETRIC`, `VIBRATE`, `INTERNET` (online assistant only), `RECEIVE_BOOT_COMPLETED` (keeps the hourly retention job scheduled), `RECORD_AUDIO` (the person's own voice, only after consent is logged). No location: a build gate fails the build otherwise |
 | Languages (17) | English, Hindi, Chhattisgarhi, Gondi, Halbi, Bengali, Nepali, Assamese, Odia, Tamil, Telugu, Kannada, Malayalam, Marathi, Gujarati, Punjabi, Urdu |
 
 ## 3. Data flow
 
-Gane-Sarson conventions: processes numbered, data stores prefixed D, trust boundaries TB0 to TB3. The architecture behind each process is in [02-architecture.md](02-architecture.md).
+Gane-Sarson conventions: processes numbered, data stores prefixed D, trust boundaries TB0 to TB4. The architecture behind each process is in [02-architecture.md](02-architecture.md).
 
 ### 3.1 Context (level 0)
 
@@ -195,7 +199,7 @@ flowchart LR
 | D1 Session store | SQLCipher Room database: sessions, sealed events, drawings | Personal, restricted |
 | D2 Content bundle | Questions, cards, motions, audio, models; SHA-256 manifest | Public content |
 | D3 Settings | DataStore `settings`; plain preferences `locale` (officer language) and `clock` (latest day seen); no personal data | Internal |
-| D4 Keystore | Non-exportable AES keys: database KEK, gateway token key, key for the officer's own assistant key | Secret |
+| D4 Keystore | Non-exportable AES keys: database KEK, gateway token key, key for the officer's own assistant key, keys wrapping the station token and the phone's iroh identity (`iroh.bin` in no-backup storage, created once per install) | Secret |
 | D5 Assistant model | Optional GGUF file, hash-checked on import | Internal |
 | D6 Landmark memory | Hand, face and pose points of signed answers, view-model memory only | Personal, volatile |
 | D9 Assistant credentials | Gateway bearer token, or the key of the officer's custom API endpoint; each wrapped by its own Keystore key | Secret |
@@ -208,6 +212,7 @@ flowchart LR
 | TB1 | Officer's phone, app sandbox | SQLCipher under a Keystore-wrapped key, FLAG_SECURE in the final release build (`secureScreen`), no backup, manifest-checked content, officer unlock |
 | TB2 | Bluetooth link to a stage device | Bonded devices only, commit-then-reveal ECDH with a typed code and check number, AES-256-GCM frames; the stage stores nothing |
 | TB3 | Network to the gateway | HTTPS only, bearer token, names and details masked, session text only after the officer allows it for the session |
+| TB4 | Link to the station computer | Off until paired; station network only for private addresses (HTTPS, token, certificate pin) or an end-to-end encrypted iroh link to the brain's key, through the department's relay when no direct path exists; each service has its own switch; the link is dropped on a network change, when switched off or when the app is in the background |
 
 ## 4. Quality assurance
 
@@ -217,6 +222,7 @@ flowchart LR
 | Instrumented | Stage accessibility, overlay touch filter, database migrations, report export on an emulator; the camera and MediaPipe tests on a phone |
 | Avatar | Formatting, lint, type checks, rig and retarget tests, and the built bundle matching the source |
 | Portal | Formatting, lint, type checks and tests |
+| Station brain | Compile and smoke checks of the API, the iroh link, WAV, path and address helpers; `brain/check.py` for security and latency on a running brain |
 | Gateway | Go tests for enrolment, limits, assist and speech proxies, admin and the PostgreSQL store, run with the race detector, plus fuzz tests |
 | Tools | Python unit tests; content manifest and reference checks |
 | Security | Release lint, semgrep, OSV-Scanner on the shipped runtime lockfile, gitleaks |
@@ -260,7 +266,8 @@ The readers generalise poorly to people they have not seen, so a reading is neve
 | Hindi caption is rule-based | Odd sentences for unusual input | No caption when a word is unknown; captions marked unchecked |
 | Android 64-bit only | No iOS or 32-bit phones | Distribution is the arm64 phone APK |
 | The station brain's speech recognition covers about 13 of the 17 languages | No text for Chhattisgarhi, Gondi, Halbi or Odia speech | The recording itself is kept; the officer listens to it |
-| The brain reached over iroh uses n0's public relays when no direct path exists | Relays see that two devices talk, never what they say; an n0 outage leaves only same-network links | A department relay removes the dependency |
+| Bengali needs a stronger speech model than Whisper `small` | No usable Bengali text with `small` | The recording is kept; a larger model (`--asr`) or an Indian-language speech model ([17](17-live-speech.md), section 7) |
+| The brain reached over iroh needs the department's relay when no direct path exists | The relay sees that two devices talk, never what they say; with it down, only direct paths work. With no relay set on the brain, no relay is used at all | One small server, set up as in [16](16-relay.md); the phone follows the relay named in the brain's ticket |
 | The Rive character needs a designer's file | Without `avatar/signer.riv` only the 3D and drawn characters are offered | The input contract is in [05](05-avatar-and-gestures.md), section 5.8 |
 | Assistant model licence | Gemma terms are not OSI open source | A fully open model can replace it by adding its hash |
 

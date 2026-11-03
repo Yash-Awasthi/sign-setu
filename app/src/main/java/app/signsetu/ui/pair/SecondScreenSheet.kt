@@ -1,5 +1,6 @@
 package app.signsetu.ui.pair
 
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -77,6 +78,8 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
     val allowed = access.granted
     var on by remember { mutableStateOf(bluetoothOn(context)) }
     val enable = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { on = bluetoothOn(context) }
+    // Bluetooth can be turned on from quick settings or the Settings button below, not only through the request.
+    LifecycleResumeEffect(Unit) { on = bluetoothOn(context); onPauseOrDispose { } }
     val link by container.link.collectAsStateWithLifecycle()
     val officer = link?.takeIf { it.role == LinkRole.OFFICER }
     val state = officer?.state?.collectAsStateWithLifecycle()?.value

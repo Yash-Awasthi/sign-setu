@@ -75,6 +75,12 @@ fun rememberPermissions(permissions: Array<String>, askNow: Boolean = true, onRe
     return ask
 }
 
+/** Android 17 drops an app's sockets to LAN addresses, the station computer's among them, until this is allowed.
+ * Earlier versions have no such permission, and count as allowed. */
+@Composable
+fun rememberLocalNetwork(onResult: (Boolean) -> Unit = {}): PermissionAsk =
+    rememberPermissions(if (android.os.Build.VERSION.SDK_INT >= 37) arrayOf("android.permission.ACCESS_LOCAL_NETWORK") else emptyArray(), askNow = false, onResult)
+
 /** Asks again, or opens the settings page once Android no longer shows the prompt. */
 @Composable
 fun PermissionButton(ask: PermissionAsk, modifier: Modifier = Modifier) {

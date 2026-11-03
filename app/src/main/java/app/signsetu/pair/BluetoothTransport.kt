@@ -27,7 +27,12 @@ class BluetoothTransport(val adapter: BluetoothAdapter) : StageTransport {
 
     override suspend fun connect(peer: String): Pipe {
         val socket = adapter.getRemoteDevice(peer).createRfcommSocketToServiceRecord(STAGE_UUID)
-        closing({ runCatching { socket.close() } }) { socket.connect() }
+        try {
+            closing({ runCatching { socket.close() } }) { socket.connect() }
+        } catch (e: Exception) {
+            runCatching { socket.close() }
+            throw e
+        }
         return Pipe(socket.inputStream, socket.outputStream, peer) { runCatching { socket.close() } }
     }
 

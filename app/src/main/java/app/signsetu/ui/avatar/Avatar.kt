@@ -118,6 +118,7 @@ object AvatarViews {
 
     internal fun give(web: AvatarWebView) {
         (web.parent as? ViewGroup)?.removeView(web)
+        web.forget()
         // A dead renderer or a full spare list: this view goes.
         if (AvatarRenderer.vrmFailed.value || idle.size >= KEEP) { web.destroy(); return }
         web.onPause()
@@ -192,6 +193,12 @@ internal class AvatarWebView(context: Context) : WebView(context) {
     fun nextToken(onFinished: () -> Unit): Int {
         this.onFinished = onFinished
         return ++token
+    }
+
+    /** Drops the last screen's callbacks, so a kept view does not hold that screen alive. */
+    fun forget() {
+        onFinished = {}
+        onReady = {}
     }
 
     /** Commands of one kind replace each other while the model loads; only the latest matters. */

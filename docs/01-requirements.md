@@ -27,7 +27,7 @@ The officer chooses a **subject profile** for each session; it decides what the 
 | Constraint | Detail |
 | --- | --- |
 | Devices | Android 10 (API 29) and later, 3 GB RAM or more, screens 5 to 6.9 inches, portrait. Officers' personal phones; no device management. |
-| Network | Every feature works offline. INTERNET is declared only to reach the department gateway when the build has one and the phone is online. A second screen links over Bluetooth to an already paired device only. |
+| Network | Every feature works offline. INTERNET is declared only to reach the department gateway when the build has one, the officer's own assistant service, and the department's station computer (on the station network, or from any network over iroh through the department's own relay) when the officer has paired one. A second screen links over Bluetooth to an already paired device only. |
 | Cost | Free and open-source components and free government services only. |
 | Platform | Native Android, Kotlin, Jetpack Compose. |
 | Distribution | Signed APK through the Mobile Seva AppStore or a department download page. |
@@ -97,8 +97,9 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Requirement | Priority |
 | --- | --- |
 | First run sets the officer language and explains the app in three screens: an aid, not an interpreter; sessions are deleted after the retention time; records stay on the phone. On a phone with no secure lock screen the app warns once at unlock and keeps records under a key not tied to unlocking until a lock is set. | MUST |
-| Settings: interpreter contact, security switches (pin the app, block screenshots, ask for fingerprint), stage camera, signing speed, ISL word order, what each sign language reads and signs, the sign reader engine, the assistants, retention period, clear all data, appearance, officer language, about and open-source licences. | MUST |
+| Settings: help and walkthrough, practice, interpreter contact, security switches (pin the app, block screenshots, ask for fingerprint), stage camera, signing speed (0.25x to 1.5x, 1x by default), ISL word order, the 3D character, what each sign language reads and signs, the assistants, the station computer, retention period (24 hours by default; 4, 8, 12, 24, 48 or 72 hours, or until deleted), check a report, clear all data, appearance, officer language, about and open-source licences. An unreadable settings file falls back to the defaults. Turning any security switch off needs the officer's fingerprint or screen lock. | MUST |
 | The "aid, not an interpreter" notice appears on first run and in About. | MUST |
+| Help: an in-app walkthrough ([19](19-walkthrough.md)) with eight searchable topics (tour, during a session, the conversation, every setting, records and reports, practice, the station computer, privacy and safety), in English and Hindi. It opens from Settings, from a Take the tour card on the home screen, from the last first-run step (before the first unlock; it holds no records) and from the session menu and More page (the call topic). Its guided tour has Next, Back and Done and reads "Step x of y" to a screen reader. | SHOULD |
 | A build stops starting new sessions 180 days after its build date and shows "Update required"; existing sessions can still be exported and cleared. | MUST |
 
 ### 4.6 Second screen
@@ -127,7 +128,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 
 | Requirement | Priority |
 | --- | --- |
-| Landmarks are kept only inside an explicit sign window: an answer of up to 20 s (opened by raised hands on the stage, the stage camera button or Read signs) and Tell me (an account of up to 3 minutes). Outside a window frames are analysed in memory for the skeleton overlay and gesture proposals and nothing is kept. | MUST |
+| Landmarks are kept only inside an explicit sign window: an answer of up to 20 s (opened by raised hands on the stage, the stage camera button or Read signs) and Tell me (an account of up to 3 minutes). The landmarks a signed answer was read from are kept with that row, encrypted, sealed in the hash chain and deleted with the session, so the station can read them again ([18](18-station.md)); outside a window frames are analysed in memory for the skeleton overlay and gesture proposals and nothing is kept. | MUST |
 | Signs are split at pauses and read on the phone into ranked proposals; proposals that match the answer cards of the item on screen rank first. The words are shown to the officer only, marked "read by the app, not checked"; the subject sees only picture alternatives to choose from. | SHOULD |
 | A reading becomes the subject's answer only when the subject picks it among two or three picture alternatives plus "None of these"; each set is logged as shown before it appears. | MUST |
 | Every signed answer and account can be replayed for the rest of the session at ¼× or ½× with sign markers, and the officer or an interpreter can enter a word per sign. The subject is asked to sign more slowly only after a failed read of lost or too-fast hands. | SHOULD |
@@ -194,6 +195,16 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | The report carries a draft certificate under BSA section 63 with the chain head and the record digest, for the officer to sign. | SHOULD |
 | Every signed answer keeps a skeleton drawing in the encrypted record: each sign's movement as a strip of stick figures, one row per sign headed by the word read; no camera picture. | MUST |
 
+### 4.15 Station computer (optional)
+
+| Requirement | Priority |
+| --- | --- |
+| The station link is off until the officer turns it on in Settings. It pairs by the brain's iroh ticket and token (works from any network), or by its https address, token and certificate pin (station network only). A ticket pasted with line breaks is accepted. | SHOULD |
+| The phone asks the station for a service only when the link is on, the latest heartbeat (every 5 s) offers it, the officer has not switched it off on this phone, and it has not failed since that heartbeat. Otherwise the phone does the job alone, with no wait. A station silent for 12 s counts as gone; the phone retries after 2 s, backing off to 10 s. | MUST |
+| The station offers speech to text (whole takes and live), sign reading, AI help (captions, sentence ranking, counsellor, report summary), sign order for typed text and an inbox for whole conversations. A sign read by the station is used only if it arrives within 2.5 s; otherwise the phone's own reading stands. | SHOULD |
+| Over iroh, traffic is end-to-end encrypted to the brain's key. Where no direct path exists it passes through the department's own relay; no third-party relay or lookup service is used. The phone uses the relay named in the brain's ticket and never an n0 relay. | MUST |
+| The link runs only while the app is in front, and closes at once when turned off. Station readings are marked as the app's reading, never as the person's answer. | MUST |
+
 ## 5. Non-functional requirements
 
 | Requirement | Priority |
@@ -215,7 +226,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Opening the app and past sessions require the device credential or a strong biometric whenever the phone has a secure lock screen. | MUST |
 | Screenshots, screen recording and recents thumbnails blocked in the final release build, behind the single build switch `secureScreen`; testing builds leave them open. | MUST |
 | No session data in backups or device transfer. | MUST |
-No build declares background location; the `standard` build declares no location permission, and its only discovery permission is BLUETOOTH_SCAN marked `neverForLocation`, used to find a phone to bond with on Android 12 and later. RECORD_AUDIO is asked for only after consent is logged in the voice sheet; the recording is kept in the encrypted session record, sealed in its hash chain, exported inside the encrypted PDF and deleted with the session, and is sent only to a paired station brain for its text. INTERNET is used only for the online assistant, under the same switch for speaking typed text through the gateway, and for the paired station brain on the local network. CAMERA is declared for the stage mirror and sign windows, BLUETOOTH_CONNECT for the second screen, USE_BIOMETRIC for the officer's unlock, VIBRATE (a normal permission) for answer codes, and RECEIVE_BOOT_COMPLETED (normal) to keep the hourly retention job scheduled. The optional `nearby` flavor adds the Nearby Connections discovery permissions and nothing else. | MUST |
+| No build declares background location; the `standard` build declares no location permission, and its only discovery permission is BLUETOOTH_SCAN marked `neverForLocation`, used to find a phone to bond with on Android 12 and later. RECORD_AUDIO is asked for only after consent is logged in the voice sheet; the recording is kept in the encrypted session record, sealed in its hash chain, exported inside the encrypted PDF and deleted with the session, and is sent only to a paired station brain for its text. INTERNET is used only for the online assistant, under the same switch for speaking typed text through the gateway, and for the paired station brain, on the local network or over iroh. CAMERA is declared for the stage mirror and sign windows, BLUETOOTH_CONNECT for the second screen, USE_BIOMETRIC for the officer's unlock, VIBRATE (a normal permission) for answer codes, and RECEIVE_BOOT_COMPLETED (normal) to keep the hourly retention job scheduled. The optional `nearby` flavor adds the Nearby Connections discovery permissions and nothing else. | MUST |
 | No third-party analytics, advertising or crash-reporting SDKs. | MUST |
 | No personal data in logs, crash traces or notifications. | MUST |
 | Under 1 crash per 100 sessions in the pilot. | MUST |

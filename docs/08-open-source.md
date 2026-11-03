@@ -31,13 +31,15 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | Rive Android runtime 10.4 | MIT | Ship | Drives a department-supplied `.riv` character from the rig; loads only when chosen |
 | Evidence export | ZXing core 3.5 | Apache-2.0 | Ship | QR code on the verification seal page |
 | Station brain (`brain/`, optional) | FastAPI, Uvicorn | MIT, BSD-3-Clause | Run on the station computer | HTTPS API on port 8000 |
-| | faster-whisper with Whisper `small` | MIT | Run on the station computer | Speech to text, INT8 on the CPU |
+| | faster-whisper, with the Whisper model the department chooses | MIT | Run on the station computer | Speech to text, INT8 on the CPU |
 | | IndicTrans2 distilled 200M (AI4Bharat) | MIT | Run on the station computer | English and Indian-language translation |
 | | NLLB-200 distilled 600M (Meta) | CC BY-NC 4.0 | Run only with legal approval | Fallback translation and Chhattisgarhi; non-commercial clause |
 | | Ollama with Gemma 3 1B | MIT; Gemma Terms of Use | Run on the station computer | Local language model for sign order and chat |
 | | Indic NLP Library | MIT | Run on the station computer | Script conversion for IndicTrans2 |
-| | iroh 1.2 (n0) | MIT or Apache-2.0 | Ship (app) and run on the station computer | Reaches the brain from any network: QUIC end-to-end encrypted to the brain's key, hole punching, n0's public relays as fallback |
-| | JNA 5.19 | Apache-2.0 or LGPL-2.1 | Ship | Native calls for iroh's Kotlin bindings |
+| | iroh 1.2 (n0) | MIT or Apache-2.0 | Ship (app) and run on the station computer | Reaches the brain from any network: QUIC end-to-end encrypted to the brain's key, hole punching, the department's own relay as fallback ([16](16-relay.md)). The app and brain use only the relay named in the ticket or `--relay`, never n0's public relays or lookup service |
+| | iroh-relay 1.2 (n0) | MIT or Apache-2.0 | Run on the department's relay server | Forwards encrypted QUIC packets where no direct path exists; the release is checked against a SHA-256 pinned in `relay/setup.sh` and `relay/setup.ps1`; certificates from Let's Encrypt |
+| | PyTorch (CPU), Transformers, CTranslate2, SentencePiece, NumPy, httpx, cryptography | BSD-style, Apache-2.0, MIT; check each pinned version in `brain/requirements.txt` | Run on the station computer | Model runtime and the brain's HTTPS client and certificate code |
+| | JNA 5.19.1 | Apache-2.0 or LGPL-2.1 | Ship | Native calls for iroh's Kotlin bindings |
 | | Cartesia | Service terms: free plans give no commercial licence; check the plan the key is on before release | Data, and the gateway's `/v1/speak` | Recorded speech for English, Hindi and nine other languages (Cartesia) (`tools/content/build_natural_audio.py`) and live speech of typed text; keys stay on the gateway, never in the app |
 | | Indic Parler-TTS (AI4Bharat) | Apache-2.0 | Data | Recorded speech for Assamese, Nepali, Odia and Urdu (`tools/content/build_audio.py`) |
 | Officer colour themes | Mihon colour schemes | Apache-2.0 | Ship (values) | Five light and dark schemes copied into `ui/theme/MihonPalettes.kt` |
@@ -88,6 +90,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | On-device assistant | llama.cpp v0.5.0 | MIT | Ship (native library) | Built from source by CMake; the source is vendored in `app/src/main/cpp/third_party/llama.cpp` at commit `7fe450e`, recorded in `app/src/main/cpp/CMakeLists.txt` |
 | | Gemma 3 1B instruction-tuned (GGUF) | Gemma Terms of Use | Ship (optional model file, not in the APK) | Free for government use, not OSI open source; see [on-device assistant](10-on-device-assistant.md) |
 | Department gateway | Go standard library, pgx, golang-jwt | BSD-3-Clause, MIT | Ship (gateway) | Versions pinned in `gateway/go.mod` and `gateway/go.sum` |
+| Reviewer portal rendering | three.js and three-vrm, through the avatar module | MIT | Tool | The portal draws every motion with the same module as the app; one renderer is kept per canvas |
 
 ## 2. Attribution
 

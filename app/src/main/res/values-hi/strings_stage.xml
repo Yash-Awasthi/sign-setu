@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stage_help">सहायता</string>
+    <string name="stage_swap_views">कैमरा और साइनर की जगह बदलें</string>
+    <string name="stage_ink_colour">स्याही का रंग %1$d / %2$d</string>
+</resources>

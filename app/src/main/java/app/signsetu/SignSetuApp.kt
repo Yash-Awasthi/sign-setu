@@ -125,7 +125,23 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     /** Signs recorded for training, uploaded only on the signer's opt-in. */
     val contributions = Contributions(File(app.filesDir, "contrib"), BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), { isOnline(app) }, scope)
     init {
-        scope.launch(Dispatchers.IO) { settings.current().let { onlineAssistant.restoreCustom(it.devAiUrl, it.devAiModel) } }
+        scope.launch(Dispatchers.IO) { settings.current().let { onlineAssistant.restoreCustom(it.devAiUrl, it.devAiModel); brain.setOn(it.stationLink) } }
+        // The officer's choice of what goes to the station applies as soon as it changes in Settings.
+        scope.launch {
+            settings.settings.collect { s -> brain.setAllowed(BrainClient.Feature.entries.filter { it == BrainClient.Feature.GLOSS || it.key !in s.stationOff }.toSet()) }
+        }
+        onlineAssistant.station = { system, user, maxTokens, timeoutMs -> brain.chat(system, user, maxTokens, timeoutMs) }
+        onlineAssistant.stationUp = { brain.can(BrainClient.Feature.LLM) }
+        // A new default network (Wi-Fi to mobile data and back) gets a fresh iroh endpoint; the first one is not a change.
+        runCatching {
+            var last: android.net.Network? = null
+            app.getSystemService(android.net.ConnectivityManager::class.java).registerDefaultNetworkCallback(object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {
+                    if (last != null && last != network) brain.networkChanged()
+                    last = network
+                }
+            })
+        }
         contributions.kick()
     }
     private var database: SessionDatabase? = null
@@ -283,6 +299,13 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         backgroundedAt = SystemClock.elapsedRealtime()
         // The officer left the app: the stage covers its item until they are back.
         officerLink?.hold()
+        brain.setForeground(false)
+    }
+
+    /** The officer's station switch: saved, and applied at once. */
+    fun setStationLink(on: Boolean) {
+        brain.setOn(on)
+        scope.launch { settings.setStationLink(on) }
     }
 
     /** Set while a session screen is open: a trip to a video call and back does not lock the conversation. */
@@ -309,6 +332,7 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         val limit = if (inSession) RELOCK_IN_SESSION_MS else RELOCK_AFTER_MS
         if (backgroundedAt != 0L && SystemClock.elapsedRealtime() - backgroundedAt > limit) lock()
         officerLink?.unhold()
+        brain.setForeground(true)
     }
 
     private companion object {

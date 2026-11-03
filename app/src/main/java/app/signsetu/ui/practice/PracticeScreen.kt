@@ -3,7 +3,8 @@ package app.signsetu.ui.practice
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -53,7 +54,7 @@ import app.signsetu.ui.theme.Spacing
 
 /** Type anything and watch the character sign it: the same planner the session uses, with nothing to record and
  * no one to ask. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
@@ -103,9 +104,11 @@ fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
                 )
             }
             if (plan != null && plan.beats.isNotEmpty()) {
-                Row(
+                // Wraps, so a long sentence's later words scroll into view instead of running off the right edge.
+                FlowRow(
                     Modifier.fillMaxWidth().heightIn(max = 112.dp).verticalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
                 ) {
                     for (beat in plan.beats) {
                         val word = text.substring(beat.range)

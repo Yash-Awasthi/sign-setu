@@ -66,6 +66,8 @@ class DatabaseKey(private val context: Context) {
 
     private fun decrypt(kek: SecretKey): ByteArray {
         val bytes = wrapped.readBytes()
+        // A truncated file opens with no key; without this it would throw a non-security error on every unlock.
+        if (bytes.size < IV_LEN + 16) throw AEADBadTagException("short key file")
         val cipher = Cipher.getInstance(TRANSFORM).apply {
             init(Cipher.DECRYPT_MODE, kek, GCMParameterSpec(128, bytes, 0, IV_LEN))
         }
@@ -75,7 +77,9 @@ class DatabaseKey(private val context: Context) {
     /** Written beside and renamed over, so an interrupted write never leaves a half key file. */
     private fun write(kek: SecretKey, dek: ByteArray) {
         val cipher = Cipher.getInstance(TRANSFORM).apply { init(Cipher.ENCRYPT_MODE, kek) }
-        val tmp = File(wrapped.path + ".new").apply { writeBytes(cipher.iv + cipher.doFinal(dek)) }
+        val tmp = File(wrapped.path + ".new")
+        // Synced before the rename: a power cut must not leave an empty key file renamed over the good one.
+        java.io.FileOutputStream(tmp).use { it.write(cipher.iv + cipher.doFinal(dek)); it.fd.sync() }
         if (!tmp.renameTo(wrapped)) throw IOException("could not store the database key")
     }
 

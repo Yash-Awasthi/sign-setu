@@ -133,12 +133,16 @@ internal fun rememberReading(
     val helper = LocalSentenceHelper.current
     val helperPick by produceState<SentenceGuess?>(null, eventId, rung) {
         val unsure = rung is Rung.FixWords || rung is Rung.WordStrip
-        if (helper == null || !unsure || helper.state() != ModelStore.State.READY) return@produceState
+        val station = cloud.takeIf { it.stationUp() }?.station
+        if (!unsure || (station == null && (helper == null || helper.state() != ModelStore.State.READY))) return@produceState
         val first = (rung as? Rung.FixWords)?.let { SentenceGuess(segments.mapIndexed { i, s -> it.match.fills.firstOrNull { f -> f.token == i }?.label ?: s.word ?: "?" }, it.en) }
         val pool = listOfNotNull(first) + alternatives.toList()
         if (pool.size < 2) return@produceState
         val signs = segments.map { it.candidates.ifEmpty { it.guesses.orEmpty() }.take(3).map { g -> g.word } }
-        val reply = helper.use { it.chat(RERANK_SYSTEM, rerankPrompt(caption, signs, pool.map { g -> g.text }), HELPER_TOKENS) }
+        val prompt = rerankPrompt(caption, signs, pool.map { g -> g.text })
+        // The station's model first, this phone's helper when the station has none or does not answer.
+        val reply = station?.invoke(RERANK_SYSTEM, prompt, HELPER_TOKENS, HELPER_WAIT_MS)
+            ?: helper?.takeIf { it.state() == ModelStore.State.READY }?.use { it.chat(RERANK_SYSTEM, prompt, HELPER_TOKENS) }
         val pick = reply?.let { parseOrder(it, pool.size) }?.firstOrNull()?.let(pool::get)
         value = pick?.takeIf { it != first }
     }
@@ -158,6 +162,9 @@ private const val ALTERNATIVE_FLOOR = 0.1f
 
 /** The helper answers with a short list of numbers. */
 private const val HELPER_TOKENS = 16
+
+/** A station slower than this leaves the ranking to this phone's helper. */
+private const val HELPER_WAIT_MS = 5_000
 
 /** Guesses per sign sent online: enough to recover a misread, few enough to keep the prompt short. */
 private const val ONLINE_GUESSES = 6

@@ -1,6 +1,6 @@
 # 14. Device attestation and certificate pinning: assessment and design
 
-Both measures depend on the production gateway host and its certificate authority. Section 6 lists the deployment inputs.
+Both measures depend on the production gateway host and its certificate authority. Section 7 lists the deployment inputs.
 
 ## 1. Current state
 
@@ -11,7 +11,9 @@ Both measures depend on the production gateway host and its certificate authorit
 | Device identity | A one-time enrolment code, kept on the server only as a SHA-256 hash, is traded at `POST /v1/enroll` for a random 256-bit bearer token. The server keeps only the token's SHA-256. |
 | Token handling on the phone | Wrapped by a non-exportable Keystore key (`signsetu.gateway.token`) that needs no screen unlock, stored in a file excluded from backup. Any code running as the app can use it. |
 | Token lifetime | Optional. With `TOKEN_TTL_DAYS` set, a token stops working that many days after enrolment and the phone must enrol again with a new code. Unset or 0, the default in code, means a token works until an administrator sets `revoked`. The department chose permanent tokens, so `render.yaml` sets 0. There is no rotation. |
-| Abuse limits | A per-device rate limit, and per-address and global wrong-code limits on enrolment. |
+| Abuse limits | A per-device rate limit, and per-address and global wrong-code limits on enrolment; an IPv6 address counts as its /64. The `Bearer` scheme is matched case-insensitively, and any other scheme is refused. Admin tokens are checked with 30 s of clock leeway. |
+| Station computer | Not covered by the gateway gap below: the phone trusts the brain's self-signed certificate by its SHA-256 pin alone, and over iroh authenticates the brain by its key. See section 7. |
+| Report seal | Separate from enrolment: each install makes a signing key in the Keystore (StrongBox, then the TEE, then a TEE key with no attestation chain on phones that refuse it) to sign a session's root hash (`DeviceSeal`). The key is attested when the phone allows it, so a lab can check it is hardware-backed. Enrolment attestation (section 4) is not built. |
 
 ## 2. Threat model
 
@@ -68,6 +70,10 @@ Server requirements: a nonce table; an X.509 and ASN.1 parser for the key descri
 
 Both measures above are weaker than ordinary token hygiene. Token expiry (`TOKEN_TTL_DAYS`, off in code and in `render.yaml` by the department's choice), a `last_seen` timestamp on devices (written at most once an hour) and the admin route that lists and revokes devices (`/v1/admin/devices`) are built.
 
-## 6. Deployment inputs
+## 6. Station computer: pinning in place
+
+The station link does not wait on a production host. On the station network the brain has a self-signed P-256 certificate; the phone is given its SHA-256 pin at pairing and trusts that one certificate and nothing else (`net/BrainClient.kt`), so a user-installed authority cannot stand in. Over iroh the brain is identified by its key in the ticket and the traffic is QUIC encrypted to it, with no certificate authority involved; a fake relay fails because the phone checks the brain's key. A copied `iroh.key` or token lets another machine act as the brain or a phone, so the brain's state folder is kept private and owner-only, and `--rotate-token` makes every phone pair again. A phone's own iroh key is created once per install and kept under a Keystore key; its endpoint id is what a relay allowlist names.
+
+## 7. Deployment inputs
 
 The gateway hostname, its certificate authority, the attestation policy (refuse or flag unverified phones) and the token life are set at deployment. The attestation roots and revocation list are deployment configuration.

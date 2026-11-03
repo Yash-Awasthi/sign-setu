@@ -19,7 +19,12 @@ export const keyOf = (r: Pick<Review, "section" | "id" | "role">) => `${r.role}|
 
 export function load(): Record<string, Review> {
   try {
-    return JSON.parse(localStorage.getItem(STORE) ?? "{}");
+    const all: unknown = JSON.parse(localStorage.getItem(STORE) ?? "{}");
+    if (!all || typeof all !== "object" || Array.isArray(all)) return {};
+    // A hand-edited or older store may hold entries without notes; those would break the export, so they are dropped.
+    return Object.fromEntries(
+      Object.entries(all as Record<string, Review>).filter(([, r]) => r && typeof r === "object" && typeof r.notes === "string"),
+    );
   } catch {
     return {};
   }
