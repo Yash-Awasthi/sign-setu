@@ -21,6 +21,9 @@ data class TextPlan(val gesture: Gesture?, val beats: List<WordBeat>, val motion
 private const val GAP = 0.3f
 /** Leaving a spelled letter for a sign crosses the chest from the off hand, so that move gets more time. */
 private const val LETTER_GAP = 0.5f
+/** At a sentence break after a letter the hold is shortened and that time given to the move, so the break keeps
+ * its length and the hands leave the letter at a walk, not a jump. */
+private const val LETTER_BREAK_HOLD = 0.2f
 /** One typed word, with a possessive or contraction ("Ravi's") kept on it. */
 internal val TOKEN = Regex("[\\p{L}\\p{M}\\p{N}]+(?:['’]\\p{L}+)?")
 
@@ -114,6 +117,7 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>, order: List<Strin
     }
     val gaps = mutableListOf<Float>()
     var fromLetter = false
+    var breakGap = 0f
     var wordStart = 0f
     fun add(g: Gesture) {
         settle()
@@ -121,11 +125,12 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>, order: List<Strin
         val letter = g.id.startsWith("letter.") || g.id.startsWith("digit.")
         if (hands && fromLetter && !letter && gaps.isNotEmpty()) {
             // The word starts after the longer move, as it would after the usual gap.
-            if (wordStart == t) wordStart += LETTER_GAP - gaps.last()
-            t += LETTER_GAP - gaps.last()
-            gaps[gaps.lastIndex] = LETTER_GAP
+            val gap = LETTER_GAP + breakGap
+            if (wordStart == t) wordStart += gap - gaps.last()
+            t += gap - gaps.last()
+            gaps[gaps.lastIndex] = gap
         }
-        if (hands) fromLetter = letter
+        if (hands) { fromLetter = letter; breakGap = 0f }
         val next = if (parts.isNotEmpty()) g.trimmed(trail = false) else g
         parts += next
         gaps += GAP
@@ -170,7 +175,12 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>, order: List<Strin
             card != null -> add(PAUSE)
         }
         if (t > wordStart) beats += WordBeat(range, card, letters, wordStart, t)
-        if (i in sentenceEnd) add(PAUSE)
+        if (i in sentenceEnd) {
+            if (fromLetter) {
+                add(Gesture(PAUSE.id, listOf(Key(0f), Key(LETTER_BREAK_HOLD))))
+                breakGap = PAUSE.keys.last().t - LETTER_BREAK_HOLD
+            } else add(PAUSE)
+        }
     }
     if (text.trimEnd().endsWith("?") || text.trimEnd().endsWith("\u061F")) {
         // The question mark is lit while the asking sign plays.
@@ -178,6 +188,16 @@ fun ContentBundle.planText(text: String, modes: Set<SignMode>, order: List<Strin
         if (parts.none { it.id in QUESTION_SIGNS }) gestures["ask"]?.let { g -> settle(); wordStart = t; add(g); beats += WordBeat(mark..mark, null, null, wordStart, t) }
     }
     return TextPlan(chain("text", parts, GAP, gaps).takeIf { it.keys.isNotEmpty() }, beats, parts.map { it.id })
+}
+
+/** Words of [text] the character has no sign, gesture or phrase for, so it would have to fingerspell them; grammar
+ * words the signing leaves out are not counted. */
+fun ContentBundle.unsignedWords(text: String): List<String> {
+    val beats = planText(text, setOf(SignMode.SIGNS), emptyList()).beats
+    return TOKEN.findAll(text).filter { m ->
+        val w = m.value.lowercase()
+        beats.none { m.range.first in it.range } && w !in FILLER && w !in ISL_UNSIGNED && !NEGATED.matches(w)
+    }.map { it.value }.toList()
 }
 
 /** Joins runs of up to three words that the lexicon knows as one ("thank you", "how many"), longest first. */

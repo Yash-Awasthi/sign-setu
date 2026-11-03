@@ -1,5 +1,7 @@
 package app.signsetu.ui.session
 
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.GenericShape
@@ -146,9 +148,12 @@ internal fun CallCaption(text: String, highlight: IntRange?, onWordTap: ((Int) -
     val replayName = stringResource(R.string.word_replay)
     // The caller's lambda changes every frame of typed-text playback; the tap detector must not restart with it.
     val onTap by rememberUpdatedState(onWordTap)
+    // The action's target is at least 48 dp tall; taps are read inside the text itself, so offsets map to its words.
     val tap = if (onWordTap == null) Modifier else Modifier
-        .pointerInput(Unit) { detectTapGestures { p -> layout?.let { onTap?.invoke(it.getOffsetForPosition(p)) } } }
+        .heightIn(min = 48.dp)
         .semantics { onClick(replayName) { onTap?.invoke(0); true } }
+        .wrapContentHeight()
+        .pointerInput(Unit) { detectTapGestures { p -> layout?.let { onTap?.invoke(it.getOffsetForPosition(p)) } } }
     Text(
         styled, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
         onTextLayout = { layout = it }, modifier = tap,

@@ -77,7 +77,7 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
         if (hands == null || pose == null) instead?.warm()
     }
 
-    private fun open() = synchronized(lock) {
+    private fun open(): Unit = synchronized(lock) {
         if (opened) return
         opened = true
         // The photo need not show hands: the hand task only has to run on it.

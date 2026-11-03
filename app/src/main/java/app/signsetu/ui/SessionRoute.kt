@@ -47,6 +47,8 @@ import app.signsetu.ui.session.signLanguage
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.Conv
+import app.signsetu.ui.session.planLadder
+import androidx.lifecycle.viewModelScope
 import app.signsetu.ui.session.OfficerPane
 import app.signsetu.ui.session.titleToKeep
 import app.signsetu.ui.session.SessionViewModel
@@ -95,6 +97,8 @@ internal fun SessionRoute(
     SideEffect { vm.reader = langReader }
     // The station reads ISL only: its reader is the department's ISL model.
     SideEffect { vm.station = container.brain.takeIf { signLanguage == SignLanguage.ISL } }
+    val planner = remember(vm) { planLadder(content, container.brain, container.models, container.onlineAssistant, vm.viewModelScope) { vm.auto.cloudAllowed } }
+    SideEffect { vm.auto.planner = planner }
     val signContent = remember(content, signLanguage) { content.forSignLanguage(signLanguage) }
     val conv by vm.auto.conv.collectAsStateWithLifecycle()
     val activity = LocalActivity.current

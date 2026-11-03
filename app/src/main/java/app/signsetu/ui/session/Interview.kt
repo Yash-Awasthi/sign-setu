@@ -12,7 +12,8 @@ import app.signsetu.data.session.SessionEvent
  * reviewed item in welfare-triage order. */
 enum class Reason { OPENING, NEXT_PHASE, FOLLOWS_ANSWER, BREAK_AFTER_UNSURE, CARRY_ON, CLOSING }
 
-data class Proposal(val q: Question, val reason: Reason)
+/** [plan]: the planner chose it over the bank's first item (Planner.kt). */
+data class Proposal(val q: Question, val reason: Reason, val plan: Plan? = null)
 
 /** Auto never proposes free recall, follow-up or rights items: those stay the officer's own choice. */
 val AUTO_PHASES = setOf(Phase.RAPPORT, Phase.GROUND_RULES, Phase.WELFARE, Phase.PRACTICAL, Phase.BREAK, Phase.CLOSING)
@@ -28,6 +29,7 @@ object AutoKey {
     const val WRAP_UP = "auto_wrap_up"
     const val ENDED_STOP = "auto_ended_stop"
     const val BREAK = "auto_break"
+    const val URGENT = "auto_urgent"
 }
 
 /** Reasons a QUESTION_SHOWN row carries. */

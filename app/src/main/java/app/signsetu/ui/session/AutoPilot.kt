@@ -24,15 +24,18 @@ import kotlinx.coroutines.sync.withLock
 /** Auto mode's state. Memory only: after a lock or restart the session reopens in Manual. */
 sealed interface Conv {
     data object Off : Conv
-    /** [held]: auto mode is paused, so the officer decides what happens to this proposal. */
-    data class Proposed(val p: Proposal, val held: Boolean = false) : Conv
+    /** [held]: auto mode is paused, so the officer decides what happens to this proposal. [confirm]: auto mode runs,
+     * but this one goes on the stage only on the officer's tap (a distress cue, or a model's safety or body item). */
+    data class Proposed(val p: Proposal, val held: Boolean = false, val confirm: Boolean = false) : Conv
+    /** The planner is reading the last answer; the officer can still pause or choose something else. */
+    data object Planning : Conv
     /** Something is on the stage; the next proposal waits for its answer or the officer's return. */
     data object Waiting : Conv
     data class Paused(val cause: PauseCause) : Conv
     data object Exhausted : Conv
 }
 
-enum class PauseCause { OFFICER, STOP, BREAK }
+enum class PauseCause { OFFICER, STOP, BREAK, URGENT }
 
 /** Runs auto mode beside the view model: every proposal, approval and skip is logged before it changes
  * anything, and every decision is re-derived from a fresh read of the log. */
@@ -58,13 +61,18 @@ class AutoPilot(
     private val secondsLeft = MutableStateFlow<Int?>(null)
     /** Whole seconds until auto mode puts the next item on the stage; null when nothing is due. */
     val countdown: StateFlow<Int?> = secondsLeft.asStateFlow()
+    /** The model ladder for the next item (Planner.kt); null keeps the bank's order alone. */
+    @Volatile var planner: Planner? = null
+    /** The officer allowed session data off the phone for this session, so the gateway may plan too. */
+    @Volatile var cloudAllowed = false
 
     init {
         // Answers arrive from the stage through the log, whoever logged them.
         scope.launch {
             var seen: Long? = null
             repo.events(sessionId).collect { events ->
-                val answer = events.lastOrNull { it.type in AnswerEvents }
+                // A request the person makes by themselves is watched too: Stop or an urgent word halts auto mode.
+                val answer = events.lastOrNull { it.type in AnswerEvents || it.type == EventType.REQUEST }
                 val before = seen
                 seen = answer?.id ?: -1L
                 if (answer != null && before != null && answer.id > before) act { onAnswer(answer) }
@@ -188,6 +196,12 @@ class AutoPilot(
                 }
             }
             now is Conv.Paused -> Unit
+            cueOf(answer) == Cue.URGENT -> {
+                running = false
+                system(AutoKey.URGENT)
+                state.value = Conv.Paused(PauseCause.URGENT)
+            }
+            answer.type == EventType.REQUEST -> Unit
             item == "k1" && answer.cardId == "yes" -> {
                 system(AutoKey.BREAK)
                 running = false
@@ -206,20 +220,62 @@ class AutoPilot(
         if (q.kind == Kind.STATEMENT) propose(STATEMENT_GAP_MS) else if (running) watchForAnswer(q, session.subjectLang)
     }
 
+    /** The bank's first item, unless the person's last answer showed a need another allowed item meets (Planner.kt).
+     * Rule items (a break, carry on, a follow-up, closing) always come first; an unsure reading, a distress cue or a
+     * plain yes or no leaves the bank's order. The planner runs outside the lock, so Pause and Skip stay instant. */
     private suspend fun propose(gapMs: Long = AUTO_GAP_MS) {
         val session = repo.session(sessionId).filterNotNull().first()
         val events = repo.eventsNow(sessionId)
-        val next = next(content, session.role, events)
-        if (next == null) {
+        val all = candidates(content, session.role, events)
+        val first = all.firstOrNull()
+        if (first == null) {
             running = false
             state.value = Conv.Exhausted
             return
         }
-        if ((state.value as? Conv.Proposed)?.p?.q?.id != next.q.id) mark(EventType.SUGGESTED, EventSource.RULE, next.q, next.reason.name)
-        state.value = Conv.Proposed(next, held = !running)
-        pace++
-        if (running) showAfterPause(next.q, gapMs, pace)
+        val prior = (state.value as? Conv.Proposed)?.p
+        val last = lastAnswer(events, content)
+        val ladder = planner
+        val choices = if (first.reason in Ruled || first.q.phase !in PlannedPhases) emptyList()
+            else all.filter { it.reason !in Ruled && it.q.phase in PlannedPhases }.map { Cued(it.q, cues(content, it.q), localCues(content, it.q, session.subjectLang)) }.filter { it.cues.isNotEmpty() }
+        if (ladder == null || last == null || last.unsure || last.cue != null || last.words.isBlank() || choices.isEmpty()) {
+            offer(first, prior, gapMs, confirm = last?.cue != null)
+            return
+        }
+        val ask = PlanAsk(counselHistory(events, content), last.asked, last.words, choices, subjectNames(events, content, officerLang), subjectDetails(events, content, officerLang), session.subjectLang)
+        val token = ++pace
+        state.value = Conv.Planning
+        secondsLeft.value = null
+        val started = System.currentTimeMillis()
+        scope.launch {
+            val got = try { ladder.plan(ask) } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+            val say = got?.say
+            val words = say?.let { writtenItem(it, got.caption, session.subjectLang, first.q.phase) }
+            act {
+                if (token != pace || state.value != Conv.Planning) return@act
+                val left = gapMs - (System.currentTimeMillis() - started)
+                val pick = got?.let { g -> all.firstOrNull { it.q.id == g.id && choices.any { c -> c.q.id == g.id } } }
+                when {
+                    got != null && words != null -> offer(Proposal(words, first.reason, got), prior, left, confirm = false, input = last.words, since = last.at)
+                    got == null || pick == null -> offer(first, prior, left, confirm = false)
+                    else -> offer(Proposal(pick.q, pick.reason, got), prior, left, confirm = needsOfficer(pick.q), input = last.words, since = last.at)
+                }
+            }
+        }
     }
+
+    private suspend fun offer(p: Proposal, prior: Proposal?, gapMs: Long, confirm: Boolean, input: String = "", since: Long = 0L) {
+        if (prior?.q?.id != p.q.id || prior.plan != p.plan) {
+            val reason = p.plan?.let { planReason(it, input, System.currentTimeMillis() - since) } ?: p.reason.name
+            mark(EventType.SUGGESTED, if (p.plan != null) EventSource.MACHINE else EventSource.RULE, p.q, reason)
+        }
+        state.value = Conv.Proposed(p, held = !running, confirm = confirm)
+        pace++
+        if (running && !confirm) showAfterPause(p.q, gapMs.coerceAtLeast(MIN_GAP_MS), pace)
+    }
+
+    /** Hands-off never shows a model's pick about safety or the body by itself. */
+    private fun needsOfficer(q: Question) = q.group == SAFETY_GROUP || q.cards.any { content.cards[it]?.category == BODY_CATEGORY }
 
     /** Hands-off: the proposal goes on the stage after [gapMs] unless the officer paused or chose otherwise. Hands still
      * signing hold it back, and a sign just given gets a quiet spell, so a small pause is not read as the end. */
@@ -295,7 +351,7 @@ class AutoPilot(
     // The outcome row and the QUESTION_SHOWN after it are two inserts, not one transaction; a crash between
     // them leaves an approval with nothing shown, which the sequencer reads as not shown.
     private suspend fun mark(type: EventType, source: EventSource, q: Question, reason: String? = null) {
-        repo.log(sessionId, type, source, officerLang, text = q.text.get(officerLang), itemId = q.id, reason = reason)
+        repo.log(sessionId, type, source, officerLang, text = q.text[officerLang] ?: q.text["en"], itemId = q.id, reason = reason)
     }
 
     private suspend fun system(key: String) {
@@ -322,6 +378,11 @@ class AutoPilot(
 }
 
 private const val AUTO_GAP_MS = 4_000L
+private const val MIN_GAP_MS = 1_000L
+private const val SAFETY_GROUP = "safety"
+private const val BODY_CATEGORY = "body"
+private val Ruled = setOf(Reason.CARRY_ON, Reason.BREAK_AFTER_UNSURE, Reason.FOLLOWS_ANSWER, Reason.CLOSING)
+private val PlannedPhases = setOf(Phase.WELFARE, Phase.PRACTICAL)
 /** After a sign: a further sign may follow, so the next item waits this long past the last one. */
 private const val SIGN_GAP_MS = 5_000L
 private const val STATEMENT_GAP_MS = 10_000L

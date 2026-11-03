@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
@@ -35,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import java.util.Locale
 
-enum class BodySide { FRONT, BACK }
+enum class BodySide(val key: String) { FRONT("hurt_front"), BACK("hurt_back") }
 
 /** A part of the body map; [label] names it in the record. */
 enum class BodyPart(val label: Int) {
@@ -105,9 +106,11 @@ internal fun bodyHit(side: BodySide, x: Float, y: Float): BodyTouch? {
 }
 
 /** The body for a frightened person to show where it hurts: front and back, any point on the figure. Every touch
- * is kept with its exact place, so the record shows where the finger went, not only a named part. */
+ * is kept with its exact place, so the record shows where the finger went, not only a named part. [subjectText]
+ * gives the sides in the person's language ("hurt_front", "hurt_back"); each chip also draws its side, for a person
+ * who cannot read. */
 @Composable
-fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier) {
+fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subjectText: (String) -> String? = { null }) {
     var side by rememberSaveable { mutableStateOf(BodySide.FRONT) }
     val marks = remember { mutableStateListOf<BodyTouch>() }
     val ink = Color(0xFF4F4539)
@@ -117,8 +120,10 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier) {
     val touch by rememberUpdatedState(onTouch)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(side == BodySide.FRONT, { side = BodySide.FRONT }, { Text(stringResource(R.string.hurt_front)) }, shape = RoundedCornerShape(14.dp))
-            FilterChip(side == BodySide.BACK, { side = BodySide.BACK }, { Text(stringResource(R.string.hurt_back)) }, shape = RoundedCornerShape(14.dp))
+            for (s in BodySide.entries) {
+                FilterChip(side == s, { side = s }, { Text(subjectText(s.key) ?: stringResource(if (s == BodySide.FRONT) R.string.hurt_front else R.string.hurt_back)) }, shape = RoundedCornerShape(14.dp),
+                    leadingIcon = { Canvas(Modifier.size(18.dp)) { drawSideGlyph(s, ink, skin) } })
+            }
         }
         Canvas(
             Modifier.weight(1f).aspectRatio(0.5f, matchHeightConstraintsFirst = true).padding(4.dp)
@@ -136,6 +141,24 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier) {
                 drawCircle(mark, 6.dp.toPx(), c)
             }
         }
+    }
+}
+
+/** A head and shoulders: seen from the front with eyes and a mouth, from the back as hair only. */
+private fun DrawScope.drawSideGlyph(side: BodySide, ink: Color, skin: Color) {
+    val w = size.width
+    val head = Offset(w / 2, w * 0.3f)
+    val r = w * 0.22f
+    drawRoundRect(skin, Offset(w * 0.18f, w * 0.58f), Size(w * 0.64f, w * 0.42f), CornerRadius(w * 0.2f))
+    drawRoundRect(ink, Offset(w * 0.18f, w * 0.58f), Size(w * 0.64f, w * 0.42f), CornerRadius(w * 0.2f), style = Stroke(w * 0.07f))
+    if (side == BodySide.FRONT) {
+        drawCircle(skin, r, head)
+        drawCircle(ink, r, head, style = Stroke(w * 0.07f))
+        drawCircle(ink, w * 0.035f, Offset(w * 0.42f, w * 0.27f))
+        drawCircle(ink, w * 0.035f, Offset(w * 0.58f, w * 0.27f))
+        drawLine(ink, Offset(w * 0.43f, w * 0.38f), Offset(w * 0.57f, w * 0.38f), w * 0.05f)
+    } else {
+        drawCircle(ink, r, head)
     }
 }
 

@@ -141,7 +141,7 @@ internal fun rememberReading(
         val signs = segments.map { it.candidates.ifEmpty { it.guesses.orEmpty() }.take(3).map { g -> g.word } }
         val prompt = rerankPrompt(caption, signs, pool.map { g -> g.text })
         // The station's model first, this phone's helper when the station has none or does not answer.
-        val reply = station?.invoke(RERANK_SYSTEM, prompt, HELPER_TOKENS, HELPER_WAIT_MS)
+        val reply = station?.invoke(RERANK_SYSTEM, prompt, HELPER_TOKENS, HELPER_WAIT_MS, emptyList(), emptyList())
             ?: helper?.takeIf { it.state() == ModelStore.State.READY }?.use { it.chat(RERANK_SYSTEM, prompt, HELPER_TOKENS) }
         val pick = reply?.let { parseOrder(it, pool.size) }?.firstOrNull()?.let(pool::get)
         value = pick?.takeIf { it != first }

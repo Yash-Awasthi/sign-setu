@@ -53,10 +53,14 @@ def _path_ok(path: str) -> bool:
             and not any(c.isspace() for c in path))
 
 
+class TooBig(ValueError):
+    """A frame longer than its limit: answered 413 like the LAN API does."""
+
+
 async def _read_frame(recv, limit: int) -> bytes:
     (n,) = struct.unpack(">I", await recv.read_exact(4))
     if n > limit:
-        raise ValueError(f"frame of {n} bytes over the {limit} limit")
+        raise TooBig(f"frame of {n} bytes over the {limit} limit")
     return await recv.read_exact(n) if n else b""
 
 
@@ -164,6 +168,12 @@ class Link:
                 headers[PEER_HEADER] = peer
                 r = await _local(http, method, path, content=body or None, headers=headers)
                 status, ctype, out = r.status_code, r.headers.get("content-type", "application/json"), r.content
+        except TooBig:
+            status, ctype, out = 413, "application/json", b'{"error":"request too large"}'
+            try:
+                await recv.stop(1)  # tells the phone to stop sending, so its write ends and it reads this answer
+            except Exception:
+                pass
         except Exception as e:
             status, ctype, out = 400, "application/json", json.dumps({"error": f"bad request: {type(e).__name__}"}).encode()
         try:

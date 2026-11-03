@@ -154,7 +154,7 @@ class SentenceEvalTest {
                 c.truth.fills.joinToString(" ") { it.label }, book.english(c.truth), book.hindi(c.truth), "", "", "", "")
         }
         val out = File("../docs/review/intents_review.csv")
-        out.parentFile.mkdirs()
+        out.parentFile?.mkdirs()
         // A byte-order mark so spreadsheet programs read the Hindi as UTF-8.
         out.writeText("﻿" + rows.joinToString("\n") { r -> r.joinToString(",", transform = ::cell) } + "\n")
         assertTrue(rows.size > book.intents.size)

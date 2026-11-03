@@ -34,7 +34,8 @@ import org.junit.Test
 class SignIngestionTest {
     private val content = ASSETS
     @Serializable private data class WordsFile(val words: List<WordEntry>)
-    private val words = Json { ignoreUnknownKeys = true }.decodeFromString<WordsFile>(File(content, "words.json").readText())
+    private val json = Json { ignoreUnknownKeys = true }
+    private val words = json.decodeFromString<WordsFile>(File(content, "words.json").readText())
         .words.flatMap { e -> e.w.map { it to e } }.toMap()
     private val signWords = parseSignWords(File(content, "sign_words.json").readText())
     private val labels = Json.parseToJsonElement(File(content, "models/sign_reader.json").readText()).jsonObject.getValue("labels").jsonArray.map { it.jsonPrimitive.content }

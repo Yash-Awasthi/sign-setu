@@ -153,6 +153,9 @@
         <item quantity="other">%1$d hours</item>
     </plurals>
     <string name="settings_retention_note">Sessions older than this are deleted even if nobody ended them.</string>
+    <string name="settings_officer_id">Officer ID in the record</string>
+    <string name="settings_officer_id_hint">Service or badge number</string>
+    <string name="settings_officer_id_note">Sealed into the first row of every new session. Leave empty to keep your ID out of records.</string>
     <string name="settings_theme">Appearance</string>
     <string name="settings_color_theme">Colour theme</string>
     <string name="settings_theme_mode">Light or dark</string>
@@ -422,6 +425,11 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="conv_wrap_up">Wrap up</string>
     <string name="conv_switch_manual">Switch to Manual</string>
     <string name="conv_source_rule">Rule order</string>
+    <string name="conv_source_model">Planner: %1$s</string>
+    <string name="conv_planning">Reading the last answer for the next step…</string>
+    <string name="conv_needs_approval">Shown only when you tap Show</string>
+    <string name="conv_paused_urgent">Auto paused: the person gave an urgent word or sign. Take over.</string>
+    <string name="reason_planned">Their answer points to: %1$s</string>
     <string name="conv_phase_step">%1$s · step %2$d of %3$d</string>
     <string name="conv_tag_approved">App-suggested · you approved</string>
     <string name="conv_tag_auto">Shown automatically</string>
@@ -454,6 +462,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="sys_auto_wrap_up">Wrapping up</string>
     <string name="sys_auto_ended_stop">Auto ended after a second Stop</string>
     <string name="sys_auto_break">The person asked for a break</string>
+    <string name="sys_auto_urgent">The person gave an urgent word or sign; auto paused</string>
     <string name="report_mode">Conversation mode</string>
     <string name="report_mode_manual">Manual</string>
     <string name="report_mode_auto">Auto (rule order)</string>
@@ -604,7 +613,8 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="board_name">Picture board</string>
     <string name="ai_counsellor_start">Let the AI counsellor talk for you</string>
     <string name="ai_tag">AI counsellor</string>
-    <string name="report_by_ai">written by the AI counsellor, officer monitoring</string>
+    <string name="report_by_ai">written by AI (counsellor or auto mode planner), officer monitoring</string>
+    <string name="report_by_model">suggested by %1$s from the answer \"%2$s\" (%3$s), %4$.1f s after it</string>
     <string name="counsel_thinking">The counsellor is writing its next line…</string>
     <string name="counsel_waiting">Waiting for their answer</string>
     <string name="counsel_next">Sends on its own in two seconds — Take over to stop it.</string>

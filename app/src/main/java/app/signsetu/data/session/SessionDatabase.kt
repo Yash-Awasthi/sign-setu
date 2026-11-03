@@ -74,13 +74,16 @@ abstract class SessionDatabase : RoomDatabase() {
             }
         }
 
+        /** Every step from version 1 to the current one; the migration test opens with the same list. */
+        val MIGRATIONS get() = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+
         fun open(context: Context, key: ByteArray, onDestructiveMigration: () -> Unit = {}, fileName: String = FILE_NAME): SessionDatabase {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, SessionDatabase::class.java, fileName)
                 .openHelperFactory(SupportOpenHelperFactory(key))
                 // Purged rows are overwritten in place, and no write-ahead log keeps old pages around.
                 .setJournalMode(JournalMode.TRUNCATE)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                .addMigrations(*MIGRATIONS)
                 // A downgrade drops sessions rather than failing every unlock; the officer is told (onDestructiveMigration).
                 .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
                 .addCallback(object : Callback() {

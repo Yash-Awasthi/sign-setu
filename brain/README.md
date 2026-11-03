@@ -9,11 +9,12 @@ An optional service for one computer at the station. Paired phones use it for sp
 | `GET /v1/beat` (iroh only) | The heartbeat: one stream that carries the status every 5 seconds until the phone closes it | `link.py` |
 | `POST /v1/asr` | WAV (16 kHz mono) to text, with the detected language | faster-whisper, the model chosen at setup (`-Asr`), INT8 on the CPU |
 | `POST /v1/live`, `/v1/live/{id}`, `/v1/live/{id}/stop` | Live speech to text: the phone sends 16 kHz PCM in pieces while the person talks and reads back the words so far, settled and tentative, and when they stopped (`live.py`) | The same model, one greedy pass about every half second; a word settles once two passes agree ([docs/17-live-speech.md](../docs/17-live-speech.md)) |
-| `POST /v1/sign` | One sign's landmarks to the station reader's likeliest words | The format 1 reader the department put in `--isl` (`signs.py`); none without it |
+| `POST /v1/sign` | One sign's landmarks to the station reader's likeliest words | Every reader in `--isl` (`signs.py`); the first by `priority` answers, and its top is marked `disputed` when another is 0.3 or more sure of a different word; none without one |
 | `POST /v1/archive`, `/v1/archive/{id}?at=`, `/v1/archive/{id}/done` | A whole conversation from a phone, as one zip in pieces, saved in the inbox once its SHA-256 matches | `inbox.py`; the inbox is `--inbox`, or `Sign Setu` in Documents, OneDrive's first |
 | `POST /v1/translate` | Up to 16 sentences between the app's languages | IndicTrans2 distilled 200M (English and Indian languages, Indian to Indian through English); NLLB-200 distilled 600M for Chhattisgarhi and as the fallback |
 | `POST /v1/gloss` | A sentence to draft ISL sign order, limited to the vocabulary the phone sends | Rules (time first, negation after the verb, question word last), refined by the language model when it answers; words outside the vocabulary are dropped |
-| `POST /v1/chat` | One reply from the local model | Ollama (`gemma3:1b` by default) on the same computer |
+| `POST /v1/plan` | Auto mode's next step: an allowed bank item that meets the person's last answer, or (write mode) one short sentence for the phone to check | `--plan words`: the model names one of the items' cue words; `--plan write`: it picks an item or writes a sentence (`plan.py`). Anything else is no pick and the phone keeps the bank's order |
+| `POST /v1/chat` | One reply from the station's model | Ollama (`gemma3:1b` by default) on the same computer, or a model behind an API key (`--llm-api openai\|anthropic`, `--llm-url`, key in `llm.key`), with names, details and numbers masked before text leaves |
 
 ## Reaching the brain
 
@@ -57,7 +58,7 @@ It makes a Python environment with the pinned packages (`requirements.txt`), dow
 | Change a setting without downloading again | `.\setup.ps1 ... -NoModels` | `./setup.sh ... --no-models` |
 | Take the service away (environment, models and state stay) | `.\remove.ps1` | `./remove.sh` |
 
-To add the station's sign reader, put its `.json` and `.bin` in `isl\` (or `isl/`) here and stop and start the brain; nothing else changes. On Windows the service starts at boot when `setup.ps1` runs as administrator, otherwise at sign-in; its log is `brain.log` in the state folder. On Linux it is a systemd user service, logged in the journal. `-Firewall` (`setup.ps1`, as administrator) opens TCP 8000 and iroh's direct path on private networks only: a Wi-Fi Windows calls Public gets neither, and phones on it need the relay.
+To add a sign reader, put its model and its `.json` spec in `isl\` (or `isl/`) here: `.bin` (format 1), `.tflite` (LiteRT) or `.onnx`. It loads within seconds, no restart. A bad or unreadable file is refused with a reason (in `/v1/status` under `isl.refused`) and the reader it would replace keeps running. A `.pt` is refused: export it to ONNX. The spec needs `labels`, `frames`, `temperature` and `input` (`shoulder98` or `raw218`); `--words` names the app's `sign_words.json` so labels it lacks are reported. On Windows the service starts at boot when `setup.ps1` runs as administrator, otherwise at sign-in; its log is `brain.log` in the state folder. On Linux it is a systemd user service, logged in the journal. `-Firewall` (`setup.ps1`, as administrator) opens TCP 8000 and iroh's direct path on private networks only: a Wi-Fi Windows calls Public gets neither, and phones on it need the relay.
 
 Started by hand, it prints two pairing lines; `status` shows the same lines while it runs as a service:
 
@@ -110,7 +111,7 @@ python -m brain --asr <model>                        # from this folder; prints 
 
 ## Check
 
-`python check.py https://<ip>:8000 <token> <pin> [--audio speech.wav]` refuses plain HTTP and a wrong pin, expects 401 without or with a wrong token and 429 for a token guesser, and times every route (first call, which loads the model, then the median and worst of the rest). Exit 1 on any failed check.
+`python check.py <token> --url https://<ip>:8000 --pin <pin> [--ticket <ticket>] [--audio speech.wav]` (`--ticket` alone checks only the iroh path through the relay: connect, heartbeat, then every service: asr, live, sign, translate, gloss, chat, archive; a service the station does not offer is skipped, not failed). On the LAN it refuses plain HTTP and a wrong pin, expects 401 without or with a wrong token and 429 for a token guesser, and times every route (first call, which loads the model, then the median and worst of the rest). Exit 1 on any failed check.
 
 ## Licences
 

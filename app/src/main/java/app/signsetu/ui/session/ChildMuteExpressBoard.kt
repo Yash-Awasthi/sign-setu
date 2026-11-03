@@ -208,7 +208,7 @@ fun FullChildMuteCommunicationBoard(
 
             val map = tab == "body" && onBodyTouch != null
             // The map takes most of the height; the body cards stay below it for a named answer.
-            if (map) HurtMap({ t -> haptic.performHapticFeedback(HapticFeedbackType.LongPress); onBodyTouch(t) }, Modifier.fillMaxWidth().weight(0.62f))
+            if (map) HurtMap({ t -> haptic.performHapticFeedback(HapticFeedbackType.LongPress); onBodyTouch(t) }, Modifier.fillMaxWidth().weight(0.62f)) { content.subjectText(it, lang) }
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),

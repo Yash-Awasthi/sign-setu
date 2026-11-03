@@ -180,11 +180,11 @@ internal fun SavedSessions(
                             androidx.compose.material3.CircularProgressIndicator(progress = { progress.coerceAtLeast(0.05f) }, modifier = Modifier.padding(12.dp).size(24.dp))
                         } else {
                             DoneButton(DownloadIcon, stringResource(R.string.saved_download), kept, enabled = busy == null) {
-                                if (kept) where = Where(s, station = false, place = s.phoneFolder!!) else download(s)
+                                if (kept) where = Where(s, station = false, place = s.phoneFolder) else download(s)
                             }
                             // Shown only while the station is connected and takes conversations: nothing to fail otherwise.
                             if (station.uses(BrainClient.Feature.ARCHIVE)) DoneButton(UploadIcon, stringResource(R.string.saved_send), sent, enabled = busy == null) {
-                                if (sent) where = Where(s, station = true, place = s.stationFile!!) else upload(s)
+                                if (sent) where = Where(s, station = true, place = s.stationFile) else upload(s)
                             }
                         }
                     }

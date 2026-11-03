@@ -296,7 +296,8 @@ const measured = (f: Frame) => f.r.shape.startsWith("c:") || f.l.shape.startsWit
 /** Recorded keys close together sample one movement. */
 const flows = (frames: Frame[], i: number) =>
   i >= 0 && i < frames.length - 1 && frames[i + 1].t - frames[i].t < FLOW && measured(frames[i]) && measured(frames[i + 1]);
-const easeOutBack = (f: number, c1 = 1.1) => 1 + (c1 + 1) * (f - 1) ** 3 + c1 * (f - 1) ** 2;
+/** Ease-out-back on a time warp that starts at rest, so a hand leaves a hold smoothly (RigTimeline.kt matches). */
+const settle = (f: number, g = f * f * (2 - f) - 1) => 1 + 2.1 * g ** 3 + 1.1 * g ** 2;
 const elbow = (name: string) => (name === "in" ? -1 : name === "down" ? 0 : 1);
 const blendShape = (a: HandShape, b: HandShape, f: number): HandShape =>
   shape(
@@ -442,7 +443,7 @@ export class Timeline {
     const f = ease(raw);
     // A free move overshoots slightly and settles; contacts and moves to or from rest never pass their target.
     const free = b.touch === "wrist" && !OTHER_HAND.has(b.at) && b.at !== "rest" && a.at !== "rest";
-    const m = free ? easeOutBack(raw) : f;
+    const m = free ? settle(raw) : f;
     const pa = this.resolve(a, side, other);
     const pb = this.resolve(b, side, other);
     const sa = handShape(a.shape) ?? SHAPES.RELAX;

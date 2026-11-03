@@ -46,8 +46,9 @@ is a fresh `/v1/status`, so the token is checked every time; a wrong token gets 
 | Capability | Offered when | What the phone may then send |
 | --- | --- | --- |
 | `asr` (and `live`) | The speech model (`--asr`) has loaded | Speech to text, one service on the phone: the words shown live while the person speaks, and the whole take's text kept after |
-| `isl` | A sign reader is in the `--isl` folder | Each sign's landmarks, as it is read |
+| `isl` | At least one sign reader (`.bin`, `.tflite` or `.onnx` with its `.json` spec) is loaded from the `--isl` folder; the folder is watched, so the capability follows files added or removed with no restart | Each sign's landmarks, as it is read |
 | `llm` | Ollama answers with the model named by `--llm` | Captions, sentence ranking, counsellor, report summary |
+| `plan` | As `llm`; follows the phone's language model switch | Auto mode's last exchange and the items it may propose next |
 | `gloss` | Always: rules, refined by the model when it answers | Sign order for typed text, asked only while the phone's "Sign in ISL order" is on; it has no switch of its own |
 | `archive` | Always (the inbox is `--inbox`, or Sign Setu in Documents) | Whole conversations |
 
@@ -96,10 +97,55 @@ phone's to within 0.00001.
 | Ranking the checked sentences of a signed answer | Station model | Phone's sentence helper | None |
 | Sentence suggestions from sign guesses | Station model | None | Gateway or custom endpoint |
 | Counsellor, report summary | Station model | None | Gateway or custom endpoint |
+| Auto mode's next item | Station model (`/v1/plan`) | Phone's assistant model | Gateway or custom endpoint |
 
-The station is the department's own computer, reached end-to-end encrypted, so text goes to it unmasked. Text going to
+The station is the department's own computer, reached end-to-end encrypted, so text goes to it unmasked. A station
+whose model is behind an API key (`--llm-api openai` for OpenAI-compatible services such as OpenAI, Groq, Mistral,
+Gemini or OpenRouter; `--llm-api anthropic` for Claude; key in `llm.key` in the state folder or `BRAIN_LLM_KEY`;
+`--llm-url` for the service's base URL) masks before the text leaves it: the names and details the phone sends with
+each request, and numbers, emails, links and ID numbers it finds itself (`brain/brain/mask.py`). `/v1/status` reports
+`llm_remote` and `plan_mode`. For Claude the station asks for low effort and lets the API retry a declined request on
+a fallback model. Text going to
 the gateway is still masked, and the consent asked before session text leaves the phone for the gateway is unchanged.
 The counsellor and the summary are offered when either the station's model or the gateway is there.
+
+### Auto mode's next item
+
+After each answer, auto mode proposes the bank's next item unless the answer showed a need another step meets.
+The answer is first matched against the items' cue words (their pictures' names: "water" meets "Do you want water?").
+Failing that, a model is asked, station first, then the phone, then the gateway, within 10 seconds in all:
+
+- **words** (small models: the phone's, and the station's on Ollama by default): the model names which cue word the
+  answer means ("thirsty" is water); the item is the first allowed one carrying that word.
+- **write** (large models: the gateway, and the station behind an API by default; `--plan write` for a large Ollama
+  model): the model picks an allowed item, or writes one short sentence about comfort or needs. The phone shows such a
+  sentence only when it is at most 12 words, has no number, stays off what happened, violence, touching, secrets, the
+  body and the people involved, asks no why and opens with no leading "did", "was" or "have", and every word has a sign
+  of its own (`refusal` in `Planner.kt`). The station's translator gives its caption in the person's language.
+
+The person answers in their own language. The phone's word match also reads the pictures' names in that language and
+in Hindi ("पानी" is water, Chhattisgarhi "दाई" is mother); no translation is involved. Translation happens only on the
+station, inside `/v1/plan`, and nothing of it is shown on the phone: the phone sends the person's language, the station
+puts the answer into English, matches it against the cue words, and only then asks its model; a sentence written in
+write mode comes back with its caption in the person's language. A small model ("words") reads only English: an answer
+the station cannot translate (Gondi and Halbi have no translator; a station without the translation models) gets no
+model step, rather than a guess. A large model ("write") reads the answer as given beside any translation. A translation
+model missing from the station fails once, is taken out of service for 60 seconds, and is never tried again until restart.
+
+With no usable answer from any of them, the bank's order stands.
+
+- Only welfare and practical items are planned. A break, carry on, a follow-up and closing keep their rules.
+- A reading stays a reading: it chooses what is asked next and is never logged as the answer.
+- No planning on an unsure answer, an unread sign, or a plain yes or no.
+- An urgent word or picture (help, knife, attack, blood and the like), from an answer or a request, pauses auto mode at
+  once. A distress cue (scared, sad, pain and the like) leaves the bank's next item, shown only on the officer's tap.
+- Hands-off mode shows a planned item or a checked sentence by itself, except a bank item about safety or the body,
+  which waits for the officer. The report marks a written sentence as written by AI, officer monitoring.
+- Each planned suggestion is logged and sealed with who found it (`words`, `station <model>`, `phone`, `gateway`),
+  the cue word, the answer it read and the time from that answer to the proposal; the report prints it beside the item.
+
+On the test computer (RTX 4060, `gemma3:1b`) the station answers a plan in 100 to 330 ms; a cue word in the answer
+itself needs no model at all.
 
 ## 5. Sending conversations to the station
 
@@ -138,7 +184,10 @@ from the start is kept beside the other, as `<name>-1.zip`, for a person to look
 | `audio/<id>.wav` | The person's recorded voice, 16 kHz mono 16-bit |
 | `signs/<id>.json.gz` | The raw landmarks each signed answer was read from, gzipped JSON |
 
-A file in `signs/` holds the word read for each sign and its frames. Android reads no database value over 2 MB, so a
+A file in `signs/` holds, for each sign, the word read, `read` (the reader's top three words, each with its probability
+`p`) and its frames. The app's reading row also carries the reader's confidence in its sealed `reason`: `read:` and, per
+sign, the read word's probability, then `s` (spelled), `~` (ambiguous), `!` (too unsure to trust one word) and `@` (read
+by the station), or `-` for a sign not read. Android reads no database value over 2 MB, so a
 long window (Tell me runs to three minutes) keeps every second frame, then every fourth, until it fits, and the file's
 `every` says which. A frame is `{"t", "left", "right", "pose"}`, plus `browsUp`, `mouthOpen`, `yaw`, `pitch` and `mouth` when
 the face model gave them: hands as 21 (x, y) and the pose as 33 (x, y), MediaPipe normalised image points, flat, null

@@ -148,6 +148,7 @@ fun OfficerPane(
     var includeSummary by rememberSaveable { mutableStateOf(false) }
     // Session data leaves the phone only after the officer allows it once for this session.
     var cloudConsent by rememberSaveable { mutableStateOf(false) }
+    SideEffect { vm.auto.cloudAllowed = cloudConsent }
     var awaitingConsent by remember { mutableStateOf<(() -> Unit)?>(null) }
     val activity = LocalActivity.current
     var stopSeen by rememberSaveable { mutableStateOf<Long?>(null) }

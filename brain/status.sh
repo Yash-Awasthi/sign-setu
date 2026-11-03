@@ -15,10 +15,10 @@ if [ -f "$STATION_CONFIG" ]; then
   # shellcheck disable=SC1090
   . "$STATION_CONFIG"
   dir="${ISL:-$here/isl}"
-  reader="$(ls "$dir"/*.json 2>/dev/null | head -1)"
+  reader="$(ls "$dir"/*.bin "$dir"/*.tflite "$dir"/*.onnx 2>/dev/null | xargs -n1 basename 2>/dev/null | paste -sd, -)"
   echo "Speech:   $ASR"
   echo "Relay:    ${RELAY:-none: phones reach it only by a direct path}"
-  if [ -n "$reader" ]; then echo "Reader:   $(basename "$reader" .json) in $dir"; else echo "Reader:   none in $dir (phones read signs themselves)"; fi
+  if [ -n "$reader" ]; then echo "Reader:   $reader in $dir"; else echo "Reader:   none in $dir (phones read signs themselves)"; fi
 else
   echo "Settings: none (run ./setup.sh --asr MODEL)"
 fi

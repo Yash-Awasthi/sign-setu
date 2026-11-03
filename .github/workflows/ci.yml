@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+# The copy that only checks CI drops a run a newer push replaced; the main repository never cancels a release.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.repository != 'Yash-Awasthi/sign-setu-pvt' }}
+
 jobs:
   version:
     runs-on: ubuntu-24.04
@@ -15,7 +20,7 @@ jobs:
       name: ${{ steps.v.outputs.name }}
       new: ${{ steps.v.outputs.new }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: v
         run: |
           name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
@@ -26,18 +31,25 @@ jobs:
   android:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
         with:
           dependency-graph: disabled
       - name: Test and lint
         run: >-
           ./gradlew --console=plain :app:testStandardDebugUnitTest :app:testNearbyDebugUnitTest
           :app:compileStandardDebugAndroidTestKotlin :app:lintStandardRelease
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: android-reports
+          path: |
+            app/build/reports/tests
+            app/build/reports/lint-results-standardRelease.html
 
   avatar:
     runs-on: ubuntu-24.04
@@ -45,8 +57,8 @@ jobs:
       run:
         working-directory: avatar
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -63,8 +75,8 @@ jobs:
       run:
         working-directory: portal
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -81,8 +93,8 @@ jobs:
   tools:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: pip install numpy resvg-py pillow soundfile
@@ -109,8 +121,8 @@ jobs:
     env:
       TEST_DATABASE_URL: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: gateway/go.mod
           cache-dependency-path: gateway/go.sum
@@ -124,17 +136,47 @@ jobs:
       - run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
       - run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
+  # The station brain and relay ship as Python and scripts: they must parse on both shells, and the relay config must load.
+  station:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Brain compiles
+        run: python -m compileall -q brain/brain brain/check.py
+      - name: Shell scripts parse
+        run: for f in brain/*.sh relay/*.sh; do bash -n "$f"; done
+      - name: Shell scripts are executable
+        run: for f in brain/*.sh relay/*.sh; do test "$(git ls-files -s "$f" | cut -c1-6)" = 100755 || { echo "$f is not executable"; exit 1; }; done
+      - name: ShellCheck errors
+        run: shellcheck -S error brain/*.sh relay/*.sh
+      - name: PowerShell scripts parse
+        shell: pwsh
+        run: |
+          $bad = 0
+          foreach ($f in Get-ChildItem brain/*.ps1, relay/*.ps1) {
+            $errs = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$errs)
+            foreach ($e in $errs) { Write-Host "$($f.Name): $($e.Message)"; $bad++ }
+          }
+          if ($bad) { exit 1 }
+      - name: Relay config loads
+        run: python -c "import tomllib; tomllib.load(open('relay/relay.toml', 'rb'))"
+
   semgrep:
     runs-on: ubuntu-24.04
     container: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
-      - run: semgrep scan --config auto --severity ERROR --error
+      - uses: actions/checkout@v5
+      # The avatar bundle is built from avatar/src, scanned here as source; minified, it only times the rules out.
+      - run: semgrep scan --config auto --severity ERROR --error --exclude app/src/main/assets/avatar/avatar.js
 
   osv:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Scan app dependencies
         run: |
           curl -sSfL -o osv-scanner https://github.com/google/osv-scanner/releases/download/v2.0.2/osv-scanner_linux_amd64
@@ -147,24 +189,31 @@ jobs:
           worst=$(jq '[.results[]?.packages[]?.groups[]?.max_severity | select(. != null and . != "") | tonumber] | max // 0' osv.json)
           echo "worst CVSS: $worst"
           jq -e ". < 7" <<< "$worst" > /dev/null
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: osv
           path: osv.json
 
   # The emulator run is slow, so it gates a new version only; a manual run forces it.
+  # Four emulators in parallel, each running every class's share of tests (AndroidJUnitRunner sharding).
   instrumented:
     needs: version
     if: needs.version.outputs.new == 'true' || github.event_name == 'workflow_dispatch'
+    name: instrumented (${{ matrix.shard }} of 4)
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
         with:
           dependency-graph: disabled
       - name: Enable KVM
@@ -174,18 +223,21 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       # A crashed test process leaves no stack in the report, so the device log rides along with it.
       # No Play services image: its first-boot self-update killed the app through the fonts provider mid-run.
-      # StageEndToEndTest needs a camera feed and the two MediaPipe tests need real clips and a GPU; the emulator here has neither.
+      # StageEndToEndTest needs a camera feed, and the MediaPipe and timing tests need real clips, a GPU or a phone; the emulator has none.
+      - name: Build the app and test APKs
+        run: ./gradlew --console=plain :app:assembleStandardDebug :app:assembleStandardDebugAndroidTest
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           arch: x86_64
           target: default
           profile: pixel_6
-          script: ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.StageAccessibilityTest,app.signsetu.StageDeviceAccessibilityTest,app.signsetu.OverlayTouchTest,app.signsetu.SessionMigrationTest,app.signsetu.ReportExportDeviceTest || (adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1)
-      - uses: actions/upload-artifact@v4
+          # One class per run: given a comma list, the connected task ran only the first class.
+          script: for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest; do ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.$c -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} || { mkdir -p app/build/reports/androidTests; adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }; done
+      - uses: actions/upload-artifact@v6
         if: failure()
         with:
-          name: instrumented-report
+          name: instrumented-report-${{ matrix.shard }}
           path: app/build/reports/androidTests
 
   gitleaks:
@@ -194,17 +246,17 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # A green master push publishes v<versionName>: a new version gets a new release, the same version is replaced.
   # Only the main repository holds the signing key and publishes; a copy used to check CI stops before this.
   release:
-    needs: [version, android, avatar, portal, tools, gateway, semgrep, osv, instrumented, gitleaks]
+    needs: [version, android, avatar, portal, tools, gateway, station, semgrep, osv, instrumented, gitleaks]
     if: ${{ !failure() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'Yash-Awasthi/sign-setu-pvt' }}
     runs-on: ubuntu-24.04
     concurrency: release
@@ -215,14 +267,14 @@ jobs:
       GATEWAY_URL: https://signsetu-gateway.onrender.com
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
         with:
           dependency-graph: disabled
       - name: Build and sign

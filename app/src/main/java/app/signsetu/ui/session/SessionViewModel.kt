@@ -29,6 +29,7 @@ import app.signsetu.pair.reencodeRemotePng
 import app.signsetu.sign.SignWindow
 import app.signsetu.sign.glossOf
 import app.signsetu.sign.glossTranscript
+import app.signsetu.sign.readConfidence
 import app.signsetu.sign.signChoices
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -124,7 +125,11 @@ class SessionViewModel(
         sessionId, repo, content, officerLang, viewModelScope,
         signing = { local.value.reading != null },
         handsOff = true,
-        present = { q, lang, again -> present(Pending.Ask(q, again), lang) },
+        present = { q, lang, again ->
+            // A sentence the planner wrote goes on the stage as the counsellor's do: signed, with any answer allowed.
+            if (q.isWritten()) present(Pending.FreeText(q.text["en"].orEmpty(), emptyList(), setOf(SignMode.SIGNS, SignMode.GESTURES, SignMode.PICTURES), q.text[lang], byAi = true), lang)
+            else present(Pending.Ask(q, again), lang)
+        },
     )
 
     val ui: StateFlow<SessionUi?> = combine(repo.session(sessionId).filterNotNull(), repo.events(sessionId), local) { s, events, l ->
@@ -349,8 +354,10 @@ class SessionViewModel(
 
     private suspend fun logSigned(segments: List<SignSegment>, words: List<String>, source: EventSource, lang: String, shownId: Long? = local.value.itemId, sentence: String? = null): Long {
         // The app's own reading keeps the raw landmarks it read from, sealed with the row (docs/18-station.md).
-        val raw = if (source == EventSource.MACHINE) withContext(Dispatchers.Default) { runCatching { StationExport.signsJson(segments.map { it.frames }, words) }.getOrNull() } else null
-        val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = sentence ?: words.joinToString(" "), shownId = shownId, landmarksJson = raw)
+        val machine = source == EventSource.MACHINE
+        val raw = if (machine) withContext(Dispatchers.Default) { runCatching { StationExport.signsJson(segments.map { it.frames }, words, segments.map { it.guesses.orEmpty() }) }.getOrNull() } else null
+        val id = repo.log(sessionId, EventType.ANSWER_SIGNED, source, lang, text = sentence ?: words.joinToString(" "), shownId = shownId,
+            reason = if (machine) readConfidence(segments) else null, landmarksJson = raw)
         local.update { it.copy(signed = it.signed + (id to segments)) }
         // The app's own reading is the moment the signs were seen; the officer's later reading of them adds no new picture.
         if (source == EventSource.MACHINE) keepSigns(segments.map { it.frames }, words, shownId)

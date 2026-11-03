@@ -16,7 +16,7 @@ from pathlib import Path
 import uvicorn
 
 from .app import create
-from .models import Asr, Llm, Translator
+from .models import ApiLlm, Asr, Llm, Translator
 from .security import Secrets, lan_addresses, write_private
 
 
@@ -54,15 +54,24 @@ def main() -> None:
     ap.add_argument("--port", type=port, default=8000)
     ap.add_argument("--asr", required=True, help="faster-whisper model: a size (small, medium, large-v3) or a model folder; the department chooses")
     ap.add_argument("--translator", default="indictrans2", choices=["indictrans2", "nllb"])
-    ap.add_argument("--llm", default="gemma3:1b", help="Ollama model name")
+    ap.add_argument("--llm", default=os.environ.get("BRAIN_LLM") or "gemma3:1b", help="model name: Ollama's, or the API's with --llm-api")
+    ap.add_argument("--llm-api", default=os.environ.get("BRAIN_LLM_API") or "ollama", choices=["ollama", "openai", "anthropic"],
+                    help="openai: any OpenAI-compatible API (OpenAI, Groq, Mistral, Gemini, OpenRouter, vLLM); anthropic: Claude. "
+                         "The key is read from llm.key in --state, or BRAIN_LLM_KEY; text is masked before it leaves")
+    ap.add_argument("--llm-url", default=os.environ.get("BRAIN_LLM_URL") or None,
+                    help="the API's base URL, e.g. https://api.groq.com/openai/v1 or https://api.mistral.ai/v1 (default: OpenAI's or Anthropic's)")
+    ap.add_argument("--plan", default=os.environ.get("BRAIN_PLAN") or None, choices=["words", "write"],
+                    help="how auto mode's next step is planned: words (small models; default for Ollama) or write (large models; default for an API)")
     ap.add_argument("--ollama", default="http://127.0.0.1:11434")
     ap.add_argument("--rotate-token", action="store_true")
     ap.add_argument("--no-iroh", action="store_true", help="LAN only: no iroh endpoint")
     ap.add_argument("--relay", type=relay_url, default=os.environ.get("BRAIN_RELAY") or None,
                     help="the department's iroh relay URL; without it phones reach the brain only by a direct path")
     ap.add_argument("--isl", default=os.environ.get("BRAIN_ISL") or str(Path(__file__).resolve().parent.parent / "isl"),
-                    help="folder with the station's sign reader (format 1 .json and .bin; default: isl/ beside this "
+                    help="folder with the station's sign reader (.bin, .tflite or .onnx, each with its .json spec; default: isl/ beside this "
                          "package); while it holds none, no signs are read here")
+    ap.add_argument("--words", default=os.environ.get("BRAIN_WORDS") or None,
+                    help="the app's sign_words.json (app/src/main/assets/content/): readers report labels it lacks")
     ap.add_argument("--inbox", default=os.environ.get("BRAIN_INBOX") or None,
                     help="folder where conversations sent from phones are saved (default: Sign Setu in Documents, OneDrive's first)")
     ap.add_argument("--log", default=None, help="write all output to this file (UTF-8, appended) instead of the console")
@@ -96,19 +105,15 @@ def main() -> None:
     # The status scripts show these again while the brain runs as a service, where nobody sees its console.
     pairing = Path(a.state) / "pairing.txt"
     write_private(pairing, ("\n".join(lines) + "\n").encode("utf-8"))
-    isl = None
-    isl_dir = Path(a.isl)
-    if any(isl_dir.glob("*.json")):
-        from .signs import IslReader
+    from .signs import Readers
 
-        try:
-            isl = IslReader(isl_dir)
-            print(f"Sign reader: {isl.name}, {len(isl.labels)} words", flush=True)
-        except (OSError, ValueError, KeyError, TypeError) as e:  # a broken reader must not keep the rest of the station down
-            print(f"Sign reader in {isl_dir} not loaded ({type(e).__name__}: {e}); phones read signs themselves", flush=True)
-    else:
-        isl_dir.mkdir(parents=True, exist_ok=True)
-        print(f"No sign reader in {isl_dir}: phones read signs themselves. Put a reader's .json and .bin there and restart.", flush=True)
+    isl_dir = Path(a.isl)
+    # The folder is watched: a model added, changed or removed takes effect within seconds, with no restart.
+    words = Path(a.words) if a.words else Path(__file__).resolve().parents[2] / "app/src/main/assets/content/sign_words.json"
+    isl = Readers(isl_dir, words=words if words.exists() else None)
+    isl.start()
+    if not isl:
+        print(f"No sign reader in {isl_dir} yet: phones read signs themselves until one loads.", flush=True)
     from .inbox import Inbox
 
     inbox = Inbox(Path(a.inbox) if a.inbox else default_inbox())
@@ -116,7 +121,18 @@ def main() -> None:
     asr = Asr(a.asr)
     # Offered to phones only once loaded (status "caps"), so no recording is sent to a station that cannot read it.
     asr.warm()
-    app = create(secrets, asr, Translator(a.translator), Llm(a.ollama, a.llm), isl=isl, inbox=inbox)
+    if a.llm_api == "ollama":
+        llm = Llm(a.ollama, a.llm)
+    else:
+        keyfile = Path(a.state) / "llm.key"
+        key = os.environ.get("BRAIN_LLM_KEY") or (keyfile.read_text(encoding="utf-8").strip() if keyfile.exists() else "")
+        # The Ollama default names no model an API serves; Claude's current Opus stands in when none is given.
+        model = a.llm if a.llm != ap.get_default("llm") else ("claude-opus-5-5" if a.llm_api == "anthropic" else a.llm)
+        if model == ap.get_default("llm"):
+            ap.error("--llm-api openai needs --llm with the service's model name, e.g. llama-3.3-70b-versatile or mistral-small-latest")
+        llm = ApiLlm(a.llm_api, model, key, a.llm_url)
+        print(f"Language model: {model} over the {a.llm_api} API; names, details and numbers are masked before text leaves", flush=True)
+    app = create(secrets, asr, Translator(a.translator), llm, isl=isl, inbox=inbox, plan_mode=a.plan)
     # Keep-alive well past the 5 s heartbeat, so the iroh bridge's pooled connection is not closed between beats.
     uvicorn.run(app, host=a.host, port=a.port, ssl_certfile=str(secrets.cert), ssl_keyfile=str(secrets.key), timeout_keep_alive=120,
                 log_level="warning", access_log=False, server_header=False, date_header=False)

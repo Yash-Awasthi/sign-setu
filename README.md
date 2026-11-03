@@ -2,7 +2,7 @@
 
 An offline Android app that helps a police officer communicate with a person who cannot communicate in words: deaf, non-verbal, traumatised or speaking another language. A 3D character signs and gestures, pictures and captions carry the question, typed text is played in draft Indian Sign Language order, and signed answers are read on the phone inside explicit sign windows. The app is a communication aid, not an interpreter, and not the statutory recording of a statement; it records the person's voice only with logged consent, between the officer's tap to start and tap to stop.
 
-- Version 0.8.4.iroh (version code 21). Android 10 (API 29) and later, 64-bit; Kotlin and Jetpack Compose; one `app` module.
+- Version 0.8.5 (version code 22). Android 10 (API 29) and later, 64-bit; Kotlin and Jetpack Compose; one `app` module.
 - Works fully offline. Online services are opt-in: the department gateway (enrolled with a one-time department code) or a custom OpenAI- or Anthropic-compatible endpoint, used only while the officer has the online assistant on; and the optional station computer, reached only once a phone is paired with it in Settings. No assistant key is compiled into an APK.
 - Permissions: `RECORD_AUDIO` records the person's own speech only, with consent logged first. No location or scanning permission in the `standard` flavor; every build fails if a forbidden permission reaches the merged manifest.
 - Sessions live in an encrypted SQLCipher database under a Keystore key that works only while the phone is unlocked. A finished session is saved under a name the officer types. Every session is deleted 24 hours after its last activity by default, by an hourly background job even if the app is never opened; the officer can pick 4 to 72 hours or keep sessions until deleted.
@@ -10,7 +10,7 @@ An offline Android app that helps a police officer communicate with a person who
 
 ## Screenshots
 
-<a href="docs/screenshots/showcase.jpg"><img src="docs/screenshots/showcase.jpg" width="100%" alt="Sign Setu: home, stage, signed answer, transcript, picture board, question bank, ISL dictionary and settings"></a>
+<a href="docs/screenshots/showcase.jpg"><img src="docs/screenshots/showcase.jpg" width="100%" alt="Sign Setu: home, stage, typed text signed, answer input, body map, transcript, question bank, picture board, ISL dictionary, Sign to Type, Help and walkthrough, settings"></a>
 
 Every screen is in [docs/12-screens.md](docs/12-screens.md).
 

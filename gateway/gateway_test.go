@@ -296,7 +296,7 @@ func TestEnrolIsRateLimited(t *testing.T) {
 func TestAssistAcceptsEveryPromptTheAppSends(t *testing.T) {
 	e := newEnv(t, nil, nil, nil)
 	h := e.enrolled()
-	if len(fixture) != 7 {
+	if len(fixture) != 8 {
 		t.Fatalf("%d templates", len(fixture))
 	}
 	for _, tpl := range fixture {

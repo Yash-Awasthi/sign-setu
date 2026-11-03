@@ -44,14 +44,14 @@ app need a rebuild.
 
 ## Troubleshooting
 
-| Symptom | Cause and fix |
-| --- | --- |
-| `npx vp` fails to start | Node is older than the range above; check `node --version` |
-| The build cannot find the avatar module | Run `npm install` in `../avatar` first |
-| The page says the character could not be loaded | Reload the page; if it persists, rebuild after `npm install` in `../avatar` |
-| New app content is not shown | The portal reads content at build time; run `npx vp build` again |
-| Verdicts are gone | They live in this browser's local storage, per role; clearing site data or using another browser or profile starts empty. Export JSON before clearing. Damaged stored data is ignored and the page starts empty |
-| A shared link opens the wrong gesture | The id after `#` must match a gesture id exactly; an unknown or malformed one opens the first gesture |
+| Symptom                                         | Cause and fix                                                                                                                                                                                                   |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npx vp` fails to start                         | Node is older than the range above; check `node --version`                                                                                                                                                      |
+| The build cannot find the avatar module         | Run `npm install` in `../avatar` first                                                                                                                                                                          |
+| The page says the character could not be loaded | Reload the page; if it persists, rebuild after `npm install` in `../avatar`                                                                                                                                     |
+| New app content is not shown                    | The portal reads content at build time; run `npx vp build` again                                                                                                                                                |
+| Verdicts are gone                               | They live in this browser's local storage, per role; clearing site data or using another browser or profile starts empty. Export JSON before clearing. Damaged stored data is ignored and the page starts empty |
+| A shared link opens the wrong gesture           | The id after `#` must match a gesture id exactly; an unknown or malformed one opens the first gesture                                                                                                           |
 
 ## Key files
 

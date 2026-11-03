@@ -48,8 +48,11 @@ fun decideRead(
 }
 
 /** The signs of one window as words, one per sign: each sign's best guess for the item on screen, "?" where none was read. */
-fun readSigns(signs: List<List<LandmarkFrame>>, reader: SignReader?, cards: Set<String>, words: Map<String, WordEntry>): List<String> =
-    signs.map { sign ->
-        val all = reader?.let { r -> runCatching { r.read(sign) }.getOrNull() }.orEmpty().sortedByDescending { it.score }
+fun readSigns(signs: List<List<LandmarkFrame>>, reader: SignReader?, cards: Set<String>, words: Map<String, WordEntry>): List<String> {
+    // The window's signs together tell which hand this person leads with.
+    val hand = DominantHand().apply { signs.forEach { s -> s.zipWithNext { a, b -> see(handEnergy(a, b)) } } }
+    return signs.map { sign ->
+        val all = reader?.let { r -> runCatching { hand.read(r, sign) }.getOrNull() }.orEmpty().sortedByDescending { it.score }
         decideRead(sign, all, null, cards, reader?.words.orEmpty(), words, reader?.cards.orEmpty()).word ?: "?"
     }
+}

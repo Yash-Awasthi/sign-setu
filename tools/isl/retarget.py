@@ -374,8 +374,46 @@ def main(data: pathlib.Path) -> None:
     print(f"isl signs: {len(made)} words, {OUT.stat().st_size // 1024} KB")
 
 
+# Key to key, rig units a second: the first stroke of a sign is slowed to this (ease_entry).
+ENTRY_SPEED = 360.0
+# RigTimeline.FLOW: keys closer than this play as one movement, so a slowed step stays under it.
+FLOW = 0.35
+
+
+def key_xy(hand: dict, side: str) -> tuple[float, float]:
+    ax, ay = anchor_xy(hand["at"], side)
+    return ax + hand.get("dx", 0) * SIGN[side], ay + hand.get("dy", 0)
+
+
+def ease_entry(sign: dict) -> dict:
+    """The first stroke of a recorded sign is mostly the hand still rising from rest, which prepare() cuts at the
+    shoulders; recorded fast, it plays as a jump out of the previous sign in a sentence. Its steps, until the speed
+    falls under half its peak, are slowed to ENTRY_SPEED. Once per sign: the "eased" mark stops a second pass."""
+    keys = sign["keys"]
+    if sign.get("eased") or len(keys) < 2:
+        return sign
+
+    def step(i: int) -> float:
+        a, b = keys[i], keys[i + 1]
+        return max((math.dist(key_xy(a[h], h), key_xy(b[h], h)) for h in "RL" if h in a and h in b), default=0.0)
+
+    peak, shift, out = 0.0, 0.0, [dict(keys[0])]
+    stroke = True
+    for i in range(len(keys) - 1):
+        dt = keys[i + 1]["t"] - keys[i]["t"]
+        v = step(i) / dt if dt > 0 else 0.0
+        stroke = stroke and v >= peak / 2
+        if stroke:
+            peak = max(peak, v)
+            if v > ENTRY_SPEED:
+                shift += max(dt, min(math.ceil(step(i) / ENTRY_SPEED * 100) / 100, FLOW - 0.01)) - dt
+        out.append({**keys[i + 1], "t": round(keys[i + 1]["t"] + shift, 2)})
+    return {**sign, "keys": out, "eased": True} if shift > 0 else sign
+
+
 def write(signs: dict) -> None:
-    lines = ",\n".join("  " + json.dumps(g, ensure_ascii=False, separators=(",", ":")) for g in signs["gestures"])
+    signs = {**signs, "gestures": [ease_entry(g) if g.get("id", "").startswith("isl.") else g for g in signs["gestures"]]}
+    lines =",\n".join("  " + json.dumps(g, ensure_ascii=False, separators=(",", ":")) for g in signs["gestures"])
     OUT.write_text(
         f'{{"note": {json.dumps(signs["note"])},\n "source": {json.dumps(signs["source"])},\n "review": "draft",\n'
         f' "categories": {json.dumps(signs["categories"], ensure_ascii=False)},\n "gestures": [\n{lines}\n]}}\n',

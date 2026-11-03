@@ -68,6 +68,8 @@ data class AppSettings(
     val stationLink: Boolean = false,
     /** Station features the officer keeps on this phone (BrainClient.Feature keys); empty sends all the station has. */
     val stationOff: Set<String> = emptySet(),
+    /** The officer's service number, sealed into each new session's first row; empty keeps it out of the record. */
+    val officerId: String = "",
 ) {
     val interpreterConfigured get() = interpreterApp != InterpreterApp.NONE && interpreterContact.isNotBlank()
 
@@ -86,6 +88,11 @@ private val Context.store by preferencesDataStore(
 
 /** Zero means keep until deleted and must survive; any other value is held to the choices on offer. */
 fun storedRetention(hours: Int): Int = if (hours <= 0) 0 else hours.coerceIn(4, 72)
+
+/** One line of at most [OFFICER_ID_MAX] characters: it is written into the provenance row, whose fields are comma-led. */
+fun storedOfficerId(id: String): String = id.filter { !it.isISOControl() && it != ',' }.trim().take(OFFICER_ID_MAX)
+
+const val OFFICER_ID_MAX = 40
 
 /** The signing speed range the stage offers; a non-finite value falls back to normal speed. */
 fun storedGestureSpeed(speed: Float): Float = if (speed.isFinite()) speed.coerceIn(0.25f, 1.5f) else 1f
@@ -115,6 +122,7 @@ class SettingsStore(private val context: Context) {
         val avatarStyle = stringPreferencesKey("avatar_style")
         val stationLink = booleanPreferencesKey("station_link")
         val stationOff = stringSetPreferencesKey("station_off")
+        val officerId = stringPreferencesKey("officer_id")
     }
 
     // A read error (not corruption, which the handler repairs) falls back to defaults instead of crashing collectors.
@@ -149,6 +157,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setAvatarStyle(style: String) = context.store.edit { it[Keys.avatarStyle] = style }
     suspend fun setStationLink(on: Boolean) = context.store.edit { it[Keys.stationLink] = on }
     suspend fun setStationOff(keys: Set<String>) = context.store.edit { it[Keys.stationOff] = keys }
+    suspend fun setOfficerId(id: String) = context.store.edit { it[Keys.officerId] = storedOfficerId(id) }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId
@@ -178,6 +187,7 @@ class SettingsStore(private val context: Context) {
         avatarStyle = this[Keys.avatarStyle] ?: "AUTO",
         stationLink = this[Keys.stationLink] ?: false,
         stationOff = this[Keys.stationOff] ?: emptySet(),
+        officerId = this[Keys.officerId]?.let(::storedOfficerId) ?: "",
     )
 }
 

@@ -28,6 +28,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -48,7 +49,7 @@ class BrainClient(
 ) {
     /** What a station can do for the phone; its heartbeat names the ones it has (brain/app.py, "caps").
      * [ASR] is one service: the words shown live while the person speaks, and the whole take's text kept after. */
-    enum class Feature(val key: String) { ASR("asr"), ISL("isl"), LLM("llm"), GLOSS("gloss"), ARCHIVE("archive") }
+    enum class Feature(val key: String) { ASR("asr"), ISL("isl"), LLM("llm"), GLOSS("gloss"), ARCHIVE("archive"), PLAN("plan") }
 
     /** [on] is the officer's switch; [offered] is what the latest heartbeat named, null until one arrives and again once
      * they stop; [allowed] is what the officer lets go to the station (Settings, Local AI brain). */
@@ -262,16 +263,46 @@ class BrainClient(
     }
 
     /** One reply from the station's local language model, for [system] and [user]; null when it has none. */
-    suspend fun chat(system: String, user: String, maxTokens: Int, timeoutMs: Int = 60_000): String? = withContext(Dispatchers.IO) {
+    suspend fun chat(system: String, user: String, maxTokens: Int, timeoutMs: Int = 60_000, names: Collection<String> = emptyList(), details: Collection<String> = emptyList()): String? = withContext(Dispatchers.IO) {
         val p = pairing()?.takeIf { can(Feature.LLM) } ?: return@withContext null
         val messages = JsonArray(listOf(
             buildJsonObject { put("role", "system"); put("content", system) },
             buildJsonObject { put("role", "user"); put("content", user) },
         ))
-        val body = buildJsonObject { put("messages", messages); put("max_tokens", maxTokens.coerceAtMost(1024)) }.toString()
+        val body = buildJsonObject {
+            put("messages", messages); put("max_tokens", maxTokens.coerceAtMost(1024))
+            // A station whose model is behind an API masks these before the text leaves it.
+            put("names", JsonArray(names.map(::JsonPrimitive))); put("details", JsonArray(details.map(::JsonPrimitive)))
+        }.toString()
         val r = tally(Feature.LLM, call(p, "POST", "/v1/chat", body.toByteArray(), JSON_TYPE, timeoutMs)) ?: return@withContext null
         runCatching { JSON.parseToJsonElement(r).jsonObject.getValue("text").jsonPrimitive.content }.getOrNull()?.takeIf { it.isNotBlank() }
     }
+
+    /** The station's next step for the conversation [turns] (a JSON array of role and text): one of [items], or a short
+     * sentence of its model's own for the phone to check. Null when it has no model, failed, or nothing fitted. */
+    suspend fun plan(turns: String, items: List<PlanItem>, timeoutMs: Int, names: Collection<String> = emptyList(), details: Collection<String> = emptyList(), lang: String = "en"): Planned? = withContext(Dispatchers.IO) {
+        val p = pairing()?.takeIf { can(Feature.PLAN) } ?: return@withContext null
+        val body = buildJsonObject {
+            put("turns", JSON.parseToJsonElement(turns))
+            put("items", JsonArray(items.map { i -> buildJsonObject { put("id", i.id); put("text", i.text); put("cues", JsonArray(i.cues.map(::JsonPrimitive))) } }))
+            put("names", JsonArray(names.map(::JsonPrimitive))); put("details", JsonArray(details.map(::JsonPrimitive)))
+            put("lang", lang)
+        }.toString()
+        val r = tally(Feature.PLAN, call(p, "POST", "/v1/plan", body.toByteArray(), JSON_TYPE, timeoutMs)) ?: return@withContext null
+        runCatching {
+            val o = JSON.parseToJsonElement(r).jsonObject
+            fun text(key: String) = o[key]?.jsonPrimitive?.contentOrNull
+            val id = text("id")
+            val say = text("say")?.takeIf { it.isNotBlank() }
+            if (id == null && say == null) return@runCatching null
+            Planned(id, text("word").orEmpty(), text("model").orEmpty(), say, text("why").orEmpty(), text("caption")?.takeIf { it.isNotBlank() })
+        }.getOrNull()
+    }
+
+    data class PlanItem(val id: String, val text: String, val cues: List<String>)
+    /** [id] a bank item, or [say] a sentence the model wrote, with [caption], the same in the person's language; [word]
+     * the cue word it read, [why] its short reason. */
+    data class Planned(val id: String?, val word: String, val model: String, val say: String? = null, val why: String = "", val caption: String? = null)
 
     /** Sends one conversation's zip to the station's inbox in pieces; [progress] gets the share sent, 0 to 1. Returns
      * where the station saved it (its full path on that computer), or null when it could not be sent whole. */

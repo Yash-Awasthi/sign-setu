@@ -67,13 +67,26 @@ class SignSegment(
     val windowHead: Set<Head> = emptySet(),
     /** Two readers disagree on this sign, or its runner-up is nearly as likely: the officer is told (Kinetics.kt). */
     val ambiguous: Boolean = false,
+    /** The station's reader gave [guesses], not this phone's. */
+    val byStation: Boolean = false,
 ) {
-    fun withWindowHead(head: Set<Head>) = SignSegment(frames, guesses, slower, context, candidates, unsure, head, ambiguous)
+    fun withWindowHead(head: Set<Head>) = SignSegment(frames, guesses, slower, context, candidates, unsure, head, ambiguous, byStation)
+    fun withStation() = SignSegment(frames, guesses, slower, context, candidates, unsure, windowHead, ambiguous, true)
 
     val word: String? get() = guesses?.let { it.firstOrNull()?.word ?: "?" }
     /** Brows raised over most of the sign's face frames. */
     val browsUp: Boolean get() = frames.filter { it.face != null }.let { f -> f.isNotEmpty() && f.count { it.browsUp } * 2 > f.size }
 }
+
+/** How sure the reader was of each sign, sealed with the app's reading: per sign the logged word's probability to two
+ * places, then "s" spelled, "~" ambiguous, "!" too unsure to trust one word, "@" read by the station; "-" for no read. */
+fun readConfidence(segments: List<SignSegment>): String = READ_PREFIX + segments.joinToString(" ") { s ->
+    val top = s.guesses?.firstOrNull() ?: return@joinToString "-"
+    String.format(java.util.Locale.ROOT, "%.2f", top.score) + (if (top.spelled) "s" else "") + (if (s.ambiguous) "~" else "") +
+        (if (s.unsure) "!" else "") + (if (s.byStation) "@" else "")
+}
+
+const val READ_PREFIX = "read:"
 
 /** A "Tell me" account as read: each sign's word at its m:ss from the first sign, "?" after one asked with raised brows. */
 fun glossTranscript(segments: List<SignSegment>): String {

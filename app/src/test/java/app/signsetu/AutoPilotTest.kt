@@ -69,7 +69,7 @@ class AutoPilotTest {
         fun answerSigned() {
             val shown = rows.last { it.type == EventType.QUESTION_SHOWN.name }.id
             test.testScheduler.runCurrent()
-            kotlinx.coroutines.runBlocking { repo.log(id, EventType.ANSWER_SIGNED, EventSource.MACHINE, "en", "pain", shownId = shown) }
+            kotlinx.coroutines.runBlocking { repo.log(id, EventType.ANSWER_SIGNED, EventSource.MACHINE, "en", "water", shownId = shown) }
             tick(1)
         }
 

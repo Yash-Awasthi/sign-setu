@@ -15,3 +15,6 @@ sacremoses==0.2.0
 indic-nlp-library==0.92
 numpy==2.5.4
 iroh==1.2.0
+onnxruntime==1.31.1
+ai-edge-litert==2.1.2
+anthropic==2.4.0

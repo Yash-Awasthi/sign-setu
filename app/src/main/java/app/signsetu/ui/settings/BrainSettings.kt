@@ -189,8 +189,9 @@ private fun ServiceRow(name: String, has: Boolean, sent: Boolean, onClick: () ->
 }
 
 /** The services listed with a switch. Sign order for typed text is not: the phone's "Sign in ISL order" decides
- * whether typed text is reordered at all, and the station's order is used for it whenever the station has one. */
-private val Listed = BrainClient.Feature.entries - BrainClient.Feature.GLOSS
+ * whether typed text is reordered at all, and the station's order is used for it whenever the station has one.
+ * Planning auto mode's next item follows the language model's switch. */
+private val Listed = BrainClient.Feature.entries - BrainClient.Feature.GLOSS - BrainClient.Feature.PLAN
 
 private fun featureName(f: BrainClient.Feature) = when (f) {
     BrainClient.Feature.ASR -> R.string.brain_feature_asr
@@ -198,6 +199,7 @@ private fun featureName(f: BrainClient.Feature) = when (f) {
     BrainClient.Feature.LLM -> R.string.brain_feature_llm
     BrainClient.Feature.GLOSS -> R.string.brain_title
     BrainClient.Feature.ARCHIVE -> R.string.brain_feature_archive
+    BrainClient.Feature.PLAN -> R.string.brain_feature_llm
 }
 
 @Composable

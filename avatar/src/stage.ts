@@ -180,6 +180,7 @@ export class AvatarStage {
     const delta = this.clock.getDelta();
     const idle = (this.request.idle ?? true) && !this.clipData;
     const now = performance.now() / 1000;
+    let gazing = false;
     if (this.clipData) {
       const c = this.clipData;
       const i = Math.min(c.frames.length - 1, Math.floor(this.elapsed() * (c.fps ?? 30)));
@@ -193,6 +194,7 @@ export class AvatarStage {
       const seconds = p.at ?? this.elapsed() * (p.speed ?? 1);
       const gaze =
         p.glance && p.at == null && seconds >= this.timeline.duration ? Math.min(1, (seconds - this.timeline.duration - 0.3) / 0.5) : 0;
+      gazing = p.glance === true && p.at == null && gaze < 1;
       const still = livePose(this.timeline, seconds, p.question ?? null, Math.max(0, gaze), this.moving(), p.negated ?? false);
       this.pose(vrm, this.body, still, idle ? now : 0, idle || this.moving() ? blinkAt(now) : 1);
     }
@@ -206,8 +208,9 @@ export class AvatarStage {
       this.finishedToken = undefined;
       this.onFinished(token);
     }
-    // Idle breathing and blinking keep drawing, and a finished clip goes back to the pose; a still pose draws once.
-    if (clipEnded || idle || this.request.glance) this.wake();
+    // Idle breathing and a glance under way keep drawing, and a finished clip goes back to the pose; a still pose,
+    // a finished glance included, draws once.
+    if (clipEnded || idle || gazing) this.wake();
   };
 
   private pose(vrm: VRM, body: MeasuredBody, still: Pose, time: number, blink: number) {

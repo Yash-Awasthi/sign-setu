@@ -60,7 +60,7 @@ internal class SignReading(
     private val confirmedNames: MutableSet<String> = ConcurrentHashMap.newKeySet()
     // Reads the current reader, not the one the session started with: the sign language can change mid-session.
     private val homeSigns = HomeSigns { frames -> this.reader?.let { r -> runCatching { r.embed(frames) }.getOrNull() } }
-    // The leading hand, learnt over the session: home signs are kept and matched as if signed with the right hand.
+    // The leading hand, learnt over the session: every sign is read, kept and matched as if signed with the right hand.
     private val dominant = DominantHand()
     private val ring = FeatureRing()
     private val gate = MotionGate()
@@ -163,7 +163,10 @@ internal class SignReading(
     }
 
     /** The officer named what a sign meant; it is kept as this person's own sign. */
-    fun teach(frames: List<LandmarkFrame>, word: String) = homeSigns.teach(dominant.canonical(frames), word)
+    fun teach(frames: List<LandmarkFrame>, word: String) = homeSigns.teach(dominant.orientations(frames).first(), word)
+
+    private fun homeMatch(frames: List<LandmarkFrame>): SignGuess? =
+        dominant.orientations(frames).mapNotNull(homeSigns::match).maxByOrNull { it.score }
 
     /** Landmarks are biometric: every frame held is dropped and every read in flight is cancelled. */
     fun wipe() {
@@ -207,10 +210,10 @@ internal class SignReading(
         val job = scope.launch(readDispatcher) {
             try {
                 if (moving) {
-                    val top = runCatching { r.read(window) }.getOrNull().orEmpty().sortedByDescending { it.score }.take(3)
+                    val top = runCatching { dominant.read(r, window) }.getOrNull().orEmpty().sortedByDescending { it.score }.take(3)
                     if (capture != null) liveFlow.update { it.copy(guesses = top) }
                 } else {
-                    val g = runCatching { r.letter(window) }.getOrNull()
+                    val g = runCatching { dominant.letter(r, window) }.getOrNull()
                     val committed = synchronized(ring) { letters.see(window.last().timestampMs, g) }
                     if (committed != null && capture != null) liveFlow.update { it.copy(spelled = it.spelled + committed) }
                 }
@@ -233,14 +236,14 @@ internal class SignReading(
                 async(Dispatchers.IO) { runCatching { s.sign(JsonArray(frames.map(StationExport::frameJson)), frames.first().aspect, STATION_SIGN_MS) }.getOrNull() }
             }
             val r = reader
-            val mine = r?.let { runCatching { it.read(frames) }.getOrNull() }.orEmpty()
+            val mine = r?.let { runCatching { dominant.read(it, frames) }.getOrNull() }.orEmpty()
             // A late station request is cancelled, so closing the window never waits on it.
             val theirs = remote?.let { d -> withTimeoutOrNull(STATION_SIGN_MS.toLong()) { d.await() }.also { if (it == null) d.cancel() } }
                 ?.map { (w, p) -> SignGuess(w, p) }
             val all = (theirs ?: mine).sortedByDescending { it.score }
             // The phone's conformal thresholds were fitted to the phone's reader, not the station's.
-            val read = decideRead(frames, all, homeSigns.match(dominant.canonical(frames)), cards, r?.words.orEmpty(), content.words, r?.cards.orEmpty(), if (theirs != null) null else r?.conformal)
-            onRead(segment, read)
+            val read = decideRead(frames, all, homeMatch(frames), cards, r?.words.orEmpty(), content.words, r?.cards.orEmpty(), if (theirs != null) null else r?.conformal)
+            onRead(segment, if (theirs != null) read.withStation() else read)
         }
     }
 }

@@ -13,6 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import app.signsetu.data.content.Clip
 import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.QuestionKind
+import app.signsetu.ui.theme.LocalMotion
+import app.signsetu.ui.theme.systemAnimationsOn
 
 /** How the character is drawn: the 3D model, the drawn 2D one, or a Rive file the department supplies. */
 enum class AvatarStyle { AUTO, FLAT, RIVE }
@@ -56,6 +58,7 @@ fun Avatar(
     val failed by AvatarRenderer.vrmFailed
     val rive = remember(style) { style == AvatarStyle.RIVE && AvatarRenderer.riveAvailable(context) }
     val flat = !rive && (style == AvatarStyle.FLAT || failed || !AvatarRenderer.webViewAvailable())
+    val motion = LocalMotion.current && remember { systemAnimationsOn(context) }
     when {
         rive -> RiveCharacter(gesture, playKey, modifier, speed, idle, atSeconds, view, clip, onFinished, onReady)
         flat -> {
@@ -63,7 +66,8 @@ fun Avatar(
             LaunchedEffect(Unit) { ready() }
             FlatAvatar(gesture, playKey, modifier, speed, idle, atSeconds, glance, view, question, clip, onFinished = onFinished)
         }
-        else -> VrmAvatar(gesture, playKey, modifier, speed, idle, atSeconds, glance, view, question, negated, clip, onFinished, onReady)
+        // Animations off stops the breathing, as the drawn and Rive characters do; a still 3D pose then draws once.
+        else -> VrmAvatar(gesture, playKey, modifier, speed, idle && motion, atSeconds, glance, view, question, negated, clip, onFinished, onReady)
     }
 }
 

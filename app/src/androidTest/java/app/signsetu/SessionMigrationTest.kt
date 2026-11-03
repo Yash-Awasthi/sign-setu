@@ -39,7 +39,7 @@ class SessionMigrationTest {
     }
 
     private fun current() = Room.databaseBuilder(context, SessionDatabase::class.java, name)
-        .addMigrations(SessionDatabase.MIGRATION_1_2, SessionDatabase.MIGRATION_2_3, SessionDatabase.MIGRATION_3_4, SessionDatabase.MIGRATION_4_5, SessionDatabase.MIGRATION_5_6, SessionDatabase.MIGRATION_6_7)
+        .addMigrations(*SessionDatabase.MIGRATIONS)
         .build()
 
     @Test

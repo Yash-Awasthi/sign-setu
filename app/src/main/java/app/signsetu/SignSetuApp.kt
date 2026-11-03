@@ -128,9 +128,9 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         scope.launch(Dispatchers.IO) { settings.current().let { onlineAssistant.restoreCustom(it.devAiUrl, it.devAiModel); brain.setOn(it.stationLink) } }
         // The officer's choice of what goes to the station applies as soon as it changes in Settings.
         scope.launch {
-            settings.settings.collect { s -> brain.setAllowed(BrainClient.Feature.entries.filter { it == BrainClient.Feature.GLOSS || it.key !in s.stationOff }.toSet()) }
+            settings.settings.collect { s -> brain.setAllowed(BrainClient.Feature.entries.filter { it == BrainClient.Feature.GLOSS || (if (it == BrainClient.Feature.PLAN) "llm" else it.key) !in s.stationOff }.toSet()) }
         }
-        onlineAssistant.station = { system, user, maxTokens, timeoutMs -> brain.chat(system, user, maxTokens, timeoutMs) }
+        onlineAssistant.station = { system, user, maxTokens, timeoutMs, names, details -> brain.chat(system, user, maxTokens, timeoutMs, names, details) }
         onlineAssistant.stationUp = { brain.can(BrainClient.Feature.LLM) }
         // A new default network (Wi-Fi to mobile data and back) gets a fresh iroh endpoint; the first one is not a change.
         runCatching {
@@ -186,7 +186,7 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
             if (epoch != started) { db.close(); return@withContext }
             val repo = SessionRepository(
                 db.dao(), onSessionStarted = { settings.setNewestSessionAt(it) },
-                provenance = { provenanceLine(app) }, signer = { line -> DeviceSeal.sign(line) },
+                provenance = { provenanceLine(app, settings.current().officerId) }, signer = { line -> DeviceSeal.sign(line) },
             )
             repo.purgeExpired(settings.current().retentionHours)
             // Exported reports are only needed while the share sheet hands them over.
@@ -293,7 +293,7 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     override fun onConfigurationChanged(newConfig: Configuration) = Unit
 
     @Deprecated("Deprecated in Java")
-    override fun onLowMemory() = onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+    override fun onLowMemory() = onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
 
     override fun onStop(owner: LifecycleOwner) {
         backgroundedAt = SystemClock.elapsedRealtime()
@@ -342,11 +342,12 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     }
 }
 
-/** App build, content bundle and device key, so a record names what produced it. */
-private fun provenanceLine(context: android.content.Context): String {
+/** App build, content bundle and device key, so a record names what produced it, and the officer when they chose to be named. */
+private fun provenanceLine(context: android.content.Context, officerId: String): String {
     val content = runCatching {
         context.assets.open("content/manifest.json").use { java.security.MessageDigest.getInstance("SHA-256").digest(it.readBytes()).toHexString().take(16) }
     }.getOrDefault("none")
     val key = DeviceSeal.fingerprint()?.take(16) ?: "none"
-    return "app ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}), content $content, device key $key"
+    return "app ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}), content $content, device key $key" +
+        (officerId.takeIf { it.isNotBlank() }?.let { ", officer $it" } ?: "")
 }

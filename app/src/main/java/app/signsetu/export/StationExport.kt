@@ -5,6 +5,7 @@ import app.signsetu.camera.LandmarkFrame
 import app.signsetu.data.session.DeviceSeal
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
+import app.signsetu.sign.SignGuess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -73,7 +74,7 @@ object StationExport {
     /** The landmarks of one sign window, gzipped JSON: per sign the word read and its frames, as [frameJson] writes
      * them. Android reads no database value over 2 MB, so a long window (Tell me runs to three minutes) keeps every
      * second frame, then every fourth, until it fits; "every" in the file says which. */
-    fun signsJson(signs: List<List<LandmarkFrame>>, words: List<String>): ByteArray {
+    fun signsJson(signs: List<List<LandmarkFrame>>, words: List<String>, guesses: List<List<SignGuess>> = emptyList()): ByteArray {
         var every = 1
         while (true) {
             val text = buildJsonObject {
@@ -83,7 +84,13 @@ object StationExport {
                 put("signs", buildJsonArray {
                     signs.forEachIndexed { i, frames ->
                         val kept = if (every == 1) frames else frames.filterIndexed { n, _ -> n % every == 0 }
-                        add(buildJsonObject { put("word", words.getOrNull(i)); put("frames", JsonArray(kept.map(::frameJson))) })
+                        add(buildJsonObject {
+                            put("word", words.getOrNull(i))
+                            guesses.getOrNull(i)?.takeIf { it.isNotEmpty() }?.let { g ->
+                                put("read", buildJsonArray { g.take(3).forEach { add(buildJsonObject { put("word", it.word); put("p", it.score) }) } })
+                            }
+                            put("frames", JsonArray(kept.map(::frameJson)))
+                        })
                     }
                 })
             }.toString().toByteArray()
@@ -122,12 +129,14 @@ object StationExport {
         |session.json  the session: title, times, language, and its seal: the Merkle root over every row's hash, the
         |              line the phone's device key signed, the signature, and that key (X.509, base64).
         |events.json   every row in the order written. "hash" is the row's link in the hash chain; "drawing", "audio"
-        |              and "signs" name the file the row holds, when it holds one.
+        |              and "signs" name the file the row holds, when it holds one. On the app's reading of signs,
+        |              "reason" is "read:" and per sign the read word's probability, then s (spelled), ~ (ambiguous),
+        |              ! (too unsure to trust one word), @ (read by the station); "-" where no sign was read.
         |drawings/     pictures drawn or kept: PNG.
         |audio/        the person's recorded voice: WAV, 16 kHz mono 16-bit.
         |signs/        the raw landmarks the app read signs from, gzipped JSON (the exact bytes the row's hash covers):
         |              "every" is 1, or 2, 4... when a long window kept only every so many frames; per sign the word
-        |              read and its frames, each with
+        |              read, "read" (the reader's top three words, each with its probability "p") and its frames, each with
         |              "left" and "right" (21 x, y each), "pose" (33 x, y), MediaPipe normalised image points, and
         |              cues read from the face. No face mesh and no camera picture is ever kept.
         |

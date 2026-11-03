@@ -454,7 +454,8 @@ fun Stage(
             panelCollapsed = moving && !signing && (lesson != null || item.choices.isNotEmpty()) && panel != null &&
                 !drawing && !writing && !drawingSent && choices == null && pending != Pending.LanguageFinder,
             onExpandPanel = { moving = false },
-            panelShare = if (item.choices.isNotEmpty() && !signing && !settled && panel != null && pending != Pending.LanguageFinder) (if (item.numbers) 0.35f else 0.45f) else 0.6f,
+            // A lesson input (number pad, name entry) needs the full share even when the item also has number tiles.
+            panelShare = if (lesson == null && item.choices.isNotEmpty() && !signing && !settled && panel != null && pending != Pending.LanguageFinder) (if (item.numbers) 0.35f else 0.45f) else 0.6f,
             modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f }
                 // Covered by the pause layer: screen readers must not reach answers that cannot be tapped.
                 .then(if (paused) Modifier.clearAndSetSemantics {} else Modifier),

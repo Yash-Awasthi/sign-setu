@@ -146,6 +146,9 @@
         <item quantity="other">%1$d घंटे</item>
     </plurals>
     <string name="settings_retention_note">इससे पुराने सत्र मिट जाते हैं, भले ही किसी ने उन्हें खत्म न किया हो।</string>
+    <string name="settings_officer_id">रिकॉर्ड में अधिकारी की पहचान</string>
+    <string name="settings_officer_id_hint">सेवा या बैज संख्या</string>
+    <string name="settings_officer_id_note">हर नए सत्र की पहली पंक्ति में मुहर के साथ लिखी जाती है। अपनी पहचान रिकॉर्ड से बाहर रखने के लिए खाली छोड़ें।</string>
     <string name="settings_theme">रूप</string>
     <string name="settings_color_theme">रंग थीम</string>
     <string name="settings_theme_mode">हल्का या गहरा</string>
@@ -415,6 +418,11 @@
     <string name="conv_wrap_up">समापन करें</string>
     <string name="conv_switch_manual">मैनुअल पर जाएँ</string>
     <string name="conv_source_rule">नियम क्रम</string>
+    <string name="conv_source_model">योजक: %1$s</string>
+    <string name="conv_planning">अगले कदम के लिए पिछला उत्तर पढ़ा जा रहा है…</string>
+    <string name="conv_needs_approval">यह केवल आपके दिखाएँ दबाने पर दिखेगा</string>
+    <string name="conv_paused_urgent">ऑटो रुका: व्यक्ति ने कोई ज़रूरी शब्द या संकेत दिया। आप संभालें।</string>
+    <string name="reason_planned">उनका उत्तर इस ओर इशारा करता है: %1$s</string>
     <string name="conv_phase_step">%1$s · चरण %2$d / %3$d</string>
     <string name="conv_tag_approved">ऐप का सुझाव · आपने स्वीकार किया</string>
     <string name="conv_tag_auto">अपने-आप दिखाया गया</string>
@@ -447,6 +455,7 @@
     <string name="sys_auto_wrap_up">समापन शुरू</string>
     <string name="sys_auto_ended_stop">दूसरी बार रुको दबाने पर ऑटो बंद</string>
     <string name="sys_auto_break">व्यक्ति ने आराम माँगा</string>
+    <string name="sys_auto_urgent">व्यक्ति ने ज़रूरी शब्द या संकेत दिया; ऑटो रुका</string>
     <string name="report_mode">बातचीत का तरीका</string>
     <string name="report_mode_manual">मैनुअल</string>
     <string name="report_mode_auto">ऑटो (नियम क्रम)</string>
@@ -603,7 +612,8 @@
     <string name="board_name">चित्र बोर्ड</string>
     <string name="ai_counsellor_start">AI परामर्शदाता को आपकी ओर से बात करने दें</string>
     <string name="ai_tag">AI परामर्शदाता</string>
-    <string name="report_by_ai">AI परामर्शदाता ने लिखा, अधिकारी देख रहे थे</string>
+    <string name="report_by_ai">AI (परामर्शदाता या ऑटो योजक) ने लिखा, अधिकारी देख रहे थे</string>
+    <string name="report_by_model">%1$s ने उत्तर \"%2$s\" (%3$s) से सुझाया, उसके %4$.1f सेकंड बाद</string>
     <string name="counsel_thinking">परामर्शदाता अगली पंक्ति लिख रहा है…</string>
     <string name="counsel_waiting">उनके जवाब की प्रतीक्षा</string>
     <string name="counsel_next">दो सेकंड में अपने आप चला जाएगा — रोकने के लिए बातचीत संभालें।</string>

@@ -13,10 +13,10 @@ Write-Host ("Brain:    " + $(if ($procs.Count) { "running (process $($procs[-1].
 if (Test-Path $StationConfig) {
     $c = Get-StationConfig
     $isl = if ($c.isl) { $c.isl } else { Join-Path $PSScriptRoot "isl" }
-    $reader = Get-ChildItem -Path $isl -Filter *.json -ErrorAction SilentlyContinue | Select-Object -First 1
+    $reader = @(Get-ChildItem -Path $isl -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in ".bin", ".tflite", ".onnx" })
     Write-Host "Speech:   $($c.asr)"
     Write-Host ("Relay:    " + $(if ($c.relay) { $c.relay } else { "none: phones reach it only by a direct path" }))
-    Write-Host ("Reader:   " + $(if ($reader) { "$($reader.BaseName) in $isl" } else { "none in $isl (phones read signs themselves)" }))
+    Write-Host ("Reader:   " + $(if ($reader.Count) { "$(($reader | ForEach-Object Name) -join ", ") in $isl" } else { "none in $isl (phones read signs themselves)" }))
 } else { Write-Host "Settings: none (run .\setup.ps1 -Asr <model>)" }
 
 $tokenFile = Join-Path $StationState "token"

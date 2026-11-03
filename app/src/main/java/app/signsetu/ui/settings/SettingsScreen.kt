@@ -65,7 +65,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import app.signsetu.ui.components.GuardedAlertDialog
 
-private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, CLOUD, AIKEY, DEVELOPER }
+private enum class Dialog { APP, CONTACT, RETENTION, CLEAR, LICENCES, LANGUAGE, CLOUD, AIKEY, DEVELOPER, OFFICER }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -179,6 +179,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                     if (s.retentionHours == 0) stringResource(R.string.settings_keep) else pluralStringResource(R.plurals.settings_hours, s.retentionHours, s.retentionHours),
                     note = stringResource(R.string.settings_retention_note),
                 ) { dialog = Dialog.RETENTION }
+                Item(stringResource(R.string.settings_officer_id), s.officerId.ifBlank { notSet }, note = stringResource(R.string.settings_officer_id_note)) { dialog = Dialog.OFFICER }
                 ReportCheckItem(repo)
                 Item(stringResource(R.string.settings_clear), stringResource(R.string.settings_clear_summary), destructive = true) {
                     dialog = Dialog.CLEAR
@@ -225,6 +226,11 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
             app = s.interpreterApp,
             initial = s.interpreterContact,
             onSave = { scope.launch { store.setInterpreter(s.interpreterApp, it) }; dialog = null },
+            onDismiss = { dialog = null },
+        )
+        Dialog.OFFICER -> OfficerIdDialog(
+            initial = s.officerId,
+            onSave = { scope.launch { store.setOfficerId(it) }; dialog = null },
             onDismiss = { dialog = null },
         )
         Dialog.RETENTION -> ChoiceDialog(

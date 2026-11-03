@@ -51,6 +51,11 @@ class StageDeviceAccessibilityTest(private val dark: Boolean) {
     @Before
     fun load() {
         shell("settings put global animator_duration_scale 0")
+        // The shell returns before the setting lands; checked mid-animation, a panel can be caught half its size.
+        val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
+        val until = android.os.SystemClock.uptimeMillis() + 5_000
+        while (android.provider.Settings.Global.getFloat(resolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) != 0f &&
+            android.os.SystemClock.uptimeMillis() < until) android.os.SystemClock.sleep(50)
         // One shared bundle: a fresh load per test filled the 192 MB emulator heap.
         repo = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as SignSetuApp).container.content
         content = runBlocking { repo.load() }

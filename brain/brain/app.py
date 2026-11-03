@@ -6,10 +6,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from . import gloss as glossing
+from . import plan as planning
+from .mask import guard as masked
 from .inbox import MAX_PIECE, Inbox
 from .live import MAX_CHUNK, Live
 from .models import Asr, Llm, Translator
-from .signs import MAX_FRAMES, IslReader
+from .signs import MAX_FRAMES, Readers
 from .security import PEER_HEADER, RateLimit, Secrets, bearer_ok, client_allowed
 
 VERSION = "1"
@@ -26,6 +28,9 @@ class TranslateIn(BaseModel):
 
 class ChatIn(BaseModel):
     messages: list[dict] = Field(min_length=1, max_length=24)
+    # What identifies the person, masked before a model behind an API sees the text.
+    names: list[str] = Field(default_factory=list, max_length=20)
+    details: list[str] = Field(default_factory=list, max_length=40)
     temperature: float = Field(0.2, ge=0, le=2)
     max_tokens: int = Field(256, ge=1, le=1024)
 
@@ -43,6 +48,26 @@ def _messages(raw: list[dict]) -> list[dict]:
             raise HTTPException(422, "each message needs a role (system, user or assistant) and text content")
         out.append({"role": role, "content": content})
     return out
+
+
+class Turn(BaseModel):
+    role: str = Field(max_length=16)
+    text: str = Field(max_length=MAX_TEXT)
+
+
+class Item(BaseModel):
+    id: str = Field(min_length=1, max_length=40)
+    text: str = Field(max_length=MAX_TEXT)
+    cues: list[str] = Field(max_length=24)
+
+
+class PlanIn(BaseModel):
+    turns: list[Turn] = Field(max_length=40)
+    items: list[Item] = Field(min_length=1, max_length=60)
+    names: list[str] = Field(default_factory=list, max_length=20)
+    details: list[str] = Field(default_factory=list, max_length=40)
+    # The person's language: the station puts their answer into English for its model, and a written line back.
+    lang: str = Field("en", max_length=8)
 
 
 class LiveIn(BaseModel):
@@ -68,7 +93,9 @@ class GlossIn(BaseModel):
 
 
 def create(secrets: Secrets, asr: Asr, translator: Translator, llm: Llm, limit: RateLimit | None = None,
-           isl: IslReader | None = None, inbox: Inbox | None = None) -> FastAPI:
+           isl: Readers | None = None, inbox: Inbox | None = None, plan_mode: str | None = None) -> FastAPI:
+    # A model behind an API is large enough to write; a local one names words unless the operator says otherwise.
+    plan_mode = plan_mode or ("write" if getattr(llm, "remote", False) else "words")
     app = FastAPI(title="Sign Setu brain", version=VERSION, docs_url=None, redoc_url=None, openapi_url=None)
     limit = limit or RateLimit(240, 60.0)
     # Wrong tokens are counted apart: ten a minute is plenty for a typo, far too few to guess 256 bits.
@@ -87,6 +114,18 @@ def create(secrets: Secrets, asr: Asr, translator: Translator, llm: Llm, limit: 
 
     def up(service: str) -> bool:
         return down.get(service, 0.0) <= time.monotonic()
+
+    def translated(text: str, src: str, tgt: str) -> str | None:
+        """[text] in [tgt]; None for a language the translator lacks or a translator that is down, never an error."""
+        if not up("translate"):
+            return None
+        try:
+            return translator.translate([text], src, tgt)[0][0]
+        except ValueError:  # a language with no translation model, such as Gondi
+            return None
+        except Exception as e:
+            mark("translate", f"{type(e).__name__}: {str(e)[:120]}")
+            return None
 
     live = Live(asr, on_fail=lambda e: mark("live", f"{type(e).__name__}: {e}"))
 
@@ -128,22 +167,23 @@ def create(secrets: Secrets, asr: Asr, translator: Translator, llm: Llm, limit: 
     @app.get("/v1/status")
     def status():
         # [caps] is what phones may ask for: they send nothing a station has not said it does (docs/18-station.md).
-        caps = {"asr": asr.loaded and up("asr"), "live": asr.loaded and up("asr") and up("live"), "isl": isl is not None and up("isl"),
-                "llm": llm.available() and up("llm"), "gloss": up("gloss"), "archive": inbox is not None and up("archive")}
-        return {"asr": asr.loaded, "translation": translator.loaded, "llm": caps["llm"], "llm_model": llm.model,
-                "isl_model": isl.name if isl else None, "caps": caps}
+        caps = {"asr": asr.loaded and up("asr"), "live": asr.loaded and up("asr") and up("live"), "isl": bool(isl) and up("isl"),
+                "llm": llm.available() and up("llm"), "gloss": up("gloss"), "plan": llm.available() and up("llm"), "archive": inbox is not None and up("archive")}
+        return {"asr": asr.loaded, "translation": translator.loaded, "llm": caps["llm"], "llm_model": llm.model, "llm_remote": getattr(llm, "remote", False), "plan_mode": plan_mode, "refused": {"asr": asr.error, "llm": None if caps["llm"] else llm.error},
+                "isl_model": isl.names[0] if isl else None,
+                "isl": isl.status() if isl is not None else {"models": [], "refused": []}, "caps": caps}
 
     @app.post("/v1/sign")
     def read_sign(body: SignIn):
         """One sign's landmarks to the station reader's likeliest words."""
-        if isl is None:
-            raise HTTPException(503, "no sign reader on this station")
+        if not isl:
+            raise HTTPException(503, detail={"error": "no sign reader on this station", "unavailable": "isl"})
         try:
-            return {"guesses": isl.read(body.frames, body.aspect, body.top), "model": isl.name}
-        except (ValueError, TypeError, IndexError) as e:
+            return isl.read(body.frames, body.aspect, body.top)
+        except ValueError as e:
             raise HTTPException(422, f"bad frames: {e}")
-        except Exception as e:
-            fail("isl", f"{type(e).__name__}: {e}")
+        except LookupError:
+            raise HTTPException(503, detail={"error": "no working sign reader", "unavailable": "isl"})
 
     @app.post("/v1/archive")
     def archive_start(body: ArchiveIn):
@@ -248,6 +288,8 @@ def create(secrets: Secrets, asr: Asr, translator: Translator, llm: Llm, limit: 
             out, engine = translator.translate(body.texts, body.src, body.tgt)
         except ValueError as e:
             raise HTTPException(422, str(e))
+        except Exception as e:  # a model that is missing or will not load: the reason goes back, not a bare 500
+            raise HTTPException(503, detail={"error": f"translation unavailable: {type(e).__name__}: {str(e)[:200]}", "unavailable": "translate"})
         return {"texts": out, "engine": engine}
 
     @app.post("/v1/chat")
@@ -256,9 +298,22 @@ def create(secrets: Secrets, asr: Asr, translator: Translator, llm: Llm, limit: 
             raise HTTPException(503, detail={"error": "no local language model", "unavailable": "llm"})
         messages = _messages(body.messages)
         try:
-            return {"text": llm.chat(messages, body.temperature, body.max_tokens), "model": llm.model}
+            return {"text": masked(llm, body.names, body.details).chat(messages, body.temperature, body.max_tokens), "model": llm.model}
         except Exception as e:
             fail("llm", f"{type(e).__name__}: {e}")
+
+    @app.post("/v1/plan")
+    def plan_next(body: PlanIn):
+        """The item among [items] that meets the person's last answer, or (write mode) a short sentence of the model's own
+        for the phone to check; both null when nothing fits."""
+        if not (llm.available() and up("llm")):
+            raise HTTPException(503, detail={"error": "no local language model", "unavailable": "plan"})
+        try:
+            out = planning.plan(masked(llm, body.names, body.details), [t.model_dump() for t in body.turns], [i.model_dump() for i in body.items],
+                                plan_mode, body.lang, translated)
+        except Exception as e:
+            fail("llm", f"{type(e).__name__}: {e}")
+        return {**out, "model": llm.model}
 
     @app.post("/v1/gloss")
     def gloss(body: GlossIn):
@@ -269,7 +324,7 @@ def create(secrets: Secrets, asr: Asr, translator: Translator, llm: Llm, limit: 
             except ValueError as e:
                 raise HTTPException(422, str(e))
         try:
-            out = glossing.expand(text, body.vocabulary, llm if llm.available() and up("llm") else None)
+            out = glossing.expand(text, body.vocabulary, masked(llm) if llm.available() and up("llm") else None)
         except Exception as e:
             # The model's refinement failed: the rules alone still give an order.
             mark("llm", f"{type(e).__name__}: {e}")

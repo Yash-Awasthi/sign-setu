@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.data.settings.InterpreterApp
+import app.signsetu.data.settings.OFFICER_ID_MAX
 import app.signsetu.data.settings.interpreterUrl
 import app.signsetu.ui.theme.Spacing
 import app.signsetu.ui.components.GuardedAlertDialog
@@ -93,6 +94,28 @@ internal fun ContactDialog(app: InterpreterApp, initial: String, onSave: (String
             )
         },
         confirmButton = { TextButton(onClick = { onSave(value.trim()) }, enabled = valid) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** Empty is allowed: saving it keeps the officer out of new records. */
+@Composable
+internal fun OfficerIdDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var value by rememberSaveable { mutableStateOf(initial) }
+    GuardedAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_officer_id)) },
+        text = {
+            OutlinedTextField(
+                value = value,
+                onValueChange = { value = it.take(OFFICER_ID_MAX) },
+                singleLine = true,
+                label = { Text(stringResource(R.string.settings_officer_id_hint)) },
+                supportingText = { Text(stringResource(R.string.settings_officer_id_note)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = { TextButton(onClick = { onSave(value) }) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

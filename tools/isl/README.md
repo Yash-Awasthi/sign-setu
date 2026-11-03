@@ -54,6 +54,9 @@ pipeline and compares the frames with a hand against what this script found on a
 - Hands: per-finger curl from joint flexion, thumb across the palm, spread, palm roll from the palm normal, angle
   from wrist to middle knuckle, and the elbow as `ex`/`ey` from the shoulder, the longest upper arm scaled to the rig's so shorter ones foreshorten (`elbow: down` is the fallback; the 3D character solves its own elbow). Shapes are written as `c:` percentages (`handShape` in `avatar/src/rig.ts`).
 - Keys at both ends, pauses and turns of the path, at least every 0.5 s.
+- `write` slows each sign's first stroke (until its speed falls under half its peak) to 360 rig units a second key to
+  key, within the player's 0.35 s flow limit: that stroke is mostly the hand still rising from rest, and recorded
+  fast it played as a jump out of the previous sign. Changed signs carry `"eased": true`, so a second pass leaves them.
 - `HOMONYMS` (fall, light, ...) stay in the dictionary but are never used for typed text.
 
 ## Checks

@@ -43,6 +43,7 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.glossToText
 import app.signsetu.sign.FeatureRing
 import app.signsetu.sign.LIVE_PEEK_MS
+import app.signsetu.sign.DominantHand
 import app.signsetu.sign.LetterCommitter
 import app.signsetu.sign.MotionGate
 import app.signsetu.sign.SignCapture
@@ -139,6 +140,7 @@ internal class Engine(
     private val ring = FeatureRing()
     private val gate = MotionGate()
     private val letters = LetterCommitter()
+    private val hand = DominantHand()
     private var prev: LandmarkFrame? = null
     private var lastPeek = 0L
     private var lastLetter = 0L
@@ -163,7 +165,9 @@ internal class Engine(
         synchronized(this) {
             val c = capture ?: return
             closed = c.add(f)
-            val moving = gate.update(handEnergy(prev, f).total)
+            val energy = handEnergy(prev, f)
+            hand.see(energy)
+            val moving = gate.update(energy.total)
             prev = f
             ring.push(f)
             val hands = f.leftHand != null || f.rightHand != null
@@ -178,10 +182,10 @@ internal class Engine(
         if (peekWord != null || peekLetter != null) scope.launch(Dispatchers.Default) {
             try {
                 if (peekWord != null) {
-                    val top = runCatching { r.read(peekWord) }.getOrNull().orEmpty().sortedByDescending { it.score }.take(3)
+                    val top = runCatching { hand.read(r, peekWord) }.getOrNull().orEmpty().sortedByDescending { it.score }.take(3)
                     withContext(Dispatchers.Main) { onLive(top) }
                 } else if (peekLetter != null) {
-                    val g = runCatching { r.letter(peekLetter) }.getOrNull()
+                    val g = runCatching { hand.letter(r, peekLetter) }.getOrNull()
                     val committed = synchronized(this@Engine) { letters.see(peekLetter.last().timestampMs, g) }
                     if (committed != null) { val s = synchronized(this@Engine) { letters.letters.toString() }; withContext(Dispatchers.Main) { onSpelling(s) } }
                 }
@@ -192,7 +196,7 @@ internal class Engine(
     private fun read(frames: List<LandmarkFrame>) {
         val r = reader ?: return
         scope.launch(Dispatchers.Default) {
-            val all = runCatching { r.read(frames) }.getOrNull().orEmpty().sortedByDescending { it.score }
+            val all = runCatching { hand.read(r, frames) }.getOrNull().orEmpty().sortedByDescending { it.score }
             val seg = decideRead(frames, all, null, emptySet(), r.words, content.words, r.cards, r.conformal)
             val choices = seg.guesses.orEmpty().ifEmpty { return@launch }
             withContext(Dispatchers.Main) { onWord(Word(choices)) }

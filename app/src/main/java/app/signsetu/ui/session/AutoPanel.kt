@@ -62,7 +62,7 @@ enum class ShownBy(@StringRes val tag: Int?, @StringRes val report: Int) {
 fun shownBy(events: List<SessionEvent>): Map<Long, ShownBy> {
     if (events.none { it.type == EventType.SYSTEM && it.text == AutoKey.MODE_AUTO }) return emptyMap()
     return events.withIndex().filter { it.value.type == EventType.QUESTION_SHOWN }.associate { (i, e) ->
-        val before = events.getOrNull(i - 1)?.takeIf { it.itemId != null && it.itemId == e.itemId }
+        val before = events.getOrNull(i - 1)?.takeIf { it.itemId != null && (it.itemId == e.itemId || e.itemId == null && e.reason == SHOWN_AI && it.itemId.startsWith(FREE_ID)) }
         e.id to when (before?.type) {
             EventType.APPROVED -> ShownBy.APP
             EventType.AUTO_ADVANCED -> ShownBy.AUTO
@@ -94,6 +94,7 @@ fun autoKeyLabel(key: String?): Int? = when (key) {
     AutoKey.WRAP_UP -> R.string.sys_auto_wrap_up
     AutoKey.ENDED_STOP -> R.string.sys_auto_ended_stop
     AutoKey.BREAK -> R.string.sys_auto_break
+    AutoKey.URGENT -> R.string.sys_auto_urgent
     else -> null
 }
 
@@ -123,6 +124,7 @@ fun autoHeader(res: Resources, events: List<SessionEvent>): List<Pair<String, St
 fun autoSuffix(res: Resources, e: SessionEvent, by: Map<Long, ShownBy>, idle: Set<Long>): String = buildString {
     if (e.reason == SHOWN_RIGHTS) append(" (").append(res.getString(R.string.rights_shown_mark)).append(')')
     if (e.reason == SHOWN_AI) append(" (").append(res.getString(R.string.report_by_ai)).append(')')
+    if (e.type == EventType.SUGGESTED) decodePlan(e.reason)?.let { append(" (").append(res.getString(R.string.report_by_model, it.by, it.input, it.word, it.ms / 1000.0)).append(')') }
     by[e.id]?.let { append(" · ").append(res.getString(it.report)) }
     if (e.id in idle) append(" (").append(res.getString(R.string.report_not_acted)).append(')')
 }
@@ -147,13 +149,15 @@ fun AutoPanel(auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLan
             )
         }
         when (val c = conv) {
-            is Conv.Proposed -> if (ui.pending == null && !showSwitch) NextCard(c.p, c.held, auto, ui, content, officerLang)
+            is Conv.Proposed -> if (ui.pending == null && !showSwitch) NextCard(c.p, c.held, c.confirm, auto, ui, content, officerLang)
+            Conv.Planning -> if (!showSwitch) Text(stringResource(R.string.conv_planning), style = MaterialTheme.typography.bodySmall)
             is Conv.Paused -> Notice(
                 stringResource(
                     when (c.cause) {
                         PauseCause.STOP -> R.string.conv_paused_stop
                         PauseCause.BREAK -> R.string.conv_paused_break
                         PauseCause.OFFICER -> R.string.conv_paused_officer
+                        PauseCause.URGENT -> R.string.conv_paused_urgent
                     },
                 ),
                 R.string.conv_resume to auto::resume,
@@ -171,7 +175,7 @@ fun AutoPanel(auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLan
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun NextCard(p: Proposal, held: Boolean, auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLang: String) {
+private fun NextCard(p: Proposal, held: Boolean, confirm: Boolean, auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLang: String) {
     val q = p.q
     val colors = MaterialTheme.colorScheme
     val subjectLang = ui.session.subjectLang
@@ -191,10 +195,10 @@ private fun NextCard(p: Proposal, held: Boolean, auto: AutoPilot, ui: SessionUi,
                     modifier = Modifier.weight(1f),
                 )
                 Surface(shape = MaterialTheme.shapes.small, color = colors.surfaceContainerLowest) {
-                    Text(stringResource(R.string.conv_source_rule), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                    Text(p.plan?.let { stringResource(R.string.conv_source_model, it.by) } ?: stringResource(R.string.conv_source_rule), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                 }
             }
-            Text(q.text.get(officerLang) ?: q.id, style = MaterialTheme.typography.titleMedium)
+            Text(q.text[officerLang] ?: q.text["en"] ?: q.id, style = MaterialTheme.typography.titleMedium)
             val caption = q.text.get(subjectLang)
             if (caption == null) {
                 Text(stringResource(R.string.media_missing, stringResource(R.string.media_caption)), style = MaterialTheme.typography.bodySmall, color = colors.error)
@@ -202,6 +206,7 @@ private fun NextCard(p: Proposal, held: Boolean, auto: AutoPilot, ui: SessionUi,
                 Text(caption, style = MaterialTheme.typography.bodyMedium)
             }
             Text(reasonText(p, content, officerLang), style = MaterialTheme.typography.bodySmall)
+            if (confirm) Text(stringResource(R.string.conv_needs_approval), style = MaterialTheme.typography.bodySmall, color = colors.error)
             if (first || p.reason == Reason.CLOSING) Text(stringResource(R.string.conv_statement_reminder), style = MaterialTheme.typography.bodySmall)
             if (ui.session.role == SessionRole.ACCUSED) Text(stringResource(R.string.conv_rights_reminder), style = MaterialTheme.typography.bodySmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
@@ -215,7 +220,7 @@ private fun NextCard(p: Proposal, held: Boolean, auto: AutoPilot, ui: SessionUi,
 }
 
 @Composable
-private fun reasonText(p: Proposal, content: ContentBundle, officerLang: String): String = when (p.reason) {
+private fun reasonText(p: Proposal, content: ContentBundle, officerLang: String): String = if (p.plan != null) stringResource(R.string.reason_planned, p.plan.word) else when (p.reason) {
     Reason.FOLLOWS_ANSWER -> {
         val ref = p.q.after?.substringBefore(':')?.let(content::question)
         stringResource(R.string.reason_follows, ref?.text?.get(officerLang) ?: ref?.id.orEmpty())

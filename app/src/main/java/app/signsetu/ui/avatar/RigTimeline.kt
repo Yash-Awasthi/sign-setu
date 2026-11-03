@@ -126,7 +126,7 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
         val f = ease(raw)
         // A free move overshoots slightly and settles; contacts and moves to or from rest never pass their target.
         val free = b.touch == "wrist" && b.at !in OTHER_HAND && b.at != "rest" && a.at != "rest"
-        val m = if (free) easeOutBack(raw) else f
+        val m = if (free) settle(raw) else f
         val pa = resolve(a, side, other)
         val pb = resolve(b, side, other)
         // handShape (MeasuredShape.kt) also reads measured "c:" shapes from isl_signs.json.
@@ -226,8 +226,10 @@ private fun hermite(p1: Float, p2: Float, m1: Float, m2: Float, u: Float): Float
     return (2 * u3 - 3 * u2 + 1) * p1 + (u3 - 2 * u2 + u) * m1 + (-2 * u3 + 3 * u2) * p2 + (u3 - u2) * m2
 }
 
-private fun easeOutBack(f: Float): Float {
-    val g = f - 1f
+/** Ease-out-back (a 4.5% overshoot that settles) on a time warp that starts at rest: plain, it left every hold at
+ * 4.1 times the mean speed, a jump; warped, its peak is 2.5 times, early, and the end stays slow. rig.ts matches. */
+private fun settle(f: Float): Float {
+    val g = f * f * (2 - f) - 1f
     return 1f + 2.1f * g * g * g + 1.1f * g * g
 }
 

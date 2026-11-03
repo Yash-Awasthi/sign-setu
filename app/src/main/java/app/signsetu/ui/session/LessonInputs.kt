@@ -1,5 +1,7 @@
 package app.signsetu.ui.session
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import app.signsetu.ui.theme.LocalStageColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -181,12 +183,18 @@ private fun NumberPad(type: AnswerType, title: (@Composable () -> Unit)? = null,
     val ok = valid(type, digits)
     val hand = type == AnswerType.AGE || type == AnswerType.COUNT
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        // Four 48 dp key rows need this much at normal sizes; below it the gaps and hand row shrink and the display takes what is left.
-        val tight = maxHeight < (4 * 48 + 52 + 4 * 6 + if (hand) 42 + 6 else 0).dp
+        // Four 48 dp key rows need this much at normal sizes; below it the gaps shrink and the display takes what is left.
+        val tight = maxHeight < (4 * 48 + 52 + 4 * 6 + if (hand) HAND_ROW_DP + 6 else 0).dp
         val gap = if (tight) 4.dp else 6.dp
-        val handHeight = if (tight) 40.dp else 42.dp
+        val handHeight = HAND_ROW_DP.dp
         val display = if (!tight) 52.dp else (maxHeight - 49.dp * 4 - gap * (if (hand) 5 else 4) - if (hand) handHeight else 0.dp).coerceIn(32.dp, 52.dp)
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(gap)) {
+        // Keys never shrink below 48 dp: with less room than that the pad scrolls instead.
+        val scroll = maxHeight < 48.dp * 4 + 32.dp + gap * (if (hand) 5 else 4) + (if (hand) handHeight else 0.dp)
+        val keyRow = if (scroll) Modifier.height(48.dp) else Modifier
+        Column(
+            (if (scroll) Modifier.fillMaxWidth().verticalScroll(rememberScrollState()) else Modifier.fillMaxSize()),
+            verticalArrangement = Arrangement.spacedBy(gap),
+        ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
                 title?.invoke()
                 Surface(shape = RoundedCornerShape(18.dp), color = Color.White, modifier = Modifier.weight(1f).height(display)) {
@@ -212,7 +220,7 @@ private fun NumberPad(type: AnswerType, title: (@Composable () -> Unit)? = null,
                             color = if (digits == num) Color(0xFFFFB300) else Color.White,
                             border = BorderStroke(1.dp, Color(0xFFD7C9B8)),
                             modifier = Modifier
-                                .height(if (tight) 36.dp else 38.dp)
+                                .height(HAND_ROW_DP.dp)
                                 .padding(horizontal = 2.dp)
                                 .clickable {
                                     digits = num
@@ -234,11 +242,11 @@ private fun NumberPad(type: AnswerType, title: (@Composable () -> Unit)? = null,
                 }
             }
             listOf("123", "456", "789").forEach { row ->
-                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row((if (scroll) keyRow else Modifier.weight(1f)).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     row.forEach { c -> PadKey(c.toString(), Modifier.weight(1f)) { digits = padPress(type, digits, c) } }
                 }
             }
-            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row((if (scroll) keyRow else Modifier.weight(1f)).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 PadIcon(rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowBack), stringResource(R.string.pad_delete), Soft, OnSoft, Modifier.weight(1f)) { digits = digits.dropLast(1) }
                 PadKey("0", Modifier.weight(1f)) { digits = padPress(type, digits, '0') }
                 PadIcon(rememberVectorPainter(Icons.Filled.Check), stringResource(R.string.stage_done), if (ok) answer.yes else Off, answer.onYes, Modifier.weight(1f)) { if (ok) onEnter(digits) }
@@ -246,6 +254,9 @@ private fun NumberPad(type: AnswerType, title: (@Composable () -> Unit)? = null,
         }
     }
 }
+
+/** The 1 to 10 hand tiles: a full touch target, since a child taps them in one go. */
+private const val HAND_ROW_DP = 48
 
 @Composable
 private fun PadKey(digit: String, modifier: Modifier, onClick: () -> Unit) {

@@ -73,13 +73,13 @@ class OnlineAssistant(
 
     /** The station's local model (BrainClient.chat), asked before the gateway or a custom service. It is the
      * department's own computer, reached end-to-end encrypted, so the text goes to it unmasked. */
-    @Volatile var station: (suspend (system: String, user: String, maxTokens: Int, timeoutMs: Int) -> String?)? = null
+    @Volatile var station: (suspend (system: String, user: String, maxTokens: Int, timeoutMs: Int, names: Collection<String>, details: Collection<String>) -> String?)? = null
 
     /** The station's reply, or null when it has no model up, failed or threw: the caller then falls through. */
-    suspend fun askStation(system: String, user: String, maxTokens: Int, timeoutMs: Int): String? {
+    suspend fun askStation(system: String, user: String, maxTokens: Int, timeoutMs: Int, names: Collection<String> = emptyList(), details: Collection<String> = emptyList()): String? {
         val ask = station?.takeIf { stationUp() } ?: return null
         return try {
-            ask(system, user, maxTokens, timeoutMs)?.takeIf { it.isNotBlank() }
+            ask(system, user, maxTokens, timeoutMs, names, details)?.takeIf { it.isNotBlank() }
         } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
     }
 
@@ -176,7 +176,7 @@ class OnlineAssistant(
     }
 
     suspend fun ask(system: String, user: String, names: Collection<String>, maxTokens: Int = 800, details: Collection<String> = emptyList(), timeoutMs: Int = 60_000, retry: Boolean = true, viaStation: Boolean = true): String? {
-        if (viaStation && stationUp()) askStation(system, user, maxTokens, timeoutMs)?.let { return it }
+        if (viaStation && stationUp()) askStation(system, user, maxTokens, timeoutMs, names, details)?.let { return it }
         if (!available || !enabled()) return null
         // Keystore decryption and the token file are disk work; never do them on the caller's UI thread.
         val d = direct

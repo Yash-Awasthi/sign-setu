@@ -6,6 +6,7 @@ import app.signsetu.assistant.followUpPrompt
 import app.signsetu.assistant.followUpTone
 import app.signsetu.assistant.translatePrompt
 import app.signsetu.data.content.Language
+import app.signsetu.ui.session.PLAN_WRITE_PROMPT
 import app.signsetu.ui.session.counselPrompt
 import java.io.File
 import kotlinx.serialization.json.Json
@@ -32,6 +33,7 @@ class GatewayPromptContractTest {
         followUpPrompt(followUpTone(child = false)),
         counselPrompt(lang, child = true),
         counselPrompt(lang, child = false),
+        PLAN_WRITE_PROMPT,
     )
 
     @Test

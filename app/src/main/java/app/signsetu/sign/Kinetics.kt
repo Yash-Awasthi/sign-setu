@@ -65,25 +65,59 @@ enum class Side { LEFT, RIGHT }
 class DominantHand(private val decideAfter: Float = 40f, private val ratio: Float = 1.6f) {
     private var left = 0f
     private var right = 0f
-    var side: Side = Side.RIGHT
+    // Learnt on the analysis thread, read by the readers' threads.
+    @Volatile var side: Side = Side.RIGHT
+        private set
+    /** Enough energy has been seen for [side] to be the person's, not the default. */
+    @Volatile var decided = false
         private set
 
     fun see(e: HandEnergy) {
         left += e.left
         right += e.right
         if (left + right < decideAfter) return
-        if (left > right * ratio) side = Side.LEFT else if (right > left * ratio) side = Side.RIGHT
+        if (left > right * ratio) { side = Side.LEFT; decided = true } else if (right > left * ratio) { side = Side.RIGHT; decided = true }
     }
 
-    fun canonical(frames: List<LandmarkFrame>): List<LandmarkFrame> = if (side == Side.LEFT) frames.map(::mirror) else frames
+    /** The ways to read [frames] so that a sign and its mirror read alike: right-led by the segment's own lead hand,
+     * else by the person's; with neither known, as seen and mirrored, for the reader to keep the surer. */
+    fun orientations(frames: List<LandmarkFrame>): List<List<LandmarkFrame>> {
+        val side = segmentLead(frames, ratio) ?: side.takeIf { decided } ?: return listOf(frames, frames.map(::mirror))
+        return listOf(if (side == Side.LEFT) frames.map(::mirror) else frames)
+    }
+
+    /** [reader]'s guesses for [frames], from the orientation whose top guess is surer. */
+    fun read(reader: SignReader, frames: List<LandmarkFrame>): List<SignGuess> =
+        orientations(frames).map(reader::read).maxByOrNull { g -> g.maxOfOrNull { it.score } ?: -1f }.orEmpty()
+
+    fun letter(reader: SignReader, frames: List<LandmarkFrame>): SignGuess? =
+        orientations(frames).mapNotNull(reader::letter).maxByOrNull { it.score }
+}
+
+/** The hand that leads [frames]: the one spending clearly more energy or, with the hands held still, the one seen in
+ * clearly more frames; null for a sign both hands make alike. A lone hand leads. */
+internal fun segmentLead(frames: List<LandmarkFrame>, ratio: Float = 1.6f): Side? {
+    var l = 0f; var r = 0f
+    for (i in 1 until frames.size) { val e = handEnergy(frames[i - 1], frames[i]); l += e.left; r += e.right }
+    lead(l, r, ratio)?.let { return it }
+    // Moving, but alike: a symmetric sign, which no frame count can split.
+    if (frames.size > 1 && (l + r) / (frames.size - 1) > GATE_OFF) return null
+    return lead(frames.count { it.leftHand?.size == 21 }.toFloat(), frames.count { it.rightHand?.size == 21 }.toFloat(), ratio)
+}
+
+private fun lead(l: Float, r: Float, ratio: Float): Side? = when {
+    l + r <= 0f -> null
+    l > r * ratio -> Side.LEFT
+    r > l * ratio -> Side.RIGHT
+    else -> null
 }
 
 /** The frame as a mirror shows it: x flipped, the hands swapped, and the body's left and right points swapped. The
- * face mesh has no simple left-right twin map here, so it is dropped rather than kept wrong. */
+ * face is flipped with its points left in place, as the readers' training mirror does (tools/ml/exp.py augment). */
 fun mirror(f: LandmarkFrame): LandmarkFrame {
     fun flip(p: List<Offset>?) = p?.map { Offset(1f - it.x, it.y) }
     val pose = flip(f.pose)?.let { p -> List(p.size) { i -> p[POSE_MIRROR.getOrElse(i) { i }.coerceAtMost(p.size - 1)] } }
-    return f.copy(leftHand = flip(f.rightHand), rightHand = flip(f.leftHand), pose = pose, face = null)
+    return f.copy(leftHand = flip(f.rightHand), rightHand = flip(f.leftHand), pose = pose, face = flip(f.face))
 }
 
 /** MediaPipe pose index of each point's mirror twin. */

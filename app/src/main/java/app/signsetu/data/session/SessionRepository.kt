@@ -82,7 +82,7 @@ class SessionRepository(
     private val onSessionStarted: suspend (Long) -> Unit = {},
     private val clock: () -> Long = System::currentTimeMillis,
     /** App, content and device key, written as the session's first row so the record says what made it. */
-    private val provenance: (() -> String)? = null,
+    private val provenance: (suspend () -> String)? = null,
     /** Signs a session's seal line (EventSeal.sealLine) with the device key; null leaves sessions unsigned. */
     private val signer: ((String) -> String?)? = null,
 ) {
