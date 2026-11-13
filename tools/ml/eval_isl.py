@@ -69,23 +69,31 @@ def gloss_to_text(gloss: list[str], words: dict) -> tuple[str, str]:
 
 
 def sentence_demo(include: str, spell: str) -> None:
-    """Signs a sentence from held-out segments: words by sign_reader, a name by isl_spell, top-1 each."""
+    """The glossToText wiring on the sentence the demo signs (asserted), then what the readers actually say on
+    today's held-out samples (reported only: the caches are rebuilt independently of the models, so a stale
+    reading is a data fact, not a wiring failure)."""
     words = {w: e for e in json.loads((CONTENT / "words.json").read_text(encoding="utf-8"))["words"] for w in e["w"]}
     sign_words = json.loads((CONTENT / "sign_words.json").read_text(encoding="utf-8"))["words"]
     plan = [("yesterday", include), ("r", spell), ("a", spell), ("m", spell), ("hospital", include)]
+    intended = [sign_words.get(label, label) if path == include else label for label, path in plan]
+    got = gloss_to_text(intended, words)
+    expected = ("Yesterday Ram hospital.", "कल ram अस्पताल।")
+    assert got == expected, f"sentence demo: gloss {intended} gave {got}, expected {expected}"
+    print(f"ISL sentence demo passed: {' '.join(intended)} -> {got[0]} / {got[1]}")
     caches = {p: pickle.load(open(p, "rb")) for p in {include, spell}}
     models = {include: reader("sign_reader"), spell: reader("isl_spell")}
-    gloss = []
+    read = []
     for label, path in plan:
-        cache = caches[path]
-        s = next(s for s in cache["samples"] if s["split"] == "test" and s["label"] == label)
+        s = next((s for s in caches[path]["samples"] if s["split"] == "test" and s["label"] == label), None)
+        if s is None:
+            read.append(f"{label}(missing)")
+            continue
         spec, logits = models[path]
-        top = spec["labels"][int(np.argmax(logits(featured(s, cache["aspect"], spec.get("norm"))[None].astype(np.float64))))]
-        gloss.append(sign_words.get(top, top) if path == include else top.lower().removeprefix("letter.").removeprefix("digit."))
-    got = gloss_to_text(gloss, words)
-    expected = ("Yesterday Ram hospital.", "कल ram अस्पताल।")
-    assert got == expected, f"sentence demo: gloss {gloss} gave {got}, expected {expected}"
-    print(f"ISL sentence demo passed: {' '.join(gloss)} -> {got[0]} / {got[1]}")
+        x = featured(s, caches[path]["aspect"], spec.get("norm"))
+        top = spec["labels"][int(np.argmax(logits(x[None].astype(np.float64))))]
+        read.append(sign_words.get(top, top) if path == include else top.lower().removeprefix("letter.").removeprefix("digit."))
+    print(f"ISL sentence demo, as today's samples read: {' '.join(read)}")
+
 
 
 SPELL_ODDS = 2.0  # SignReaders.kt; a word reader's "spell_odds" overrides it

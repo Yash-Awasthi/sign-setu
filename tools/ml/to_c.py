@@ -1,10 +1,11 @@
 """Brings working data from D:\\ml-data back to C:\\work\\ml-data (C: is the working set, D: backup and cold storage).
 Copy while hashing, hash the copy, compare size and sha256 per file; resumable per file.
 
-    python to_c.py move landmarks q3 runs ...         verified, then the D: copy goes; no junction
     python to_c.py copy islrtc_dict [--first LIST]    D: copy kept; the C: junction becomes the real folder
                                                       only after every file verifies; LIST (paths under
                                                       C:\\work\\ml-data, one per line) copies first
+
+`move` is disabled: D:\\ml-data is the only backup of the corpus, so no tool may delete it.
 """
 import os
 import pathlib
@@ -60,6 +61,9 @@ def transfer(name, man, keep, first=()):
 
 def main(a):
     mode, names = a[0], [x for x in a[1:] if not x.startswith("--")]
+    if mode != "copy":
+        sys.exit("to_c.py copy only: D:\\ml-data is the only backup, so nothing on D: may be deleted. "
+                 "`move` rmtree'd the D: source and is disabled (2026-11-12).")
     first = []
     if "--first" in a:
         lst = a[a.index("--first") + 1]

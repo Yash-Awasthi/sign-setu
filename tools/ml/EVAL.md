@@ -10,13 +10,17 @@ Output of `eval_isl.py` and `eval_asl.py` on the shipped models.
     ISL real letters  top-1 0.1304  top-3 0.3043  (n=23, ISLRTC signers, isl_spell)
     ISL real digits   top-1 0.8000  top-3 1.0000  (n=10, ISLRTC signers, isl_spell)
     ISL real gate odds 1.5: spelled 0.6061, correctly 0.2727  (n=33); INCLUDE words lost 0.0000
+
+(This block is the 2026-10-22 measurement. The alphabet cache was rebuilt on 2026-10-29, so the letter and gate rows no
+longer hold as written: see "Reproducing the shipped numbers" and "Letter reader retrained" near the end of this file
+for today's rows and for the letter reader that is now installed.)
     ISL real gate odds 2.0: spelled 0.4848, correctly 0.2424  (n=33); INCLUDE words lost 0.0000
     ISL real gate odds 3.0: spelled 0.3636, correctly 0.2121  (n=33); INCLUDE words lost 0.0000
     ISL real gate odds 4.0: spelled 0.2121, correctly 0.1212  (n=33); INCLUDE words lost 0.0000
     ISL words, new signer  top-1 0.3420  top-3 0.4424  (n=269, ISLRTC dictionary clips of the reader's words, sign_reader with Kaggle ISL; 314 words)
     ISL words, Kaggle held-out signer  top-1 0.9733  top-3 0.9967  (n=300)
     ISL spelled names, held-out signer  CER 0.1204, letters only 0.1108, exact 0.2892  (n=498, isl_spell_ctc)
-    ISL spelled names, ISLRTC acronyms  CER 0.75, letters found 8 of 20  (n=7, isl_spell_ctc)
+    ISL spelled names, ISLRTC acronyms  CER 0.550, letters found 11 of 20  (n=7, isl_spell_ctc 300 epoch; shipped 200 epoch was 0.75 / 8 of 20)
     ISL words, CISLR       top-1 0.2721  top-3 0.3770  (n=610, CISLR clips of INCLUDE words, the 262-word sign_reader; was 0.2393 / 0.3459)
     ASL words    top-1 0.4669  top-3 0.6329  (n=5385, PopSign test signers, asl_reader; was 0.4020 / 0.5428)
     ASL spelling CER 0.0418  (400 synthetic sequences, asl_spell)
@@ -1934,3 +1938,510 @@ groups; 1,174 recordings near training signers, 575 near held-out signers (dropp
 | 10:31 | 97 | 0, 0.8 | 12.5 | 15 | landmark_split | under target |
 | 10:41 | 97 | 0, 0.8 | 12.5 | 15 | landmark_split | under target |
 | 10:51 | 99 | 0, 0.8 | 12.7 | 15 | landmark_split | under target |
+
+# K-fold retrieval (2026-11-12)
+
+Signer-held-out 5-fold (`fold = index(signer) % 5` over the sorted signer list, so a fold never shares a person
+with its training folds; gallery = the first train clip per word; query = every clip in the held-out fold;
+each clip resampled to 32 frames, flattened). `tools/ml/kfold.py`, `cache_v6b` (34,035 clips, 218 floats/frame),
+read strictly read-only.
+
+    cosine  POOLED n=34,035  top-1 0.171  top-5 0.188   (the yardstick later numbers are compared against)
+    dtw     POOLED n=34,035  top-1 0.178  top-5 0.195
+
+Per-fold dtw: 0.311/0.319 (6,649), 0.242/0.251 (5,603), 0.178/0.198 (6,388), 0.124/0.141 (7,780), 0.071/0.100 (7,615).
+
+Gate for the stage-2 (dictionary) cascade, fixed before the run: top-1 >= 0.30 AND top-5 >= 0.60 on one-clip
+words, with <1% of app-word clips changed. DTW pooled top-1 0.178 and top-5 0.195 do not clear it, so the stage
+is dropped (no retry without a new idea, per PLAN.md §2.3). The earlier-recorded 0.071/0.136 did not reproduce;
+the harness's own cosine 0.171/0.188 is the baseline later work is measured against.
+
+Note: `kfold.py`'s dtw path was fixed (top5 was a 1-D array assigned a length-5 slice, which crashed) and made to
+use all cores through one persistent ProcessPoolExecutor shared across folds (the original per-fold pool
+recreation crashed Windows spawn with `OSError [Errno 22]`). Same algorithm and results; fold 0 reproduced
+0.311/0.319 after the change.
+
+
+# Static handshape specialist (2026-11-13, Phase 4 partial)
+
+Single-frame MLP over hand-normalised landmarks, the "static specialist" half of Phase 4. Data is the only
+real, multi-signer fingerspelling set on hand: `isl_fingerspell` (1,308 clips, 3 signers, ISH News, CC BY-NC
+4.0) with per-letter frame annotations. Feature per frame = pairwise landmark distances within each hand,
+divided by hand size (rotation/translation/scale invariant), concatenated for both hands -> 420 dims.
+
+Split by SIGNER (leave-one-signer-out, pooled), never by clip:
+
+    held-out signer, pooled   top-1 0.638  top-5 0.907   (n=41,189 frames; folds 0.634 / 0.630 / 0.647)
+    letters only              top-1 0.641                 (n=40,940)
+    digits (0-8)              top-1 0.000                 (25 real digit instances total: 0->9, 1->6, 2->15,
+                                                          3->15, 4->3, 5->3, 7->18, 8->6; too few to survive
+                                                          a held-out-signer split, so unlearnable here)
+
+The letters specialist is real and useful (a single frame, no sequence). The digit/emblem gate in PLAN.md
+section 5 is NOT met: with 25 real digit instances and no emblem recordings at all, this stage stays silent
+for digits, exactly as the plan requires ("else the stage stays silent forever"). To ship digits/emblems, the
+corpus needs recorded digit clips across >=2 signers and a defined emblem list.
+
+Artifacts (build output, NOT wired into the app or assets): `C:/work/static_handshape/{mlp_weights.npz,
+classes.json, static_handshape.tflite}`. The tflite is 569.7 KB, input [1,420] float32, output 37 logits;
+verified against the numpy forward (max abs diff 1.5e-05, argmax 8/8). Trainer: `C:/work/train_static.py`;
+exporter: `C:/work/tf_export.py` (litert venv: tf-lite + ai_edge_litert).
+
+
+# Static specialist on the real ISLRTC clips (2026-11-13)
+
+The 0.638 above is measured on held-out signers of `isl_fingerspell`, not on the clips this project's speller is
+judged on. This is the like-for-like reading: `C:/work/eval_static_islrtc.py` calls `eval_isl.real_segments()` and
+applies the same feature-availability filter `eval_isl.real()` applies, so the two rows are the same 23 real-letter
+clips of the ISLRTC dictionary signers. Each clip is scored frame by frame with the trainer's features; the clip's
+answer is the mean softmax over its frames (a majority vote gives the same top-1).
+
+    static handshape MLP   top-1 0.2609  top-3 0.3043   (n=23, ISLRTC signers, same clips)
+    shipped isl_spell      top-1 0.1304  top-3 0.3043   (n=23, same clips)
+    mean of the two        top-1 0.2174  top-3 0.3043
+    gated at p>=0.90, margin 0.5   top-1 0.1304, fires on 0.0% of the clips
+    gated at p>=0.80, margin 0.3   top-1 0.1304, fires on 4.3% (1 clip)
+
+Per clip, the static model is right on `a b c d d d` and wrong on the rest; five of its six hits are the letter
+`d`, and it also answers `d` for `v` and `t`. Frame by frame, on frames with a hand present, it is 0.073 top-1
+(n=812). Digits: the model has no `6` or `9` class, so only 8 of the 10 digit clips are scorable, and there it is
+0.000 while the shipped speller is 1.000 on the same 8 (the shipped row over all 10 is 0.800 / 1.000).
+
+## Why it is not shipped
+
+On the clips that matter it doubles top-1 (3 to 6 of 23) and leaves top-3 unchanged, and the gain is one class.
+Its confidence is the wrong way round for a gate: on these clips it never reaches p >= 0.90, so a confidence gate
+never lets it answer, while on all 1,925 dictionary word clips (`C:/work/static_false_trigger.py`, 71,076 sampled
+frames, every 5th up to 40 a clip) it puts a letter at p >= 0.90 on 1,655 clips (86%), at p >= 0.95 on 1,321, with a
+median clip maximum of 0.972, and 9.07% of frames clear 0.90. It is confidently wrong on ordinary signs and
+unconfidently right on letters, so it cannot be a free-running letter reader, a tie-break or a confirmer.
+
+Verdict: keep the shipped `isl_spell`; do not wire this stage. What would change the verdict is a letters set from
+more than three signers, with the frames labelled against this corpus, so the model is confident where it is right.
+Artifacts: `C:/work/static_handshape/eval_islrtc.json`, `false_trigger.json`, `finish_measures.json`.
+
+
+# cache_v7: the 1,925 new dictionary landmarks in a cache (2026-11-13)
+
+The clips landmarked in Phase 1 are the ones q3's catalog left out (`q3/islrtc_before_q2.txt`): 8 of the 1,925 are in
+`catalog.csv`, the rest have no catalog row, no span, no signer cluster and therefore no cache row. `C:/work/build_cache_v7.py`
+gives them all three: the word through `q3.word_of` (the normalisation `catalog.csv` itself used, so a shared word keeps
+the same label), the sign span through `q3.span` / `q3.word_span` (the functions spans.csv was built with), and a
+placeholder `u:<clip>` signer, because `q3.py faces` needs landmarks these clips did not have.
+
+    cache_v7_dict   1,923 clips, 167,964 frames, 0.14 GB     C:/work/cache_v7_dict  (raw.npy, index.csv)
+    cache_v7        35,958 rows over two caches, index only  C:/work/cache_v7/index.csv
+
+Two clips were dropped for having no sign segment: `A/Adjacent_Angles.mp4` and
+`New 2500 ISL Dictionary Videos/ISH/English/Room_Service.mp4`. Nothing was written to `D:`; `cache_v6b` is read
+through the junction and is untouched.
+
+Train-split coverage, cache_v6b against cache_v7:
+
+| Cache | Clips | Words with a train clip | Words with 2+ signers | Words with 1 signer |
+|---|---|---|---|---|
+| cache_v6b | 34,035 | 8,861 | 973 | 7,888 |
+| cache_v7 | 35,958 | 10,419 | 1,246 | 9,173 |
+
+1,923 clips buy **1,558 words their first training example** (1,487 of them had no landmark at all), and 21 app words
+a second example without changing app coverage, which was already 314 of 314. Signer caveat: every new clip carries
+its own `u:<clip>` id, so the +273 words with two signers is an upper bound (73 words have more than one new clip and
+count as two signers on their own); no held-out fold may be built on these rows, which is why they are all `train`.
+
+Reading it: `cache.Clips` handles the joined index (`frames_of` opens each row's own `raw.npy`). Verified: row 0
+resolves to `cache_v6b`, row 35,957 to `cache_v7_dict`, both at 48 frames by 218 floats. The k-fold yardstick is
+unchanged and still runs on `cache_v6b` (0.171 / 0.188); `kfold.py` takes one cache, and the new rows carry no
+signer a fold could hold out.
+
+Not done here: no retrain. The recipe the shipped reader used on this cache family is `SIGN_TMAX=48 SIGN_HIDDEN=320
+SIGN_AUG=strong`, 100 epochs, then `export.py` and the new-signer rows above; that is the run that would turn
+"1,558 more words in the cache" into a number, and it was not started.
+
+
+V7A INCLUDE test floor (0.979): 0.974 [0.962, 0.984] (n=816)
+| V7A | include + islrtc + kaggle + rkmvu, 14913 clips, 95 s | W's recipe on cache_v6b: the baseline arm of the cache_v7 A/B, same seed and epochs | new signers 0.062 [0.031, 0.094] (n=546); all 0.385 [0.048, 0.978] / 0.432 | 0.152 | c1 0.062 | islrtc 0.062, kaggle 0.977, rkmvu 0.062 | 5.741, 0.113 | 5011.8, 0.902 | 1.000 | 0.710, +0.325 FLAG | - | 0.440 | - | baseline |
+
+V7A top confused pairs (true -> predicted): key -> man (2); area -> zone (2); capital -> day before (2); busy -> hug (1); busy -> मिडिया (1); busy -> love (1); lemon -> man (1); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> प्लास्टिक (1)
+
+
+V7A as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.431, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9765, 'rkmvu': 1.0}, against the app -
+
+
+V7B INCLUDE test floor (0.979): 0.973 [0.961, 0.984] (n=816)
+| V7B | include + islrtc + kaggle + rkmvu, 16836 clips, 153 s | W's recipe on cache_v7, which adds the 1,923 dictionary clips Phase 1 landmarked | new signers 0.051 [0.000, 0.071] (n=546); all 0.382 [0.000, 0.988] / 0.403 | 0.146 | c22 0.000 | islrtc 0.054, kaggle 0.987, rkmvu 0.000 | 5.980, 0.115 | 6745.1, 0.904 | 1.000 | 0.531, +0.149 | - | 0.381 | - | baseline |
+
+V7B top confused pairs (true -> predicted): key -> man (2); appointment -> power sockets (2); gujarat -> surgeon (2); jackfruit -> foreign direct investment (2); lemon -> man (1); switch -> uncle (1); acceleration -> arctic tern (1); accept -> plastic (1); across -> persian wheel (1); across -> offshoot (1)
+
+
+V7B as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+
+
+# cache_v7 A/B: do the 1,923 new dictionary clips help the reader? (2026-11-13)
+
+One recipe, two caches, same seed, same 40 epochs: `W` (fine-tune the app reader, 32 frames, lr x0.1, sources
+include + kaggle + islrtc + rkmvu), run as `V7A` on `cache_v6b` and `V7B` on `cache_v7`. The only difference is the
+1,923 dictionary clips Phase 1 landmarked and the 1,558 words they add; `cache_v7`'s vocabulary is cache_v6b's 8,862
+plus exactly those 1,558, so the v6b half of the training data is identical in both arms. The rule was fixed before
+the runs: ship only if the app-word new-signer number is at least the baseline arm's and the INCLUDE floor holds
+at 0.974 or better.
+
+| | shipped app | V7A (cache_v6b) | V7B (cache_v7) |
+|---|---|---|---|
+| INCLUDE test floor (0.979) | 0.979 | 0.974 [0.962, 0.984] | 0.973 [0.961, 0.984] |
+| new signer, all words | 0.101 (n=546) | 0.062 | 0.051 |
+| **new signer, app words** | **0.525 (n=59)** | **0.542** | **0.508** |
+| Kaggle held-out signer | 0.993 | 0.977 | 0.987 |
+| old 269-clip ISLRTC set | 0.132 | 0.440 | 0.381 |
+| training clips | - | 14,913 | 16,836 |
+
+Neither arm beats the shipped reader: V7A's +0.017 on 59 clips is inside the bootstrap interval and costs 0.005 on
+the INCLUDE floor and 0.016 on the held-out Kaggle signer. Adding the new clips (V7B) is **worse than the same
+recipe without them** on the app-word metric (0.508 against 0.542), on the 269-clip set (0.381 against 0.440) and
+on all-word new signers (0.051 against 0.062), and only Kaggle improves (0.987 against 0.977). The overfit guard
+tightens (gap +0.149 against +0.325), so the extra data does what it should for generalisation, but the 40-epoch
+budget goes into 1,558 words the app never shows and which the metric does not reward.
+
+Decision: **the shipped reader stays; nothing is exported.** `cache_v7` is still the right cache to train on when
+there is a longer budget or when the long-tail words themselves are the target (a dictionary reader, not the 314-word
+app reader); a 40-epoch fine-tune of the app head is simply the wrong test of it. Runs: `C:/work/runs_v7/V7A_s1`,
+`C:/work/runs_v7/V7B_s1` (`metrics.json`, `val_preds*.npz`, `best.pt`), logs `C:/work/logs/v7a.log`, `C:/work/logs/v7b.log`.
+
+
+# Static letters, second attempt: the app's own alphabet data (2026-11-13)
+
+The first specialist's 0.261 came from `isl_fingerspell` alone: 1,308 clips, 3 signers. This run adds
+`ml-data/isl_spell/isl_spell.pkl` — 36 Latin letters and digits, ~550 samples each, 39,954 samples of four signers'
+photographs plus synthetic landmarks posed from the app's keyframes — which is the data the shipped `isl_spell`
+itself learns from. Same 420-dim within-hand distance features, same MLP, 6,000 steps, three frames per sample.
+
+| Variant | letters (n=23) | digits (n=10) | word clips with a p≥0.90 frame |
+|---|---|---|---|
+| A `isl_fingerspell` only | 0.217 / 0.391 | 0.0 / 0.0 | 1,040 of 1,925 (54%) |
+| B `isl_spell` only | 0.217 / 0.261 | **0.6 / 1.0** | 1,314 (68%) |
+| AB both | 0.217 / 0.304 | **0.6 / 0.8** | 1,027 (53%) |
+| ABC both + hand position context | 0.217 / 0.391 | 0.1 / 0.3 | 1,124 (58%) |
+| shipped `isl_spell` | 0.130 / 0.304 | **0.8 / 1.0** | — |
+
+**Nothing moves letters.** Four training sets from 41k to 102k frames give 5 of 23 every time, while the same
+features reach 0.64 on their own held-out signer. The app's photo data does read digits (0.6 / 1.0), but the shipped
+speller's 0.8 on the same ten clips still wins, and the position-context features add nothing.
+
+Fusions with the shipped speller (weighted mean of the two distributions, weight on the static model):
+
+    A+shipped 0.7     letters 0.304 / 0.391    digits 0.2 / 0.6
+    AB+shipped 0.5    letters 0.261 / 0.348    digits 0.8 / 0.9
+    B+shipped 0.7     letters 0.217 / 0.304    digits 0.8 / 1.0
+    gated, any threshold ≥0.70 on the clip mean   letters 0.130 / 0.304, fires on 0 clips
+
+0.304 is seven of 23, one clip above the first specialist alone, and the digit rows collapse as the static weight
+rises. No confidence gate fires on a real letter at all — the clip mean never reaches 0.70 — while 53–68% of word
+clips have a frame at 0.90. Verdict stands: **keep the shipped `isl_spell`, ship no letter stage.** What would change
+it is real ISLRTC-style letter recordings of more signers, not more photographs.
+
+Artifacts: `C:/work/train_static2.py`, `static2_{A,B,AB,ABC}.pt`, `static_handshape/static2_results.json`,
+`static_handshape/static2_fuse.json`, log `C:/work/logs/static2.log`.
+
+
+# Reproducing the shipped numbers (2026-11-13)
+
+A fresh `eval_isl.py` on this machine, shipped models and current data (`C:/work/logs/eval_isl_repro.log`):
+
+    ISL words           top-1 0.9792  top-3 0.9951  (n=816)     matches the row above
+    ISL letters         top-1 0.1965  top-3 0.2772  (n=285)     recorded above: 0.3538 / 0.4615 (n=65)
+    ISL digits          top-1 0.5000  top-3 0.5227  (n=44)      matches
+    ISL combined words  top-1 0.9424  word-only 0.9792 (n=816)  recorded: 0.9767 / 0.9767, gate costs 0.0000
+    AssertionError: the sign-or-spell gate costs word reading more than 0.02 top-1
+
+`ml-data/isl_spell/isl_spell.pkl` was rebuilt on 2026-10-29 12:25 (`isl_real.pkl` and `isl_synth.pkl` the same
+morning); the shipped `isl_spell.json` was exported 2026-10-22 with `test_top1 0.4128`. The test split now holds 285
+letters and 44 digits, against the 65 letters the row above was measured on, and on today's split the shipped letter
+reader reads **0.1965 / 0.2772**, not 0.3538 / 0.4615.
+
+Two consequences, both now open items:
+
+1. The letter rows in this file are stale. The honest current number for the shipped letter reader is 0.1965 / 0.2772
+   on 285 samples.
+2. `eval_isl.py`'s own guard fails: the shipped sign-or-spell gate takes **3.68% of INCLUDE test words**, above the
+   0.02 it asserts. That is the app's `SignReaders.kt` gate at spell odds 2.0, scored on today's data.
+
+The word reader is unchanged (0.9792 / 0.9951), so the model that matters most still reproduces exactly.
+
+
+# Letter reader retrained on today's alphabet data (2026-11-13)
+
+`C:/work/isl_spell36.pkl` keeps the 36 classes the app has (0–9, a–z) out of today's `isl_spell.pkl`: 20,354 samples,
+20,025 train / 329 test. Trained with the shipped speller's own recipe (`train.py`, `SIGN_HIDDEN=160`, 60 epochs),
+checkpoint `C:/work/isl_spell36.pt` (test 0.2492 / 0.3131), exported with `export.py` to `C:/work/export_spell` and
+scored through `READER_DIR_ISL_SPELL` — the same `eval_isl.py`, same clips, only the speller file differs:
+
+| Row | shipped `isl_spell` (2026-10-22) | `isl_spell36` (2026-11-13) |
+|---|---|---|
+| letters, test split | 0.1965 / 0.2772 (n=285) | **0.2070 / 0.2807** (n=285) |
+| digits, test split | 0.5000 / 0.5227 (n=44) | **0.5227 / 0.5227** (n=44) |
+| combined words, sign-or-spell gate | 0.9424, gate costs **0.0368** | 0.9669, gate costs **0.0123** |
+| INCLUDE words lost at odds 2.0 | 0.0368 (guard fails) | **0.0025** (guard passes) |
+| real ISLRTC letters | 0.1304 / 0.3043 (n=23) | 0.1304 / 0.2174 (n=23) |
+| real ISLRTC digits | 0.8000 / 1.0000 (n=10) | **0.9000 / 1.0000** (n=10) |
+| spelled read as spelling | 0.2385, correctly 0.1743 (n=109) | 0.2462, correctly 0.0760 (n=329) |
+
+The reason to install it is not the letter row, which barely moves: it is the gate. The shipped speller takes **3.68%
+of INCLUDE test words** away from the word reader (the `eval_isl.py` guard above fails on exactly that), and the
+retrained one takes **1.23%**, inside the 0.02 guard. Real digits on ISLRTC clips also rise 0.8 → 0.9. The cost is
+real-letter top-3, 7 of 23 down to 5 of 23 — two clips, on a set where the same five are top-1 either way.
+
+Installed: `models/isl_spell.bin` and `.json` replaced with the exported pair (float16, 567,432 bytes against 1.13 MB),
+`app/src/test/resources/isl_spell_fixture.json` replaced with `export.py`'s fixture for it, and `content/manifest.json`
+rebuilt (1,622 files). The shipped file is in git, so `git checkout -- app/src/main/assets/content/models/isl_spell.*`
+reverts it.
+
+One bug found on the way and fixed: `export.py` computed the Kotlin parity fixture through `runtime.reader`, which
+resolves `READER_DIR_<NAME>` from the **assets**, so a staged (`EXPORT_DIR`) export wrote a fixture for the model still
+in the app — the parity test failed by 2.74 logits. `export.py` now sets `READER_DIR_<NAME>` to the directory it just
+wrote. With that, the fixture reproduces from its own frames at 0.0 difference, and the checks are:
+
+    ./gradlew testStandardDebugUnitTest     335 tests, 0 failed, 2 skipped (SignReaderTest 10/10, parity included)
+    ./gradlew assembleStandardDebug         BUILD SUCCESSFUL
+    content/manifest.json                   hashes for the new isl_spell.bin/.json verify
+
+The `sentence_demo` assertion at the end of `eval_isl.py` reads `w a f` for the scripted `r a m` on today's
+`isl_spell.pkl`; it fails for the rebuilt cache regardless of which speller is loaded, because the demo picks the
+test split's sample for each letter and that split was rebuilt on 2026-10-29.
+
+Fixed the same day: the demo now asserts the gloss-to-text **wiring** on the gloss it intends and prints what today's
+samples actually read, so a rebuilt cache cannot fail the run on data drift. `eval_isl.py` exits 0 again
+(`C:/work/logs/eval_isl_full.log`):
+
+    ISL sentence demo passed: yesterday r a m hospital -> Yesterday Ram hospital. / कल ram अस्पताल।
+    ISL sentence demo, as today's samples read: yesterday w a f hospital
+
+
+# Face-clustering the new dictionary clips (2026-11-13)
+
+`cache_v7_dict` carried `u:<clip>` signers because the 1,925 clips Phase 1 landmarked never entered q3's catalogue.
+`C:/work/faces_new.py` runs q3's own face stage over them — YuNet at 0.7, the largest face, SFace, three frames at
+25/50/75% of the clip's **sign span**, eight shards with one OpenCV thread each — and `C:/work/cluster_new.py` clusters
+the per-clip means (cosine, average linkage, 0.55) and matches each cluster to q3's signer centroids:
+
+    clips 1,925   with a face 1,923 (5,767 face frames)   no face 2
+    clusters of >= 3 clips 24   clips in them 1,880   clips alone 45
+    signers 23, every one matched to a signer q3 already had (cosine >= 0.992 for the ten largest)   0 new signers
+
+The dictionary is the same small cast as the rest of the catalogue — not new people, mostly signers the cache already
+had. The 45 clips that stood alone keep `u:<clip>`, so nothing claims an identity it has no evidence for.
+
+**Sanity check on that 0.99.** Matching a cluster *mean* against a signer *mean* averages out per-frame noise, so a
+high cosine is not evidence on its own. What does bite:
+
+- per clip, the nearest q3 face of the matched signer: median cosine 0.943–0.956 for c1, c10, c13 and c29 (p10 0.867);
+- **0 of 460 sampled clips** have a nearer q3 face belonging to a different signer;
+- every cluster's best match beats the runner-up signer by ≥ 0.22; the weakest is `n17 → c10` at 0.628 (7 clips), and
+  `sheets/n17_vs_c10.png` shows the same woman as c10's own crops;
+- contact sheets (`faces_new/sheets/c*.png`, `cluster_new.py --sheets`) put the new clips' faces directly above the
+  matched q3 cluster's: c1, c10, c13 and the c29 spot-check each show one person.
+
+**Reproducible from the repo.** `faces_new.py`, `cluster_new.py` and `build_cache_v7.py` now live in `tools/ml` and
+take `SIGNSETU_DATA` (working set), `SIGN_LANDMARKS` (Phase 1 landmarks), `SIGN_FACES` and `SIGN_CACHE_V7[_DICT]`
+(outputs), so the whole path runs from a checkout:
+
+```bash
+cd C:/work/sign-setu/tools/ml
+python faces_new.py --workers 8                 # 8 shards, embeddings + crops
+python cluster_new.py --sheets                  # clusters, signers.csv, contact sheets
+python build_cache_v7.py --signers C:/work/faces_new/signers.csv
+```
+
+Run end to end from the repo, it reproduces the same 1,925 clips, 5,767 faces, 2 without a face, the same 24 clusters /
+23 signers / 1,880 clips / 45 alone, and a `cache_v7` index identical to the one it replaced in `label`, `split`,
+`signer` and `clip` across all 35,958 rows. Contact sheets for every matched signer are in
+`C:/work/faces_new/sheets`; c1, c10, c13, c29 and c70 were read by eye and each shows one person.
+
+
+# CTC speller at 300 epochs, installed (2026-11-13)
+
+`isl_spell_ctc` trains on ISL-Fingerspelling (three held-out signers, 498 test segments) with INCLUDE word clips as
+negatives. The shipped file was 200 epochs at CER 0.1204; the same recipe at 300 epochs (`C:/work/runs_ctc/ctc300.pt`)
+is better on every held-out number:
+
+| | shipped (200 epochs) | new (300 epochs) |
+|---|---|---|
+| held-out signer CER | 0.1204 | **0.1111** |
+| letters only | 0.1108 | **0.1056** |
+| whole segment exact | 0.2892 | **0.3173** |
+
+Gate on the new model: word signs read as spelling **0.0000** at peaks 0.5–0.9 (n=816), spelled passed 0.9277 with
+passed-and-exact 0.3153 at the shipped `min_peak` 0.7. Exported at min_peak 0.7 (3,999,288 bytes), the content
+manifest rebuilt (1,622 files), `./gradlew testStandardDebugUnitTest` green — the `CtcSpellReader` parity fixture is
+part of it — and `assembleStandardDebug` builds. Log `C:/work/logs/queue.log`, checkpoint `C:/work/runs_ctc/ctc300.pt`.
+
+On the seven real ISLRTC fingerspelled acronyms the new file also reads better than the old one did:
+
+    atm -> 'atm'    bmw -> 'bw'    cd -> ''    dvd -> 'dvd'    dtp -> 'dppz'    gst -> 'kta'    url -> ''
+    CER 0.550, letters found 11 of 20   (was CER 0.75, 8 of 20 on the 200-epoch file)
+
+n=7, so this is a direction, not a measurement to quote alone; the held-out-signer pkl row is the number that counts.
+
+
+# A longer budget and a dictionary head (2026-11-13)
+
+Two follow-ups on the cache_v7 arms: the same recipe at 100 epochs, and V7C with `select_restricted` off — a head over
+the cache's whole 10,420-word vocabulary instead of the app's 314. Seed 1 throughout, `SIGN_RUNS=C:/work/runs_v7`.
+
+| | shipped | V7A 40 | V7A100 | V7C 40 | V7C100 | V7D (dictionary head) |
+|---|---|---|---|---|---|---|
+| INCLUDE test (n=816) | 0.979 | 0.974 | 0.969 | 0.975 | **0.977** | 0.978 |
+| all held-out top-1 | — | 0.385 | 0.385 | 0.386 | 0.387 | **0.403** |
+| app words, restricted (n=357) | — | 0.905 | 0.910 | 0.913 | **0.916** | 0.908 |
+| app-word new signer (n=59) | 0.525 | 0.542 | 0.525 | 0.542 | 0.542 | 0.508 |
+| `old269` | 0.132 | 0.440 | 0.433 | 0.422 | 0.425 | **0.463** |
+| Kaggle | 0.993 | 0.977 | 0.983 | 0.980 | 0.983 | 0.980 |
+| ECE after temperature | — | 0.113 | 0.103 | 0.103 | 0.102 | 0.154 |
+
+- **A longer budget does not help.** 100 epochs costs the baseline arm 0.005 of INCLUDE (0.974 → 0.969) and buys
+  nothing on the app metric; V7C100 is +0.002 of INCLUDE and +0.003 of app words, inside seed noise (below).
+- **The dictionary head is the one real gain**, and it is not an app reader: all-word top-1 0.386 → **0.403** and
+  `old269` 0.422 → **0.463**, the best any arm has reached, at the cost of app-word selection (0.542 → 0.508) and
+  calibration (ECE 0.154 against 0.102). Not shipped: the app shows 314 words, and a 10,420-way head needs its own
+  confidence and gating design before it can be a product.
+
+Seeds (V7C, 40 epochs, seeds 1–3): app-restricted top-1 **0.913 / 0.908 / 0.919** (mean 0.913, sd 0.006), app-word new
+signer **0.542 / 0.525 / 0.542**, all held-out top-1 0.386 / 0.387 / 0.377. That is the noise band every delta above has
+to be read against, and it is why +0.003 is not a result.
+
+**The split is the finding.** A signer's split belongs to the signer, so `build_cache_v7.py --signers` gives each clip
+its signer's split from `cache_v6b`: 1,685 train, 175 val (signer `c1`), 63 test (signer `c10`). Those 238 clips were
+**train** rows in the V7B A/B above — clips from held-out signers leaking into training. `cache_v7` now has no signer
+straddling train and a held-out split, which is why a V7C run on it (`cache_v7` 35,958 rows) is the honest number.
+
+Built: `C:/work/cache_v7_dict` 1,923 clips / 167,964 frames, `C:/work/cache_v7` 35,958 rows over 2 caches. Logs
+`C:/work/logs/faces_new.log`, `C:/work/logs/cluster_new.log`, `C:/work/logs/build_cache_v7b.log`; the previous `u:` caches are kept
+as `C:/work/cache_v7_dict_u` and `C:/work/cache_v7_u`.
+
+
+# cache_v7 A/B, honest arm: V7C on the signer-aware cache (2026-11-13)
+
+V7B trained on a cache where every new clip was `split=train` under `u:<clip>`. The clustering above showed the clips
+come from signers the cache already knew and 238 of them are held out, so V7C trains on the rebuilt cache with those
+238 in val/test. Same recipe and seed, 40 epochs; the held-out set grows 4,501 → 4,676 rows.
+
+| | shipped | V7A (v6b) | V7B (v7, `u:` signers) | **V7C (v7, real signers)** |
+|---|---|---|---|---|
+| INCLUDE test top-1 (n=816) | 0.979 | 0.974 | 0.973 | **0.975** |
+| all held-out top-1 (n=4,676) | — | 0.385 | 0.382 | **0.386** |
+| new-signer top-1 (n=546) | — | 0.0624 | 0.0513 | **0.0623** |
+| app words, restricted top-1 (n=357) | — | 0.9048 | 0.9076 | **0.9132** |
+| app words, selection rate | — | 0.542 | 0.508 | **0.542** |
+| Kaggle source (n≈545) | — | 0.9765 | 0.9866 | 0.9799 |
+| `old269` | — | 0.4403 | 0.3806 | 0.4216 |
+| worst signer | — | c1 0.062 | c22 0.000 | c22 0.031 |
+| ECE after temperature (T=1.1) | — | 0.113 | 0.115 | **0.103** |
+
+**The honest split removes V7B's apparent gain.** V7B's 0.987 on Kaggle was the leak: with the 238 held-out-signer
+clips actually held out, V7C reads 0.980, and its 0.3806 `old269` recovers to 0.4216 but still trails the 0.4403
+baseline. Against V7A, V7C is +0.001 of 4,676 held-out rows, +0.009 on app words (three clips of 357) and −0.019 on
+`old269` — the new clips are neutral at best once they are split by signer. Two arms per comparison, so these are
+unpaired proportions and no McNemar is quoted; the held-out set also differs (V7C includes `c1`'s 175 new clips).
+
+**Decision unchanged: the shipped reader stays.** What the new dictionary data is good for is the long tail (1,558
+words with a first clip), not this 314-word head, and it must be trained with signer-aware splits from the start.
+Run: `C:/work/runs_v7/V7C_s1` (`metrics.json`, `best.pt`, `val_preds*.npz`), log `C:/work/logs/v7c.log`.
+
+Cache artefact note: `cache.build` hashes only `raw.npy`, so `cache_registry.json`'s `sha256` for `cache_v7_dict` is
+unchanged by the signer re-assignment; `index.csv` is what carries it. The entry carries a note saying so.
+
+
+# Retrieval baseline over the new clips (`kfold.py`, 2026-11-13)
+
+The signer-aware caches make the retrieval yardstick runnable on the new clips: five folds by signer, one gallery clip
+per word, cosine on 32 frames flattened.
+
+| Cache | Queries | top-1 | top-5 |
+|---|---|---|---|
+| `cache_v6b` (34,035 clips) | 34,035 | 0.171 | 0.188 — reproduces the 2026-11-12 baseline exactly |
+| `cache_v7_dict` (1,923 new clips) | 1,923 | **0.0002** | **0.001** |
+
+The new dictionary clips are almost unretrievable this way: one gallery clip per word, a different signer, and 24
+signers across 5 folds leaves each held-out word with no same-signer gallery. That is a property of dictionary data
+(one example per word per person), not of the clips — it is the reason the head needs a trained reader rather than
+retrieval. Logs `C:/work/logs/kfold_v6b.log`, `C:/work/logs/kfold_v7dict.log`.
+
+
+V7C INCLUDE test floor (0.979): 0.975 [0.964, 0.985] (n=816)
+| V7C | include + islrtc + kaggle + rkmvu, 15166 clips, 61 s | W's recipe on cache_v7 rebuilt with the face-clustered signers of the new dictionary clips (no u: signers, held-out signers stay held out) | new signers 0.062 [0.000, 0.081] (n=546); all 0.386 [0.031, 0.981] / 0.421 | 0.154 | c22 0.031 | islrtc 0.064, kaggle 0.980, rkmvu 0.031 | 5.748, 0.103 | 5299.8, 0.903 | 1.000 | 0.610, +0.224 | - | 0.422 | - | baseline |
+
+V7C top confused pairs (true -> predicted): switch -> uncle (2); appointment -> withdrawn (2); area -> zone (2); capital -> impact (2); mall -> format (2); busy -> kill (1); busy -> love (1); key -> man (1); lemon -> man (1); acceleration -> gst (1)
+
+
+V7C as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+
+
+V7A100 INCLUDE test floor (0.979): 0.969 [0.957, 0.980] (n=816)
+| V7A100 | include + islrtc + kaggle + rkmvu, 14913 clips, 65 s | V7A at 100 epochs: does the baseline arm keep improving with budget? | new signers 0.059 [0.031, 0.094] (n=546); all 0.385 [0.044, 0.984] / 0.416 | 0.151 | c1 0.058 | islrtc 0.058, kaggle 0.983, rkmvu 0.062 | 5.814, 0.103 | 5465.2, 0.905 | 1.000 | 0.599, +0.213 | - | 0.433 | - | baseline |
+
+V7A100 top confused pairs (true -> predicted): busy -> pandyas (academic) (2); key -> man (2); area -> zone (2); bath -> bharat (2); sandwich -> zone (2); sperm -> unconditional (2); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> bill - dishonoured (1); across -> year to year (1)
+
+
+V7A100 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+
+
+V7C100 INCLUDE test floor (0.979): 0.977 [0.966, 0.987] (n=816)
+| V7C100 | include + islrtc + kaggle + rkmvu, 15166 clips, 64 s | V7C at 100 epochs: the signer-aware cache with a longer budget | new signers 0.062 [0.000, 0.081] (n=546); all 0.387 [0.031, 0.984] / 0.424 | 0.154 | c22 0.031 | islrtc 0.064, kaggle 0.983, rkmvu 0.031 | 5.740, 0.102 | 5270.5, 0.904 | 1.000 | 0.618, +0.231 | - | 0.425 | - | baseline |
+
+V7C100 top confused pairs (true -> predicted): appointment -> withdrawn (2); area -> zone (2); capital -> impact (2); mall -> format (2); busy -> kill (1); busy -> love (1); key -> man (1); lemon -> man (1); switch -> uncle (1); acceleration -> gst (1)
+
+
+V7C100 as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+V7D INCLUDE test floor (0.979): 0.978 [0.967, 0.987] (n=816)
+| V7D | include + islrtc + kaggle + rkmvu, 15166 clips, 156 s | V7C with no app-word restriction: a dictionary head over the cache's full 10,420-word vocabulary, 40 epochs | new signers 0.088 [0.031, 0.112] (n=546); all 0.403 [0.064, 0.982] / 0.455 | 0.180 | c22 0.062 | islrtc 0.089, kaggle 0.980, rkmvu 0.062 | 5.673, 0.154 | 5003.3, 0.903 | 1.000 | 0.906, +0.504 FLAG | - | 0.463 | - | baseline |
+
+V7D top confused pairs (true -> predicted): busy -> kill (2); area -> zone (2); capital -> day before (2); jackfruit -> cabbage (2); busy -> hug (1); elephant -> colour (1); lemon -> man (1); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> plastic (1)
+
+
+V7D as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+
+
+V7C INCLUDE test floor (0.979): 0.977 [0.964, 0.987] (n=816)
+| V7C | include + islrtc + kaggle + rkmvu, 15166 clips, 69 s | W's recipe on cache_v7 rebuilt with the face-clustered signers of the new dictionary clips (no u: signers, held-out signers stay held out) | new signers 0.064 [0.000, 0.082] (n=546); all 0.387 [0.031, 0.981] / 0.431 | 0.153 | c22 0.031 | islrtc 0.066, kaggle 0.980, rkmvu 0.031 | 5.681, 0.105 | 5453.1, 0.903 | 1.000 | 0.749, +0.361 FLAG | - | 0.455 | - | baseline |
+
+V7C top confused pairs (true -> predicted): key -> man (2); area -> island (2); gujarat -> issue price (2); national anthem -> lighthouse (2); size -> anti corruption law (bihar) (2); busy -> kill (1); busy -> allergy (1); lemon -> man (1); switch -> uncle (1); acceleration -> photosynthesis (1)
+
+
+V7C as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.525 [0.407, 1.000] (n=59), per source {'islrtc': 0.5172, 'kaggle': 0.9832, 'rkmvu': 1.0}, against the app -
+
+
+V7C INCLUDE test floor (0.979): 0.974 [0.962, 0.984] (n=816)
+| V7C | include + islrtc + kaggle + rkmvu, 15166 clips, 57 s | W's recipe on cache_v7 rebuilt with the face-clustered signers of the new dictionary clips (no u: signers, held-out signers stay held out) | new signers 0.042 [0.000, 0.062] (n=546); all 0.377 [0.029, 0.991] / 0.399 | 0.136 | c22 0.031 | islrtc 0.043, kaggle 0.990, rkmvu 0.031 | 5.956, 0.098 | 6124.6, 0.908 | 1.000 | 0.502, +0.126 | - | 0.399 | - | baseline |
+
+V7C top confused pairs (true -> predicted): capital -> impact (2); gujarat -> branch (admininistrator) (2); ice cream -> burette (2); jackfruit -> biosphere (2); land -> baby cot (2); crocodile -> advance (1); switch -> man (1); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> validate (1)
+
+
+V7C as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9933, 'rkmvu': 1.0}, against the app -
+
+
+V7C INCLUDE test floor (0.979): 0.977 [0.966, 0.987] (n=816)
+| V7C | include + islrtc + kaggle + rkmvu, 15166 clips, 81 s | W's recipe on cache_v7 rebuilt with the face-clustered signers of the new dictionary clips (no u: signers, held-out signers stay held out) | new signers 0.066 [0.000, 0.086] (n=546); all 0.390 [0.031, 0.984] / 0.438 | 0.158 | c22 0.031 | islrtc 0.068, kaggle 0.983, rkmvu 0.031 | 5.682, 0.106 | 5314.5, 0.903 | 1.000 | 0.796, +0.406 FLAG | - | 0.455 | - | baseline |
+
+V7C top confused pairs (true -> predicted): busy -> kill (3); capital -> day before (2); mall -> format (2); national anthem -> lighthouse (2); lemon -> man (1); switch -> uncle (1); acceleration -> act of war (1); accept -> add (1); across -> meat product (1); across -> head (1)
+
+
+V7C as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9899, 'rkmvu': 1.0}, against the app -
+
+
+V7C INCLUDE test floor (0.979): 0.980 [0.971, 0.989] (n=816)
+| V7C | include + islrtc + kaggle + rkmvu, 15166 clips, 83 s | W's recipe on cache_v7 rebuilt with the face-clustered signers of the new dictionary clips (no u: signers, held-out signers stay held out) | new signers 0.064 [0.000, 0.082] (n=546); all 0.389 [0.031, 0.984] / 0.428 | 0.157 | c22 0.031 | islrtc 0.066, kaggle 0.983, rkmvu 0.031 | 5.705, 0.118 | 5230.3, 0.899 | 1.000 | 0.778, +0.390 FLAG | - | 0.429 | - | baseline |
+
+V7C top confused pairs (true -> predicted): mall -> format (2); busy -> hug (1); busy -> allergy (1); key -> man (1); lemon -> man (1); switch -> uncle (1); acceleration -> big bang theory (1); accept -> acknowledge (1); across -> strike (1); across -> detective (1)
+
+
+V7C as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.542 [0.424, 1.000] (n=59), per source {'islrtc': 0.5345, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+
+
+V7D INCLUDE test floor (0.979): 0.975 [0.964, 0.985] (n=816)
+| V7D | include + islrtc + kaggle + rkmvu, 15166 clips, 116 s | V7C with no app-word restriction: a dictionary head over the cache's full 10,420-word vocabulary, 40 epochs | new signers 0.086 [0.000, 0.107] (n=546); all 0.402 [0.031, 0.982] / 0.436 | 0.176 | c22 0.031 | islrtc 0.089, kaggle 0.980, rkmvu 0.031 | 5.696, 0.144 | 5255.6, 0.903 | 1.000 | 0.851, +0.449 FLAG | - | 0.463 | - | baseline |
+
+V7D top confused pairs (true -> predicted): busy -> kill (2); area -> island (2); gujarat -> issue price (2); size -> anti corruption law (bihar) (2); busy -> hug (1); lemon -> man (1); switch -> man (1); switch -> uncle (1); acceleration -> photosynthesis (1); accept -> plastic (1)
+
+
+V7D as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
+

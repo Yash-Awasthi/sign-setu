@@ -687,5 +687,137 @@
   "patience": 10,
   "asl_share": 0.5,
   "change": "B5A50F plus iSign sentence windows mined for app words (mine_isign.py, judge-gated, unverified; train only)"
+ },
+ "V7A": {
+  "parent": "APP",
+  "change": "W's recipe on cache_v6b: the baseline arm of the cache_v7 A/B, same seed and epochs",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.6,
+  "eval_every": 1,
+  "min_epochs": 5,
+  "patience": 10,
+  "batch": 128
+ },
+ "V7B": {
+  "parent": "APP",
+  "change": "W's recipe on cache_v7, which adds the 1,923 dictionary clips Phase 1 landmarked",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.6,
+  "eval_every": 1,
+  "min_epochs": 5,
+  "patience": 10,
+  "batch": 128
+ },
+ "V7C": {
+  "parent": "APP",
+  "change": "W's recipe on cache_v7 rebuilt with the face-clustered signers of the new dictionary clips (no u: signers, held-out signers stay held out)",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.6,
+  "eval_every": 1,
+  "min_epochs": 5,
+  "patience": 10,
+  "batch": 128
+ },
+ "V7A100": {
+  "parent": "APP",
+  "change": "V7A at 100 epochs: does the baseline arm keep improving with budget?",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.6,
+  "eval_every": 1,
+  "min_epochs": 5,
+  "patience": 10,
+  "batch": 128
+ },
+ "V7C100": {
+  "parent": "APP",
+  "change": "V7C at 100 epochs: the signer-aware cache with a longer budget",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": true,
+  "vram": 0.6,
+  "eval_every": 1,
+  "min_epochs": 5,
+  "patience": 10,
+  "batch": 128
+ },
+ "V7D": {
+  "parent": "APP",
+  "change": "V7C with no app-word restriction: a dictionary head over the cache's full 10,420-word vocabulary, 40 epochs",
+  "from_app": true,
+  "arch": "shipped",
+  "frames": 32,
+  "lr_scale": 0.1,
+  "synthetic": true,
+  "sources": [
+   "include",
+   "kaggle",
+   "islrtc",
+   "rkmvu"
+  ],
+  "recipe": "full",
+  "select_restricted": false,
+  "vram": 0.6,
+  "eval_every": 1,
+  "min_epochs": 5,
+  "patience": 10,
+  "batch": 128
  }
 }

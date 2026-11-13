@@ -87,6 +87,8 @@ def main(name: str, ckpt_path: pathlib.Path, cache_path: pathlib.Path) -> None:
     }
     (MODELS / f"{name}.json").write_text(json.dumps(spec, indent=1) + "\n", encoding="utf-8", newline="\n")
     print(f"{name}: weights {len(blob)} bytes, {len(labels)} classes")
+    # runtime.reader reads the assets unless pointed at this file, and a staged export is not in the assets.
+    os.environ[f"READER_DIR_{name.upper()}"] = str(MODELS)
 
     aspect = cache["aspect"]
     test = [s for s in cache["samples"] if s["split"] == "test" and (s["has_pose"][:7].any() or s.get("norm") == "hands")]

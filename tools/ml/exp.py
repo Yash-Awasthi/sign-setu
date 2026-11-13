@@ -23,7 +23,8 @@ from models import ARCHS, F as FACE_COLS, L, P, PRES, R, Shipped
 from guard import DATA
 
 HERE = pathlib.Path(__file__).resolve().parent
-RUNS = DATA / "runs"
+# SIGN_RUNS keeps a run's checkpoints and metrics on another disk; D: is read-only for every plan step.
+RUNS = pathlib.Path(os.environ.get("SIGN_RUNS", str(DATA / "runs")))
 EVAL = HERE / "EVAL.md"
 APP_MODELS = HERE.parents[1] / "app" / "src" / "main" / "assets" / "content" / "models"
 POSE_SWAP = [0, 4, 5, 6, 1, 2, 3, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17, 20, 19, 22, 21, 24, 23, 26, 25, 28, 27,

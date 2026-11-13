@@ -117,6 +117,6 @@
  "weights": "float16 little-endian, tensors in the order above, row-major; conv weight is [out][in][kernel]",
  "feature_spec": "frames resampled to `fps` by nearest timestamp (ties to the earlier), at most `max_frames`; y scaled by height/width; per frame: left then right hand, 21x(x,y) minus that wrist divided by its wrist to middle-knuckle length (84); right wrist minus left wrist (2); each wrist minus the shoulder midpoint (4) and each wrist's step since the previous frame with that hand (4), these three in shoulder widths averaged over every frame with a pose; presence flags (2); a missing hand is zeros",
  "dataset": "ISL-Fingerspelling (ISH News, WSLP 2025, huggingface.co ISL Fingerspelling Dataset, CC BY-NC 4.0), signers 00 and 01; INCLUDE and Kaggle ISL word clips as non-spelling; landmarks by MediaPipe Holistic",
- "epochs": 200,
- "held_out_signer_cer": 0.1204
+ "epochs": 300,
+ "held_out_signer_cer": 0.1111
 }
