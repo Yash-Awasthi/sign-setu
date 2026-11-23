@@ -98,7 +98,7 @@ flowchart LR
 
 | Item | Value |
 | --- | --- |
-| Devices | Android 10 (API 29) or later, 64-bit, 3 GB RAM or more, 5 to 6.9 inch portrait |
+| Devices | Android 10 (API 29) or later, arm64-v8a, x86_64; compiled against API 37, target API 37; 2400 MiB RAM and 1200 MiB free memory for the optional model; 95.1 MB of shipped assets |
 | Flavors | `standard` (reference, Bluetooth RFCOMM) and `nearby` (adds Google Nearby Connections) |
 | Release packages | Universal (arm64-v8a and x86_64) and arm64-v8a phone APKs, signed by CI; native libraries and models stored uncompressed |
 | Permissions (standard) | `CAMERA`, `BLUETOOTH_CONNECT` (`BLUETOOTH` up to API 30), `BLUETOOTH_SCAN` (never for location, to pair a second screen), `USE_BIOMETRIC`, `VIBRATE`, `INTERNET` (online assistant only), `ACCESS_NETWORK_STATE` (whether the network is up before a call), `ACCESS_LOCAL_NETWORK` (Android 17: sockets to the station on the LAN), `RECEIVE_BOOT_COMPLETED` (keeps the hourly retention job scheduled), `RECORD_AUDIO` (the person's own voice, only after consent is logged). No location: a build gate fails the build otherwise |
