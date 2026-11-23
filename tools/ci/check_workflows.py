@@ -42,9 +42,13 @@ def job(text: str, name: str) -> str:
 
 
 def instrumented_classes(text: str) -> list[str]:
-    """The classes the emulator job runs, in order."""
+    """The classes the emulator job runs, from its class loop and from any single-class step."""
+    names: list[str] = []
     found = re.search(r"for c in ([^;]+); do", text)
-    return found.group(1).split() if found else []
+    if found:
+        names += found.group(1).split()
+    names += re.findall(r"class[= ]app\.signsetu\.(\w+)", text)
+    return list(dict.fromkeys(names))
 
 
 def test_classes(root: pathlib.Path | None = None) -> list[str]:

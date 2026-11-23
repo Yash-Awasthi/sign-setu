@@ -262,7 +262,29 @@ jobs:
           target: default
           profile: pixel_6
           # One class per run: given a comma list, the connected task ran only the first class.
-          script: for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest; do ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.$c -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} || { mkdir -p app/build/reports/androidTests; adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }; done
+          script: |
+            for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest; do
+              ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.$c -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} || { mkdir -p app/build/reports/androidTests; adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }
+            done
+            # The same exported report, checked off the phone: the app's seal must satisfy tools/security/verify_seal.py.
+            # The test is run through the instrumentation runner directly, not the connected task, because the
+            # connected task uninstalls the app and the report with it.
+            if [ "${{ matrix.shard }}" = "0" ]; then
+              adb install -r -t app/build/outputs/apk/standard/debug/app-standard-debug.apk
+              adb install -r -t app/build/outputs/apk/androidTest/standard/debug/app-standard-debug-androidTest.apk
+              adb shell am instrument -w -e class app.signsetu.VerifierFixtureDeviceTest in.signsetu.test/androidx.test.runner.AndroidJUnitRunner || { adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }
+              mkdir -p out/verify
+              adb exec-out run-as in.signsetu cat files/verify/report.pdf > out/verify/report.pdf
+              adb exec-out run-as in.signsetu cat files/verify/passphrase.txt > out/verify/passphrase.txt
+              pip install cryptography pypdf
+              python tools/security/verify_seal.py --pdf out/verify/report.pdf --passphrase "$(cat out/verify/passphrase.txt)"
+            fi
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: verify-fixture-${{ matrix.shard }}
+          path: out/verify
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v6
         if: failure()
         with:
