@@ -1,0 +1,506 @@
+# plan.md — Sign Setu
+
+Consolidated plan. Absorbs `plan.txt` (the owner's 14-line wishlist, reproduced
+verbatim in Appendix D — every
+line is re-stated below as a concrete subtask in Phase 4/5, nothing dropped) and
+the plan-like parts of `README.md` and `docs/11-product-overview.md`,
+`docs/12-screens.md`, `docs/19-walkthrough.md`. The numbered docs stay as
+reference; the audit and compliance docs (`docs/04-security.md`,
+`docs/13-dpia.md`, `docs/14-attestation-and-pinning.md`) remain normative.
+
+Generated 2026-11-24. Evidence base: `README.md`, the absorbed wishlist, 21 docs under
+`docs/`, `.github/workflows/ci.yml` (12 jobs), `app/build.gradle.kts`,
+`gradle/libs.versions.toml`, `gradle/verification-metadata.xml`,
+`settings-gradle.lockfile`, 174 Kotlin files (38,300 lines) with 388 `@Test` in
+49 files, `avatar/` (JS module + tests), `portal/` (Vite/TS reviewer portal),
+`gateway/` (14 Go files), `brain/` (Python station service), `relay/`,
+`content/`, `tools/{ml,security,content}`, and `render.yaml`.
+
+**Order:** corrective → preventive → perfective → widening → depth → enterprise.
+
+**Hierarchy:** Phase → Major (M#.#) → Minor (m#.#.#) → Subtask. One subtask = one
+
+**Done tasks stay.** A finished subtask becomes `- [x]` in place with one evidence line under it (`verified-here: <command> → <result>`). Nothing is ever removed from this list.
+PR = one command that proves it.
+
+**Tag (exactly one):** `[C]` corrective · `[P]` preventive · `[F]` perfective ·
+`[W]` widening · `[D]` depth · `[E]` enterprise.
+
+**Method anchors:** `mobile-apps` §4/§5 (lifecycle, permissions), `security-operations`
+§5 (consent, sealing, threat model), `engineering-craft` (behaviour is the
+contract), `design-ux` §1/§5, `data-ml` §8 (accuracy claims with n), `writing-docs`
+§1, `devops-cloud` §8.
+
+---
+
+## 0. Verified ground truth
+
+| Fact | Measured | Claimed | Source |
+|---|---|---|---|
+| Version | `versionName 0.8.51`, `versionCode 23` | "0.8.5 (version code 22)" | `app/build.gradle.kts:36-37` vs `README.md:7` |
+| SDK | `minSdk 29`, `targetSdk 37`, `compileSdk 37` | "Android 10 (API 29) and later, 64-bit" | same |
+| Toolchain | AGP 9.4.1, Kotlin 2.4.21, Compose BOM 2026.09.00, Room 2.8.5, SQLCipher 4.19.1 | — | `gradle/libs.versions.toml` |
+| Code | **257 Kotlin files, 48,700 lines**, one `app` module (all `.kt` files are under `app/`) | earlier draft said 174 / 38,300 | `find app -name '*.kt' \| wc -l` → 257; `cat` sum → 48,700 |
+| Tests | 388 `@Test` in **59** files, two flavours (`standard`, `nearby`) | earlier draft said 49 files | `grep -rho @Test` → 388; `grep -rl @Test` → 59 |
+| Instrumented tests | An `instrumented` job **exists**: 4 shards, API 34 `pixel_6` emulator, 8 named classes — gated by `if: needs.version.outputs.new == 'true' \|\| github.event_name == 'workflow_dispatch'`, so a normal PR runs **zero** instrumented tests | earlier draft said "compiled but never executed" — **wrong**: it runs on version bumps and manual dispatch, just not on PRs | `ci.yml:199-243` |
+| CI | **12 jobs**: version, android (unit+lint), avatar, portal, tools, gateway, station, semgrep, osv, instrumented, gitleaks, release | earlier draft said 7 | parsed from `jobs:` in `ci.yml` |
+| Dependency integrity | `verification-metadata.xml`, `app/gradle.lockfile`, `settings-gradle.lockfile` | same | files present |
+| Secret scan | `.gitleaks.toml` present | — | root |
+| Modules | `avatar/` JS+Node tests, `portal/` Vite TS, `gateway/` Go 14 files, `brain/` Python, `relay/`, `content/` | — | `ls` |
+| Sign readers | ISL 314 words + letters/digits/names; ASL 250 + fingerspelling (experimental) | same | `README.md`, `tools/ml/EVAL.md` |
+| Evidence chain | PDF: hash chain, Keystore-signed Merkle root, QR verify page, BSA s.63 draft certificate; `tools/security/verify_seal.py` | same | `README.md` |
+| Retention | 24 h default, 4–72 h choices, hourly job | same | `README.md`, `docs/13-dpia.md` |
+| Owner wishlist | 14 lines, reproduced in Appendix D (`plan.txt` deleted) | — | Appendix D |
+
+Invariants (regulatory and safety, non-negotiable):
+
+1. **Offline by default.** No network call without an explicit opt-in; no assistant key in an APK; the `standard` flavour has no location or scanning permission and the build fails if one reaches the merged manifest.
+2. **Consent before recording.** The person's voice is recorded only between the officer's start and stop taps, with consent logged first.
+3. **Sessions are encrypted at rest** under a Keystore key usable only while unlocked; retention is enforced by the hourly job, not by the UI.
+4. **Ledger integrity.** Every exported record keeps its hash chain, Merkle root, device signature and the QR verification path; `verify_seal.py` must verify anything the app exports.
+5. **The app is an aid, not an interpreter or a statement.** No UI, string or document may imply certified interpretation or a statutory recording.
+6. **A reading is never an answer.** Camera-derived text reaches the officer only; the person confirms meaning.
+7. **No new permission without a DPIA update** in `docs/13-dpia.md`.
+
+---
+
+## Phase 1 — Corrective: make the documented state the real state
+
+### M1.1 Documentation drift with legal weight
+
+**Why:** the README is what a department reads before deploying. It states
+version 0.8.5 / code 22 while the build is 0.8.51 / code 23, and any released
+behaviour change missing from it is a compliance problem, not a typo.
+**Done when:** the version, features and permissions in the docs are generated or
+checked against the build.
+
+- [x] Generate the version line in `README.md` from `app/build.gradle.kts`; a mismatch fails CI. `[C]`
+  - verified-here: `python tools/docs/check_version.py` → exit 1 before the write (README said 0.8.5/22, build 0.8.51/23), exit 0 after `--write`; wired into the `tools` job of `.github/workflows/ci.yml`; 6 tests in `tools/docs/test_check_version.py` pass.
+- [ ] Diff the documented feature list against the code and the screens doc: anything described but removed is deleted, anything present but undocumented is added. `[C]`
+- [ ] Re-verify the permission table against the merged manifest of both flavours as a test, and print it into the docs. `[C]`
+- [ ] State the supported device baseline (API 29, 64-bit, RAM, free storage for the 806 MB model) as measured values, not adjectives. `[C]`
+
+### M1.2 Instrumented tests run only on a version bump
+
+**Why:** 388 unit tests pass on every PR. The parts that only fail on a device —
+SQLCipher under Keystore, the hourly retention job, the second screen, MediaPipe
+landmarks, PDF export and verification — run **only** when `version.outputs.new` is
+true or a human dispatches the workflow (`ci.yml:202`), and only for 8 named
+classes. A regression can therefore sit on `master` until release day.
+**Done when:** the instrumented suite runs on every PR that touches `app/` (sharded,
+release-blocking) and covers export/verify and retention, not just the 8 classes.
+
+- [ ] Widen the shard matrix to the full instrumented suite, keep the 45-minute timeout, and add a `paths: app/**` trigger so unrelated PRs stay fast. `[C]`
+- [ ] Instrumented test: create a session, export a PDF, verify it with `verify_seal.py`, assert the seal and the hash chain. `[C]`
+- [ ] Instrumented test: retention job deletes a session past its window and never deletes one inside it, with an injected clock. `[C]`
+- [ ] Instrumented test: the encrypted database cannot be opened after the device is locked (Keystore behaviour), and the app shows the documented message instead of crashing. `[C]`
+- [ ] Instrumented test: permission denial for `RECORD_AUDIO` yields the documented path with no recording and no crash. `[C]`
+
+### M1.3 The owner's list, first pass (high-severity usability)
+
+These come from the owner's list (Appendix D) and are corrective because they break the core journey
+for a non-speaking person, not because they are cosmetic.
+
+- [ ] Remove the password form from PDF export (owner: "remove password form exports pdfs"); keep the seal and the hash chain, and state the threat-model change in `docs/04-security.md`. `[C]`
+- [ ] Remove the timed hold when navigating to messages (owner: "no timed hold when going to msgs"). `[C]`
+- [ ] Fix caption highlighting during a video call; today the wrong words highlight (owner). `[C]`
+- [ ] Make the mute control for the person's speech visible on the main surface, never behind a menu (owner: "not deep hidden to the policeman"). `[C]`
+- [ ] Cap divergent paths at three per screen; measure the current count per screen in `docs/12-screens.md` and record the cuts. `[C]`
+
+### M1.4 Evidence-chain gaps
+
+- [ ] `verify_seal.py` and the in-app "Check a report" agree on every field: test one exported PDF through both and diff the verdicts. `[C]`
+- [ ] Export failure paths: storage full, cancelled share sheet, app killed mid-export — no partial PDF, no orphaned temp file, a clear message. `[C]`
+- [ ] The draft BSA s.63 certificate text carries the app version and the device key fingerprint; assert both appear in a fresh export. `[C]`
+- [ ] Document what the seal proves and what it does not (device possession, not authorship) in `docs/04-security.md`. `[C]`
+
+---
+
+## Phase 2 — Preventive
+
+### M2.1 The gates this project already values, extended
+
+- [ ] Android coverage per package (session, records, sign readers, stage, settings) with a floor that ratchets; publish the report as a CI artefact. `[P]`
+- [ ] Fuzz the exported-PDF verifier (`verify_seal.py`) and the record JSON parser with malformed inputs; a crash or a false "valid" is a release blocker. `[P]`
+- [ ] Property tests for the retention clock: any start time, any window 4–72 h, exactly one deletion at the boundary. `[P]`
+- [ ] Lint baseline zero, `abortOnError`, and a rule that no new `android.permission.*` can appear without touching the permission test. `[P]`
+- [ ] Content checks (already in CI) extended to every language: 17 caption languages must each have complete key coverage, and a missing string fails. `[P]`
+
+### M2.2 Sign-reader accuracy as a gate, not a claim
+
+**Why:** `tools/ml/EVAL.md` holds the accuracy story; the readers are the
+product's core claim and the place where a confident wrong word does the most
+harm.
+**Done when:** a regression in accuracy fails before a release.
+
+- [ ] Freeze an evaluation set (landmark sequences only, no video) with per-word labels; store it under `tools/ml/data/` with a manifest. `[P]`
+- [ ] `tools/ml/eval.py --check` reports top-1/top-5 per word, the "unclear" rate, and the confusion pairs; CI runs it on the frozen set. `[P]`
+- [ ] Fail the build when top-1 drops more than 1 point or the unclear rate rises more than 2 points against the recorded baseline. `[P]`
+- [ ] Publish the current numbers in `docs/05-avatar-and-gestures.md` with n and the date. `[P]`
+
+### M2.3 Data and privacy guarantees as tests
+
+- [ ] A test that the app performs no network request with the online assistant off and no station paired (instrumented, checking the socket layer). `[P]`
+- [ ] A test that the GGUF model is refused unless its SHA-256 is on the allow-list. `[P]`
+- [ ] A test that a session's database file is unreadable without the Keystore key (extract the file, attempt to open). `[P]`
+- [ ] A test that logs contain no transcript text, no names and no paths (grep the log buffer after a scripted session). `[P]`
+- [ ] `docs/13-dpia.md` gains a change-log table: every new data field or permission adds a row with its purpose and retention. `[P]`
+
+### M2.4 Build integrity
+
+- [ ] Release APKs: `SHA256SUMS`, an SBOM, and the dependency-verification metadata hash recorded next to the artefact. `[P]`
+- [ ] Reproducible build check: same commit, same SDK/NDK, two builds, compare with `apksigcopier`-style diff and document non-deterministic inputs. `[P]`
+- [ ] NDK and CMake versions asserted in the build script; a mismatch fails with the expected value. `[P]`
+- [ ] `avatar/` bundle and `app/src/main/assets/avatar/avatar.js` identity check already exists in CI; extend it to `content/` and the GGUF allow-list. `[P]`
+
+### M2.5 Second screen and station paths
+
+- [ ] Bluetooth second screen: a test for reconnect after a dropped bonded link, and for a rejected frame (wrong MAC, bad signature) being dropped silently with a log line. `[P]`
+- [ ] Station brain: a contract test between the app and `brain/` covering the request shapes, timeouts and the offline fallback. `[P]`
+- [ ] Relay: prove the relay sees only ciphertext, with a recorded capture and the fields it can read. `[P]`
+
+---
+
+## Phase 3 — Perfective
+
+### M3.1 Toolchain to stable
+
+**Why:** the toolchain (AGP 9.4.1, Kotlin 2.4.21, Compose BOM 2026.09.00, Room 2.8.5,
+SQLCipher 4.19.1) moves faster than the test evidence around it.
+**Done when:** the instrumented suite runs before and after any upgrade.
+
+- **m3.1.1 Upgrade**
+  - [ ] AGP, Kotlin, Compose BOM, Room and SQLCipher to the current stable line; re-run the instrumented suite and record any behaviour change. `[F]`
+- **m3.1.2 Build speed**
+  - [ ] Gradle: configuration cache, build cache, and a measured CI time reduction. `[F]`
+
+### M3.2 Code shape
+
+**Why:** 48,700 lines across 257 files with no module boundary beyond `app`.
+**Done when:** the ten biggest files are named and split.
+
+- **m3.2.1 Splitting**
+  - [ ] Name the ten largest Kotlin files with their line counts, then split by responsibility. `[F]`
+- **m3.2.2 Dead weight**
+  - [ ] Remove dead resources and strings; assert `lint --check UnusedResources` is clean. `[F]`
+
+### M3.3 Measured performance
+
+**Why:** "smoother faster flow" is in the owner's list and nothing measures it.
+**Done when:** three numbers exist before and after.
+
+- **m3.3.1 Benchmarks**
+  - [ ] Baseline Profile + Macrobenchmark: cold start, first stage frame, sign-window open latency; publish before/after. `[F]`
+- **m3.3.2 Startup cost**
+  - [ ] Cache avatar assets and the stage scene so a restart does not reload them (owner: "cached data for avatar so it doesn't relod on app startups"). `[F]`
+
+### M3.4 Docs and portal hygiene
+
+**Why:** the portal has no CI gate and the docs have no index.
+**Done when:** the portal cannot silently gain a write path.
+
+- **m3.4.1 Portal**
+  - [ ] Portal (`portal/`): typecheck and unit tests in CI, plus a check that it never gains a write path to session data. `[F]`
+- **m3.4.2 Docs**
+  - [ ] `docs/README.md` becomes an index with one line per doc and its audience (officer, developer, reviewer, department). `[F]`
+  - [x] `plan.txt` deleted: every line is either implemented above or recorded in Appendix A, and the raw wording is preserved in Appendix D.
+
+---
+
+## Phase 4 — Widening: the owner's list, second pass
+
+Each line of the owner's list (Appendix D) appears here as the feature it asks for. None of these is
+optional polish; they are the reason the app is hard to use today.
+
+### M4.1 The consolidated stage (owner: "too crowded and feature heavy")
+
+- [ ] One stage layout with a single primary action, a bottom bar of tools (language, pictures, drawing, emoji, typing) and at most three visible paths. `[W]`
+- [ ] Replace scattered per-feature buttons with a bottom bar and side sheets that show the full toolset on one screen. `[W]`
+- [ ] Preset emoji/picture chips that appear automatically when a related word is typed or spoken — water, food, family, home, house, toilet, medicine (owner: "EMOJI SHOULD BE PRESET WHEN related word appears"). `[W]`
+- [ ] One-tap "I need…" express row (water, food, toilet, pain, help, family) that is always reachable and never buried. `[W]`
+- [ ] A single, obvious way to end a session (owner: "easy the closing of session"), with the other exits demoted to one menu. `[W]`
+- [ ] Question-suggestion strip: the next three likely questions for the selected role, one tap each. `[W]`
+
+### M4.2 The video-call surface (owner: "better ui on video call")
+
+- [ ] A call surface that looks like a call: avatar and person tiles, caption overlay, and controls that appear on tap and fade when idle. `[W]`
+- [ ] A slide-to-open panel that reveals the full toolset without leaving the call (owner: "slide to open button that make it fully feel like a video call"). `[W]`
+- [ ] Hold/wait control and a messages shortcut at the same level, not one hidden behind the other. `[W]`
+- [ ] Caption rendering: one line at a time, large type, the current word emphasised correctly (fixes the highlighting bug at the source, not per-screen). `[W]`
+- [ ] Responsive layout for phone, tablet and a landscape dock with the second screen. `[W]`
+
+### M4.3 Signing quality (owner: "better hand signs and fingerspellings", "joint restrictions")
+
+- [ ] Add joint limits to the avatar rig so wrists and elbows stop bending beyond human range (owner: "wrist and elbow move non humanly"). `[W]`
+- [ ] Re-record or re-time the fingerspelling transitions; measure the per-letter transition time and the readability check with two signers. `[W]`
+- [ ] Improve the sign blend at phrase boundaries (co-articulation) and record the before/after clips for review. `[W]`
+- [ ] A signer review sheet: every ISL word with a still frame and a "reads correctly?" column, filled by a Deaf reviewer. `[W]`
+
+### M4.4 Speed (owner: "smoother faster flow")
+
+- [ ] Measure the current time from tap to first signed frame, per screen; publish the numbers and target the three worst. `[W]`
+- [ ] Pre-warm the stage and the sign readers so the first question does not wait on model load. `[W]`
+- [ ] Remove blocking work from the main thread in the stage and sign-window paths; verify with a jank count before/after. `[W]`
+
+### M4.5 Richer communication (owner: "more feature richness")
+
+- [ ] Drawing board improvements: shapes, undo, and a saved sketch attached to the session record. `[W]`
+- [ ] Body-map precision: zoom regions (hand, foot, chest, abdomen) with the touched point recorded exactly. `[W]`
+- [ ] Emotion and pain scale on the stage (faces + 0–10), logged with the session. `[W]`
+- [ ] Family/contact card the person can point at to identify who to call. `[W]`
+
+---
+
+## Phase 5 — Depth
+
+### M5.1 Accessibility depth (the primary user cannot speak and may not read)
+
+- [ ] TalkBack pass over every screen: labels, order, and a description for the 3D stage and each drawn control. `[D]`
+- [ ] Contrast ≥ 4.5:1 in all ten colour themes and both dark modes; measure per theme and publish a table. `[D]`
+- [ ] Touch targets ≥ 48 dp, and one-handed reach for every in-session action. `[D]`
+- [ ] Switch-access and keyboard-only path through the person's answer flow (tap, picture, nod, finger count). `[D]`
+- [ ] Reading level: captions tested with two people who read the target language as a second language; record the words that caused confusion and change them. `[D]`
+- [ ] Reduced motion honoured: the avatar and stage animations have a low-motion mode that still signs legibly. `[D]`
+
+### M5.2 Interface craft
+
+Method: `design-ux` §1/§5 — screenshot every screen at 360/412/768 dp, measure
+geometry, draft three candidate fixes per problem, score, implement, re-shoot.
+
+- [ ] Baseline screenshots of all screens (the 12 in `docs/12-screens.md`) into `docs/screens/before/`. `[D]`
+- [ ] One token set for spacing, type, radius and colour across the ten themes; no raw values in composables. `[D]`
+- [ ] Screen inventory: every screen with its purpose, its three primary actions and its exit; anything without a purpose is removed. `[D]`
+- [ ] Person-facing screens use larger type, fewer words and one action; officer-facing screens may be denser — the split is explicit. `[D]`
+- [ ] Error and empty states: no model, no camera, no microphone, no second screen, storage full — each with the fix, not an error code. `[D]`
+- [ ] Onboarding: the three first-run steps and the tour, measured for completion time with one officer who has not seen the app. `[D]`
+
+### M5.3 Sign-language depth
+
+- [ ] Per-word accuracy table for ISL and ASL with n per word; flag every word under a usable threshold and either improve it or mark it "hold to confirm". `[D]`
+- [ ] The "unclear" path: when two readers disagree, ask the person once with pictures; measure how often that resolves the meaning. `[D]`
+- [ ] Fingerspelling: hold-to-commit timing studied with two signers and tuned; publish the chosen value and the reason. `[D]`
+- [ ] Regional variation: record which signs differ by region and let a department pick a variant. `[D]`
+- [ ] Deaf-reviewer loop: a documented review sheet and a stated cadence for adding words. `[D]`
+
+### M5.4 Evidence and operations depth
+
+- [ ] A full session drill: start → consent → record → sign → answer → finish → export → verify on a second device; timed end to end with a real officer. `[D]`
+- [ ] Battery and thermal: a 30-minute session on a mid-range phone, recording and signing, with battery drop and thermal throttling measured. `[D]`
+- [ ] Storage: measure per-session size (audio, frames, records) and assert the retention job keeps the device inside a documented budget. `[D]`
+- [ ] Failure rehearsal: phone dies mid-session; second screen drops; model file corrupt; report what survives and what the officer should do. `[D]`
+
+---
+
+## Phase 6 — Enterprise readiness
+
+### M6.1 The document a department signs
+
+**Why:** the DPIA is the artefact that unlocks deployment, and it has no owner or
+review date.
+**Done when:** the DPIA matches the data inventory and is signed.
+
+- **m6.1.1 DPIA**
+  - [ ] DPIA refresh (`docs/13-dpia.md`) aligned with the current data inventory, with a named owner and a review date. `[E]`
+- **m6.1.2 Attestation truth**
+  - [ ] Attestation and pinning (`docs/14-attestation-and-pinning.md`): verify the described controls exist in the code, and mark any that are aspirational. `[E]`
+
+### M6.2 Deployment package and training
+
+**Why:** a department needs a verifiable bundle, not a repository.
+**Done when:** the bundle is reproducible and an officer can be trained from it.
+
+- **m6.2.1 Package**
+  - [ ] Signed APK, SBOM, `SHA256SUMS`, the DPIA, the walkthrough, the model allow-list procedure and the verification instructions in one place. `[E]`
+- **m6.2.2 Training**
+  - [ ] The officer walkthrough with screenshots, an accessibility note, and the three mistakes officers actually make (measured from the drill). `[E]`
+
+### M6.3 Support, release and incident
+
+**Why:** an officer with a bad signing or a failed export has no path today.
+**Done when:** each incident class has a first action and a person.
+
+- **m6.3.1 Support and release policy**
+  - [ ] How an officer reports a bad signing or a failed export, what to attach, and the response window. `[E]`
+  - [ ] Release policy: version discipline, a changelog per release, a supported-device matrix, and an upgrade path that keeps sessions readable. `[E]`
+- **m6.3.2 Vendors and incidents**
+  - [ ] Vendor and dependency review: SQLCipher, MediaPipe, llama.cpp/GGUF, iroh — licences, update cadence and the security advisory subscription for each. `[E]`
+  - [ ] Incident plan: a compromised device key, a leaked report password (historical), a bad model file, a signing regression — each with the first action and who is told. `[E]`
+
+---
+
+## 7. Execution model: waves, effort, exit gates
+
+Effort: **S** ≤ 1 day, **M** 2–3 days, **L** 1–2 weeks.
+
+| Wave | Days | Objective | Majors | Effort | Gate |
+|---|---|---|---|---|---|
+| **W0** | 2–3 | Documentation drift, instrumented tests, high-severity wishes, evidence-chain gaps | M1.1–M1.4 | M+M+M+M | README version matches `build.gradle.kts`; the `instrumented` job runs on PRs touching `app/`, not only on a version bump; every evidence export verifies with `tools/security/verify_seal.py` |
+| **W1** | 4–5 | Gates: integrity, sign accuracy, privacy tests, build integrity, second screen | M2.1–M2.5 | M+M+M+M+M | a corrupted export fails CI; reader accuracy has a measured floor; retention is tested by advancing the clock |
+| **W2** | 6–7 | Stable toolchain, code shape, measured performance | M3.1–M3.4 | M+M+M+M | cold start and sign-window latency published before/after |
+| **W3** | 8–11 | Owner's second pass: stage, video call, signing quality, speed, features | M4.1–M4.5 | L×5 | each wish is either implemented with a test or recorded in Appendix A |
+| **W4** | 12–14 | Accessibility, interface craft, signing depth, operations | M5.1–M5.4 | M+M+M+M | a Deaf user completes a full session in a usability pass |
+| **W5** | quarter | DPIA, attestation truth, deployment package, support, incident plan | M6.1–M6.3 | M | the package is reproducible and the DPIA is signed |
+
+Wave rules: W0's instrumented-test item is the cheapest way to find out what the
+current suite actually does on a device. Nothing in W3 ships without W1's privacy
+tests — this app records third parties under consent.
+
+---
+
+## 8. Dependencies and the critical path
+
+```
+M1.1 (doc truth)      → every later claim (version, retention, readers)
+M1.2 (instrumented)   → M3.1 (toolchain upgrade) → M4.x
+M1.4 (evidence gaps)  → M2.1 (integrity gate)    → M6.2 (package)
+M2.3 (privacy tests)  → M4.x (any new recording surface)
+M3.3 (performance)    → M4.4 (speed wishes)
+M5.1 (accessibility)  → M6.2 (training material)
+```
+
+Critical path: **M1.2 → M2.1 → M4.x**. Everything the owner asked for in the list
+touches recording, staging or export, and those are exactly the paths that have no
+executed test today.
+
+Do not start: M3.1 before M1.2 (upgrading an unexecuted suite proves nothing); M4.x
+before M2.3 (new recording surfaces without privacy tests); M6.2 before M2.1 (a
+deployment package around an unverified seal).
+
+---
+
+## 9. Verification harness (commands that exist today)
+
+| Purpose | Command | Status |
+|---|---|---|
+| Android unit + lint | `./gradlew :app:testStandardDebugUnitTest :app:testNearbyDebugUnitTest :app:lintStandardRelease` | exists (`ci.yml:42-45`) |
+| Instrumented run | `instrumented` job: 4 shards × 8 named classes, API 34 emulator, only on a version bump or manual dispatch | exists (`ci.yml:199-243`); **not on PRs** |
+| Avatar (JS) | `npm ci && npx vp check && npx vp test && npx vp build` | exists (`ci.yml:66-70`) |
+| Portal | `npm ci && npx vp check && npx vp test && npx vp build` with a git-diff check on generated assets | exists (`ci.yml:87-91`) |
+| Content | `python tools/content/build_content.py --check` | exists (`ci.yml:105`) |
+| Gateway (Go) | `vex`, `fuzz`, `staticcheck` in the gateway job | exists |
+| Evidence verify | `python tools/security/verify_seal.py` | exists |
+| Secret scan | `.gitleaks.toml` + gitleaks | exists |
+| Dependency integrity | `verification-metadata.xml`, `app/gradle.lockfile`, `settings-gradle.lockfile` | exists |
+| **Instrumented execution** | `instrumented` job (4 shards × 8 named classes, API 34 emulator), gated on a version bump or manual dispatch | exists (`ci.yml:199-243`); a normal PR runs none (M1.2) |
+| **Reader accuracy gate** | — | **missing** (M2.2) |
+| **Retention clock test** | — | **missing** (M2.3) |
+
+---
+
+## 10. Risk register
+
+| # | Risk | Prob | Impact | Detection | Mitigation |
+|---|---|---|---|---|---|
+| R1 | README says 0.8.5/22, build says 0.8.51/23 | Certain | Wrong support answers | `build.gradle.kts:36-37` vs README | M1.1 |
+| R2 | Instrumented tests do not run on PRs (8 classes, version-bump gated) | Certain | Device-only failures land on `master` | `ci.yml:202` gate | M1.2 |
+| R3 | An exported record fails verification later | Med | Evidential loss | `verify_seal.py` exists, not gated | M1.4/M2.1 |
+| R4 | Sign-reader accuracy regresses silently | High | Wrong transcription | no floor | M2.2 |
+| R5 | Retention job misbehaves | Med | Data kept too long (legal) | no clock test | M2.3 |
+| R6 | **`standard` flavour gains a location/scanning permission** | Med | Privacy claim false | manifest check exists | keep the build-failure gate |
+| R7 | 48,700 lines in one module with no seams | High | Slow, risky change | `wc -l` | M3.2 |
+| R8 | Toolchain drift outruns the test evidence | High | Silent behaviour change | version file | M3.1 after M1.2 |
+| R9 | Accessibility regressions (the primary users) | Med | Exclusion | no automated check | M5.1 |
+| R10 | DPIA out of date with the data inventory | High | Department cannot sign | doc only | M6.1 |
+
+---
+
+## 11. PR batching and rollback
+
+| Batch | Contents | Rollback |
+|---|---|---|
+| B1 | README + docs version/retention corrections | revert docs |
+| B2 | connected-test CI job + one device-labelled test | revert workflow step |
+| B3 | verify_seal gate in CI + fixture | revert gate |
+| B4 | reader-accuracy floor + corpus | revert threshold |
+| B5 | retention clock test | revert test |
+| B6 | toolchain upgrade | revert version catalog + wrapper |
+
+Rollback rules: Room/SQLCipher migrations are forward-only and a session must stay
+readable after a revert (that is the upgrade-path requirement); a model file is
+versioned, never overwritten.
+
+---
+
+## 12. Progress metrics
+
+| Metric | Now (measured) | W1 | W3 | How measured |
+|---|---|---|---|---|
+| Kotlin files / lines | 257 / 48,700 | same | split | `find`, `wc -l` |
+| `@Test` | 388 in 59 files | + gate tests | + feature tests | `grep -rho @Test` |
+| Instrumented tests executed | 0 per PR (8 classes on a version bump) | all classes on `app/**` PRs | full suite | CI log |
+| CI jobs | 12 | 12 | 12 | parsed `jobs:` |
+| Reader accuracy floor | none | set | enforced | eval output |
+| Version consistency | README wrong | fixed | fixed | script |
+| Cold start (ms) | unmeasured | measured | improved | Macrobenchmark |
+
+---
+
+## Appendix A — Owner decisions outstanding
+
+From the owner's list (Appendix D) where the request needs a decision rather than code:
+
+- "don't need export report, we have download button" conflicts with the records/seal flow; decide whether Download and Export are one action.
+- Removing the PDF password changes the threat model (anyone with the file can read it). The seal still proves integrity; confirm that is acceptable for department use.
+- Number of colour themes (currently ten) versus a smaller, tested set.
+- Whether the AI counsellor stays available for witnesses only, or is removed entirely for evidential safety.
+- Whether the second screen becomes the default in a station setup.
+
+Blocked on hardware or people:
+
+- Two-phone Bluetooth drill on real devices.
+- Deaf signer review for the ISL/ASL sheets.
+- A real officer's end-to-end session for timing and wording.
+- An Android 12+ pairing run for the second screen.
+
+## Appendix B — Definition of done
+
+1. The failing test exists before the fix: a unit test, an instrumented test or an evaluation-set regression.
+2. `./gradlew testStandardDebugUnitTest testNearbyDebugUnitTest lintStandardRelease`, the instrumented job, `avatar`/`portal` tests, `go test ./...` and the content checks all pass; output pasted.
+3. No invariant in §0 broken: offline by default, consent before recording, encrypted sessions with enforced retention, ledger integrity, aid-not-interpreter, a reading is never an answer, no permission without a DPIA line.
+4. Any change to the evidence path is verified end to end with `verify_seal.py` and in-app "Check a report".
+5. Docs updated in the same PR; the README version comes from the build file, never from memory.
+
+## Appendix C — Evidence ledger
+
+| Claim | Command | Result | Status |
+|---|---|---|---|
+| `versionCode 23`, `versionName 0.8.51` | `grep -nE 'versionCode\|versionName' app/build.gradle.kts` | 23 / "0.8.51" | verified-here |
+| `minSdk 29`, `targetSdk 37`, `compileSdk 37` | same | 29 / 37 / 37 | verified-here |
+| 257 Kotlin files, 48,700 lines, all under `app/` | `find`, `cat \| wc -l` | 257 / 48,700 | verified-here |
+| 388 `@Test` in 59 files | `grep -rho @Test`, `grep -rl @Test` | 388 / 59 | verified-here |
+| Instrumented is gated, not absent | `sed -n '199,243p' .github/workflows/ci.yml` | `if: …version.outputs.new == 'true' \|\| workflow_dispatch`; 8 classes; 4 shards; API 34 `pixel_6` | verified-here |
+| Java 21 in CI | `ci.yml:38` | temurin 21 | verified-here |
+| 12 CI jobs | parse `jobs:` in `.github/workflows/ci.yml` | version, android, avatar, portal, tools, gateway, station, semgrep, osv, instrumented, gitleaks, release | verified-here |
+| `plan.txt` 15 lines (14 non-empty) | `wc -l plan.txt` | 15 / 14 | verified-here; file deleted, content in Appendix D |
+| "174 files / 38,300 lines", "49 test files" | earlier counts | **wrong** | corrected |
+| "Sign readers: ISL 314, ASL 250" | `README.md`, `tools/ml/EVAL.md` | doc claims | needs-verify |
+| Evidence chain end-to-end | `tools/security/verify_seal.py` not run here | needs-verify | needs-verify |
+
+## Appendix D — The owner's original list, verbatim
+
+`plan.txt` (14 non-empty lines, deleted) is reproduced here so no wording is lost.
+Every line maps to a phase above; the ones that need a decision are in Appendix A.
+
+```
+dont-neeed-export-report, we have download button.txt
+need joint restirciton of movement as upon animation wrist and elbow move non humanly
+need better ui
+no timed hold when going to msgs
+mssage caption highlighting is bad during video clal look into it
+smoother faster flow
+cached data for avatar so it doesn't relod on app startups
+better hand signs and fnegrsplelings
+better overall ui to help people choose what they wanna say . right now it is very croded and feature heavy that can be consolidated into
+EMOJI SHOULD BE PRESET WHEN related owrd appears like water food family home house etc
+better ui on video call needed with slide to open button that make it fully feel like a video call and button appear when needed , -- capiton and vaatr and user on video call with options to hold(wait) and go to msgs , all other need to have a button and those buttons shall be like modern sidebars , buttom bars tat show full functionality on the screen with language picker meoji picker drwing etc etc what soever available
+this is for the people who cant speak and we need more feature richness, more repsonsicve design and better ways
+remove password form exports pdfs
+also easy the xclosing of session and don't provided multiple divergent paths that confuse , atmax 3 is fine no more than tht divergent paths on a songle screen
+and more feature rich and ocncernign to mute guy awith usability porer not deep hidden to the policeman
+```
+
+---
+
+## Journal
+
+- 2026-11-24 m1.1.1 [x] README version line generated from `app/build.gradle.kts` | proof: `python tools/docs/check_version.py` → exit 1 before, exit 0 after `--write`; CI `tools` job runs it | next: m1.1.2
