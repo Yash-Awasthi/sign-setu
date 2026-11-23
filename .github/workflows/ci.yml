@@ -100,7 +100,7 @@ jobs:
       - run: pip install numpy resvg-py pillow soundfile
       - name: Python tool tests
         run: |
-          for d in tools/isl tools/security tools/content tools/text2isl tools/docs; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
+          for d in tools/isl tools/security tools/content tools/text2isl tools/docs tools/ci; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
       - name: The README version line comes from the build file
         run: python tools/docs/check_version.py
       - name: Documents match the tree
@@ -109,6 +109,8 @@ jobs:
         run: python tools/security/check_permissions.py
       - name: The device baseline comes from the build and the memory floors
         run: python tools/docs/baseline.py
+      - name: The emulator job runs every instrumented class the emulator can run
+        run: python tools/ci/check_workflows.py
       - name: Content manifest is current
         run: python tools/content/build_content.py --check
       - name: Content references, ids and language coverage
@@ -203,11 +205,30 @@ jobs:
           name: osv
           path: osv.json
 
-  # The emulator run is slow, so it gates a new version only; a manual run forces it.
+  # A pull request touching the app, its build files or this workflow runs the emulator suite; so does a new version
+  # and a manual run. Everything else stays fast: the unit tests already ran in the android job.
+  app-changed:
+    runs-on: ubuntu-24.04
+    outputs:
+      any: ${{ steps.f.outputs.any }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: f
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "any=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if git diff --name-only '${{ github.event.pull_request.base.sha }}' HEAD | grep -qE '^(app/|gradle/|settings\.gradle\.kts|build\.gradle\.kts|\.github/workflows/ci\.yml)'; then
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # The emulator run is slow, so it runs on a pull request that touches the app, on a new version, and on a manual run.
   # Four emulators in parallel, each running every class's share of tests (AndroidJUnitRunner sharding).
   instrumented:
-    needs: version
-    if: needs.version.outputs.new == 'true' || github.event_name == 'workflow_dispatch'
+    needs: [version, app-changed]
+    if: ${{ !cancelled() && (needs.app-changed.outputs.any == 'true' || needs.version.outputs.new == 'true' || github.event_name == 'workflow_dispatch') }}
     name: instrumented (${{ matrix.shard }} of 4)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -231,7 +252,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       # A crashed test process leaves no stack in the report, so the device log rides along with it.
       # No Play services image: its first-boot self-update killed the app through the fonts provider mid-run.
-      # StageEndToEndTest needs a camera feed, and the MediaPipe and timing tests need real clips, a GPU or a phone; the emulator has none.
+      # StageEndToEndTest drives the emulator's camera; the classes that measure frame time need a phone's GPU.
       - name: Build the app and test APKs
         run: ./gradlew --console=plain :app:assembleStandardDebug :app:assembleStandardDebugAndroidTest
       - uses: reactivecircus/android-emulator-runner@v2
@@ -241,7 +262,7 @@ jobs:
           target: default
           profile: pixel_6
           # One class per run: given a comma list, the connected task ran only the first class.
-          script: for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest; do ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.$c -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} || { mkdir -p app/build/reports/androidTests; adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }; done
+          script: for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest; do ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.$c -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} || { mkdir -p app/build/reports/androidTests; adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }; done
       - uses: actions/upload-artifact@v6
         if: failure()
         with:

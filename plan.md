@@ -42,7 +42,7 @@ contract), `design-ux` §1/§5, `data-ml` §8 (accuracy claims with n), `writing
 | Toolchain | AGP 9.4.1, Kotlin 2.4.21, Compose BOM 2026.09.00, Room 2.8.5, SQLCipher 4.19.1 | — | `gradle/libs.versions.toml` |
 | Code | **257 Kotlin files, 48,700 lines**, one `app` module (all `.kt` files are under `app/`) | earlier draft said 174 / 38,300 | `find app -name '*.kt' \| wc -l` → 257; `cat` sum → 48,700 |
 | Tests | 388 `@Test` in **59** files, two flavours (`standard`, `nearby`) | earlier draft said 49 files | `grep -rho @Test` → 388; `grep -rl @Test` → 59 |
-| Instrumented tests | An `instrumented` job **exists**: 4 shards, API 34 `pixel_6` emulator, 8 named classes — gated by `if: needs.version.outputs.new == 'true' \|\| github.event_name == 'workflow_dispatch'`, so a normal PR runs **zero** instrumented tests | earlier draft said "compiled but never executed" — **wrong**: it runs on version bumps and manual dispatch, just not on PRs | `ci.yml:199-243` |
+| Instrumented tests | An `instrumented` job **exists**: 4 shards, API 34 `pixel_6` emulator, 10 named classes, gated on `app-changed` (a PR touching `app/`, `gradle/`, `settings.gradle.kts`, `build.gradle.kts` or `ci.yml`), a new version, or a manual run. 3 of the 13 classes on disk are device-only **as measured here**: `TrackingPerformanceTest`, `StageFrameRateTest` and `StageEndToEndTest` each fail on an Android 14 x86_64 emulator. MediaPipe does run on the emulator: `SignPipelineDeviceTest` passed in 333 s. | earlier draft said 8 classes and "MediaPipe needs a phone" — **wrong twice** | `ci.yml` instrumented job; `.github/workflows/ci.yml` + measured runs |
 | CI | **12 jobs**: version, android (unit+lint), avatar, portal, tools, gateway, station, semgrep, osv, instrumented, gitleaks, release | earlier draft said 7 | parsed from `jobs:` in `ci.yml` |
 | Dependency integrity | `verification-metadata.xml`, `app/gradle.lockfile`, `settings-gradle.lockfile` | same | files present |
 | Secret scan | `.gitleaks.toml` present | — | root |
@@ -93,7 +93,10 @@ classes. A regression can therefore sit on `master` until release day.
 **Done when:** the instrumented suite runs on every PR that touches `app/` (sharded,
 release-blocking) and covers export/verify and retention, not just the 8 classes.
 
-- [ ] Widen the shard matrix to the full instrumented suite, keep the 45-minute timeout, and add a `paths: app/**` trigger so unrelated PRs stay fast. `[C]`
+- [x] Widen the shard matrix to the full instrumented suite, keep the 45-minute timeout, and add a `paths: app/**` trigger so unrelated PRs stay fast. `[C]`
+  - verified-here: `python tools/ci/check_workflows.py` → exit 1 before (job needed only `version`), exit 0 after. The job now `needs: [version, app-changed]` and runs when `needs.app-changed.outputs.any == 'true' || needs.version.outputs.new == 'true' || workflow_dispatch`, keeping `timeout-minutes: 45` and 4 shards; 10 classes instead of 8, adding `SignPipelineDeviceTest` (MediaPipe, measured pass on this emulator in 333 s) and `SkeletonOverlayDeviceTest` (measured pass in 256 s). 7 tests in `tools/ci/` pass; the check runs in the `tools` CI job so a new instrumented class cannot be left out.
+  - deviation: the trigger is the `app-changed` job's `git diff` filter, not `on.pull_request.paths`, because the `release` job needs `instrumented` in the same workflow and a workflow-level `paths` filter would also skip the unit, avatar, portal and gateway jobs on a docs-only PR.
+  - deviation: "the full suite" is 10 of 13 classes. Measured on the local Android 14 x86_64 emulator: `TrackingPerformanceTest` exit 1 (frame budget), `StageFrameRateTest` exit 1, `StageEndToEndTest` exit 1. The three are recorded in `DEVICE_ONLY` in `tools/ci/check_workflows.py` with the reason.
 - [ ] Instrumented test: create a session, export a PDF, verify it with `verify_seal.py`, assert the seal and the hash chain. `[C]`
 - [ ] Instrumented test: retention job deletes a session past its window and never deletes one inside it, with an injected clock. `[C]`
 - [ ] Instrumented test: the encrypted database cannot be opened after the device is locked (Keystore behaviour), and the app shows the documented message instead of crashing. `[C]`
@@ -430,7 +433,7 @@ versioned, never overwritten.
 |---|---|---|---|---|
 | Kotlin files / lines | 257 / 48,700 | same | split | `find`, `wc -l` |
 | `@Test` | 388 in 59 files | + gate tests | + feature tests | `grep -rho @Test` |
-| Instrumented tests executed | 0 per PR (8 classes on a version bump) | all classes on `app/**` PRs | full suite | CI log |
+| Instrumented tests executed | 10 of 13 classes per PR that touches `app/` (3 device-only, measured) | same | same | CI log |
 | CI jobs | 12 | 12 | 12 | parsed `jobs:` |
 | Reader accuracy floor | none | set | enforced | eval output |
 | Version consistency | README wrong | fixed | fixed | script |
@@ -510,3 +513,4 @@ and more feature rich and ocncernign to mute guy awith usability porer not deep 
 - 2026-11-24 m1.1.2 [x] docs diffed against the tree, two dead paths fixed | proof: `python tools/docs/check_docs.py` → exit 1 (3 stale paths), exit 0 after; 12 tool tests pass | next: m1.1.3
 - 2026-11-24 m1.1.3 [x] permission table generated from both source manifests, prose row completed | proof: `python tools/security/check_permissions.py` → exit 1 before the table existed, exit 0 after `--write`; 10 tests pass | next: m1.1.4
 - 2026-11-24 m1.1.4 [x] device baseline generated from the build and the memory floors; 2.4 GB/1.2 GB replace the unmeasured "3 GB" | proof: `python tools/docs/baseline.py` → exit 1 before, 0 after `--write`; 18 tool tests pass | needs-verify: assistant model byte size | next: m1.2.1
+- 2026-11-24 m1.2.1 [x] emulator job widened to 10 classes and gated on an `app-changed` filter | proof: `python tools/ci/check_workflows.py` → exit 1 before, 0 after; 7 CI tests pass | deviation: job-level diff filter instead of `paths:`; 3 classes measured device-only | next: m1.2.2
