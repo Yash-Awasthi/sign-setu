@@ -78,7 +78,8 @@ checked against the build.
   - verified-here: `python tools/docs/check_version.py` → exit 1 before the write (README said 0.8.5/22, build 0.8.51/23), exit 0 after `--write`; wired into the `tools` job of `.github/workflows/ci.yml`; 6 tests in `tools/docs/test_check_version.py` pass.
 - [x] Diff the documented feature list against the code and the screens doc: anything described but removed is deleted, anything present but undocumented is added. `[C]`
   - verified-here: `python tools/docs/check_docs.py` → exit 1 with `docs/05-avatar-and-gestures.md: names a file that does not exist: content/clips.json` and `docs/17-live-speech.md`, `docs/18-station.md`: `brain/link.py`; both paths corrected to `app/src/main/assets/content/clips.json` and `brain/brain/link.py`, now exit 0. Checks: every relative link resolves, every capture in `docs/screens/` is described in `12-screens.md` and every reference exists, every `docs/*.md` is in the map, a `code` path exists, and the stated counts (languages 17, ISL 314, ASL 250, retention 4–72 h, default 24 h) equal the bundle and `SettingsStore.kt`. 12 tests in `tools/docs/` pass; run in the `tools` CI job.
-- [ ] Re-verify the permission table against the merged manifest of both flavours as a test, and print it into the docs. `[C]`
+- [x] Re-verify the permission table against the merged manifest of both flavours as a test, and print it into the docs. `[C]`
+  - verified-here: `python tools/security/check_permissions.py` → reads `app/src/main/AndroidManifest.xml` and `app/src/{standard,nearby}/AndroidManifest.xml`, generated table now in `docs/README.md` §2.4 (18 permissions, per-flavour API limit and scan flag), exit 0; the prose row gained `ACCESS_NETWORK_STATE` and `ACCESS_LOCAL_NETWORK`, which it was missing. 10 tests in `tools/security/` pass; run in the `tools` CI job. Library-added permissions stay covered by the merged-manifest gate in `app/build.gradle.kts:124-159`.
 - [ ] State the supported device baseline (API 29, 64-bit, RAM, free storage for the 806 MB model) as measured values, not adjectives. `[C]`
 
 ### M1.2 Instrumented tests run only on a version bump
@@ -506,3 +507,4 @@ and more feature rich and ocncernign to mute guy awith usability porer not deep 
 
 - 2026-11-24 m1.1.1 [x] README version line generated from `app/build.gradle.kts` | proof: `python tools/docs/check_version.py` → exit 1 before, exit 0 after `--write`; CI `tools` job runs it | next: m1.1.2
 - 2026-11-24 m1.1.2 [x] docs diffed against the tree, two dead paths fixed | proof: `python tools/docs/check_docs.py` → exit 1 (3 stale paths), exit 0 after; 12 tool tests pass | next: m1.1.3
+- 2026-11-24 m1.1.3 [x] permission table generated from both source manifests, prose row completed | proof: `python tools/security/check_permissions.py` → exit 1 before the table existed, exit 0 after `--write`; 10 tests pass | next: m1.1.4

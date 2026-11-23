@@ -101,8 +101,31 @@ flowchart LR
 | Devices | Android 10 (API 29) or later, 64-bit, 3 GB RAM or more, 5 to 6.9 inch portrait |
 | Flavors | `standard` (reference, Bluetooth RFCOMM) and `nearby` (adds Google Nearby Connections) |
 | Release packages | Universal (arm64-v8a and x86_64) and arm64-v8a phone APKs, signed by CI; native libraries and models stored uncompressed |
-| Permissions (standard) | `CAMERA`, `BLUETOOTH_CONNECT` (`BLUETOOTH` up to API 30), `BLUETOOTH_SCAN` (never for location, to pair a second screen), `USE_BIOMETRIC`, `VIBRATE`, `INTERNET` (online assistant only), `RECEIVE_BOOT_COMPLETED` (keeps the hourly retention job scheduled), `RECORD_AUDIO` (the person's own voice, only after consent is logged). No location: a build gate fails the build otherwise |
+| Permissions (standard) | `CAMERA`, `BLUETOOTH_CONNECT` (`BLUETOOTH` up to API 30), `BLUETOOTH_SCAN` (never for location, to pair a second screen), `USE_BIOMETRIC`, `VIBRATE`, `INTERNET` (online assistant only), `ACCESS_NETWORK_STATE` (whether the network is up before a call), `ACCESS_LOCAL_NETWORK` (Android 17: sockets to the station on the LAN), `RECEIVE_BOOT_COMPLETED` (keeps the hourly retention job scheduled), `RECORD_AUDIO` (the person's own voice, only after consent is logged). No location: a build gate fails the build otherwise |
 | Languages (17) | English, Hindi, Chhattisgarhi, Gondi, Halbi, Bengali, Nepali, Assamese, Odia, Tamil, Telugu, Kannada, Malayalam, Marathi, Gujarati, Punjabi, Urdu |
+
+Permissions, generated from the two source manifests by `tools/security/check_permissions.py --write`; the `nearby` flavour adds scanning for Nearby Connections. A permission the app declares with `tools:node="remove"` is not listed: the app refuses it.
+
+| Permission | `standard` | `nearby` |
+| --- | --- | --- |
+| `CAMERA` | yes | yes |
+| `VIBRATE` | yes | yes |
+| `USE_BIOMETRIC` | yes | yes |
+| `RECEIVE_BOOT_COMPLETED` | yes | yes |
+| `INTERNET` | yes | yes |
+| `ACCESS_NETWORK_STATE` | yes | yes |
+| `ACCESS_LOCAL_NETWORK` | yes | yes |
+| `RECORD_AUDIO` | yes | yes |
+| `BLUETOOTH` | yes, API ≤ 30 | yes, API ≤ 30 |
+| `BLUETOOTH_CONNECT` | yes | yes |
+| `BLUETOOTH_SCAN` | yes, neverForLocation | yes, no flag |
+| `ACCESS_WIFI_STATE` | — | yes, API ≤ 31 |
+| `CHANGE_WIFI_STATE` | — | yes, API ≤ 31 |
+| `BLUETOOTH_ADMIN` | — | yes, API ≤ 30 |
+| `ACCESS_FINE_LOCATION` | — | yes, API ≤ 32 |
+| `ACCESS_COARSE_LOCATION` | — | yes, API ≤ 32 |
+| `BLUETOOTH_ADVERTISE` | — | yes |
+| `NEARBY_WIFI_DEVICES` | — | yes |
 
 ## 3. Data flow
 

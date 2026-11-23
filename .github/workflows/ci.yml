@@ -105,6 +105,8 @@ jobs:
         run: python tools/docs/check_version.py
       - name: Documents match the tree
         run: python tools/docs/check_docs.py
+      - name: The permission table comes from the manifests
+        run: python tools/security/check_permissions.py
       - name: Content manifest is current
         run: python tools/content/build_content.py --check
       - name: Content references, ids and language coverage

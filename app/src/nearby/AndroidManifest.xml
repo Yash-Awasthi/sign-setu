@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Nearby flavor only: scanning and advertising for Nearby Connections. The build gate still refuses
-     RECORD_AUDIO, background location and INTERNET. -->
+     background location in this flavour, and the standard flavour refuses location and advertising. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
