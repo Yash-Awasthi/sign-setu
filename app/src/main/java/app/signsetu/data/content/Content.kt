@@ -185,8 +185,8 @@ data class ContentBundle(
     fun groupsFor(role: Role, child: Boolean = false): List<Group> =
         groups.filter { (it.roles.isEmpty() || role in it.roles) && (it.child == null || it.child == child) }
 
-    fun questionsIn(group: String, role: Role, profile: Profile): List<Question> =
-        questions.filter { it.group == group && askable(it, role, profile) }
+    fun questionsIn(group: String, role: Role, profile: Profile, juvenile: Boolean = profile == Profile.YOUNG_CHILD): List<Question> =
+        questions.filter { it.group == group && askable(it, role, profile, juvenile) }
 
     fun group(id: String): Group? = groups.firstOrNull { it.id == id }
     fun question(id: String): Question? = questions.firstOrNull { it.id == id }

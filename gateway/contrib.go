@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,6 +18,7 @@ const maxContribBytes = 2 << 20
 
 // The signer id is random on the phone and is the only key to a signer's records, so it must be long enough not to guess.
 var signerID = regexp.MustCompile(`^[a-z0-9-]{16,64}$`)
+var contribRecordID = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 var contribKinds = map[string]bool{"prompt": true, "correction": true}
 
@@ -25,9 +28,10 @@ var contribRecordKeys = map[string]bool{"kind": true, "session": true, "window":
 var contribMu sync.Mutex
 
 type contribBody struct {
-	Signer  string                       `json:"signer"`
-	Consent string                       `json:"consent"`
-	Records []map[string]json.RawMessage `json:"records"`
+	Signer    string                       `json:"signer"`
+	Consent   string                       `json:"consent"`
+	Records   []map[string]json.RawMessage `json:"records"`
+	RecordIDs []string                     `json:"record_ids"`
 }
 
 // contribReason is empty for a valid upload, else why it is refused; the phone drops a refused record from its queue.
@@ -39,8 +43,15 @@ func contribReason(b contribBody) string {
 		return "consent version required"
 	case len(b.Records) == 0 || len(b.Records) > 50:
 		return "1 to 50 records"
+	case len(b.RecordIDs) != len(b.Records):
+		return "one record id is required per record"
 	}
+	seen := make(map[string]bool, len(b.RecordIDs))
 	for i, r := range b.Records {
+		if !contribRecordID.MatchString(b.RecordIDs[i]) || seen[b.RecordIDs[i]] {
+			return "record ids must be unique 64-character lowercase hex strings"
+		}
+		seen[b.RecordIDs[i]] = true
 		for k := range r {
 			if !contribRecordKeys[k] {
 				return "record " + strconv.Itoa(i) + ": unexpected field " + k
@@ -71,6 +82,40 @@ func (g *Gateway) contribFile(signer string) string {
 	return filepath.Join(g.cfg.ContribDir, signer+".jsonl")
 }
 
+func readContribIDs(path string) (map[string]bool, error) {
+	f, err := os.Open(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return map[string]bool{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	ids := map[string]bool{}
+	reader := bufio.NewReader(f)
+	for {
+		line, readErr := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			var row struct {
+				RecordID string `json:"record_id"`
+			}
+			if err := json.Unmarshal(line, &row); err != nil {
+				return nil, err
+			}
+			if row.RecordID != "" {
+				ids[row.RecordID] = true
+			}
+		}
+		if errors.Is(readErr, io.EOF) {
+			return ids, nil
+		}
+		if readErr != nil {
+			return nil, readErr
+		}
+	}
+}
+
 func (g *Gateway) contribRoute(w http.ResponseWriter, r *http.Request, dev Device) {
 	if !g.contribLimiter.Allow(dev.ID) {
 		refuse(w, g.contribLimiter, dev.ID)
@@ -85,19 +130,35 @@ func (g *Gateway) contribRoute(w http.ResponseWriter, r *http.Request, dev Devic
 		return
 	}
 	at := isoTime(g.now())
+	stored := 0
 	err := func() error {
 		contribMu.Lock()
 		defer contribMu.Unlock()
 		if err := os.MkdirAll(g.cfg.ContribDir, 0o700); err != nil {
 			return err
 		}
-		f, err := os.OpenFile(g.contribFile(body.Signer), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+		path := g.contribFile(body.Signer)
+		storedIDs, err := readContribIDs(path)
+		if err != nil {
+			return err
+		}
+		var newRecords []int
+		for i, id := range body.RecordIDs {
+			if !storedIDs[id] {
+				newRecords = append(newRecords, i)
+				storedIDs[id] = true
+			}
+		}
+		if len(newRecords) == 0 {
+			return nil
+		}
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 		if err != nil {
 			return err
 		}
 		enc := json.NewEncoder(f)
-		for _, rec := range body.Records {
-			if err := enc.Encode(map[string]any{"at": at, "device": dev.ID, "signer": body.Signer, "consent": body.Consent, "record": rec}); err != nil {
+		for _, i := range newRecords {
+			if err := enc.Encode(map[string]any{"at": at, "device": dev.ID, "signer": body.Signer, "consent": body.Consent, "record_id": body.RecordIDs[i], "record": body.Records[i]}); err != nil {
 				f.Close()
 				return err
 			}
@@ -106,7 +167,11 @@ func (g *Gateway) contribRoute(w http.ResponseWriter, r *http.Request, dev Devic
 			f.Close()
 			return err
 		}
-		return f.Close()
+		if err := f.Close(); err != nil {
+			return err
+		}
+		stored = len(newRecords)
+		return nil
 	}()
 	if err == nil {
 		err = g.store.Audit(r.Context(), "contrib", dev.ID)
@@ -115,7 +180,7 @@ func (g *Gateway) contribRoute(w http.ResponseWriter, r *http.Request, dev Devic
 		g.internal(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]int{"stored": len(body.Records)})
+	writeJSON(w, http.StatusOK, map[string]int{"stored": stored})
 }
 
 func (g *Gateway) contribDelete(w http.ResponseWriter, r *http.Request, dev Device) {

@@ -11,12 +11,13 @@ import (
 // memStore keeps the same rules as pgStore (unique codes and tokens, rising audit ids) for the handler tests;
 // store_test.go runs the real one against PostgreSQL.
 type memStore struct {
-	mu      sync.Mutex
-	devices []Device
-	codes   map[string]bool
-	audit   []AuditRow
-	lastID  int64
-	broken  bool
+	mu        sync.Mutex
+	devices   []Device
+	codes     map[string]bool
+	audit     []AuditRow
+	lastID    int64
+	broken    bool
+	failAudit bool
 }
 
 func newMemStore() *memStore { return &memStore{codes: map[string]bool{}} }
@@ -72,6 +73,9 @@ func (m *memStore) TouchLastSeen(_ context.Context, id string, at time.Time) err
 func (m *memStore) Audit(_ context.Context, action, deviceID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.failAudit {
+		return errBroken
+	}
 	m.addAudit(action, deviceID)
 	return nil
 }

@@ -14,6 +14,7 @@ import app.signsetu.ui.session.AutoPilot
 import app.signsetu.ui.session.Conv
 import app.signsetu.ui.session.PauseCause
 import app.signsetu.ui.session.Pending
+import app.signsetu.ui.session.lastAnswer
 import app.signsetu.ui.session.reportMode
 import app.signsetu.data.session.SessionEvent
 import kotlinx.coroutines.CoroutineScope
@@ -66,10 +67,25 @@ class AutoPilotTest {
             error("no question reached the stage")
         }
 
+        fun runToQuestionAfter(shownId: Long): Long {
+            repeat(400) {
+                tick(1_000)
+                val last = rows.lastOrNull { it.type == EventType.QUESTION_SHOWN.name }
+                if (last != null && last.id > shownId && last.itemId != null && bank.question(last.itemId)?.kind != Kind.STATEMENT) return last.id
+            }
+            error("no later question reached the stage")
+        }
+
         fun answerSigned() {
             val shown = rows.last { it.type == EventType.QUESTION_SHOWN.name }.id
+            answerSignedFor(shown)
+        }
+
+        fun answerSignedFor(shown: Long, late: Boolean = false) {
             test.testScheduler.runCurrent()
-            kotlinx.coroutines.runBlocking { repo.log(id, EventType.ANSWER_SIGNED, EventSource.MACHINE, "en", "water", shownId = shown) }
+            kotlinx.coroutines.runBlocking {
+                repo.log(id, EventType.ANSWER_SIGNED, EventSource.MACHINE, "en", "water", shownId = shown, via = if (late) "stage_late" else null)
+            }
             tick(1)
         }
 
@@ -155,6 +171,31 @@ class AutoPilotTest {
         tick(1_500)
         assertEquals(shownBefore + 1, rows.count { it.type == EventType.QUESTION_SHOWN.name })
         assertTrue(shownCount(q) == 1)
+    }
+
+    @Test
+    fun aLateAnswerForAnEarlierQuestionDoesNotAdvanceAutoMode() = phone(handsOff = true) {
+        pilot.setAuto(true); tick(1)
+        runToQuestion()
+        val firstShown = rows.last { it.type == EventType.QUESTION_SHOWN.name }.id
+        answerSignedFor(firstShown)
+        val currentShown = runToQuestionAfter(firstShown)
+        assertTrue(currentShown > firstShown)
+        assertEquals(Conv.Waiting, conv)
+
+        answerSignedFor(firstShown, late = true)
+        assertEquals(Conv.Waiting, conv)
+    }
+
+    @Test
+    fun plannerDoesNotTreatLateAnswerAsAnswerToTheLatestQuestion() {
+        val events = listOf(
+            SessionEvent(1, 1, EventType.QUESTION_SHOWN, EventSource.PRESET, "en", "first", null, null, null, itemId = "s2"),
+            SessionEvent(2, 2, EventType.ANSWER_CARD, EventSource.SUBJECT, "en", "yes", "yes", null, null, shownId = 1),
+            SessionEvent(3, 3, EventType.QUESTION_SHOWN, EventSource.PRESET, "en", "second", null, null, null, itemId = "s3"),
+            SessionEvent(4, 4, EventType.ANSWER_CARD, EventSource.SUBJECT, "en", "no", "no", null, null, shownId = 1, via = "stage_late"),
+        )
+        assertEquals(null, lastAnswer(events, bank))
     }
 
     @Test

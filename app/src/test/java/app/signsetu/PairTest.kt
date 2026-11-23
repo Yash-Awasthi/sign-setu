@@ -448,6 +448,18 @@ class PairTest {
         assertEquals(VIA_STAGE_LATE, dao.rows.value.last().via)
     }
 
+    @Test
+    fun aLateCameraReadStaysWithItsQuestion() = vmTest { vm, dao ->
+        vm.prepare(Pending.Ask(question))
+        vm.show()
+        val first = vm.ui.value!!.itemId!!
+        vm.prepare(Pending.Cards(listOf("water")))
+        vm.show()
+        vm.logRemote(first, 0, AnswerBody.CameraRead("yes"))
+        val read = dao.rows.value.last { it.type == EventType.ANSWER_SIGNED.name }
+        assertEquals(first, read.shownId)
+    }
+
     // 17
     @Test
     fun aResentAnswerIsLoggedOnce() = vmTest { vm, dao ->

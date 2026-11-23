@@ -3,9 +3,19 @@ package app.signsetu
 import app.signsetu.data.content.Phase
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Role
+import app.signsetu.data.session.EventSource
+import app.signsetu.data.session.EventType
+import app.signsetu.data.session.Session
+import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
+import app.signsetu.ui.session.Mode
+import app.signsetu.ui.session.SessionUi
+import app.signsetu.ui.session.SYSTEM_JUVENILE
+import app.signsetu.ui.session.SYSTEM_JUVENILE_OFF
+import app.signsetu.ui.session.child
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -33,6 +43,19 @@ class RoleTest {
     }
 
     @Test
+    fun anUnknownRoleCannotBrowseFreeRecall() {
+        assertFalse("recall" in bundle.groupsFor(Role.NOT_KNOWN).map { it.id })
+        assertTrue("recall" in bundle.groupsFor(Role.VICTIM).map { it.id })
+    }
+
+    @Test
+    fun explicitAgeStateAppliesIndependentlyOfCommunicationProfile() {
+        assertTrue(sessionUi(Profile.ISL_USER, SYSTEM_JUVENILE).child)
+        assertTrue(sessionUi(Profile.OTHER_LANGUAGE, SYSTEM_JUVENILE).child)
+        assertFalse(sessionUi(Profile.YOUNG_CHILD, SYSTEM_JUVENILE_OFF).child)
+    }
+
+    @Test
     fun aChildInConflictWithLawGetsJuvenileRightsNotAdultArrestRights() {
         val child = bundle.groupsFor(Role.ACCUSED, child = true).map { it.id }.toSet()
         val adult = bundle.groupsFor(Role.ACCUSED, child = false).map { it.id }.toSet()
@@ -52,5 +75,20 @@ class RoleTest {
         repo.setRole(id, Role.VICTIM)
         assertEquals(Role.VICTIM, repo.openSession()?.role)
     }
+
+    private fun sessionUi(profile: Profile, ageEvent: String) = SessionUi(
+        session = Session("test", 0, profile, "en"),
+        selectedGroup = "",
+        sensitiveUnlocked = false,
+        pending = null,
+        mode = Mode.OFFICER,
+        rotated = false,
+        answeredCard = null,
+        answeredYes = null,
+        chosenLanguage = null,
+        events = listOf(SessionEvent(1, 1, EventType.SYSTEM, EventSource.OFFICER, null, ageEvent, null, null, null)),
+        reading = null,
+        signed = emptyMap(),
+    )
 
 }

@@ -11,8 +11,8 @@ internal val Paces = listOf(0.5f, 0.75f, 1f)
 internal fun nextPace(pace: Float): Float = Paces.firstOrNull { it > pace + 0.01f } ?: Paces.first()
 
 /** A young child starts slow; everyone else starts at the officer's setting. */
-internal fun initialPace(profile: Profile, setting: Float): Float =
-    if (profile == Profile.YOUNG_CHILD) minOf(setting, 0.75f) else setting
+internal fun initialPace(profile: Profile, setting: Float, child: Boolean = profile == Profile.YOUNG_CHILD): Float =
+    if (child) minOf(setting, 0.75f) else setting
 
 internal fun beatAt(beats: List<WordBeat>, offset: Int): WordBeat? = beats.firstOrNull { offset in it.range }
 
@@ -22,8 +22,11 @@ internal object StagePace {
     val speed = mutableFloatStateOf(1f)
 
     fun forSession(id: String, initial: Float) {
-        if (session == id) return
-        session = id
-        speed.floatValue = initial
+        if (session != id) {
+            session = id
+            speed.floatValue = initial
+        } else if (initial < speed.floatValue) {
+            speed.floatValue = initial
+        }
     }
 }

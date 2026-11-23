@@ -179,7 +179,7 @@ internal fun Dock(
                 if (lastAnswerEvent != null && !typing) {
                     val suggestions = cloud.followUps(
                         lastAnswerEvent.text ?: lastAnswerEvent.cardId ?: "answered",
-                        ui.session.profile == Profile.YOUNG_CHILD,
+                        ui.child,
                         subjectNames(ui.events, content, officerLang),
                         subjectDetails(ui.events, content, officerLang),
                     )

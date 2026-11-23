@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.io.File
+import java.security.MessageDigest
 import java.security.SecureRandom
 
 /** Version of the consent card's wording; a new wording asks again. */
@@ -33,7 +34,9 @@ class Contributions(
     private val sessions = File(root, "sessions")
     private val queue = File(root, "queue")
     private val consentFile = File(root, "consent.txt")
+    private val deletionPendingFile = File(root, "delete.pending")
     private var flusher: Job? = null
+    private val uploadLock = Any()
 
     /** Random and local: the only link between a signer and their uploads, and the key to deleting them. */
     val signer: String by lazy {
@@ -110,7 +113,7 @@ class Contributions(
         if (flusher?.isActive == true || base.isEmpty()) return
         flusher = scope.launch(Dispatchers.IO) {
             var wait = FIRST_RETRY_MS
-            while (consented && pending() > 0) {
+            while (consented && !deletionPendingFile.exists() && pending() > 0) {
                 if (sendBatch()) wait = FIRST_RETRY_MS else { delay(wait); wait = minOf(wait * 2, LAST_RETRY_MS) }
             }
         }
@@ -118,15 +121,22 @@ class Contributions(
 
     /** One upload of up to [BATCH] records; false when it should be retried later. */
     private fun sendBatch(): Boolean {
+        return synchronized(uploadLock) { sendBatchLocked() }
+    }
+
+    private fun sendBatchLocked(): Boolean {
         val token = vault.get() ?: return false
-        if (!online() || !consented) return false
+        if (!online() || !consented || deletionPendingFile.exists()) return false
         val files = queued().take(BATCH)
         if (files.isEmpty()) return true
-        val records = files.mapNotNull { f -> runCatching { kotlinx.serialization.json.Json.parseToJsonElement(f.readText()) }.getOrNull() }
+        val records = files.mapNotNull { f ->
+            runCatching { f to kotlinx.serialization.json.Json.parseToJsonElement(f.readText()) }.getOrNull()
+        }
         val body = buildJsonObject {
             put("signer", signer)
             put("consent", CONSENT_VERSION)
-            put("records", JsonArray(records))
+            put("records", JsonArray(records.map { it.second }))
+            put("record_ids", JsonArray(records.map { JsonPrimitive(recordId(it.first)) }))
         }
         val reply = http.call("POST", "$base/v1/contrib", body.toString(), token, UPLOAD_TIMEOUT_MS) ?: return false
         return when {
@@ -137,10 +147,33 @@ class Contributions(
     }
 
     /** Asks the gateway to delete everything this signer sent; true once it has. */
-    fun deleteMine(): Boolean {
-        val token = vault.get() ?: return false
-        return http.call("DELETE", "$base/v1/contrib/$signer", null, token, UPLOAD_TIMEOUT_MS)?.ok == true
+    fun deleteMine(): Boolean = synchronized(this) outer@{
+        val token = vault.get() ?: return@outer false
+        root.mkdirs()
+        try {
+            deletionPendingFile.writeText("v1")
+        } catch (_: java.io.IOException) {
+            return@outer false
+        }
+        synchronized(uploadLock) inner@{
+            if (http.call("DELETE", "$base/v1/contrib/$signer", null, token, UPLOAD_TIMEOUT_MS)?.ok != true) {
+                return@inner false
+            }
+            flusher?.cancel()
+            flusher = null
+            val files = queue.listFiles()
+            val cleared = (files != null || !queue.exists()) && files.orEmpty().all { it.delete() || !it.exists() }
+            if (!cleared) {
+                consentFile.delete()
+                return@inner false
+            }
+            if (!deletionPendingFile.delete() && deletionPendingFile.exists()) return@inner false
+            true
+        }
     }
+
+    private fun recordId(file: File): String =
+        MessageDigest.getInstance("SHA-256").digest("$signer\u0000${file.name}".toByteArray()).toHexString()
 
     private companion object {
         const val BATCH = 10

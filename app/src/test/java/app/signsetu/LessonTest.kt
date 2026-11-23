@@ -206,6 +206,13 @@ class LessonTest {
     }
 
     @Test
+    fun childSafeguardsApplyAlongsideSignAndUnknownLanguageProfiles() {
+        assertFalse("p2" in content.questionsIn("identity", Role.VICTIM, Profile.ISL_USER, juvenile = true).map { it.id })
+        assertFalse("p2" in content.questionsIn("identity", Role.VICTIM, Profile.OTHER_LANGUAGE, juvenile = true).map { it.id })
+        assertTrue("p2" in content.questionsIn("identity", Role.VICTIM, Profile.ISL_USER, juvenile = false).map { it.id })
+    }
+
+    @Test
     fun anAccusedKeepsTheFactualQuestionsButNoWelfareOnlyItems() {
         val school = shown("school", Role.ACCUSED)
         assertEquals(listOf("sc1", "sc2", "sc3"), school)

@@ -242,7 +242,7 @@ fun OfficerPane(
             else -> withConsent {
                 page = 0
                 vm.counsellor.start(
-                    counselPrompt(subjectLanguage?.english ?: subjectLang, ui.session.profile == Profile.YOUNG_CHILD),
+                    counselPrompt(subjectLanguage?.english ?: subjectLang, ui.child),
                     write = { system, transcript ->
                         val events = vm.ui.value?.events.orEmpty()
                         cloud.ask(system, transcript, subjectNames(events, content, officerLang), 300, subjectDetails(events, content, officerLang))

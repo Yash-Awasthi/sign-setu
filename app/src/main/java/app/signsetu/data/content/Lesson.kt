@@ -4,7 +4,9 @@ import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Role
 
 /** Whether this person may be asked [q]: welfare-only items leave out an accused, some items a young child. */
-fun askable(q: Question, role: Role, profile: Profile) = (q.roles.isEmpty() || role in q.roles) && profile !in q.hiddenFor
+fun askable(q: Question, role: Role, profile: Profile, juvenile: Boolean = profile == Profile.YOUNG_CHILD) =
+    (q.roles.isEmpty() || role in q.roles) && profile !in q.hiddenFor &&
+        !(juvenile && Profile.YOUNG_CHILD in q.hiddenFor)
 
 /** Questions marked signed get one motion from the shared text-to-sign path, in draft ISL order. */
 fun ContentBundle.withSignedQuestions(): ContentBundle {

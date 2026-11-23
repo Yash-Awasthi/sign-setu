@@ -314,12 +314,11 @@ class SessionViewModel(
 
     /** A nod, shake, thumb, point, held fingers, palm or shrug the camera read: logged as the app's reading, never as
      * the person's answer, for the officer to accept from the chat like a signed reading. */
-    fun cameraRead(card: String, cue: String?) {
+    fun cameraRead(card: String, cue: String?, shownId: Long? = local.value.itemId) {
         // A nod or shake in a sign window's margin is already in that reading; logged apart it would hide the reading.
         if ((cue == "nod" || cue == "shake") && signs.inHeadMargin()) return
         val label = content.cards[card]?.label?.get(officerLang) ?: content.subjectText(card, officerLang) ?: card
         viewModelScope.launch {
-            val shownId = local.value.itemId
             val id = repo.log(sessionId, EventType.ANSWER_SIGNED, EventSource.MACHINE, officerLang, text = label, cardId = card, shownId = shownId, via = cue)
             local.update { it.copy(signed = it.signed + (id to emptyList())) }
             keepSkeleton(signs.lastBody, EventSource.MACHINE, shownId)
@@ -516,7 +515,7 @@ class SessionViewModel(
                 }
             }
             AnswerBody.Change -> if (current) hold(null, via)
-            is AnswerBody.CameraRead -> cameraRead(body.card, body.cue)
+            is AnswerBody.CameraRead -> cameraRead(body.card, body.cue, q)
             is AnswerBody.Text -> repo.log(sessionId, EventType.ANSWER_TEXT, EventSource.SUBJECT, ui.value?.session?.subjectLang, text = body.text.trim().take(TEXT_CAP), shownId = q, via = via)
             is AnswerBody.Drawing -> {
                 val png = remotePng(body.png)

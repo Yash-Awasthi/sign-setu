@@ -97,8 +97,8 @@ val SessionUi.speakerGender: Gender
 
 /** A young child, or an accused the officer marked as possibly under 18: no adult arrest rights are offered. */
 val SessionUi.juvenile: Boolean
-    get() = session.profile == Profile.YOUNG_CHILD ||
-        events.lastOrNull { it.type == EventType.SYSTEM && (it.text == SYSTEM_JUVENILE || it.text == SYSTEM_JUVENILE_OFF) }?.text == SYSTEM_JUVENILE
+    get() = events.lastOrNull { it.type == EventType.SYSTEM && (it.text == SYSTEM_JUVENILE || it.text == SYSTEM_JUVENILE_OFF) }
+        ?.text?.let { it == SYSTEM_JUVENILE } ?: (session.profile == Profile.YOUNG_CHILD)
 
 /** Followed by a [SignLanguage] name: the officer set the language the session is signed in. */
 const val SYSTEM_SIGN_LANGUAGE = "sign_language:"
@@ -137,4 +137,4 @@ data class SessionUi(
     val runTotal: Int = 0,
 )
 
-val SessionUi.child: Boolean get() = session.profile == Profile.YOUNG_CHILD
+val SessionUi.child: Boolean get() = juvenile

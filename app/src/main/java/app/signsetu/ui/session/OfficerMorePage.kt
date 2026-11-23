@@ -165,7 +165,7 @@ internal fun MorePage(
             val answeredIds = remember(ui.events, asked) { ui.events.filter { it.type in AnswerEvents }.mapNotNull { e -> e.shownId?.let(asked::get) }.toSet() }
             val phrases = if (words.isEmpty()) emptyList() else content.phrases.filter { p -> hit(p.label, *p.slots.map { it.text }.toTypedArray()) }
             val questions = if (words.isEmpty()) emptyList()
-                else groups.flatMap { g -> content.questionsIn(g.id, ui.session.role, ui.session.profile).filter { hit(it.text, g.label) }.map { g to it } }
+                else groups.flatMap { g -> content.questionsIn(g.id, ui.session.role, ui.session.profile, ui.juvenile).filter { hit(it.text, g.label) }.map { g to it } }
             Column(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 if (words.isNotEmpty() && phrases.isEmpty() && questions.isEmpty()) {
                     Text(stringResource(R.string.more_search_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -184,9 +184,9 @@ class LastAnswer(val asked: String, val words: String, val unsure: Boolean, val 
 fun lastAnswer(events: List<SessionEvent>, content: ContentBundle): LastAnswer? {
     val shown = events.indexOfLast { it.type == EventType.QUESTION_SHOWN }
     if (shown < 0) return null
-    val answers = events.drop(shown + 1).filter { it.type in AnswerEvents }
-    if (answers.isEmpty()) return null
     val row = events[shown]
+    val answers = events.filter { it.type in AnswerEvents && it.shownId == row.id }
+    if (answers.isEmpty()) return null
     val asked = row.itemId?.let(content::question)?.text?.get("en") ?: row.text.orEmpty()
     val unsure = answers.any { it.isUnsure() || it.type == EventType.ANSWER_SIGNED && signedWords(it.text)?.contains('…') != false }
     val cues = answers.mapNotNull(::cueOf)

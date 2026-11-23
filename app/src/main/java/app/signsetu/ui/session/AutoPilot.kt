@@ -183,6 +183,7 @@ class AutoPilot(
         val now = state.value
         if (now == Conv.Off) return
         val events = repo.eventsNow(sessionId)
+        val latestShown = events.lastOrNull { it.type == EventType.QUESTION_SHOWN }?.id
         val item = events.firstOrNull { it.id == answer.shownId }?.itemId
         when {
             answer.isStop() -> {
@@ -201,6 +202,7 @@ class AutoPilot(
                 system(AutoKey.URGENT)
                 state.value = Conv.Paused(PauseCause.URGENT)
             }
+            answer.shownId == null || answer.shownId != latestShown -> Unit
             answer.type == EventType.REQUEST -> Unit
             item == "k1" && answer.cardId == "yes" -> {
                 system(AutoKey.BREAK)

@@ -58,6 +58,7 @@ class StageLogicTest {
         assertEquals(listOf(0.75f, 1f, 0.5f), listOf(0.5f, 0.75f, 1f).map(::nextPace))
         assertEquals(0.75f, initialPace(Profile.YOUNG_CHILD, 1f))
         assertEquals(1f, initialPace(Profile.ISL_USER, 1f))
+        assertEquals(0.75f, initialPace(Profile.ISL_USER, 1f, child = true))
     }
 
     @Test
