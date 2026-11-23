@@ -36,7 +36,7 @@ the phone's radio awake, which costs battery for nothing when no station is need
 ## 2. The heartbeat: nothing is asked for that the station has not offered
 
 A phone treats the station as offering nothing until the station says otherwise. With the link on, the phone opens
-one stream, `GET /v1/beat`, and the station writes its status on it every 5 seconds (`brain/link.py`). Each beat
+one stream, `GET /v1/beat`, and the station writes its status on it every 5 seconds (`brain/brain/link.py`). Each beat
 is a fresh `/v1/status`, so the token is checked every time; a wrong token gets one 401 and the stream ends.
 
 ```json

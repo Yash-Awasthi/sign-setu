@@ -103,6 +103,8 @@ jobs:
           for d in tools/isl tools/security tools/content tools/text2isl tools/docs; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
       - name: The README version line comes from the build file
         run: python tools/docs/check_version.py
+      - name: Documents match the tree
+        run: python tools/docs/check_docs.py
       - name: Content manifest is current
         run: python tools/content/build_content.py --check
       - name: Content references, ids and language coverage

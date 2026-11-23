@@ -43,7 +43,7 @@ phone (VoiceSheet)                                   station brain
 ```
 
 Each piece is an ordinary request, over HTTPS on the station network or as one iroh stream from anywhere
-(`brain/link.py`). A dropped connection or a network change loses at most one piece's reply; the next piece carries
+(`brain/brain/link.py`). A dropped connection or a network change loses at most one piece's reply; the next piece carries
 on. Transcription runs on its own thread, so a reply never waits for Whisper: it returns whatever the last pass found.
 
 ### 2.1 Settling words: local agreement

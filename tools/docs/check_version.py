@@ -1,8 +1,9 @@
-"""Keeps the README's version line generated from app/build.gradle.kts.
+"""Keeps the version a document states generated from app/build.gradle.kts.
 
-The build file is the only place a version is written. `--write` regenerates the
-README line from it; the default mode exits 1 when the two disagree, so CI fails
-on drift instead of a department reading the wrong number.
+The build file is the only place a version is written. `--write` regenerates both
+places that repeat it (the README line and the docs version row) from the build;
+the default mode exits 1 when either disagrees, so CI fails on drift instead of a
+department reading the wrong number.
 """
 import argparse
 import pathlib
@@ -12,8 +13,11 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 GRADLE = ROOT / "app" / "build.gradle.kts"
 README = ROOT / "README.md"
+DOCS_README = ROOT / "docs" / "README.md"
 
 LINE_START = "- Version "
+ROW_START = "| Version |"
+
 FIELDS = {
     "versionCode": re.compile(r'^\s*versionCode\s*=\s*(\d+)\s*$', re.MULTILINE),
     "versionName": re.compile(r'^\s*versionName\s*=\s*"([^"]+)"\s*$', re.MULTILINE),
@@ -40,7 +44,7 @@ def build_values(gradle: pathlib.Path | None = None) -> dict:
 RELEASES = {"29": "10", "30": "11", "31": "12", "32": "12L", "33": "13", "34": "14", "35": "15", "36": "16"}
 
 
-def render(values: dict) -> str:
+def render_line(values: dict) -> str:
     """The one README line that carries a version."""
     release = RELEASES.get(values["minSdk"], values["minSdk"])
     return (
@@ -51,37 +55,50 @@ def render(values: dict) -> str:
     )
 
 
-def generated(text: str, values: dict) -> str:
-    """README text with its version line replaced."""
+def render_row(values: dict) -> str:
+    """The version row of the documentation index."""
+    return f"{ROW_START} {values['versionName']} (version code {values['versionCode']}), applicationId `in.signsetu` |"
+
+
+# Each document that repeats the version: its line prefix and how to render that line.
+def parts() -> list[tuple[pathlib.Path, str, object]]:
+    return [(README, LINE_START, render_line), (DOCS_README, ROW_START, render_row)]
+
+
+def generated(text: str, values: dict, start: str, render) -> str:
+    """Text with its version line replaced."""
     lines = text.splitlines(keepends=True)
     for i, line in enumerate(lines):
-        if line.startswith(LINE_START):
+        if line.startswith(start):
             lines[i] = render(values) + "\n"
             return "".join(lines)
-    raise ValueError("README.md has no '- Version ' line to generate")
+    raise ValueError(f"no '{start}' line to generate")
 
 
-def check(readme: pathlib.Path | None = None, gradle: pathlib.Path | None = None) -> list[str]:
-    """Empty when the README version line matches the build; else the errors."""
-    readme = README if readme is None else readme
+def check(readme: pathlib.Path | None = None, gradle: pathlib.Path | None = None, docs: pathlib.Path | None = None) -> list[str]:
+    """Empty when both documents state the build's version; else the errors."""
     values = build_values(GRADLE if gradle is None else gradle)
-    text = readme.read_text(encoding="utf-8")
-    want = render(values)
-    have = [line for line in text.splitlines() if line.startswith(LINE_START)]
-    if not have:
-        return ["README.md: no '- Version ' line"]
-    return [] if have[0] == want else [f"README.md: {have[0]}\n  expected: {want}"]
+    overrides = (README if readme is None else readme, DOCS_README if docs is None else docs)
+    errors = []
+    for (_, start, render), path in zip(parts(), overrides):
+        have = [line for line in path.read_text(encoding="utf-8").splitlines() if line.startswith(start)]
+        if not have:
+            errors.append(f"{path}: no '{start}' line")
+        elif have[0] != render(values):
+            errors.append(f"{path}: {have[0]}\n  expected: {render(values)}")
+    return errors
 
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write", action="store_true", help="rewrite the README line from the build")
+    parser.add_argument("--write", action="store_true", help="rewrite both documents from the build")
     args = parser.parse_args(argv)
     try:
+        values = build_values()
         if args.write:
-            values = build_values()
-            README.write_text(generated(README.read_text(encoding="utf-8"), values), encoding="utf-8")
-            print(f"README.md: {render(values)}")
+            for path, start, render in parts():
+                path.write_text(generated(path.read_text(encoding="utf-8"), values, start, render), encoding="utf-8")
+                print(f"{path}: {render(values)}")
             return 0
         errors = check()
     except ValueError as error:

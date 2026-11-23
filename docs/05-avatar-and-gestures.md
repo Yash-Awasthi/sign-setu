@@ -130,7 +130,7 @@ Every recorded performer signs the consent form; raw footage is kept only until 
 
 ### 5.4 Runtime
 
-The character is rendered live by the avatar module (`avatar/`, three.js and three-vrm, built into `app/src/main/assets/avatar/`) in a WebView that loads only those assets and makes no network request. It plays authored and recorded keyframes with jointed fingers and facial expression beside the picture card, and plays recorded sentence clips (48 body and hand points a frame, `content/clips.json`, from `tools/text2isl`) when a typed sentence matches one.
+The character is rendered live by the avatar module (`avatar/`, three.js and three-vrm, built into `app/src/main/assets/avatar/`) in a WebView that loads only those assets and makes no network request. It plays authored and recorded keyframes with jointed fingers and facial expression beside the picture card, and plays recorded sentence clips (48 body and hand points a frame, `app/src/main/assets/content/clips.json`, from `tools/text2isl`) when a typed sentence matches one.
 
 ### 5.5 Size
 

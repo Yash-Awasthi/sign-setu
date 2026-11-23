@@ -76,7 +76,8 @@ checked against the build.
 
 - [x] Generate the version line in `README.md` from `app/build.gradle.kts`; a mismatch fails CI. `[C]`
   - verified-here: `python tools/docs/check_version.py` → exit 1 before the write (README said 0.8.5/22, build 0.8.51/23), exit 0 after `--write`; wired into the `tools` job of `.github/workflows/ci.yml`; 6 tests in `tools/docs/test_check_version.py` pass.
-- [ ] Diff the documented feature list against the code and the screens doc: anything described but removed is deleted, anything present but undocumented is added. `[C]`
+- [x] Diff the documented feature list against the code and the screens doc: anything described but removed is deleted, anything present but undocumented is added. `[C]`
+  - verified-here: `python tools/docs/check_docs.py` → exit 1 with `docs/05-avatar-and-gestures.md: names a file that does not exist: content/clips.json` and `docs/17-live-speech.md`, `docs/18-station.md`: `brain/link.py`; both paths corrected to `app/src/main/assets/content/clips.json` and `brain/brain/link.py`, now exit 0. Checks: every relative link resolves, every capture in `docs/screens/` is described in `12-screens.md` and every reference exists, every `docs/*.md` is in the map, a `code` path exists, and the stated counts (languages 17, ISL 314, ASL 250, retention 4–72 h, default 24 h) equal the bundle and `SettingsStore.kt`. 12 tests in `tools/docs/` pass; run in the `tools` CI job.
 - [ ] Re-verify the permission table against the merged manifest of both flavours as a test, and print it into the docs. `[C]`
 - [ ] State the supported device baseline (API 29, 64-bit, RAM, free storage for the 806 MB model) as measured values, not adjectives. `[C]`
 
@@ -504,3 +505,4 @@ and more feature rich and ocncernign to mute guy awith usability porer not deep 
 ## Journal
 
 - 2026-11-24 m1.1.1 [x] README version line generated from `app/build.gradle.kts` | proof: `python tools/docs/check_version.py` → exit 1 before, exit 0 after `--write`; CI `tools` job runs it | next: m1.1.2
+- 2026-11-24 m1.1.2 [x] docs diffed against the tree, two dead paths fixed | proof: `python tools/docs/check_docs.py` → exit 1 (3 stale paths), exit 0 after; 12 tool tests pass | next: m1.1.3
