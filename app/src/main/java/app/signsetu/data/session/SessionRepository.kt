@@ -166,7 +166,7 @@ class SessionRepository(
 
     /** Zero hours keeps every session until the officer deletes it; a session counts as idle from its end or last row. */
     suspend fun purgeExpired(retentionHours: Int): Int =
-        if (retentionHours <= 0) 0 else unlessClosed(0) { dao.deleteIdleBefore(clock() - retentionHours * 3_600_000L) }
+        if (retentionHours <= 0) 0 else unlessClosed(0) { dao.deleteIdleBefore(Retention.cutoff(clock(), retentionHours)) }
 
     /** Finished sessions, newest first, kept under the officer's name for them. */
     fun saved(): Flow<List<Session>> = dao.saved().map { list -> list.map { it.toModel() } }

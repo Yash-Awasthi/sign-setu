@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
+import app.signsetu.data.session.Retention
 import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
 import kotlinx.coroutines.flow.first
@@ -81,6 +82,40 @@ class RetentionClockDeviceTest {
         finished(500, "old but kept by the officer's setting")
         assertEquals(0, repo.purgeExpired(0))
         assertEquals(1, repo.saved().first().size)
+    }
+
+    /** The SQL the sweep runs and the rule the app states agree over a random mix of ends, last rows and windows —
+     * including sessions sitting exactly on the boundary, which stay. */
+    @Test
+    fun aRandomSweepTakesExactlyTheSessionsTheRuleNames() = kotlinx.coroutines.runBlocking {
+        val rng = kotlin.random.Random(31)
+        val windows = listOf(4, 8, 12, 24, 48, 72)
+        val base = now.get()
+        val sessions = mutableListOf<Pair<String, Long>>()
+        repeat(24) { i ->
+            val start = base - rng.nextLong(1, 200) * hour
+            now.set(start)
+            val id = repo.start(Profile.NOT_SURE, "en")
+            val lastRow = if (rng.nextBoolean()) {
+                now.set(start + rng.nextLong(0, 20) * hour)
+                repo.log(id, EventType.NOTE, EventSource.OFFICER, "en", text = "row $i")
+                now.get()
+            } else null
+            val ended = if (rng.nextBoolean()) {
+                now.set(start + rng.nextLong(0, 200) * hour)
+                repo.end(id, "session $i")
+                now.get()
+            } else null
+            sessions += id to Retention.idleSince(start, ended, lastRow)
+        }
+        val hours = windows.random(rng)
+        // Half the runs sit exactly on a boundary, which must not delete.
+        now.set(if (rng.nextBoolean()) sessions.first().second + hours * hour else base + rng.nextLong(0, 100) * hour)
+        val expected = sessions.filter { (_, idle) -> Retention.expired(idle, now.get(), hours) }.map { it.first }.toSet()
+        val swept = repo.purgeExpired(hours)
+        val left = repo.saved().first().map { it.id }.toSet()
+        assertEquals("as many sessions went as the rule names", expected.size, swept)
+        assertEquals("and they are the same ones", expected, sessions.map { it.first }.toSet() - left)
     }
 
     @Test
