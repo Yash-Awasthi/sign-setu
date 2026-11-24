@@ -35,6 +35,8 @@
     <string name="officer_draw">उन्हें चित्र बनाने दें</string>
     <string name="officer_log">सत्र रिकॉर्ड</string>
     <string name="officer_call">दुभाषिया बुलाएँ</string>
+    <string name="speech_mute">उनकी आवाज़ बंद करें</string>
+    <string name="speech_unmute">उनकी आवाज़ चालू करें</string>
     <string name="officer_more">और विकल्प</string>
     <string name="officer_end">सत्र पूरा करें</string>
     <string name="officer_rotate">वे मेरे सामने बैठे हैं</string>

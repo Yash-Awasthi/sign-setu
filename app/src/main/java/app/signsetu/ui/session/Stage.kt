@@ -53,6 +53,7 @@ import app.signsetu.ui.avatar.LEAD_IN
 import app.signsetu.ui.avatar.LEAD_OUT
 import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.components.rememberSpeechPlayer
+import app.signsetu.ui.components.SubjectSpeech
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.Spacing
 
@@ -137,6 +138,9 @@ fun Stage(
     }
 
     val speech = rememberSpeechPlayer()
+    // Muting the person's speech stops what is playing at once; the officer's button sets this from the main surface.
+    val speechMuted by SubjectSpeech.muted
+    LaunchedEffect(speechMuted) { if (speechMuted) speech.stop() }
     val audio = speechFor(pending, content, lang)
     // Every item speaks once by itself, signers included (many have some hearing, and a companion may hear); play replays it.
     LaunchedEffect(pending, lang) { if (audio != null) speech.play(audio) }

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import app.signsetu.ui.components.OfficerAuth
+import app.signsetu.ui.components.SubjectSpeech
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Edit
@@ -55,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -300,6 +302,15 @@ fun OfficerPane(
                 }
                 onCallInterpreter?.let { call ->
                     IconButton(onClick = call) { Icon(Icons.Filled.Call, contentDescription = stringResource(R.string.officer_call)) }
+                }
+                // Muting the person's speech sits on the surface, never in the menu: the owner's rule, the officer must
+                // find it without opening anything.
+                val muted by SubjectSpeech.muted
+                IconButton(onClick = { SubjectSpeech.set(!muted) }) {
+                    Icon(
+                        painterResource(if (muted) R.drawable.ic_volume_off else R.drawable.ic_volume),
+                        contentDescription = stringResource(if (muted) R.string.speech_unmute else R.string.speech_mute),
+                    )
                 }
                 IconButton(onClick = { sheet = Sheet.NOTES }) { Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.qn_title)) }
                 OfficerMenu(

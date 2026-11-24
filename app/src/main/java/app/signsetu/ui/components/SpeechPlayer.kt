@@ -11,8 +11,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 
 /** Plays recorded speech from the content bundle. One player per subject screen; never plays unless asked. */
-class SpeechPlayer(private val context: Context, private val intact: (String) -> Boolean = { true }) {
-    private val player = ExoPlayer.Builder(context).build().apply {
+class SpeechPlayer(private val context: Context, private val intact: (String) -> Boolean = { true }) {    private val player = ExoPlayer.Builder(context).build().apply {
         setAudioAttributes(
             AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_SPEECH).build(),
             true,
@@ -21,8 +20,8 @@ class SpeechPlayer(private val context: Context, private val intact: (String) ->
 
     /** [path] is relative to the content bundle, e.g. `audio/hi/n1.ogg`. */
     fun play(path: String, speed: Float = 1f) {
-        // A recording that fails its manifest check is never played.
-        if (!intact(path)) return
+        // Muted, or a recording that fails its manifest check: nothing is played.
+        if (SubjectSpeech.muted.value || !intact(path)) return
         player.setPlaybackSpeed(speed)
         player.setMediaItem(MediaItem.fromUri("asset:///content/$path"))
         player.prepare()
@@ -31,6 +30,7 @@ class SpeechPlayer(private val context: Context, private val intact: (String) ->
 
     /** Speech made on the fly for typed text; held in one cache file that release() deletes. */
     fun playBytes(audio: ByteArray, speed: Float = 1f) {
+        if (SubjectSpeech.muted.value) return
         val file = java.io.File(context.cacheDir, SPOKEN).apply { writeBytes(audio) }
         player.setPlaybackSpeed(speed)
         player.setMediaItem(MediaItem.fromUri(android.net.Uri.fromFile(file)))
@@ -41,7 +41,7 @@ class SpeechPlayer(private val context: Context, private val intact: (String) ->
     private val voice by lazy { OfflineVoice(context) }
 
     /** Typed text with no recording and no online voice: the phone's own Hindi or English voice, if it has one. */
-    fun speakOffline(text: String, lang: String?, speed: Float = 1f) = voice.speak(text, lang, speed)
+    fun speakOffline(text: String, lang: String?, speed: Float = 1f) = !SubjectSpeech.muted.value && voice.speak(text, lang, speed)
 
     fun stop() { player.stop(); voice.stop() }
 

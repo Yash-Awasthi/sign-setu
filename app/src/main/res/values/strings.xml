@@ -36,6 +36,8 @@
     <string name="officer_draw">Let them draw</string>
     <string name="officer_log">Session log</string>
     <string name="officer_call">Call an interpreter</string>
+    <string name="speech_mute">Mute their speech</string>
+    <string name="speech_unmute">Unmute their speech</string>
     <string name="officer_more">More options</string>
     <string name="officer_end">Finish session</string>
     <string name="officer_rotate">They sit opposite me</string>
