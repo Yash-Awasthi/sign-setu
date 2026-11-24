@@ -118,7 +118,7 @@
     <string name="export_body">The report is one PDF and needs no password. Anyone who has it can read the conversation, so share it only with the case file or the CWC. Its seal still shows whether it was altered.</string>
     <string name="export_share">Share report</string>
     <string name="export_finish">Done</string>
-    <string name="export_failed">Could not create the report. The session is unchanged.</string>
+    <string name="export_failed">Could not create the report: the phone may be full. The session is unchanged.</string>
     <string name="ok">OK</string>
     <string name="report_title">Sign Setu: communication notes</string>
     <string name="report_disclaimer">Produced by a communication aid. These notes are not a statement and not a record of the person\'s own words. Answers may be wrong; confirm anything important through an interpreter or other reliable means.</string>

@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
 
 /** Officer-language text for the report, resolved by the caller from string resources. */
@@ -50,6 +51,32 @@ class ReportSeal(val qr: String, val lines: List<String>)
 /** A titled table printed before the conversation, such as the personal details the subject gave. */
 class ReportSection(val title: String, val header: List<String>, val rows: List<List<String>>)
 
+/** Writes the report beside its name and gives it the name only once every byte is on the disk: a full disk, a
+ * write that fails or the app being killed mid-export leaves no half PDF for the share sheet to send, and no part file
+ * behind once the next export starts (and none at all after a restart, which empties the export folder). */
+internal fun writeReport(
+    dir: File,
+    name: String,
+    bytes: ByteArray,
+    write: (File, ByteArray) -> Unit = { file, data -> file.writeBytes(data) },
+): File {
+    val part = File(dir, name + PART)
+    val file = File(dir, name)
+    try {
+        write(part, bytes)
+        if (part.length() != bytes.size.toLong()) throw IOException("short write: ${part.length()} of ${bytes.size} bytes")
+        if (!part.renameTo(file)) throw IOException("the finished report could not be named")
+    } catch (e: IOException) {
+        // Only the half-written part goes: a report already under this name was never touched.
+        part.delete()
+        throw e
+    }
+    return file
+}
+
+/** The suffix of a report still being written. */
+private const val PART = ".part"
+
 /** Builds the session report as an A4 PDF that opens in any reader: one file, no password to pass on. Its seal page
  * carries the signature and the hash-chain head, so a reader can see whether it was altered. */
 class SessionReport(private val context: Context) {
@@ -70,10 +97,11 @@ class SessionReport(private val context: Context) {
             purgeStaleExports()
             val pdf = render(rows, text, drawing, section, aiSummary, certificateText, chainDigest, seal, attachments)
             val dir = exportsDir(context).apply { mkdirs() }
-            val file = File(dir, "sign-setu-report-${System.currentTimeMillis()}.pdf")
-            file.writeBytes(pdf)
-            pdf.fill(0)
-            file
+            try {
+                writeReport(dir, "sign-setu-report-${System.currentTimeMillis()}.pdf", pdf)
+            } finally {
+                pdf.fill(0)
+            }
         }
 
     private suspend fun render(
@@ -332,7 +360,8 @@ class SessionReport(private val context: Context) {
     /** a report left behind by an earlier export is deleted after 15 minutes. */
     private fun purgeStaleExports() {
         val cutoff = System.currentTimeMillis() - 15 * 60 * 1000L
-        exportsDir(context).listFiles()?.forEach { if (it.isFile && it.lastModified() < cutoff) it.delete() }
+        // A part file is never shareable, so it goes whatever its age: it can only be a write that never finished.
+        exportsDir(context).listFiles()?.forEach { if (it.isFile && (it.name.endsWith(PART) || it.lastModified() < cutoff)) it.delete() }
     }
 
     companion object {
