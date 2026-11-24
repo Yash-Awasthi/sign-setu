@@ -263,7 +263,7 @@ jobs:
           profile: pixel_6
           # One class per run: given a comma list, the connected task ran only the first class.
           script: |
-            for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest RetentionClockDeviceTest LockedKeystoreDeviceTest VoicePermissionDeviceTest; do
+            for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest RetentionClockDeviceTest LockedKeystoreDeviceTest VoicePermissionDeviceTest StageHandleTapDeviceTest; do
               ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.$c -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} || { mkdir -p app/build/reports/androidTests; adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }
             done
             # The same exported report, checked off the phone: the app's seal must satisfy tools/security/verify_seal.py.

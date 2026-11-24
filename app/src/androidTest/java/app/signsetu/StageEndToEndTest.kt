@@ -16,7 +16,6 @@ import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assert
@@ -142,10 +141,10 @@ class StageEndToEndTest {
             }
         }
 
-        // The session opens on the stage with the ground rules; the officer takes the phone back by the handle.
+        // The session opens on the stage with the ground rules; one tap on the handle takes the officer back.
         val handle = hasContentDescription(str(R.string.show_officer))
         waitFor(handle)
-        rule.onNode(handle).performTouchInput { longClick(durationMillis = 1_500) }
+        rule.onNode(handle).performClick()
 
         // 1. The officer finds "Does it hurt anywhere?" by searching the More page and shows it.
         val h1 = content.question("h1")!!
@@ -180,7 +179,7 @@ class StageEndToEndTest {
         assertEquals(listOf(null, null), answers().map { it.reason })
 
         // 4. Back on the officer pane: the pictures are graded Said (one row, or two when the taps are far apart), the nod is the app's reading.
-        rule.onNode(handle).performTouchInput { longClick(durationMillis = 1_500) }
+        rule.onNode(handle).performClick()
         waitFor(hasText(str(R.string.officer_tab_more)))
         waitFor(hasText(str(R.string.grade_machine_read)))
         assertTrue(rule.onAllNodesWithText(str(R.string.grade_said)).fetchSemanticsNodes().size in 1..2)

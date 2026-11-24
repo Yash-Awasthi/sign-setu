@@ -154,7 +154,7 @@ flowchart TB
 
 *Figure 4. The two faces of one session screen.*
 
-`SessionRoute` pins the app (`startLockTask`) for the whole session when no second screen is linked; pinning is lifted for the interpreter call or the share sheet and set again on return. While the phone's own stage shows it also hides the system bars and frees the assistant model. The officer takes the phone back by holding the chat handle for 1/3 s.
+`SessionRoute` pins the app (`startLockTask`) for the whole session when no second screen is linked; pinning is lifted for the interpreter call or the share sheet and set again on return. While the phone's own stage shows it also hides the system bars and frees the assistant model. The officer takes the phone back with one tap on the chat handle (the owner removed the timed hold: "no timed hold when going to msgs").
 
 ## 5. Packages
 

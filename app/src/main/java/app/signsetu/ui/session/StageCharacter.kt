@@ -2,17 +2,8 @@ package app.signsetu.ui.session
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import app.signsetu.ui.theme.LocalMotion
 import kotlinx.coroutines.launch
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.onLongClick
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.semantics.role
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
@@ -26,7 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -117,8 +107,6 @@ internal fun LetterTile(letters: List<String>, current: Int, modifier: Modifier)
     }
 }
 
-internal const val HANDLE_HOLD_MS = 333L
-
 /** Tells the person at the stage that auto mode is about to show the next item, so it never arrives unannounced. */
 @Composable
 internal fun AutoNextChip(seconds: Int, modifier: Modifier) {
@@ -127,74 +115,24 @@ internal fun AutoNextChip(seconds: Int, modifier: Modifier) {
     }
 }
 
-/** The officer's way back to the phone: hold the chat button and a ring fills over a dimmed screen; when it closes
- * the officer's side opens. Letting go early, or sliding the finger away, starts over. */
+/** The officer's way back to the phone: one tap on the chat button, no hold. The owner asked for it ("no timed hold
+ * when going to msgs"): a person holding the phone all day should not have to wait out a ring to reach the officer. */
 @Composable
 internal fun OfficerHandleLayer(onClick: () -> Unit, modifier: Modifier) {
-    val hold = remember { Animatable(0f) }
-    Box(Modifier.fillMaxSize()) {
-        if (hold.value > 0f) HoldRing(hold.value)
-        OfficerHandle(onClick, hold, modifier)
-    }
+    OfficerHandle(onClick, modifier)
 }
 
 @Composable
-private fun HoldRing(progress: Float) {
-    val motion = LocalMotion.current
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            drawRect(Color.Black.copy(alpha = 0.6f * if (motion) (progress * 4f).coerceAtMost(1f) else 1f))
-            val stroke = 6.dp.toPx()
-            val radius = 44.dp.toPx()
-            val topLeft = Offset(center.x - radius, center.y - radius)
-            val box = Size(radius * 2, radius * 2)
-            drawArc(Color.White.copy(alpha = 0.25f), 0f, 360f, false, topLeft, box, style = Stroke(stroke))
-            drawArc(Color.White, -90f, 360f * progress, false, topLeft, box, style = Stroke(stroke, cap = StrokeCap.Round))
-        }
-        Text("💬", fontSize = 30.sp)
-    }
-}
-
-@Composable
-private fun OfficerHandle(onClick: () -> Unit, hold: Animatable<Float, AnimationVector1D>, modifier: Modifier) {
+private fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
     val stage = LocalStageColors.current
     val label = stringResource(R.string.show_officer)
-    val current by androidx.compose.runtime.rememberUpdatedState(onClick)
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val haptic = LocalHapticFeedback.current
     Box(
         modifier
             .padding(6.dp)
             .size(48.dp)
             .clip(CircleShape)
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown()
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    val ring = scope.launch {
-                        // Frame time, not an animation spec: the animation-speed setting must not shorten the hold, and a
-                        // test clock that skips ahead holds for exactly as long as its injected press.
-                        val started = withFrameNanos { it }
-                        do {
-                            val now = withFrameNanos { it }
-                            hold.snapTo(((now - started) / 1_000_000f / HANDLE_HOLD_MS).coerceAtMost(1f))
-                        } while (hold.value < 1f)
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        current()
-                        hold.snapTo(0f)
-                    }
-                    do {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.first()
-                        val slid = (change.position - down.position).getDistance() > viewConfiguration.touchSlop * 2
-                        if (slid || !change.pressed) {
-                            if (hold.value < 1f) { ring.cancel(); scope.launch { hold.snapTo(0f) } }
-                            break
-                        }
-                    } while (true)
-                }
-            }
-            .semantics { role = Role.Button; contentDescription = label; onLongClick(label) { current(); true } },
+            .clickable(onClickLabel = label, onClick = onClick)
+            .semantics { role = Role.Button; contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
         Surface(shape = CircleShape, color = stage.handle, modifier = Modifier.size(34.dp)) {
