@@ -3,6 +3,7 @@ package app.signsetu
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import app.signsetu.data.session.DeviceSeal
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
@@ -56,7 +57,8 @@ class ReportExportDeviceTest {
     @Test
     fun theExportIsEncryptedAndCarriesItsDigestOnEveryPage() = runBlocking {
         val content = app.container.content.load()
-        val repo = SessionRepository(db.dao())
+        // Signed as the app signs in use, so the certificate names the device signature it really has.
+        val repo = SessionRepository(db.dao(), signer = { line -> DeviceSeal.sign(line) })
         val id = repo.start(Profile.NOT_SURE, "en")
         repo.log(id, EventType.ANSWER_CARD, EventSource.SUBJECT, "en", cardId = "yes")
         repo.log(id, EventType.ANSWER_CARD, EventSource.SUBJECT, "en", cardId = "no")
@@ -83,6 +85,17 @@ class ReportExportDeviceTest {
         pages.forEachIndexed { i, text -> assertTrue("page ${i + 1} names record $digest:\n$text", "record $digest" in text) }
         val answers = "${res.getString(R.string.report_answers)}: ${res.getString(R.string.summary_taps, 2)}"
         assertTrue("summary line \"$answers\" in:\n${pages[0]}", answers in pages[0].replace('\n', ' '))
+
+        // A court can name the build and the key the seal was signed with, both on the certificate page.
+        val cert = pages.last { "CERTIFICATE OF ADMISSIBILITY" in it }
+        val version = app.packageManager.getPackageInfo(app.packageName, 0)
+        val named = "Sign Setu ${version.versionName} (${version.longVersionCode})"
+        assertTrue("the build $named on the certificate: $cert", named in cert)
+        val fingerprint = DeviceSeal.publicKey()?.let { java.security.MessageDigest.getInstance("SHA-256").digest(it).joinToString("") { b -> "%02x".format(b) } }
+        assertTrue("the sealing key $fingerprint on the certificate: $cert", fingerprint != null && fingerprint in cert)
+        // The page wraps its lines, so the fields are read with the wrapping flattened.
+        val flat = cert.replace('\n', ' ').replace("  ", " ")
+        assertTrue("the signing algorithm on the certificate: $flat", "ECDSA P-256" in flat)
 
         val again = export()
         val digests = PDDocument.load(again).use { doc -> Regex("record ([0-9a-f-]{19})").findAll(PDFTextStripper().getText(doc)).map { it.groupValues[1] }.toSet() }

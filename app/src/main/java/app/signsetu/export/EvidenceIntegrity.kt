@@ -1,6 +1,7 @@
 package app.signsetu.export
 
 import android.os.Build
+import app.signsetu.BuildConfig
 import app.signsetu.data.content.SignLanguage
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
@@ -155,6 +156,8 @@ object EvidenceIntegrity {
         keyFingerprint: String? = null,
         signed: Boolean = false,
         deviceModel: String = "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})",
+        /** The build that produced the report: a court can name the software, not just the phone. */
+        appVersion: String = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
     ): String {
         val df = SimpleDateFormat("dd-MM-yyyy HH:mm:ss z", Locale.ENGLISH)
         val sessionStartDate = df.format(Date(session.startedAt))
@@ -176,6 +179,7 @@ object EvidenceIntegrity {
             • Producing Officer        : ____________________ (Rank: __________)
             • Police Station / Unit    : ____________________
             • Operating Hardware Device: $deviceModel
+            • Producing App / Build    : Sign Setu $appVersion
             • Storage                  : $storage
 
             2. STATEMENT OF PROPER OPERATION (SECTION 63(2) BSA 2023):

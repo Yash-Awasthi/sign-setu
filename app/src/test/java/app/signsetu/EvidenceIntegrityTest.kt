@@ -122,4 +122,25 @@ class EvidenceIntegrityTest {
         assertTrue(cert.contains("Inquiry Role             : Not recorded"))
         assertTrue(!cert.contains("NOT_KNOWN"))
     }
+
+    /** A court has to be able to name the software and the key, not only the phone. */
+    @Test
+    fun theCertificateNamesTheBuildAndTheDeviceKey() {
+        val fingerprint = "c59dc51904f46aeeff7d2faf51287f211bb552eca3371a6e630bbe1f9aa6c64f"
+        val cert = EvidenceIntegrity.generateSection63Certificate(
+            session, events, check(sealed()), "abcd",
+            keyFingerprint = fingerprint, signed = true,
+        )
+        assertTrue(cert.contains("Producing App / Build    : Sign Setu "))
+        assertTrue("the version the build carries, not a guess", cert.contains("Sign Setu ${app.signsetu.BuildConfig.VERSION_NAME} (${app.signsetu.BuildConfig.VERSION_CODE})"))
+        assertTrue(cert.contains("Device Key (SHA-256)     : $fingerprint"))
+        assertTrue(cert.contains("Device Signature         : ECDSA P-256"))
+    }
+
+    @Test
+    fun aCertificateWithNoKeySaysSoRatherThanPrintingNothing() {
+        val cert = EvidenceIntegrity.generateSection63Certificate(session, events, check(sealed()), "abcd")
+        assertTrue(cert.contains("Device Key (SHA-256)     : Not available"))
+        assertTrue(cert.contains("Device Signature         : Not signed"))
+    }
 }

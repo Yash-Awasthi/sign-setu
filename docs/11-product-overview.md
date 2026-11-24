@@ -191,7 +191,7 @@ Export works without a network. The PDF is written on the phone and handed to An
 | Answers from a second screen | Yes, marked "from second screen" | Provenance |
 | Landmarks and replays | Never; a conversation sent to the station carries the landmarks ([18](18-station.md)) | Biometric data |
 | Skeleton drawing of a signed answer | Always | Each sign's movement as stick figures, one row per sign with its word; no picture of the person |
-| Hash-chain status and certificate | Yes: chain head, record digest on every page, draft BSA s.63 certificate | Integrity of the record |
+| Hash-chain status and certificate | Yes: chain head, record digest on every page, the producing app and build (`Sign Setu 0.8.52 (24)`), the device key's SHA-256 fingerprint and its signature state, all in the draft BSA s.63 certificate | Integrity of the record |
 | Machine draft summary | Only when the officer attaches it, marked not part of the record | A draft, not evidence |
 | The person's recorded speech | Yes, embedded in the encrypted PDF as `audio-<id>.wav`, with its row in the conversation | Their own answer, recorded with consent |
 | The brain's text and translation of that speech | Yes, beside the recording, marked as the app's reading | A reading, not the person's words |
