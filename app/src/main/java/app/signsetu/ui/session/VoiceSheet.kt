@@ -116,7 +116,7 @@ internal fun VoiceSheet(
                 }
                 return@Column
             }
-            Text(stringResource(if (granted) R.string.voice_hold else R.string.voice_no_permission), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(voiceHint(granted)), style = MaterialTheme.typography.bodyMedium)
             if (!granted) app.signsetu.ui.components.PermissionButton(mic)
             LinearProgressIndicator(progress = { level }, modifier = Modifier.fillMaxWidth())
             val label = stringResource(if (recording) R.string.voice_stop else R.string.voice_them)
@@ -149,6 +149,9 @@ internal fun VoiceSheet(
         }
     }
 }
+
+/** What the sheet says about the microphone: how to record, or the one line that asks for the permission. */
+internal fun voiceHint(granted: Boolean): Int = if (granted) R.string.voice_hold else R.string.voice_no_permission
 
 /** How often the words heard so far are asked for while the person talks. */
 private const val LIVE_MS = 400L
