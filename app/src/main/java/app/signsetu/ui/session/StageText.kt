@@ -78,6 +78,14 @@ internal fun speechFor(pending: Pending?, content: ContentBundle, lang: String):
 
 private val NUMBER_CARD = Regex("n\\d+")
 
+/** A word to light, together with the text its offsets were measured in. The light is only shown where that same
+ * text is on screen: a caption's offsets applied to a different line lit the wrong words on the call surface. */
+internal class CaptionLight(val text: String, val range: IntRange) {
+    /** The range to light when [shown] is the line the offsets belong to, else null. */
+    fun inText(shown: String?): IntRange? =
+        range.takeIf { shown != null && shown == text && !it.isEmpty() && it.first >= 0 && it.last < shown.length }
+}
+
 /** A line the stage shows itself: [shown] in the subject's language (null when the hint stands in), signed from
  * [english]; [plan], when set, is already in [shown]'s positions. */
 internal data class CaptionLine(val shown: String?, val english: String, val plan: TextPlan? = null)

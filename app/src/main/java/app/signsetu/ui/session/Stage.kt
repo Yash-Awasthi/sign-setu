@@ -119,7 +119,7 @@ fun Stage(
     var focus by remember(pending) { mutableStateOf<WordBeat?>(null) }
     var wordTaps by remember(pending) { mutableIntStateOf(0) }
     // The word of the waiting line being signed, set by the character's own clock below.
-    val idleLit = remember { mutableStateOf<IntRange?>(null) }
+    val idleLit = remember { mutableStateOf<CaptionLight?>(null) }
     var reacting by remember { mutableStateOf(false) }
     // Answer panels make room while the character signs the item or a replay; its automatic repeats leave them up.
     var moving by remember(pending) { mutableStateOf(true) }
@@ -275,8 +275,10 @@ fun Stage(
     val avatar: @Composable (String?) -> Unit = { line ->
         // A subject line the call lights while it waits is spoken and signed once, like every other caption, each
         // word lit as it is signed.
+        // The waiting line as it is shown, with the plan's ranges moved onto it: the light goes only where this text is.
+        val idleShown = remember(line, content, lang) { line?.let { k -> content.subjectText(k, lang) }.orEmpty() }
         val idlePlan = remember(line, content, lang) {
-            line?.let { k -> content.subjectText(k, "en")?.let { linePlan(content, it, content.subjectText(k, lang).orEmpty(), CAPTION_MODES) } }
+            line?.let { k -> content.subjectText(k, "en")?.let { linePlan(content, it, idleShown, CAPTION_MODES) } }
         }
         val lineSigns = idlePlan?.gesture
         LaunchedEffect(line, lang) { line?.let { content.subjectAudio(it, lang) }?.let { speech.play(it, audioRate(pace)) } }
@@ -288,7 +290,7 @@ fun Stage(
             while (true) {
                 val t = withFrameNanos { now -> (now - start) / 1e9f * pace } - LEAD_IN
                 if (t >= end) break
-                idleLit.value = p.beats.lastOrNull { t >= it.start }?.range?.takeIf { !it.isEmpty() }
+                idleLit.value = p.beats.lastOrNull { t >= it.start }?.range?.takeIf { !it.isEmpty() }?.let { CaptionLight(idleShown, it) }
             }
             idleLit.value = null
         }
@@ -428,7 +430,8 @@ fun Stage(
             tracker = tracker,
             avatar = avatar,
             caption = caption,
-            captionHighlight = if (typed != null) (focus?.range ?: beat?.range)?.takeIf { highlightable } else beat?.range?.takeIf { !it.isEmpty() },
+            captionLight = (if (typed != null) (focus?.range ?: beat?.range)?.takeIf { highlightable } else beat?.range?.takeIf { !it.isEmpty() })
+                ?.let { CaptionLight(if (typed != null) typed.text else shownText, it) },
             idleHighlight = idleLit.value,
             onWordTap = onWordTap,
             onCard = onCard,

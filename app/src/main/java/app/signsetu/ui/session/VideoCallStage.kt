@@ -95,16 +95,17 @@ private sealed interface Reaction {
 
 /** The stage as a one-to-one video call: the character is the caller, the subject's camera a small window. */
 @Composable
-fun VideoCallStage(
+internal fun VideoCallStage(
     ui: SessionUi,
     content: ContentBundle,
     tracker: LandmarkTracker?,
     /** The character as the stage builds it, given the subject line the call has lit while it waits, if any. */
     avatar: @Composable (String?) -> Unit,
     caption: String?,
-    captionHighlight: IntRange?,
+    /** The word being signed, with the text it belongs to: it lights only where that text is the one on screen. */
+    captionLight: CaptionLight?,
     /** The word of the waiting line under the caption being signed now. */
-    idleHighlight: IntRange?,
+    idleHighlight: CaptionLight?,
     /** Tapping the caption replays it, or one word of typed text. */
     onWordTap: ((Int) -> Unit)?,
     onCard: (String) -> Unit,
@@ -387,7 +388,7 @@ fun VideoCallStage(
             Column(Modifier.fillMaxSize().imePadding()) {
                 Box(Modifier.weight(if (panelCollapsed) 1f else 1f - panelShare).fillMaxWidth()) { avatarView() }
                 Text(
-                    litWord(promptText, captionHighlight), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White,
+                    litWord(promptText, captionLight?.inText(promptText)), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White,
                     textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                 )
                 if (panelCollapsed) PanelStrip(onExpandPanel, Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
@@ -480,7 +481,7 @@ fun VideoCallStage(
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    CallCaption(promptText, captionHighlight, onWordTap)
+                    CallCaption(promptText, captionLight?.inText(promptText), onWordTap)
                     rightsNotice?.let {
                         Text(it, fontSize = 13.sp, color = LocalCall.current.accentSoft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
                     }
@@ -488,7 +489,7 @@ fun VideoCallStage(
                     if (!ui.child && !statement && caption != null) (idleLine ?: hint)?.let {
                         // Lit and larger while the character acts it out, and the reassurance takes its place when idle.
                         val lit = hintLit || idleLine != null
-                        Text(litWord(it, idleHighlight.takeIf { lit }), fontSize = if (lit) 15.sp else 11.sp, color = if (lit) Color.White else LocalCall.current.muted, fontWeight = if (lit) FontWeight.Bold else null, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
+                        Text(litWord(it, idleHighlight?.inText(it).takeIf { lit }), fontSize = if (lit) 15.sp else 11.sp, color = if (lit) Color.White else LocalCall.current.muted, fontWeight = if (lit) FontWeight.Bold else null, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
                     }
                 }
             }
