@@ -115,7 +115,10 @@ internal fun WrapUpDialog(
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 onThank?.let { OutlinedButton(onClick = it, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wrap_thank)) } }
                 if (!historyOff) Button(onClick = onSave, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wrap_save)) }
-                if (historyOff || !reopened) OutlinedButton(onClick = onExport, enabled = historyOff || title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.end_export)) }
+                // Three ways out at most (the owner's rule): thank them, save, or delete. A kept report is exported
+                // from the history row's download, so the dialog does not offer a second route to the same file; a
+                // rooted phone keeps no history, and there the export is the only way to keep the report at all.
+                if (historyOff) OutlinedButton(onClick = onExport, enabled = true, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.end_export)) }
                 // Deleting is a second, deliberate step: the first tap only arms it.
                 var sure by remember { mutableStateOf(false) }
                 TextButton(onClick = { if (sure) onDelete() else sure = true }, modifier = Modifier.fillMaxWidth()) {

@@ -636,7 +636,7 @@
     <string name="leave_stay">रुकें</string>
     <string name="wrap_name_hint">केस या फ़ाइल नंबर लिखें, व्यक्ति का नाम नहीं।</string>
     <string name="wrap_default_name">सत्र %1$s</string>
-    <string name="wrap_saved_note">यह इस फ़ोन पर, एन्क्रिप्ट होकर, इसी नाम से रहेगा जब तक आप इसे न मिटाएँ। शुरुआती स्क्रीन से फिर खोलें।</string>
+    <string name="wrap_saved_note">यह इस फ़ोन पर, एन्क्रिप्ट होकर, इसी नाम से रहेगा जब तक आप इसे न मिटाएँ। शुरुआती स्क्रीन से फिर खोलकर पढ़ें, या उसकी रिपोर्ट फ़ोन पर सहेजें।</string>
     <string name="wrap_save">सहेजें और पूरा करें</string>
     <string name="wrap_delete">बिना सहेजे मिटाएँ</string>
     <string name="wrap_delete_sure">यह सत्र हमेशा के लिए मिटाने को फिर दबाएँ</string>

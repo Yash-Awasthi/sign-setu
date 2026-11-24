@@ -643,7 +643,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="leave_stay">Stay</string>
     <string name="wrap_name_hint">Use a case or file number, not the person\'s name.</string>
     <string name="wrap_default_name">Session %1$s</string>
-    <string name="wrap_saved_note">Kept on this phone, encrypted, under this name until you delete it. Open it again from the start screen.</string>
+    <string name="wrap_saved_note">Kept on this phone, encrypted, under this name until you delete it. Open it again from the start screen to read it, or to save its report to the phone.</string>
     <string name="wrap_save">Save and finish</string>
     <string name="wrap_delete">Delete without saving</string>
     <string name="wrap_delete_sure">Tap again to delete this session for good</string>

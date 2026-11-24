@@ -59,3 +59,10 @@ See [ml/README.md](ml/README.md) for data, environments and the training order. 
 | `sbom.py` | CycloneDX SBOM of the release runtime classpath, with Syft (Apache-2.0); written to `app/build/sbom/sign-setu-release.cdx.json` | `sbom.py path/to/syft` |
 | `verify_seal.py` | Checks an exported report's verification seal away from the phone: the device signature over session, entry count, chain head and Merkle root, with the key the seal carries (optionally the certificate's key fingerprint). Exit 0 valid, 1 invalid, 2 no seal | `verify_seal.py --pdf report.pdf` or `--qr "<QR text>"`; a report from an older build still needs `--passphrase`. Needs `cryptography` and `pypdf` |
 | `test_paths.py` | Fails when a tracked text file carries a developer's absolute home path | `python -m unittest discover -s tools/security -p 'test_*.py'` |
+
+## UX (`tools/ux`)
+
+| Script | What it does | Run |
+| --- | --- | --- |
+| `count_paths.py` | Counts, per screen, the divergent paths a session can end by: controls that end, leave or discard it. "Keep going" and a delete that only arms on the first tap are counted once. The cap of three is enforced per state by `WrapUpPathsDeviceTest`; this is the inventory behind [12-screens.md](../docs/12-screens.md) §5 | `count_paths.py`, `--verbose` to list each label |
+| `test_count_paths.py` | Unit tests for the counting rules (armed delete, discard wording, staying controls) | `python -m unittest discover -s tools/ux -p 'test_*.py'` |

@@ -58,7 +58,7 @@ The stage first shows only the character, the caption and the Stop octagon in th
 | Quick notes | [35-officer-change-profile.png](screens/35-officer-change-profile.png) | Age, victim or accused, sign language seen, speech, hearing, home, injuries, gender: one tap each |
 | Second screen | [36-officer-second-screen.png](screens/36-officer-second-screen.png) | Pairing a department device; Find a nearby phone pairs one from inside the app on Android 12 and later |
 | Record their voice | [48-officer-record-voice.png](screens/48-officer-record-voice.png) | The microphone in the dock: consent first, then tap to start, the person speaks, tap to stop; the recording joins the record |
-| Finish | [37-officer-finish.png](screens/37-officer-finish.png) | Summary, name, Save, Export, Delete without saving |
+| Finish | [37-officer-finish.png](screens/37-officer-finish.png) | Summary, name, and three ways out: Thank them on the stage, Save and finish, Delete without saving (§5) |
 | Report ready | [38-officer-export.png](screens/38-officer-export.png) | Share, Done; the PDF has no password |
 
 ## 4. Settings
@@ -73,7 +73,25 @@ The stage first shows only the character, the caption and the Stop octagon in th
 | Help and walkthrough | [52-help-walkthrough.png](screens/52-help-walkthrough.png) | Searchable topic list: tour, call, chat, settings, records, practice, station computer, privacy; the tour has Next, Back, Done and step dots. Text in [19-walkthrough.md](19-walkthrough.md) |
 | Appearance | [43-settings-appearance.png](screens/43-settings-appearance.png) | Light or dark and the ten colour themes |
 
-## 5. Not captured
+## 5. Ways out of a session
+
+The owner's rule: no screen offers more than three divergent paths, where a divergent path is a control that ends, leaves
+or discards the session. "Keep going" is on the finish screen but diverges nowhere: it puts the officer back where they
+were. Measured with `tools/ux/count_paths.py` (the static inventory) and `WrapUpPathsDeviceTest` (what each state really
+shows, on the emulator):
+
+| Screen and state | Ways out | Which |
+| --- | --- | --- |
+| Finish, a session kept in history | 3 | Thank them on the stage, Save and finish, Delete without saving |
+| Finish, a rooted phone that keeps no history | 3 | Thank them on the stage, Export report, Delete without saving |
+| Finish, a saved session opened again | 3 | Thank them on the stage, Save and finish, Discard unsaved conversation |
+| The session menu | 1 | Finish |
+
+Export left the finish screen for a kept session: the same sealed PDF is written to `Documents/SignSetu` from the saved
+session's download on the home screen, so offering it twice was one route too many. A rooted phone has no history to
+download from, and there the export stays. Deleting still takes two taps.
+
+## 6. Not captured
 
 | Screen | Reason |
 | --- | --- |
