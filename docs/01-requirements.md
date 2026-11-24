@@ -88,7 +88,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | --- | --- |
 | Every question shown and answer received is logged with a timestamp. | MUST |
 | The officer can add free-text notes. | MUST |
-| Export produces one PDF that opens in any reader with no password, sealed with the device signature and the hash-chain head on every page, shared through the Android share sheet. The owner chose an unpassworded file over a passphrase to pass on ("remove password form exports pdfs"): the seal proves integrity, not confidentiality. | MUST |
+| Export produces one PDF that opens in any reader with no password, sealed with the device signature and the hash-chain head on every page, shared through the Android share sheet. The owner chose an unpassworded file over a passphrase to pass on ("remove password form exports pdfs"): the seal proves integrity, not confidentiality. It is a device-possession record, not an authorship record; [security](04-security.md) §2.10 lists what it proves and what it does not. | MUST |
 | Sessions are purged after a retention period of 4 to 72 hours, 24 by default; an officer or department may choose to keep them until deleted. | MUST |
 | Every event is saved before the interface updates, so a crash or restart loses nothing. | MUST |
 

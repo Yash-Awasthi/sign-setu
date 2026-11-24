@@ -108,6 +108,32 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | Input to the brain is bounded: request paths are decoded and rejected if they contain `..`, backslashes or control characters; chat messages carry only role and content (system, user or assistant; content up to 32 KB); WAV headers with zero channels or rate are refused; a stored file is read back at most 256 MB; inbox names that are Windows device names are prefixed. | MASVS-CODE-4 |
 | The phone caps station replies at 8 MB on both paths, bounds every stream with timeouts and closes only the connection a failed call used. The phone's iroh key is made once per install in `noBackupFilesDir/iroh.bin` under the Keystore key `signsetu.iroh.key`; a relay `[access]` allowlist names its endpoint id. | MASVS-CODE-4, CRYPTO-2 |
 
+### 2.10 What the seal proves, and what it does not
+
+An exported report carries one seal line, `SS1|<session>|<sealed entries>|<chain head>|<Merkle root>` (`EventSeal.sealLine`),
+signed with ECDSA P-256 by a key the Android Keystore holds and never releases (`DeviceSeal`). The signature covers those
+four facts and nothing else; the key travels with the seal so any reader can check it without the phone.
+
+| The seal proves | How the reader sees it |
+| --- | --- |
+| The four facts in the line are the ones the phone sealed: the session, how many entries it held, the chain head and the tree's Merkle root | The signature verifies under the key in the seal (`verify_seal.py`, `checkReport`) |
+| Nobody changed the seal page after export: one character of the line or of the signature breaks it | `Signature invalid` from the off-phone tool; `SIGNATURE_INVALID` in the app |
+| The key that signed is a P-256 key that was in a Keystore on the phone's account, since the private half never leaves it | By construction; the fingerprint on the certificate names that key |
+| When the session is still on the phone, that the stored rows still rebuild the same head — no row, drawing, landmark or recorded answer was edited afterwards | The app re-walks every row (`verifyChain`) and answers `RECORD_ALTERED` when one does not match; the two readers are diffed over the same file by `seal_agreement.py` |
+
+| The seal does not prove | Why |
+| --- | --- |
+| Who used the phone. No officer identity, login or PIN is signed | The officer's name, rank and station are blank lines on the paper for them to complete; `OfficerAuth` guards the app, not the key |
+| That the record is true, or that the person said what is written | The seal is about bytes, not truth: readings are marked as readings, and a machine draft is marked not part of the record |
+| When the seal was made, in a way an outside party can trust | The date on the certificate and the rows' timestamps come from the phone's clock; there is no trusted timestamp and no external time source |
+| That the phone was genuine and unrooted | No key attestation is requested and the root check is a heuristic (F-4); a rooted phone with a rewritten store and its own key can produce a self-consistent seal, which is why the key fingerprint has to be compared with the one printed by a phone the department trusts |
+| That the printed rows are the sealed rows, when checked away from the phone | The printed-rows digest sits in the seal outside the signed line (F-10), so only re-walking the chain on the phone ties pages to entries; off-phone the seal binds the chain head to the key, not the pages to the head |
+| That the device signing key belongs to the officer who signed the paper | Any holder of the phone can produce a sealed report; the certificate's signature and department custody are what tie it to a person |
+
+The seal is therefore a device-possession record, not an authorship record: it shows this phone produced this chain head,
+not that a given officer wrote or reviewed it. The paper's signature, the station diary and the department's custody chain
+carry authorship; the hash chain and the seal carry integrity.
+
 ## 3. MASVS v2 checklist
 
 Status from code and configuration; dynamic testing by the empanelled auditor confirms it (§7).
@@ -191,6 +217,7 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | F-7 | Testing builds allow screenshots | Medium until the final build | `secureScreen=true` for the final release APK |
 | F-8 | Bundled BouncyCastle ships a trust-all `X509TrustManager` class (lint) | Info | Unused by the app; R8 keeps it only if referenced |
 | F-9 | The event-log tree carries an odd leaf up to the next level; it is not RFC 6962's tree shape, though it uses its 0x00 and 0x01 prefixes | Info | Left unchanged: changing it would break existing reports; the verifier and the station use the same rule |
+| F-10 | The printed-rows digest is in the seal but outside the signed line, so away from the phone the seal binds the chain head to the key and not the printed pages to the head | Low | Accepted for now: the digest is printed on every page so a re-export reproduces it, and the phone re-walks the chain; signing the digest as well would change the seal line and every report already issued (2.10) |
 
 ## 7. Testing plan
 
