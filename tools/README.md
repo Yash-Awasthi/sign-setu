@@ -66,3 +66,6 @@ See [ml/README.md](ml/README.md) for data, environments and the training order. 
 | --- | --- | --- |
 | `count_paths.py` | Counts, per screen, the divergent paths a session can end by: controls that end, leave or discard it. "Keep going" and a delete that only arms on the first tap are counted once. The cap of three is enforced per state by `WrapUpPathsDeviceTest`; this is the inventory behind [12-screens.md](../docs/12-screens.md) §5 | `count_paths.py`, `--verbose` to list each label |
 | `test_count_paths.py` | Unit tests for the counting rules (armed delete, discard wording, staying controls) | `python -m unittest discover -s tools/ux -p 'test_*.py'` |
+
+| `seal_agreement.py` | Diffs the phone's own verdict on an exported report against `verify_seal.py`'s, field by field (session, entry count, chain head, Merkle root, printed-rows digest, key fingerprint, verdict). Feed it the PDF and the `app.json` that `SealAgreementDeviceTest` leaves in the app's cache | `seal_agreement.py --pdf report.pdf --app app.json`; exit 0 agree, 1 disagree |
+| `test_seal_agreement.py` | Unit tests for the diff and the seal-field reader | `python -m unittest discover -s tools/security -p 'test_*.py'` |

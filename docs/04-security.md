@@ -33,6 +33,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 | No key in the source, the repository or any APK: the build has no field for an assistant key. The gateway enrols with a one-time department code; a custom API endpoint takes the officer's own key, kept in the Keystore. gitleaks runs on every push. | MASVS-CRYPTO-2 |
 | Export: a PDF with no password, sealed rather than encrypted — every page carries the record digest and the hash-chain head, the certificate page the full chain head and its status, and the seal page the P-256 device signature over the line (`EvidenceIntegrity`). | MASVS-CRYPTO-1 |
 | Event log sealed as a SHA-256 chain as rows are written (`EventSeal`); export re-walks it and reports the first broken row. | BSA s.63 |
+| Two readers, one seal: the phone's own "Check a report" (`checkReport`) and the off-phone `tools/security/verify_seal.py` are diffed field by field over the same exported file by `tools/security/seal_agreement.py`, so the session, entry count, chain head, Merkle root, printed-rows digest, key fingerprint and the verdict itself cannot drift apart. Measured 0.8.52 on an API 34 emulator; a copy with one signature character flipped makes the two disagree. | BSA s.63 |
 
 ### 2.3 Authentication
 
