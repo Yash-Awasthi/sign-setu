@@ -59,8 +59,11 @@ def main() -> int:
     a = ap.parse_args()
 
     payload = verify_seal.seal_from_pdf(a.pdf)
-    if not payload:
+    if payload is None:
         print("this report has no seal", file=sys.stderr)
+        return 2
+    if payload == "":
+        print("this file cannot be read as a PDF", file=sys.stderr)
         return 2
     code, message = verify_seal.check(payload, json.loads(Path(a.app).read_text())["fingerprint"] if Path(a.app).exists() else None)
     if code == 2:

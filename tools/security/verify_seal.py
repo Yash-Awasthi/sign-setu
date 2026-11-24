@@ -17,14 +17,21 @@ SEAL_KEY = "/SignSetuSeal"
 
 
 def seal_from_pdf(path: str, passphrase: str = "") -> str | None:
+    """The seal the file carries: None when it carries none, "" when the file cannot be read as a PDF at all."""
     from pypdf import PdfReader
 
-    reader = PdfReader(path)
-    # Current exports are not encrypted; an older one opens with the passphrase shown when it was made.
-    if reader.is_encrypted and not reader.decrypt(passphrase):
-        raise SystemExit("the passphrase does not open this report")
-    meta = reader.metadata or {}
-    return meta.get(SEAL_KEY)
+    try:
+        reader = PdfReader(path)
+        # Current exports are not encrypted; an older one opens with the passphrase shown when it was made.
+        if reader.is_encrypted and not reader.decrypt(passphrase):
+            raise SystemExit("the passphrase does not open this report")
+        meta = reader.metadata or {}
+        seal = meta.get(SEAL_KEY)
+    except SystemExit:
+        raise
+    except Exception:  # noqa: BLE001 - a damaged or foreign file is an answer, not a traceback
+        return ""
+    return seal if isinstance(seal, str) else None
 
 
 def check(payload: str, fingerprint: str | None = None) -> tuple[int, str]:
@@ -40,18 +47,30 @@ def check(payload: str, fingerprint: str | None = None) -> tuple[int, str]:
     digest, sig, key = fields[5], fields[6], fields[7]
     if sig == "-" or key == "-":
         return 1, f"seal for session {session} carries no device signature"
-    der = base64.b64decode(key)
-    found = hashlib.sha256(der).hexdigest()
+    # Anything that is not base64 of a DER key is a seal this tool cannot check, never an error it dies of.
+    try:
+        der = base64.b64decode(key, validate=True)
+        found = hashlib.sha256(der).hexdigest()
+    except Exception:  # noqa: BLE001
+        return 2, "the seal's key is not base64 of a DER public key"
     if fingerprint and found.lower() != fingerprint.lower().replace(":", "").replace(" ", ""):
         return 1, f"the seal's key {found} is not the certificate's key"
-    public = serialization.load_der_public_key(der)
+    try:
+        public = serialization.load_der_public_key(der)
+    except Exception:  # noqa: BLE001
+        return 2, "the seal's key is not a readable DER public key"
     if not isinstance(public, ec.EllipticCurvePublicKey):
         return 2, "the seal's key is not an EC key"
-    raw = base64.b64decode(sig + "=" * (-len(sig) % 4))
+    try:
+        raw = base64.b64decode(sig + "=" * (-len(sig) % 4), validate=True)
+    except Exception:  # noqa: BLE001
+        return 2, "the seal's signature is not base64"
     try:
         public.verify(raw, line.encode(), ec.ECDSA(hashes.SHA256()))
     except InvalidSignature:
         return 1, "INVALID: the signature does not match the seal line; treat the report as altered"
+    except Exception:  # noqa: BLE001 - a signature of the wrong shape is not a valid one
+        return 1, "INVALID: the signature cannot be checked against the seal line"
     return 0, (f"valid: session {session}, {count} sealed entries, chain head {head}, Merkle root {root}, "
                f"printed-rows digest {digest}, device key {found}")
 
@@ -65,8 +84,11 @@ def main() -> None:
     ap.add_argument("--key-fingerprint", help="the device key SHA-256 printed on the certificate")
     a = ap.parse_args()
     payload = a.qr if a.qr else seal_from_pdf(a.pdf, a.passphrase or "")
-    if not payload:
+    if payload is None:
         print("this report has no seal")
+        sys.exit(2)
+    if payload == "":
+        print("this file cannot be read as a PDF")
         sys.exit(2)
     code, message = check(payload, a.key_fingerprint)
     print(message)

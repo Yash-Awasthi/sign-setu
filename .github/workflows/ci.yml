@@ -100,7 +100,9 @@ jobs:
       - run: pip install numpy resvg-py pillow soundfile
       - name: Python tool tests
         run: |
-          for d in tools/isl tools/security tools/content tools/text2isl tools/docs tools/ci; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
+          for d in tools/isl tools/security tools/content tools/text2isl tools/docs tools/ci tools/ux; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
+      - name: Malformed input never crashes a reader and never reads as valid
+        run: python tools/security/fuzz_parsers.py --trials 200 --seed 1
       - name: The README version line comes from the build file
         run: python tools/docs/check_version.py
       - name: Documents match the tree

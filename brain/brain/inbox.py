@@ -126,13 +126,20 @@ class Inbox:
 
 
 def _record(path: Path) -> tuple[str | None, list]:
-    """The session id and the rows' hash-chain links of a conversation zip; (None, []) for anything else."""
+    """The session id and the rows' hash-chain links of a conversation zip; (None, []) for anything else.
+
+    Anything at all: a zip that is not one, a member that is not JSON, JSON of the wrong shape, a nesting deep enough
+    to exhaust the stack (a RecursionError, which is a RuntimeError) or an id that is not text. A record the station
+    cannot read is a file it does not take, never a crash in the service.
+    """
     try:
         with zipfile.ZipFile(path) as z:
             if any(z.getinfo(n).file_size > MAX_RECORD for n in ("session.json", "events.json")):
                 return None, []
             session = json.loads(z.read("session.json")).get("id")
-            rows = [e.get("hash") for e in json.loads(z.read("events.json"))]
+            if not isinstance(session, str) or not session:
+                return None, []
+            rows = [e.get("hash") if isinstance(e, dict) else None for e in json.loads(z.read("events.json"))]
         return session, rows
     except (OSError, KeyError, ValueError, AttributeError, TypeError, zipfile.BadZipFile, RuntimeError, NotImplementedError):
         return None, []
