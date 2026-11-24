@@ -404,8 +404,8 @@ flowchart TB
     DB["SQLCipher session store"]:::data
     TOK["signsetu.gateway.token, signsetu.assist.key, signsetu.iroh.key<br/>Keystore AES-256-GCM"]:::sec
     GWT["gateway token gw.bin, officer's service key assist.bin, phone's iroh key iroh.bin<br/>noBackupFilesDir, wrapped"]:::data
-    PASS["Export passphrase<br/>80 bits, shown once"]:::sec
-    PDF["Encrypted PDF, AES-256"]:::data
+    PASS["Export seal\nP-256 signature, chain head"]:::sec
+    PDF["PDF, no password\nopens in any reader"]:::data
     ECDH["Link keys<br/>P-256 ECDH + HKDF-SHA256, memory only"]:::sec
     FR["AES-256-GCM frames"]:::data
     CRED -- "phone unlocked" --> KEK
@@ -582,7 +582,7 @@ Typed text asks the brain for sign order after a typing pause, and a recorded an
 
 ## 12. Export
 
-`SessionViewModel.exportReport` re-reads the rows from the store, re-walks the hash chain and builds the Section 63 certificate (`EvidenceIntegrity`); `SessionReport` draws A4 pages with `PdfDocument` (header, personal details given, optional machine draft summary, the conversation, a separate section for readings, drawings, the certificate), numbers every page with the record digest and chain head, adds the verification seal page, embeds each recorded answer as `audio-<id>.wav`, and encrypts the file with PdfBox AES-256 under a 16-character passphrase from 32 symbols (80 bits) and a random owner password. The file waits in `cacheDir/exports` for the share sheet; files older than 15 minutes, and all of them at every unlock and on Clear all data, are deleted.
+`SessionViewModel.exportReport` re-reads the rows from the store, re-walks the hash chain and builds the Section 63 certificate (`EvidenceIntegrity`); `SessionReport` draws A4 pages with `PdfDocument` (header, personal details given, optional machine draft summary, the conversation, a separate section for readings, drawings, the certificate), numbers every page with the record digest and chain head, adds the verification seal page, and embeds each recorded answer as `audio-<id>.wav`. The file is not encrypted: the owner's decision is that an officer can open and forward it without a passphrase to read out, and what protects the record is the seal (device signature, record digest and chain head on every page, the chain head and its status on the certificate page) rather than confidentiality. The file waits in `cacheDir/exports` for the share sheet; files older than 15 minutes, and all of them at every unlock and on Clear all data, are deleted.
 
 ## 13. Build and delivery
 

@@ -70,7 +70,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | ISL-Fingerspelling (ISH News; WSLP at AACL-IJCNLP 2025) | CC BY-NC 4.0 | Data | 1,308 fingerspelled segments by 3 signers; trains `isl_spell_ctc` (`tools/ml/prepare_isl_fingerspell.py`) |
 | | sherpa-onnx, Vosk | Apache-2.0 | Not used | On-phone speech recognition was considered; speech goes to the station brain instead |
 | Storage and crypto | SQLCipher for Android | BSD-style | Ship | Room 3 supported from 4.18.0 |
-| Export | PdfBox-Android 2.0.27.0 | Apache-2.0 | Ship | AES-256 password-protected PDF export; no recent release, so watch advisories. Its BouncyCastle is held at 1.86 by a build constraint because 1.72 has known critical vulnerabilities |
+| Export | PdfBox-Android 2.0.27.0 | Apache-2.0 | Ship | Writes the report's PDF file and reads the seal back when an officer checks a report; no recent release, so watch advisories. Its BouncyCastle is held at 1.86 by a build constraint because 1.72 has known critical vulnerabilities |
 | | BouncyCastle (bcprov, bcpkix, bcutil) 1.86 | MIT-style Bouncy Castle licence | Ship | Pulled in for PdfBox-Android; pinned to 1.86 for the vulnerability fix above |
 | | zip4j | Apache-2.0 | Alternative | AES-256 zip; recipients need 7-Zip, so PDF is preferred |
 | Drawing canvas | Compose Canvas | Platform | Ship | No library needed |

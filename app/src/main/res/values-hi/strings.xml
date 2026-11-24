@@ -105,10 +105,9 @@
 
     <string name="wrap_include_summary">रिपोर्ट में AI सारांश का मसौदा जोड़ें (छिपाया हुआ पाठ ऑनलाइन भेजा जाता है)</string>
     <string name="end_export">रिपोर्ट निर्यात करें</string>
-    <string name="export_working">एन्क्रिप्टेड रिपोर्ट तैयार हो रही है…</string>
+    <string name="export_working">रिपोर्ट तैयार हो रही है…</string>
     <string name="export_title">रिपोर्ट तैयार</string>
-    <string name="export_body">रिपोर्ट एन्क्रिप्टेड है। यह पासवर्ड फ़ाइल से अलग दें, जैसे बोलकर। यह केवल एक बार दिखेगा।</string>
-    <string name="export_password">पासवर्ड</string>
+    <string name="export_body">रिपोर्ट एक ही PDF है और उसके लिए कोई पासवर्ड नहीं चाहिए। जिसके पास यह होगा वह बातचीत पढ़ सकेगा, इसलिए इसे केवल केस फ़ाइल या CWC को दें। मुहर फिर भी बताती है कि इसमें बदलाव हुआ या नहीं।</string>
     <string name="export_share">रिपोर्ट भेजें</string>
     <string name="export_finish">हो गया</string>
     <string name="export_failed">रिपोर्ट नहीं बन सकी। सत्र में कोई बदलाव नहीं हुआ।</string>
@@ -723,7 +722,7 @@
     <string name="qn_accused">आरोपी</string>
     <string name="check_report">रिपोर्ट जाँचें</string>
     <string name="check_report_summary">निर्यात की गई PDF खोलें और उसकी मुहर जाँचें</string>
-    <string name="check_report_pass">पासफ़्रेज़</string>
+    <string name="check_report_body">निर्यात की गई PDF चुनें; उसकी मुहर इस फ़ोन की कुंजी से और, अगर सत्र अब भी यहाँ है, सत्र से मिलाई जाती है।</string>
     <string name="check_report_go">जाँचें</string>
     <string name="check_report_unopened">फ़ाइल नहीं खुली। पासफ़्रेज़ जाँचें और देखें कि यह Sign Setu रिपोर्ट है।</string>
     <string name="check_report_matches">मुहर सही है और इस फ़ोन पर रखे सत्र से मेल खाती है।</string>
@@ -844,11 +843,11 @@
     <string name="saved_download_failed">यह इस फ़ोन में सहेजा नहीं जा सका।</string>
     <string name="saved_where_station">स्टेशन कंप्यूटर पर</string>
     <string name="saved_where_phone">इस फ़ोन में</string>
+    <string name="saved_where_phone_body">फ़ोल्डर में बातचीत zip और PDF दोनों रूप में है। PDF के लिए पासवर्ड नहीं चाहिए: इसे केवल केस फ़ाइल या CWC को दें।</string>
     <string name="saved_where_name">फ़ाइल</string>
     <string name="saved_where_path">कहाँ</string>
     <string name="saved_send_again">फिर भेजें</string>
     <string name="saved_save_again">फिर सहेजें</string>
-    <string name="saved_passphrase">PDF रिपोर्ट इस पासफ़्रेज़ से खुलती है। इसे केवल उसी को दें जिसे रिपोर्ट चाहिए।</string>
     <string name="wrap_discard">बिना सहेजी बातचीत हटाएँ</string>
     <string name="wrap_discard_sure">खोलने के बाद जोड़ा गया हटाने के लिए फिर दबाएँ</string>
     <string name="session_discarded">बिना सहेजे बदलाव हटाए; सहेजा सत्र पहले जैसा है।</string>

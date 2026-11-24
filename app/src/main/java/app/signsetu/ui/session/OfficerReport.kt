@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Lock
@@ -16,7 +15,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,7 +26,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -53,7 +50,7 @@ import androidx.compose.foundation.layout.heightIn
 
 internal sealed interface ExportState {
     data object Working : ExportState
-    data class Ready(val file: File, val passphrase: String) : ExportState
+    data class Ready(val file: File) : ExportState
     data object Failed : ExportState
 }
 
@@ -131,33 +128,12 @@ internal fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () 
             confirmButton = {},
         )
         is ExportState.Ready -> GuardedAlertDialog(
-            // The password is shown once and the file is deleted on Finish, so Back must not close it.
+            // The file is deleted on Finish, so Back must not close it.
             onDismissRequest = {},
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
-            icon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+            icon = { Icon(Icons.Filled.Share, contentDescription = null) },
             title = { Text(stringResource(R.string.export_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    Text(stringResource(R.string.export_body))
-                    Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = MaterialTheme.shapes.medium) {
-                        Column(Modifier.fillMaxWidth().padding(Spacing.md), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                stringResource(R.string.export_password),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                state.passphrase,
-                                style = MaterialTheme.typography.headlineSmall.copy(fontFamily = FontFamily.Monospace),
-                                maxLines = 1,
-                                autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = 28.sp),
-                                // Read out character by character, as the officer would.
-                                modifier = Modifier.semantics { contentDescription = state.passphrase.toCharArray().joinToString(" ") },
-                            )
-                        }
-                    }
-                }
-            },
+            text = { Text(stringResource(R.string.export_body)) },
             confirmButton = {
                 Button(onClick = onShare) {
                     Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -165,7 +141,7 @@ internal fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () 
                 }
             },
             dismissButton = {
-                // The session stays saved, so a lost file or password only means exporting again.
+                // The session stays saved, so a lost file only means exporting again.
                 TextButton(onClick = onFinish) { Text(stringResource(R.string.export_finish)) }
             },
         )

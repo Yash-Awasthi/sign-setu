@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Builds the encrypted report from everything logged so far; returns the file and its one-time passphrase. */
+/** Builds the report from everything logged so far; returns the PDF file. */
 internal suspend fun SessionRepository.exportSession(
     sessionId: String,
     report: SessionReport,
@@ -26,7 +26,7 @@ internal suspend fun SessionRepository.exportSession(
     section: ReportSection?,
     aiSummary: String?,
     rowsOf: (List<SessionEvent>) -> List<ReportRow>,
-): Pair<File, String> {
+): File {
     // Rows, digest and chain all come from the database as it is now, so the printed rows are the ones certified.
     val events = eventsNow(sessionId)
     val rows = rowsOf(events)

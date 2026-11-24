@@ -515,7 +515,7 @@ fun OfficerPane(
                     val idle = notActedOn(ui.events)
                     val section = detailsSection(res, content, officerLang, ui.events)
                     export = runCatching { vm.exportReport(reportText(res, ui, content), recordDetail(res, content, officerLang, ui.events) { eventDetail(res, it, by, idle) }, section, summary) }
-                        .fold({ (file, pass) -> ExportState.Ready(file, pass) }, { ExportState.Failed })
+                        .fold({ ExportState.Ready(it) }, { ExportState.Failed })
                 }
             })
         }

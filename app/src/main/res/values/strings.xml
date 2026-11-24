@@ -111,10 +111,9 @@
     <!-- Export -->
     <string name="wrap_include_summary">Add an AI summary draft to the report (masked text is sent online)</string>
     <string name="end_export">Export report</string>
-    <string name="export_working">Preparing the encrypted report…</string>
+    <string name="export_working">Preparing the report…</string>
     <string name="export_title">Report ready</string>
-    <string name="export_body">The report is encrypted. Give this password separately from the file, for example by reading it out. It is shown only once.</string>
-    <string name="export_password">Password</string>
+    <string name="export_body">The report is one PDF and needs no password. Anyone who has it can read the conversation, so share it only with the case file or the CWC. Its seal still shows whether it was altered.</string>
     <string name="export_share">Share report</string>
     <string name="export_finish">Done</string>
     <string name="export_failed">Could not create the report. The session is unchanged.</string>
@@ -730,7 +729,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="qn_accused">Accused</string>
     <string name="check_report">Check a report</string>
     <string name="check_report_summary">Open an exported PDF and check its seal</string>
-    <string name="check_report_pass">Passphrase</string>
+    <string name="check_report_body">Pick the exported PDF; its seal is checked against this phone’s key and against the session, if it is still here.</string>
     <string name="check_report_go">Check</string>
     <string name="check_report_unopened">The file did not open. Check the passphrase and that it is a Sign Setu report.</string>
     <string name="check_report_matches">The seal is valid and matches the session still on this phone.</string>
@@ -851,11 +850,11 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="saved_download_failed">It could not be saved on this phone.</string>
     <string name="saved_where_station">On the station computer</string>
     <string name="saved_where_phone">On this phone</string>
+    <string name="saved_where_phone_body">The folder holds the conversation as a zip and as a PDF. The PDF needs no password: share it only with the case file or the CWC.</string>
     <string name="saved_where_name">File</string>
     <string name="saved_where_path">Where</string>
     <string name="saved_send_again">Send again</string>
     <string name="saved_save_again">Save again</string>
-    <string name="saved_passphrase">The PDF report opens with this passphrase. Give it only to whoever needs the report.</string>
     <string name="wrap_discard">Discard unsaved conversation</string>
     <string name="wrap_discard_sure">Tap again to discard what was added since it was opened</string>
     <string name="session_discarded">Unsaved changes discarded; the saved session is as it was.</string>

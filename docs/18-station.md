@@ -162,7 +162,7 @@ dashes become underscores; a title in any script stays readable), in its inbox f
 officer's to delete.
 
 In the history each saved session has two buttons: download saves `Documents/SignSetu/<name>/` on the phone with the
-zip and the encrypted PDF report (its passphrase is shown once), and upload sends the zip to the station; upload is shown
+zip and the sealed PDF report (no password to pass on), and upload sends the zip to the station; upload is shown
 only while the station is connected and takes conversations. A small "i" on a button means a copy made at the session's
 current seal exists; tapping it shows the file and its full path, on the phone or on the station computer, and offers
 to do it again. A long press chooses sessions to delete.

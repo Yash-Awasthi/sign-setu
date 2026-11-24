@@ -45,7 +45,7 @@ phone unless an online service is switched on.
 7. **If they need a break.** If the person taps Stop, a calm breathing screen covers the stage and the officer sees
    a banner to pause and check they are comfortable. Only their "I'm ready" ends the pause.
 8. **Finish and save.** Finish session is at the foot of More options and in the menu. Name the session, then tap
-   Save and finish or Export report. The report password is shown only once. Help is always in Settings and in
+   Save and finish or Export report. The report is one PDF with no password. Help is always in Settings and in
    the session menu.
 
 ## 2. During a session
@@ -256,7 +256,7 @@ Pinning and the fingerprint prompt default to off only in unlocked test builds.
 
 - **Delete automatically after.** Sessions older than this are deleted even if nobody ended them: 4, 8, 12, 24, 48
   or 72 hours, or Keep until deleted (24 hours). Follow the department's rule.
-- **Check a report.** Open an exported PDF with its passphrase and check its seal. See section 5.
+- **Check a report.** Pick an exported PDF and check its seal; no passphrase is needed. See section 5.
 - **Delete all data.** Destroys the encryption key, so every session on the phone becomes unreadable and cannot be
   recovered. Settings are kept. Needs a second confirmation.
 
@@ -283,12 +283,13 @@ An unreadable settings file falls back to the defaults.
 - **Saved sessions** are listed on the home screen to Open again or Delete. Long-press to choose several, then
   delete the chosen sessions. An unfinished session shows at the top with Continue and End it. Sessions are deleted
   after the time set in Settings.
-- **Export report** makes an encrypted, sealed PDF of the session. The password is shown only once: give it
-  separately from the file, for example by reading it out. Then Share report and Done.
+- **Export report** makes a sealed PDF of the session, one file with no password: anyone who receives it can read
+  it, so share it only with the case file or the CWC. The seal page shows whether it was altered. Then Share report
+  and Done.
 - **Send or save a saved session.** An open saved session can be sent to the station computer (Send to the station)
-  or written to the phone (Save to this phone). The PDF opens with the passphrase shown; give it only to whoever
+  or written to the phone (Save to this phone). The PDF there opens without a password; give it only to whoever
   needs the report.
-- **Check a report.** Settings, Check a report: open the PDF, enter its passphrase and tap Check. It says whether
+- **Check a report.** Settings, Check a report: pick the PDF and tap Check. It says whether
   the seal is valid, whether it matches the session still on the phone, or whether the record was altered after it
   was sealed. A report with a damaged seal is reported as an invalid signature.
 
@@ -346,7 +347,7 @@ Further facts:
   inbox.
 - **Protecting the screen.** The app is pinned in a session, screenshots are blocked, and leaving a session or
   deleting asks for fingerprint or screen lock. Turning these off needs the officer, not the person.
-- **Reports.** A report is encrypted with a one-time password and sealed with the phone's key, so any change can be
+- **Reports.** A report is one PDF with no password, sealed with the phone's key, so any change can be
   found with Check a report. The signing key is held in StrongBox where available, otherwise in the phone's secure
   hardware.
 - **An aid, not an interpreter.** Readings by the app are marked not checked. For rights and anything that matters

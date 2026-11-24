@@ -59,7 +59,7 @@ The stage first shows only the character, the caption and the Stop octagon in th
 | Second screen | [36-officer-second-screen.png](screens/36-officer-second-screen.png) | Pairing a department device; Find a nearby phone pairs one from inside the app on Android 12 and later |
 | Record their voice | [48-officer-record-voice.png](screens/48-officer-record-voice.png) | The microphone in the dock: consent first, then tap to start, the person speaks, tap to stop; the recording joins the record |
 | Finish | [37-officer-finish.png](screens/37-officer-finish.png) | Summary, name, Save, Export, Delete without saving |
-| Report ready | [38-officer-export.png](screens/38-officer-export.png) | One-time password, Share, Done |
+| Report ready | [38-officer-export.png](screens/38-officer-export.png) | Share, Done; the PDF has no password |
 
 ## 4. Settings
 

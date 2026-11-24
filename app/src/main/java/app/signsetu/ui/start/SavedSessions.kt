@@ -61,8 +61,8 @@ private const val SAVED_SHOWN = 5
 
 /** The two ways a saved session leaves this phone, as the history row offers them. */
 class SavedActions(
-    /** Writes Documents/SignSetu/<name>/ with the zip and the PDF; the folder and the PDF's passphrase, or null. */
-    val download: suspend (Session) -> Pair<String, String>?,
+    /** Writes Documents/SignSetu/<name>/ with the zip and the PDF; the folder, or null. */
+    val download: suspend (Session) -> String?,
     /** Sends the zip to the station; where the station saved it, or null. [progress] is 0 to 1. */
     val upload: suspend (Session, (Float) -> Unit) -> String?,
 )
@@ -104,7 +104,7 @@ internal fun SavedSessions(
     var busy by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableStateOf(0f) }
     var where by remember { mutableStateOf<Where?>(null) }
-    var savedHere by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var savedHere by remember { mutableStateOf<String?>(null) }
     var all by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(loaded) { loaded?.let { list -> chosen.retainAll(list.map { it.id }.toSet()) } }
     val saved = loaded ?: return
@@ -219,7 +219,7 @@ internal fun SavedSessions(
             }),
         )
     }
-    savedHere?.let { (folder, pass) ->
+    savedHere?.let { folder ->
         GuardedAlertDialog(
             onDismissRequest = { savedHere = null },
             icon = { Icon(Icons.Filled.Info, contentDescription = null) },
@@ -227,8 +227,7 @@ internal fun SavedSessions(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     androidx.compose.foundation.text.selection.SelectionContainer { Text(folder, style = MaterialTheme.typography.bodyMedium) }
-                    Text(stringResource(R.string.saved_passphrase), style = MaterialTheme.typography.labelMedium)
-                    androidx.compose.foundation.text.selection.SelectionContainer { Text(pass, style = MaterialTheme.typography.titleMedium) }
+                    Text(stringResource(R.string.saved_where_phone_body), style = MaterialTheme.typography.bodyMedium)
                 }
             },
             confirmButton = { TextButton(onClick = { savedHere = null }) { Text(stringResource(android.R.string.ok)) } },

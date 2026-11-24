@@ -16,7 +16,6 @@ import app.signsetu.ui.session.recordDetail
 import app.signsetu.ui.session.reportText
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +27,7 @@ import kotlinx.coroutines.withTimeout
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -73,13 +72,11 @@ class ReportExportDeviceTest {
         val detail = recordDetail(res, content, "en", ui.events) { eventDetail(res, it) }
         val digest = recordDigest(vm.reportRows(detail))
 
-        suspend fun export(): Pair<ByteArray, String> = vm.exportReport(reportText(res, ui, content), detail)
-            .let { (file, pass) -> file.readBytes() to pass }
+        suspend fun export(): ByteArray = vm.exportReport(reportText(res, ui, content), detail).readBytes()
 
-        val (pdf, passphrase) = export()
-        assertThrows(InvalidPasswordException::class.java) { PDDocument.load(pdf).close() }
-        val pages = PDDocument.load(pdf, passphrase).use { doc ->
-            assertTrue("encrypted", doc.isEncrypted)
+        val pdf = export()
+        val pages = PDDocument.load(pdf).use { doc ->
+            assertFalse("no password: any reader opens it", doc.isEncrypted)
             (1..doc.numberOfPages).map { n -> PDFTextStripper().apply { startPage = n; endPage = n }.getText(doc) }
         }
         assertTrue("several pages: ${pages.size}", pages.size >= 2)
@@ -87,8 +84,8 @@ class ReportExportDeviceTest {
         val answers = "${res.getString(R.string.report_answers)}: ${res.getString(R.string.summary_taps, 2)}"
         assertTrue("summary line \"$answers\" in:\n${pages[0]}", answers in pages[0].replace('\n', ' '))
 
-        val (again, secondPass) = export()
-        val digests = PDDocument.load(again, secondPass).use { doc -> Regex("record ([0-9a-f-]{19})").findAll(PDFTextStripper().getText(doc)).map { it.groupValues[1] }.toSet() }
+        val again = export()
+        val digests = PDDocument.load(again).use { doc -> Regex("record ([0-9a-f-]{19})").findAll(PDFTextStripper().getText(doc)).map { it.groupValues[1] }.toSet() }
         assertEquals(setOf(digest), digests)
         watcher.cancel()
     }

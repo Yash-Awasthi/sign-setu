@@ -11,13 +11,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
-/** Opens an exported report with its passphrase and checks its seal: the signature with the key the seal carries,
- * and, when the session is still on this phone, the record as it stands now. Null when the file cannot be opened. */
-suspend fun checkReport(context: Context, uri: Uri, passphrase: String, repo: SessionRepository?): EvidenceIntegrity.SealCheck? = withContext(Dispatchers.IO) {
+/** Opens an exported report and checks its seal: the signature with the key the seal carries, and, when the session
+ * is still on this phone, the record as it stands now. Null when the file cannot be opened. */
+suspend fun checkReport(context: Context, uri: Uri, repo: SessionRepository?): EvidenceIntegrity.SealCheck? = withContext(Dispatchers.IO) {
     PDFBoxResourceLoader.init(context)
     val payload = runCatching {
         context.contentResolver.openInputStream(uri)?.use { input ->
-            PDDocument.load(input, passphrase).use { it.documentInformation.getCustomMetadataValue(SessionReport.SEAL_KEY) }
+            PDDocument.load(input).use { it.documentInformation.getCustomMetadataValue(SessionReport.SEAL_KEY) }
         }
     }.getOrNull() ?: return@withContext null
     val sessionId = payload.split('|').getOrNull(1)

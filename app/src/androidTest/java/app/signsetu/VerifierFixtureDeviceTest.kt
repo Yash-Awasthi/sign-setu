@@ -71,20 +71,19 @@ class VerifierFixtureDeviceTest {
         val ui: SessionUi = withTimeout(10_000) { vm.ui.first { it != null && it.events.size == total }!! }
         val res = app.resources
         val detail = recordDetail(res, content, "en", ui.events) { eventDetail(res, it) }
-        val (file, pass) = vm.exportReport(reportText(res, ui, content), detail)
+        val file = vm.exportReport(reportText(res, ui, content), detail)
         watcher.cancel()
 
         // The app's own files directory: `adb exec-out run-as in.signsetu cat files/verify/report.pdf` reads it
         // from the host, so the desktop verifier checks exactly the file the app wrote.
         val out = File(app.filesDir, "verify/report.pdf").also { it.parentFile?.mkdirs() }
         file.copyTo(out, overwrite = true)
-        File(out.parentFile, "passphrase.txt").writeText(pass)
 
         assertTrue("the fixture pdf was written: $out", out.length() > 0)
         assertEquals(
             "the app's own check on the file it just wrote",
             SealCheck.MATCHES_DEVICE,
-            checkReport(app, Uri.fromFile(out), pass, repo),
+            checkReport(app, Uri.fromFile(out), repo),
         )
     }
 }

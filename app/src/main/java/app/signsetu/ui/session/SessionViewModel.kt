@@ -813,8 +813,8 @@ class SessionViewModel(
 
     suspend fun drawing(id: Long): ByteArray? = repo.drawing(id)
 
-    /** Builds the encrypted report from everything logged so far; returns the file and its one-time passphrase. */
-    suspend fun exportReport(text: ReportText, detail: (SessionEvent) -> String, section: ReportSection? = null, aiSummary: String? = null): Pair<File, String> {
+    /** Builds the report from everything logged so far; returns the PDF file. */
+    suspend fun exportReport(text: ReportText, detail: (SessionEvent) -> String, section: ReportSection? = null, aiSummary: String? = null): File {
         val currentUi = ui.value
         val session = currentUi?.session ?: Session(sessionId, System.currentTimeMillis(), Profile.NOT_SURE, "en")
         return repo.exportSession(sessionId, report, session, currentUi?.signLanguage ?: SignLanguage.ISL, text, section, aiSummary) { reportRows(detail, it) }

@@ -17,14 +17,11 @@ import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
-import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission
-import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.security.MessageDigest
-import java.security.SecureRandom
 
 /** Officer-language text for the report, resolved by the caller from string resources. */
 class ReportText(
@@ -53,8 +50,8 @@ class ReportSeal(val qr: String, val lines: List<String>)
 /** A titled table printed before the conversation, such as the personal details the subject gave. */
 class ReportSection(val title: String, val header: List<String>, val rows: List<List<String>>)
 
-/** Builds the session report as an A4 PDF and encrypts it with AES-256 under a one-time passphrase. The report
- * opens in any PDF reader; nothing else is needed by the case file or CWC. */
+/** Builds the session report as an A4 PDF that opens in any reader: one file, no password to pass on. Its seal page
+ * carries the signature and the hash-chain head, so a reader can see whether it was altered. */
 class SessionReport(private val context: Context) {
 
     suspend fun export(
@@ -68,22 +65,15 @@ class SessionReport(private val context: Context) {
         seal: ReportSeal? = null,
         /** Files carried inside the PDF, by name: the person's recorded speech, so the export holds the record whole. */
         attachments: List<Pair<String, ByteArray>> = emptyList(),
-    ): Pair<File, String> =
+    ): File =
         withContext(Dispatchers.IO) {
             purgeStaleExports()
-            val plain = render(rows, text, drawing, section, aiSummary, certificateText, chainDigest, seal, attachments)
-            val passphrase = newPassphrase()
-            PDFBoxResourceLoader.init(context)
+            val pdf = render(rows, text, drawing, section, aiSummary, certificateText, chainDigest, seal, attachments)
             val dir = exportsDir(context).apply { mkdirs() }
             val file = File(dir, "sign-setu-report-${System.currentTimeMillis()}.pdf")
-            PDDocument.load(plain).use { doc ->
-                val owner = ByteArray(24).also { SecureRandom().nextBytes(it) }.toHexString()
-                val policy = StandardProtectionPolicy(owner, passphrase, AccessPermission()).apply { encryptionKeyLength = 256 }
-                doc.protect(policy)
-                doc.save(file)
-            }
-            plain.fill(0)
-            file to passphrase
+            file.writeBytes(pdf)
+            pdf.fill(0)
+            file
         }
 
     private suspend fun render(
@@ -351,18 +341,11 @@ class SessionReport(private val context: Context) {
         private const val MARGIN = 40f
         // Room for the page number and the not-a-statement notice under the last row.
         private const val FOOTER = 30f
-        // Crockford base32 without look-alike characters; 16 symbols = 80 bits.
-        private const val ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
         const val SEAL_KEY = "SignSetuSeal"
 
         /** Where exports wait for the share sheet; only needed while it hands them over. */
         fun exportsDir(context: Context) = File(context.cacheDir, "exports")
-
-        private fun newPassphrase(): String {
-            val random = SecureRandom()
-            return (1..16).map { ALPHABET[random.nextInt(ALPHABET.length)] }.chunked(4).joinToString("-") { it.joinToString("") }
-        }
     }
 }
 

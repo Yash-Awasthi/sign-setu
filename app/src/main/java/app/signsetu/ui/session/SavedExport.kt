@@ -19,8 +19,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** A saved session written to the phone from the history: Documents/SignSetu/<name>/ holding the conversation's zip
- * (as the station gets it) and its encrypted PDF report. Saving again replaces both. Returns the folder and the PDF's
- * passphrase, or null when it could not be written. */
+ * (as the station gets it) and its PDF report. Saving again replaces both. Returns the folder, or null when it could
+ * not be written. */
 internal suspend fun saveToPhone(
     context: Context,
     repo: SessionRepository,
@@ -28,11 +28,11 @@ internal suspend fun saveToPhone(
     officerLang: String,
     report: SessionReport,
     session: Session,
-): Pair<String, String>? {
+): String? {
     // The seal it is saved at: the "i" shows while the session still has that seal.
     val head = session.rootHash ?: repo.head(session.id) ?: return null
     val zip = StationExport.build(repo, session.id) ?: return null
-    val (pdf, passphrase) = savedReport(context, repo, content, officerLang, report, session.id) ?: return null
+    val pdf = savedReport(context, repo, content, officerLang, report, session.id) ?: return null
     val name = folderName(session)
     val folder = "${android.os.Environment.DIRECTORY_DOCUMENTS}/SignSetu/$name"
     val ok = withContext(Dispatchers.IO) {
@@ -46,7 +46,7 @@ internal suspend fun saveToPhone(
     }
     if (!ok) return null
     repo.markPhoneExport(session.id, folder, head)
-    return folder to passphrase
+    return folder
 }
 
 /** The report a finished session's Export makes, built here without opening the session on screen. */

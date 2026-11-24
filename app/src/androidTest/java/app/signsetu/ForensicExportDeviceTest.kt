@@ -65,26 +65,28 @@ class ForensicExportDeviceTest {
 
         val reopened = SessionDatabase.open(app, key, fileName = name)
         val repo2 = SessionRepository(reopened.dao(), signer = { DeviceSeal.sign(it) })
-        val (pdf, pass) = export(repo2, id)
-        assertEquals(SealCheck.MATCHES_DEVICE, checkReport(app, Uri.fromFile(pdf), pass, repo2))
-        assertEquals("away from the phone the signature alone is checked", SealCheck.SIGNATURE_VALID, checkReport(app, Uri.fromFile(pdf), pass, null))
+        val pdf = export(repo2, id)
+        assertEquals(SealCheck.MATCHES_DEVICE, checkReport(app, Uri.fromFile(pdf), repo2))
+        assertEquals("away from the phone the signature alone is checked", SealCheck.SIGNATURE_VALID, checkReport(app, Uri.fromFile(pdf), null))
+        // No password, so any reader opens it; the seal page is what says it was not altered.
+        assertFalse("the report is not encrypted", PDDocument.load(pdf).use { it.isEncrypted })
 
         // An edited stored row, behind the app's back: the seal line is unchanged but the row no longer matches its seal.
         reopened.openHelper.writableDatabase.execSQL("UPDATE event SET text = 'far from the school' WHERE text = 'near the school'")
-        assertEquals(SealCheck.RECORD_ALTERED, checkReport(app, Uri.fromFile(pdf), pass, repo2))
+        assertEquals(SealCheck.RECORD_ALTERED, checkReport(app, Uri.fromFile(pdf), repo2))
 
         // An inserted row changes the seal line itself.
         repo2.log(id, EventType.NOTE, EventSource.OFFICER, "en", text = "added later")
-        assertEquals(SealCheck.DIFFERS_FROM_DEVICE, checkReport(app, Uri.fromFile(pdf), pass, repo2))
+        assertEquals(SealCheck.DIFFERS_FROM_DEVICE, checkReport(app, Uri.fromFile(pdf), repo2))
 
         // The certificate printed now says the chain is broken.
-        val (again, pass2) = export(repo2, id)
-        val text = PDDocument.load(again, pass2).use { PDFTextStripper().getText(it) }
+        val again = export(repo2, id)
+        val text = PDDocument.load(again).use { PDFTextStripper().getText(it) }
         assertTrue("the new certificate reports the break:\n$text", "BROKEN" in text)
         reopened.close()
     }
 
-    private suspend fun export(repo: SessionRepository, id: String): Pair<File, String> {
+    private suspend fun export(repo: SessionRepository, id: String): File {
         val content = app.container.content.load()
         lateinit var vm: SessionViewModel
         instrumentation.runOnMainSync { vm = SessionViewModel(id, repo, content, "en", app.container.report) }

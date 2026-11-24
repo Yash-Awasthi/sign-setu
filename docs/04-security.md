@@ -29,9 +29,9 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 
 | Control | Source |
 | --- | --- |
-| Platform JCA, Android Keystore and SQLCipher only; no custom algorithms. AES-256-GCM, P-256 ECDH, HKDF-SHA256, SHA-256; `SecureRandom` for every key, nonce and passphrase (`kotlin.random` is used only to shuffle pictures). | MASVS-CRYPTO-1 |
+| Platform JCA, Android Keystore and SQLCipher only; no custom algorithms. AES-256-GCM, P-256 ECDH, HKDF-SHA256, SHA-256; `SecureRandom` for every key and nonce (`kotlin.random` is used only to shuffle pictures). | MASVS-CRYPTO-1 |
 | No key in the source, the repository or any APK: the build has no field for an assistant key. The gateway enrols with a one-time department code; a custom API endpoint takes the officer's own key, kept in the Keystore. gitleaks runs on every push. | MASVS-CRYPTO-2 |
-| Export: PDF encrypted with AES-256 under a one-time 80-bit passphrase shown once, and a random owner password. Every page carries the record digest and the hash-chain head; the certificate page carries the full chain head and its status (`EvidenceIntegrity`). | MASVS-CRYPTO-1 |
+| Export: a PDF with no password, sealed rather than encrypted — every page carries the record digest and the hash-chain head, the certificate page the full chain head and its status, and the seal page the P-256 device signature over the line (`EvidenceIntegrity`). | MASVS-CRYPTO-1 |
 | Event log sealed as a SHA-256 chain as rows are written (`EventSeal`); export re-walks it and reports the first broken row. | BSA s.63 |
 
 ### 2.3 Authentication
@@ -149,7 +149,7 @@ Status from code and configuration; dynamic testing by the empanelled auditor co
 | Phone iroh key `signsetu.iroh.key` | Keystore, wraps `iroh.bin` (the phone's station-link identity) | Never, unless the file is lost; reinstall or a backup restore makes a new one | The phone gets a new endpoint id; the relay allowlist, if any, is updated |
 | Brain keys (`iroh.key`, certificate, token) | The brain's state folder, owner-only | `--rotate-token` for the token; delete `iroh.key` for a new identity | Every phone pairs again |
 | Service key key `signsetu.assist.key` | Keystore, wraps `assist.bin` (custom API endpoint) | When the officer removes or replaces the service | Officer enters the key again |
-| Export passphrase | Shown once | Per export | Report unreadable; export again |
+| Export passphrase | Removed in 0.8.52: the report is one file with no password | — | Anything an officer shares can be read by whoever receives it; the seal still shows alteration |
 | Link keys | ECDH and HKDF per link, memory only | Every link and resume | Link closes; pair again |
 | Resume secret | Memory only | Every new link; zeroed on Bye, expiry, lock, end | Reconnect needs the code |
 | Release signing key | Repository secrets for CI; offline copies with the release manager and a second custodian | On compromise (v3 rotation) | Updates need the backup |

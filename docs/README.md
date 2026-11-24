@@ -4,7 +4,7 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 
 | Field | Value |
 | --- | --- |
-| Version | 0.8.51 (version code 23), applicationId `in.signsetu` |
+| Version | 0.8.52 (version code 24), applicationId `in.signsetu` |
 | Classification | Internal |
 | Source of truth | This repository; the code wins over any document, and documents are corrected when they drift |
 
@@ -62,7 +62,7 @@ Conventions: **[confirm]** marks anything that depends on a person or body outsi
 
 ### 2.1 Scope
 
-**In scope:** officer page; subject-facing stage with an animated character; questions, phrases and pictures in 17 languages; answers by touch, drawing, writing and signing to the camera; on-device sign reading for Indian (ISL) and American (ASL) sign language; an encrypted, hash-chained session record; a password-protected report with a draft BSA s.63 certificate; an optional second screen over Bluetooth; voice recorded only with logged consent; the in-app Help and guided tour in English and Hindi; an optional station computer, the station brain (speech to text, translation, sign reading, inbox), reached on the station network or over iroh, through the department's own self-hosted relay when no direct path exists; an optional online assistant through the department gateway; a reviewer portal for content sign-off.
+**In scope:** officer page; subject-facing stage with an animated character; questions, phrases and pictures in 17 languages; answers by touch, drawing, writing and signing to the camera; on-device sign reading for Indian (ISL) and American (ASL) sign language; an encrypted, hash-chained session record; a sealed report with no password and a draft BSA s.63 certificate; an optional second screen over Bluetooth; voice recorded only with logged consent; the in-app Help and guided tour in English and Hindi; an optional station computer, the station brain (speech to text, translation, sign reading, inbox), reached on the station network or over iroh, through the department's own self-hosted relay when no direct path exists; an optional online assistant through the department gateway; a reviewer portal for content sign-off.
 
 **Out of scope:** statement recording, case management, identity capture, video recording, and any recording of the officer's voice.
 
@@ -148,7 +148,7 @@ flowchart LR
     P0 -- "F2 conversation, readings, grades" --> E1
     P0 -- "F3 stage" --> E2
     E2 -- "F4 taps, drawing, writing, camera frames" --> P0
-    P0 -- "F5 encrypted PDF" --> E3
+    P0 -- "F5 sealed PDF" --> E3
     P0 -- "F6 contact link" --> E4
     P0 -- "F7 stage view" --> E5
     E5 -- "F8 answers, words read" --> P0
@@ -207,7 +207,7 @@ flowchart LR
     P7 <-- "AES-256-GCM frames" --> E5
     P2 -- "export request" --> P5
     P4 -- "rows, chain" --> P5
-    P5 -- "encrypted PDF" --> E3
+    P5 -- "sealed PDF" --> E3
     D3 -- "retention" --> P8
     P8 -- "purge or wipe" --> D1
     classDef ent fill:#ffffff,stroke:#16202e,stroke-width:2px,color:#16202e
@@ -276,7 +276,7 @@ The readers generalise poorly to people they have not seen, so a reading is neve
 | Signing | CI runs `zipalign` and `apksigner` with the release key from repository secrets, signature scheme v3; a green `master` push publishes `v<versionName>`, replacing the APKs while the version is unchanged. The emulator tests run only for a new version or a manual run |
 | Expiry | A build refuses new sessions 180 days after its build day |
 | Install | Allow installs from the source and open the APK. A screen lock is strongly recommended; without one the app warns once and keeps records under a key not tied to unlocking until a lock is set |
-| Export | Finish, name the session, Export report, share the PDF, give the passphrase by another channel |
+| Export | Finish, name the session, Export report, share the PDF |
 | Update | Install the newer APK over the old one; it must carry the same signing key |
 
 ## 6. Limitations

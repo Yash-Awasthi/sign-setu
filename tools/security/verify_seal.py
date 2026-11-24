@@ -1,8 +1,9 @@
 """Checks a Sign Setu report's verification seal away from the phone.
 
-Give it the text of the report's QR code (`--qr`), or the exported PDF and its passphrase (`--pdf`, `--passphrase`),
-which carries the same seal in its metadata. The seal line (the first five fields) must verify under the ECDSA P-256
-device key the seal carries. With `--key-fingerprint` the key must also be the one printed on the certificate.
+Give it the text of the report's QR code (`--qr`), or the exported PDF (`--pdf`), which carries the same seal in its
+metadata. The seal line (the first five fields) must verify under the ECDSA P-256 device key the seal carries. With
+`--key-fingerprint` the key must also be the one printed on the certificate. Reports exported by older builds were
+encrypted; `--passphrase` still opens one of those, and is not needed for a current export.
 
 Exit status: 0 valid, 1 signature invalid or key mismatch, 2 no seal or malformed.
 Needs `cryptography`, and `pypdf` for `--pdf`.
@@ -15,10 +16,11 @@ import sys
 SEAL_KEY = "/SignSetuSeal"
 
 
-def seal_from_pdf(path: str, passphrase: str) -> str | None:
+def seal_from_pdf(path: str, passphrase: str = "") -> str | None:
     from pypdf import PdfReader
 
     reader = PdfReader(path)
+    # Current exports are not encrypted; an older one opens with the passphrase shown when it was made.
     if reader.is_encrypted and not reader.decrypt(passphrase):
         raise SystemExit("the passphrase does not open this report")
     meta = reader.metadata or {}
@@ -59,7 +61,7 @@ def main() -> None:
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--qr", help="the QR code's text")
     src.add_argument("--pdf", help="the exported report")
-    ap.add_argument("--passphrase", help="the report's one-time passphrase (with --pdf)")
+    ap.add_argument("--passphrase", help="only for a report exported by an older build, which was encrypted")
     ap.add_argument("--key-fingerprint", help="the device key SHA-256 printed on the certificate")
     a = ap.parse_args()
     payload = a.qr if a.qr else seal_from_pdf(a.pdf, a.passphrase or "")
