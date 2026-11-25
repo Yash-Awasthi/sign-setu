@@ -62,14 +62,32 @@ export function place(x: number, y: number, body: Body): Vector3 {
   );
 }
 
-/** The closest a wrist comes to its shoulder, as a share of arm length: an elbow folded tighter collapses the mesh. */
-const MIN_REACH = 0.45;
+/** Tightest elbow bend the mesh can fold without collapsing (interior angle, degrees). */
+export const ELBOW_MIN_DEG = 40;
+/** Straightest the elbow goes; the few degrees left over keep the bend direction defined. */
+export const ELBOW_MAX_DEG = 178;
+/** Furthest the wrist may swing off the forearm axis, in degrees. */
+export const WRIST_LIMIT_DEG = 70;
+
+/** Interior elbow angle in degrees for the two bone lengths and the shoulder to wrist [d], by the law of cosines. */
+export function elbowAngle(upper: number, fore: number, d: number): number {
+  const c = (upper * upper + fore * fore - d * d) / (2 * upper * fore);
+  return MathUtils.radToDeg(Math.acos(MathUtils.clamp(c, -1, 1)));
+}
 
 /** Two-bone arm: the elbow for shoulder s and wrist target t, bent toward pole. The wrist comes back within reach
- * and no nearer than [MIN_REACH]. */
+ * and no nearer than the elbow limits allow. */
 export function solveArm(s: Vector3, t: Vector3, pole: Vector3, upper: number, fore: number): { elbow: Vector3; wrist: Vector3 } {
   const dir = t.clone().sub(s);
-  const d = MathUtils.clamp(dir.length(), Math.max(Math.abs(upper - fore) + 1e-3, MIN_REACH * (upper + fore)), upper + fore - 1e-3);
+  const reach = (deg: number) =>
+    Math.sqrt(upper * upper + fore * fore - 2 * upper * fore * Math.cos(MathUtils.degToRad(deg)));
+  // A target on the shoulder leaves no direction to bend in; aim it down like the bend fallback below.
+  if (dir.lengthSq() < 1e-12) dir.set(0, -1, 0);
+  const d = MathUtils.clamp(
+    dir.length(),
+    Math.max(Math.abs(upper - fore) + 1e-3, reach(ELBOW_MIN_DEG)),
+    Math.min(reach(ELBOW_MAX_DEG), upper + fore - 1e-3),
+  );
   dir.normalize();
   const a = (upper * upper + d * d - fore * fore) / (2 * d);
   const h = Math.sqrt(Math.max(0, upper * upper - a * a));
@@ -133,6 +151,14 @@ export function splitTwist(local: Quaternion, axis: Vector3): { twist: Quaternio
   if (twist.lengthSq() < 1e-12) twist.identity();
   else twist.normalize();
   return { twist, swing: twist.clone().invert().multiply(local) };
+}
+
+/** Clamps a swing turn to [maxDeg] about its own axis; a turn already within the limit comes back untouched. */
+export function limitSwing(swing: Quaternion, maxDeg = WRIST_LIMIT_DEG): Quaternion {
+  const max = MathUtils.degToRad(maxDeg);
+  if (2 * Math.acos(Math.min(1, Math.abs(swing.w))) <= max) return swing;
+  const axis = new Vector3(swing.x, swing.y, swing.z).normalize();
+  return new Quaternion().setFromAxisAngle(axis, max);
 }
 
 const FINGERS = ["Index", "Middle", "Ring", "Little"] as const;

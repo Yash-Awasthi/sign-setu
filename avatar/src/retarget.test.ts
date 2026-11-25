@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vite-plus/test";
-import { Quaternion, Vector3 } from "three";
-import { arm, expressions, handTurn, place, solveArm, splitTwist, type Body } from "./retarget";
+import { MathUtils, Quaternion, Vector3 } from "three";
+import {
+  ELBOW_MAX_DEG,
+  ELBOW_MIN_DEG,
+  WRIST_LIMIT_DEG,
+  arm,
+  elbowAngle,
+  expressions,
+  handTurn,
+  limitSwing,
+  place,
+  solveArm,
+  splitTwist,
+  type Body,
+} from "./retarget";
 import { BUILD, FACES, L, R, SHAPES, Timeline, restPose, type HandPose } from "./rig";
 
 // Rest bones of the shipped model (app/src/main/assets/avatar/model.vrm).
@@ -58,8 +71,20 @@ describe("solveArm", () => {
       body.upper,
       body.fore,
     );
-    expect(wrist.distanceTo(body.right)).toBeGreaterThanOrEqual(0.45 * (body.upper + body.fore) - 1e-6);
+    expect(elbowAngle(body.upper, body.fore, wrist.distanceTo(body.right))).toBeGreaterThanOrEqual(ELBOW_MIN_DEG - 1e-6);
     expect(elbow.distanceTo(body.right)).toBeCloseTo(body.upper, 5);
+  });
+
+  it("stops the elbow at its tightest when the wrist target sits on the shoulder", () => {
+    const { wrist } = solveArm(body.right, body.right.clone(), new Vector3(0, -1, 0), body.upper, body.fore);
+    const angle = elbowAngle(body.upper, body.fore, wrist.distanceTo(body.right));
+    expect(angle).toBeGreaterThanOrEqual(ELBOW_MIN_DEG - 1e-6);
+  });
+
+  it("stops the elbow at its straightest when the wrist target is past arm's length", () => {
+    const { wrist } = solveArm(body.right, new Vector3(-2, 1.3, 0), new Vector3(0, -1, 0), body.upper, body.fore);
+    const angle = elbowAngle(body.upper, body.fore, wrist.distanceTo(body.right));
+    expect(angle).toBeLessThanOrEqual(ELBOW_MAX_DEG + 1e-6);
   });
 
   it("keeps the elbow out to the side and in front of the shoulder line when a hand crosses the body", () => {
@@ -104,6 +129,22 @@ describe("splitTwist", () => {
     expect(twist.angleTo(turn)).toBeLessThan(1e-6);
     expect(swing.angleTo(bend)).toBeLessThan(1e-6);
     expect(twist.clone().multiply(swing).angleTo(turn.clone().multiply(bend))).toBeLessThan(1e-6);
+  });
+});
+
+describe("limitSwing", () => {
+  it("clips a wrist bend past the limit and keeps its axis", () => {
+    const axis = new Vector3(1, 2, -1).normalize();
+    const wide = new Quaternion().setFromAxisAngle(axis, MathUtils.degToRad(120));
+    const clipped = limitSwing(wide);
+    expect(MathUtils.radToDeg(2 * Math.acos(Math.min(1, Math.abs(clipped.w))))).toBeCloseTo(WRIST_LIMIT_DEG, 5);
+    const kept = new Vector3(clipped.x, clipped.y, clipped.z).normalize();
+    expect(kept.dot(axis)).toBeCloseTo(1, 6);
+  });
+
+  it("leaves a bend within the limit untouched", () => {
+    const small = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), MathUtils.degToRad(30));
+    expect(limitSwing(small)).toBe(small);
   });
 });
 

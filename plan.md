@@ -263,7 +263,8 @@ optional polish; they are the reason the app is hard to use today.
 
 ### M4.3 Signing quality (owner: "better hand signs and fingerspellings", "joint restrictions")
 
-- [ ] Add joint limits to the avatar rig so wrists and elbows stop bending beyond human range (owner: "wrist and elbow move non humanly"). `[W]`
+- [x] Add joint limits to the avatar rig so wrists and elbows stop bending beyond human range (owner: "wrist and elbow move non humanly"). `[W]`
+    - verified-here: cd avatar && npx vp test run src/retarget.test.ts -> 20/20 tests pass; cd avatar && npx vp build -> exit 0
 - [ ] Re-record or re-time the fingerspelling transitions; measure the per-letter transition time and the readability check with two signers. `[W]`
 - [ ] Improve the sign blend at phrase boundaries (co-articulation) and record the before/after clips for review. `[W]`
 - [ ] A signer review sheet: every ISL word with a still frame and a "reads correctly?" column, filled by a Deaf reviewer. `[W]`

@@ -10,7 +10,7 @@ import {
   type VRMHumanBoneName,
 } from "@pixiv/three-vrm";
 import { applyClipFrame, clipFace } from "./clip";
-import { arm, expressions, fingerAngles, handTurn, solveArm, splitTwist, type Body } from "./retarget";
+import { arm, expressions, fingerAngles, handTurn, limitSwing, solveArm, splitTwist, type Body } from "./retarget";
 import { FACES, L, R, Timeline, blinkAt, glanceAt, livePose, type Gesture, type Pose, type QuestionKind, type Side } from "./rig";
 
 export type View = "body" | "head";
@@ -254,7 +254,7 @@ export class AvatarStage {
       const local = lowerWorld.invert().multiply(turnChest.clone().multiply(turn));
       const half = new THREE.Quaternion().slerp(splitTwist(local, armRest(side)).twist, 0.5);
       lower.quaternion.multiply(half);
-      hand.quaternion.copy(half.invert().multiply(local));
+      hand.quaternion.copy(limitSwing(half.invert().multiply(local)));
       for (const [name, [x, y, z]] of Object.entries(fingerAngles(h.shape, side))) {
         bone(`${prefix}${name}`)?.rotation.set(x, y, z, name.endsWith("Proximal") && !name.startsWith("Thumb") ? "YZX" : "XYZ");
       }
