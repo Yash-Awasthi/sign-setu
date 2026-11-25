@@ -348,7 +348,8 @@ review date.
 **Done when:** the bundle is reproducible and an officer can be trained from it.
 
 - **m6.2.1 Package**
-  - [ ] Signed APK, SBOM, `SHA256SUMS`, the DPIA, the walkthrough, the model allow-list procedure and the verification instructions in one place. `[E]`
+  - [x] Signed APK, SBOM, `SHA256SUMS`, the DPIA, the walkthrough, the model allow-list procedure and the verification instructions in one place. `[E]`
+    - verified-here: python tools/docs/check_docs.py -> exit 0 on HEAD plus this unit (repo tree red only from docs/22-screen-inventory.md, a sibling commit with no index row); check_version.py -> exit 0; check_release.py -> exit 0; docs/24-deployment-package.md names all seven artefacts and every path in it exists
 - **m6.2.2 Training**
   - [ ] The officer walkthrough with screenshots, an accessibility note, and the three mistakes officers actually make (measured from the drill). `[E]`
 
