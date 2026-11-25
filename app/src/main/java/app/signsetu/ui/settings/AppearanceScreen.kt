@@ -91,6 +91,7 @@ fun AppearanceScreen(store: SettingsStore, onBack: () -> Unit) {
                 }
                 // Pure black only changes a dark screen, so the switch shows only while the app is dark.
                 if (dark) SwitchItem(R.string.settings_amoled, R.string.settings_amoled_summary, s.amoled) { on -> scope.launch { store.setAmoled(on) } }
+                SwitchItem(R.string.settings_motion, R.string.settings_motion_summary, s.reduceMotion) { on -> scope.launch { store.setReduceMotion(on) } }
             }
             Group(R.string.settings_color_theme) {
                 LazyRow(

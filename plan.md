@@ -291,7 +291,8 @@ optional polish; they are the reason the app is hard to use today.
 - [ ] Touch targets ≥ 48 dp, and one-handed reach for every in-session action. `[D]`
 - [ ] Switch-access and keyboard-only path through the person's answer flow (tap, picture, nod, finger count). `[D]`
 - [ ] Reading level: captions tested with two people who read the target language as a second language; record the words that caused confusion and change them. `[D]`
-- [ ] Reduced motion honoured: the avatar and stage animations have a low-motion mode that still signs legibly. `[D]`
+- [x] Reduced motion honoured: the avatar and stage animations have a low-motion mode that still signs legibly. `[D]`
+  verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.MotionTest -> 4 tests, 0 failures
 
 ### M5.2 Interface craft
 

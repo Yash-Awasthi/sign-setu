@@ -172,6 +172,8 @@
     <string name="theme_yotsuba">Yotsuba</string>
     <string name="settings_amoled">Pure black (AMOLED)</string>
     <string name="settings_amoled_summary">Black backgrounds in dark mode, for OLED screens</string>
+    <string name="settings_motion">Less motion</string>
+    <string name="settings_motion_summary">Stops breathing and other decoration; signs still play</string>
     <string name="settings_theme_system">Device default</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>

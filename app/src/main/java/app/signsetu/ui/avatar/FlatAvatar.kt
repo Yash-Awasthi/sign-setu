@@ -3,6 +3,7 @@ package app.signsetu.ui.avatar
 import app.signsetu.data.content.Clip
 import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.QuestionKind
+import app.signsetu.ui.theme.LocalMotion
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -98,9 +99,11 @@ internal fun FlatAvatar(
     val clock = remember { mutableFloatStateOf(0f) }
     val idleClock = remember { mutableFloatStateOf(0f) }
     val context = LocalContext.current
-    val still = remember {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    // The officer's less-motion switch or the phone's "remove animations": decoration stops, the sign still plays.
+    val motion = LocalMotion.current && remember {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
     }
+    val still = !motion
     val finished by rememberUpdatedState(onFinished)
     val gaze = remember { Animatable(0f) }
     // The elbow drawn last frame, so a two-bone solve keeps its bend instead of flipping across the shoulder line.

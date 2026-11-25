@@ -15,5 +15,8 @@ val LocalMotion = staticCompositionLocalOf { true }
 @Composable
 fun <T> motion(spec: FiniteAnimationSpec<T>): FiniteAnimationSpec<T> = if (LocalMotion.current) spec else snap()
 
+/** Decoration runs only when the officer has not asked for less motion and the phone's animations are on. */
+fun motionEnabled(reduceMotion: Boolean, animationsOn: Boolean): Boolean = animationsOn && !reduceMotion
+
 fun systemAnimationsOn(context: Context): Boolean =
     Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f

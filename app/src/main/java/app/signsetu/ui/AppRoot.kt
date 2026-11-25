@@ -1,6 +1,7 @@
 package app.signsetu.ui
 
 import app.signsetu.ui.theme.systemAnimationsOn
+import app.signsetu.ui.theme.motionEnabled
 import app.signsetu.ui.theme.LocalMotion
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.EnterTransition
@@ -127,7 +128,7 @@ fun AppRoot(container: AppContainer) {
     }
 
     val appContext = LocalContext.current
-    val motionOn = systemAnimationsOn(appContext)
+    val motionOn = motionEnabled(settings?.reduceMotion == true, systemAnimationsOn(appContext))
     val dark = settings?.colorTheme == ColorTheme.CONTRAST || when (settings?.themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
