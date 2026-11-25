@@ -99,8 +99,14 @@ def check(assets: pathlib.Path = ASSETS) -> list[str]:
                 errors.append(f"word {name!r}: unknown {key} {word[key]!r}")
         if word.get("card") and word["card"] not in cards:
             errors.append(f"word {name!r}: unknown card {word['card']!r}")
+    # A screen label is either a full language map or an error: a value that is not a map, or a map
+    # with no language the bundle knows, would otherwise pass without any language being checked.
     for key, values in subject_ui.items():
-        if isinstance(values, dict) and set(values) & allowed:
+        if not isinstance(values, dict):
+            errors.append(f"subject_ui {key}: expected a language map, got {type(values).__name__}")
+        elif not set(values) & allowed:
+            errors.append(f"subject_ui {key}: no known language, keys {sorted(values)}")
+        else:
             label(f"subject_ui {key}", values, allowed)
     # Every word an intent waits for must be one the sign reader can actually give (docs/15-gloss-to-text.md).
     if (assets / "intents.json").exists():
