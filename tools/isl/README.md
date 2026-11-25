@@ -2,7 +2,8 @@
 
 `retarget.py` turns the INCLUDE signers' MediaPipe Holistic landmarks (AI4Bharat, Sridhar et al. 2020, OpenHands
 pose release, CC BY 4.0) into `app/src/main/assets/content/isl_signs.json`, one sign per word, ids `isl.<word>`.
-Every sign is a draft until Deaf review. Run from the repository root; data stays outside the repository, and each
+Every sign is a draft until Deaf review. The review sheet, its columns and the cadence for adding
+words are in [docs/review/word_review.md](../../docs/review/word_review.md). Run from the repository root; data stays outside the repository, and each
 script takes its data folder as an argument (the defaults below are one developer's paths).
 
 | Script | Input | Writes |
