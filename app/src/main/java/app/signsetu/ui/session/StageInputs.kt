@@ -48,15 +48,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -184,7 +187,12 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
     var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var ink by remember { mutableStateOf(Ink) }
+    var tool by remember { mutableStateOf(DrawTool.PEN) }
+    // A drag reads the colour and tool chosen after it began: keyed on Unit, the gesture block would keep the first.
+    val pen by rememberUpdatedState(ink)
+    val shape by rememberUpdatedState(tool)
     val paper = Color.White
+    val board = stringResource(R.string.stage_draw_board)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
         Surface(
             shape = RoundedCornerShape(20.dp),
@@ -197,17 +205,24 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
                 Modifier
                     .fillMaxSize()
                     .onSizeChanged { canvasSize = it }
+                    .semantics { contentDescription = board }
                     .pointerInput(Unit) {
                         detectDragGestures(
                             onDragStart = { current = listOf(it) },
                             onDrag = { change, _ -> current = current + change.position },
                             // Kept in canvas fractions, so a drawing survives the canvas changing size.
-                            onDragEnd = { strokes.add(DrawStroke(current.map { it.fraction(canvasSize) }, ink)); current = emptyList() },
+                            onDragEnd = {
+                                val trail = current.map { it.fraction(canvasSize) }
+                                drawnLines(shape, trail).forEach { strokes.add(DrawStroke(it, pen)) }
+                                current = emptyList()
+                            },
                             onDragCancel = { current = emptyList() },
                         )
                     },
             ) {
-                (strokes.map { s -> DrawStroke(s.points.map { it.scaled(canvasSize) }, s.color) } + DrawStroke(current, ink)).forEach { s ->
+                val lines = strokes.map { s -> DrawStroke(s.points.map { it.scaled(canvasSize) }, s.color) } +
+                    drawnLines(shape, current).map { DrawStroke(it, pen) }
+                lines.forEach { s ->
                     if (s.points.size < 2) return@forEach
                     val path = Path().apply {
                         moveTo(s.points[0].x, s.points[0].y)
@@ -219,6 +234,30 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
         }
         val stage = LocalStageColors.current
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+            DrawTool.entries.forEach { t ->
+                val name = stringResource(t.nameId())
+                val chosen = t == tool
+                Box(
+                    Modifier.size(48.dp).clip(CircleShape)
+                        .background(if (chosen) stage.tool else Color.Transparent)
+                        .border(stage.toolEdge, CircleShape)
+                        .clickable(role = Role.RadioButton) { tool = t }
+                        .semantics { selected = chosen; contentDescription = name },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Canvas(Modifier.size(26.dp)) { drawToolGlyph(t, stage.onTool) }
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            // Undo takes back one line or shape; a slip of the finger should not cost the whole picture.
+            PressableSurface(
+                onClick = { if (strokes.isNotEmpty()) strokes.removeAt(strokes.lastIndex) }, shape = CircleShape, color = stage.tool, border = stage.toolEdge,
+                modifier = Modifier.size(48.dp).semantics { contentDescription = content.subjectText("undo", lang) ?: "Undo" },
+            ) {
+                Box(contentAlignment = Alignment.Center) { Icon(painterResource(R.drawable.ic_undo), contentDescription = null, tint = stage.onTool) }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
             InkColors.forEachIndexed { i, c ->
                 val name = stringResource(R.string.stage_ink_colour, i + 1, InkColors.size)
                 Box(
@@ -227,14 +266,6 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
                 ) {
                     Box(Modifier.size(if (ink == c) 40.dp else 32.dp).background(c, CircleShape).border(if (ink == c) 3.dp else 0.dp, Color.White, CircleShape))
                 }
-            }
-            Spacer(Modifier.weight(1f))
-            // Undo takes back one line; a slip of the finger should not cost the whole picture.
-            PressableSurface(
-                onClick = { if (strokes.isNotEmpty()) strokes.removeAt(strokes.lastIndex) }, shape = CircleShape, color = stage.tool, border = stage.toolEdge,
-                modifier = Modifier.size(48.dp).semantics { contentDescription = content.subjectText("undo", lang) ?: "Undo" },
-            ) {
-                Box(contentAlignment = Alignment.Center) { Icon(painterResource(R.drawable.ic_undo), contentDescription = null, tint = stage.onTool) }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
@@ -251,6 +282,35 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
             DoneButton(content, lang, enabled = strokes.isNotEmpty()) {
                 if (strokes.isNotEmpty()) onDone(renderPng(strokes.map { s -> DrawStroke(s.points.map { it.scaled(canvasSize) }, s.color) }, canvasSize, paper.toArgb()))
             }
+        }
+    }
+}
+
+@StringRes
+private fun DrawTool.nameId(): Int = when (this) {
+    DrawTool.PEN -> R.string.stage_tool_pen
+    DrawTool.LINE -> R.string.stage_tool_line
+    DrawTool.RECT -> R.string.stage_tool_rect
+    DrawTool.OVAL -> R.string.stage_tool_oval
+    DrawTool.ARROW -> R.string.stage_tool_arrow
+}
+
+/** The tool's mark on its chip: the shape it draws, at the size of the chip's ink. */
+private fun DrawScope.drawToolGlyph(tool: DrawTool, color: Color) {
+    val w = size.width
+    val h = size.height
+    val ink = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+    val a = Offset(w * 0.15f, h * 0.85f)
+    val b = Offset(w * 0.85f, h * 0.15f)
+    when (tool) {
+        DrawTool.PEN -> drawLine(color, a, b, strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
+        DrawTool.LINE -> drawLine(color, a, b, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+        DrawTool.RECT -> drawRect(color, Offset(w * 0.14f, h * 0.22f), Size(w * 0.72f, h * 0.56f), style = ink)
+        DrawTool.OVAL -> drawOval(color, Offset(w * 0.14f, h * 0.22f), Size(w * 0.72f, h * 0.56f), style = ink)
+        DrawTool.ARROW -> {
+            drawLine(color, a, b, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+            drawLine(color, b, Offset(w * 0.55f, h * 0.17f), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+            drawLine(color, b, Offset(w * 0.83f, h * 0.45f), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
         }
     }
 }

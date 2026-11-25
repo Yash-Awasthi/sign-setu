@@ -275,7 +275,8 @@ optional polish; they are the reason the app is hard to use today.
 
 ### M4.5 Richer communication (owner: "more feature richness")
 
-- [ ] Drawing board improvements: shapes, undo, and a saved sketch attached to the session record. `[W]`
+- [x] Drawing board improvements: shapes, undo, and a saved sketch attached to the session record. `[W]`
+  verified-here: ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.DrawingBoardDeviceTest -> 3 tests passed on ci34 (API 34), including a rectangle whose four sides reach the kept PNG with paper inside, and undo removing it; :app:testStandardDebugUnitTest --tests app.signsetu.DrawShapesTest -> 8 passed
 - [ ] Body-map precision: zoom regions (hand, foot, chest, abdomen) with the touched point recorded exactly. `[W]`
 - [ ] Emotion and pain scale on the stage (faces + 0–10), logged with the session. `[W]`
 - [ ] Family/contact card the person can point at to identify who to call. `[W]`
