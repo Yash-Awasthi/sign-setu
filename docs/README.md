@@ -43,6 +43,7 @@ One row per document: who it is for, and what it holds.
 | [18-station.md](18-station.md) | developer | The station: the link switch, heartbeat and capabilities, sign reading and AI help in order, sending conversations, the zip format, setup |
 | [19-walkthrough.md](19-walkthrough.md) | officer | Walkthrough of the app, matching the in-app Help: a session step by step, the call and the stage, the conversation, every setting, records, practice, station computer, privacy |
 | [20-vendor-review.md](20-vendor-review.md) | reviewer | Vendor and dependency review: SQLCipher, MediaPipe, llama.cpp/GGUF, iroh; licence, pinned version, update path and advisory source for each |
+| [21-support.md](21-support.md) | officer | Reporting a bad reading or a failed export: what to do first, what to attach, how it is sent, and the response window |
 | [models/sign_reader_v4.md](models/sign_reader_v4.md) | developer | Model card of the ISL word reader |
 | [models/sign_reader_v3.md](models/sign_reader_v3.md) | developer | Model card of the previous ISL word reader |
 | [../portal/README.md](../portal/README.md) | reviewer | Reviewer portal for content sign-off |

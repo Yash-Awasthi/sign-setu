@@ -350,7 +350,8 @@ review date.
 **Done when:** each incident class has a first action and a person.
 
 - **m6.3.1 Support and release policy**
-  - [ ] How an officer reports a bad signing or a failed export, what to attach, and the response window. `[E]`
+  - [x] How an officer reports a bad signing or a failed export, what to attach, and the response window. `[E]`
+    - verified-here: python tools/docs/check_docs.py -> exit 0; python tools/docs/check_version.py -> exit 0; grep -n -e '## 1. A bad signing' -e '## 2. A failed export' -e '## 3. What to attach' -e '## 5. Response window' docs/21-support.md -> 5, 13, 23, 44; grep -n -P '[^\x00-\x7F]' docs/21-support.md -> no output
   - [ ] Release policy: version discipline, a changelog per release, a supported-device matrix, and an upgrade path that keeps sessions readable. `[E]`
 - **m6.3.2 Vendors and incidents**
   - [x] Vendor and dependency review: SQLCipher, MediaPipe, llama.cpp/GGUF, iroh — licences, update cadence and the security advisory subscription for each. `[E]`
