@@ -331,7 +331,8 @@ review date.
 **Done when:** the DPIA matches the data inventory and is signed.
 
 - **m6.1.1 DPIA**
-  - [ ] DPIA refresh (`docs/13-dpia.md`) aligned with the current data inventory, with a named owner and a review date. `[E]`
+  - [x] DPIA refresh (`docs/13-dpia.md`) aligned with the current data inventory, with a named owner and a review date. `[E]`
+  - verified-here: python tools/security/check_permissions.py -> exit 0; python tools/docs/check_docs.py -> exit 0; the export cache row is in sections 1.2 and 7 with its real 15-minute rule
 - **m6.1.2 Attestation truth**
   - [x] Attestation and pinning (`docs/14-attestation-and-pinning.md`): verify the described controls exist in the code, and mark any that are aspirational. `[E]`
   - verified-here: python tools/docs/check_attestation.py -> exit 0; python -m unittest discover -s tools/docs -p 'test_*.py' -> all pass; python tools/docs/check_docs.py -> exit 0
