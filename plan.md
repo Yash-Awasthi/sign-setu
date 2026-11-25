@@ -318,7 +318,8 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 
 - [ ] A full session drill: start → consent → record → sign → answer → finish → export → verify on a second device; timed end to end with a real officer. `[D]`
 - [ ] Battery and thermal: a 30-minute session on a mid-range phone, recording and signing, with battery drop and thermal throttling measured. `[D]`
-- [ ] Storage: measure per-session size (audio, frames, records) and assert the retention job keeps the device inside a documented budget. `[D]`
+- [x] Storage: measure per-session size (audio, frames, records) and assert the retention job keeps the device inside a documented budget. `[D]`
+  - verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.StorageBudgetTest -> BUILD SUCCESSFUL; a documented worst-case session (3 min narrative, 60 s recording, one drawing, 400 rows) measures 3118948 B, a typical session 514043 B, and every retention window offered at 2 sessions an hour stays inside the 1 GB budget (72 h keeps 144 worst-case sessions = 449128512 B); python tools/docs/check_docs.py -> exit 0. docs/23-storage-budget.md records the measurements and what the bound does not cover.
 - [x] Failure rehearsal: phone dies mid-session; second screen drops; model file corrupt; report what survives and what the officer should do. `[D]`
 - verified-here: python tools/security/check_permissions.py -> exit 0; python tools/docs/check_docs.py -> exit 0; ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.SessionSurvivesRestartDeviceTest -> BUILD SUCCESSFUL on emulator API 34, 1 test OK; the export and content paths are covered by ExportFailureDeviceTest and ContentFallbackTest, not rerun here
 
