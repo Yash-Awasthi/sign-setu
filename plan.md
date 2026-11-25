@@ -333,7 +333,8 @@ review date.
 - **m6.1.1 DPIA**
   - [ ] DPIA refresh (`docs/13-dpia.md`) aligned with the current data inventory, with a named owner and a review date. `[E]`
 - **m6.1.2 Attestation truth**
-  - [ ] Attestation and pinning (`docs/14-attestation-and-pinning.md`): verify the described controls exist in the code, and mark any that are aspirational. `[E]`
+  - [x] Attestation and pinning (`docs/14-attestation-and-pinning.md`): verify the described controls exist in the code, and mark any that are aspirational. `[E]`
+  - verified-here: python tools/docs/check_attestation.py -> exit 0; python -m unittest discover -s tools/docs -p 'test_*.py' -> all pass; python tools/docs/check_docs.py -> exit 0
 
 ### M6.2 Deployment package and training
 

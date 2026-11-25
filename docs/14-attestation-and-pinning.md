@@ -15,6 +15,27 @@ Both measures depend on the production gateway host and its certificate authorit
 | Station computer | Not covered by the gateway gap below: the phone trusts the brain's self-signed certificate by its SHA-256 pin alone, and over iroh authenticates the brain by its key. See section 7. |
 | Report seal | Separate from enrolment: each install makes a signing key in the Keystore (StrongBox, then the TEE, then a TEE key with no attestation chain on phones that refuse it) to sign a session's root hash (`DeviceSeal`). The key is attested when the phone allows it, so a lab can check it is hardware-backed. Enrolment attestation (section 4) is not built. |
 
+### 1.1 Which controls exist in the tree
+
+Each claim in this document was checked against the code at HEAD; a control the tree does not have is marked Aspirational with the design section that would add it.
+
+| Control | Status | Evidence |
+| --- | --- | --- |
+| HTTPS only, cleartext refused | Implemented | `app/src/main/java/app/signsetu/net/Http.kt#startsWith("https://")`, `app/src/main/res/xml/network_security_config.xml#cleartextTrafficPermitted="false"` |
+| No certificate pins for the gateway; the platform trust store is used | Aspirational | section 3 |
+| One-time enrolment code kept only as a hash and traded for a bearer token | Implemented | `gateway/config.go#ENROLL_HASHES`, `gateway/gateway.go#sha256Hex(*body.Code)`, `gateway/gateway.go#newToken` |
+| Gateway token kept on the server only as a SHA-256 hash | Implemented | `gateway/gateway.go#TokenHash: sha256Hex(token)`, `gateway/store.go#token_hash` |
+| Token wrapped by a non-exportable Keystore key in a file outside backup | Implemented | `app/src/main/java/app/signsetu/net/TokenVault.kt#noBackupFilesDir`, `app/src/main/java/app/signsetu/net/TokenVault.kt#signsetu.gateway.token` |
+| Optional token life, revocation and the admin device routes | Implemented | `gateway/config.go#TOKEN_TTL_DAYS`, `gateway/gateway.go#token expired`, `gateway/gateway.go#GET /v1/admin/devices`, `gateway/admin.go#adminRevoke` |
+| last_seen written at most once an hour | Implemented | `gateway/gateway.go#lastSeenResolution`, `gateway/store.go#TouchLastSeen` |
+| Enrolment and abuse limits: per-address and global wrong-code caps, IPv6 folded to /64, case-insensitive Bearer, 30 s admin leeway | Implemented | `gateway/gateway.go#enrollFailuresAll`, `gateway/auth.go#addrKey`, `gateway/auth.go#EqualFold(scheme, "Bearer")`, `gateway/auth.go#WithLeeway(30*time.Second)` |
+| Device key attestation at enrolment with a server nonce | Aspirational | section 4 |
+| Report seal signing key in the Keystore with StrongBox, then TEE, then TEE without attestation | Implemented | `app/src/main/java/app/signsetu/data/session/DeviceSeal.kt#setIsStrongBoxBacked`, `app/src/main/java/app/signsetu/data/session/DeviceSeal.kt#StrongBoxUnavailableException`, `app/src/main/java/app/signsetu/data/session/DeviceSeal.kt#setAttestationChallenge` |
+| Station certificate trusted by its SHA-256 pin alone | Implemented | `app/src/main/java/app/signsetu/net/BrainClient.kt#pinned(p.pin)`, `app/src/main/java/app/signsetu/net/BrainClient.kt#checkServerTrusted` |
+| iroh identity key made once per install, kept under a Keystore key, named by the ticket | Implemented | `app/src/main/java/app/signsetu/net/IrohBrain.kt#signsetu.iroh.key`, `app/src/main/java/app/signsetu/net/IrohBrain.kt#SecretKey.generate`, `app/src/main/java/app/signsetu/net/IrohBrain.kt#EndpointTicket.fromString` |
+| Gateway host set at build time with -PgatewayUrl | Implemented | `app/build.gradle.kts#gatewayUrl`, `app/build.gradle.kts#GATEWAY_URL` |
+| Certificate authority and attestation policy set at deployment | Aspirational | section 7 |
+
 ## 2. Threat model
 
 Assets: the assistant proxy (cost and misuse), the model files, the consented sign contributions, and the confidentiality of masked text in transit. Subject data goes to the gateway only as masked text for the optional assistant and counsellor.
