@@ -205,6 +205,17 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Over iroh, traffic is end-to-end encrypted to the brain's key. Where no direct path exists it passes through the department's own relay; no third-party relay or lookup service is used. The phone uses the relay named in the brain's ticket and never an n0 relay. | MUST |
 | The link runs only while the app is in front, and closes at once when turned off. Station readings are marked as the app's reading, never as the person's answer. | MUST |
 
+### 4.16 Reporting a bad reading or a failed export
+
+| Requirement | Priority |
+| --- | --- |
+| An officer who does not accept a reading replaces it with the person's own answer: Type what was signed, or Ask them to choose. The record keeps the person's answer, and the reading stays marked as the app's own. | MUST |
+| A support note names the word or phrase as it was shown, the sign language and profile, the app version and build day from Settings, About, and the phone model with its Android release from the phone's own Settings. No session is attached to report a reading. | MUST |
+| A failed export names the likely cause and leaves no partial file. The session is unchanged, and the officer can export again, save it to the phone, or send it to the station computer. | MUST |
+| A support note goes to the department IT security cell and the maintainer; named contacts: **[confirm]**. A report is sent only through the department's case channel, and any possible exposure follows the breach path in [13](13-dpia.md). | MUST |
+| A reading a signer disputes also goes to the Deaf reviewer, who alone can say whether the sign was read correctly. | SHOULD |
+| The department acknowledges a support note within one working day, answers within two, and the same day when a live case depends on the reading or the report. This is a department commitment, not app behaviour: **[confirm]**. | SHOULD |
+
 ## 5. Non-functional requirements
 
 | Requirement | Priority |
