@@ -71,3 +71,9 @@ See [ml/README.md](ml/README.md) for data, environments and the training order. 
 | `test_seal_agreement.py` | Unit tests for the diff and the seal-field reader | `python -m unittest discover -s tools/security -p 'test_*.py'` |
 | `fuzz_parsers.py` | Throws malformed input at the off-phone seal reader (payloads and PDFs) and at the station's record reader (`brain/brain/inbox.py`): neither may crash and neither may read a changed seal as valid. Fixed seed, so a failure reproduces. Found and closed three real escapes in 0.8.52: bad base64 or a non-DER key raising out of `verify_seal.check`, unreadable PDFs raising out of `seal_from_pdf`, and a non-text session id coming back from `_record` | `fuzz_parsers.py [--trials N] [--seed N]`; exit 0 clean, 1 a violation. CI runs 200 inputs at seed 1 |
 | `test_fuzz_parsers.py` | Unit tests pinning the same rules, with the exact escapes that were closed | `python -m unittest discover -s tools/security -p 'test_*.py'` |
+
+## Build integrity (`tools/ci`)
+
+| Script | What it does | Run |
+| --- | --- | --- |
+| `check_toolchain.py` | The NDK and CMake pinned in `app/build.gradle.kts` must match the CMake minimum, the installed SDK and both READMEs; a mismatch exits 1 naming the expected value | `check_toolchain.py` |

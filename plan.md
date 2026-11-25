@@ -175,7 +175,8 @@ harm.
 
 - [ ] Release APKs: `SHA256SUMS`, an SBOM, and the dependency-verification metadata hash recorded next to the artefact. `[P]`
 - [ ] Reproducible build check: same commit, same SDK/NDK, two builds, compare with `apksigcopier`-style diff and document non-deterministic inputs. `[P]`
-- [ ] NDK and CMake versions asserted in the build script; a mismatch fails with the expected value. `[P]`
+- [x] NDK and CMake versions asserted in the build script; a mismatch fails with the expected value. `[P]`
+  - verified-here: python tools/ci/check_toolchain.py -> exit 0, "NDK 30.0.16248370 and CMake 4.1.2: build script, CMake minimum, installed SDK and docs agree"; the same check over a copy with ndkVersion "29.0.1" -> exit 1, "ndkVersion is \"29.0.1\" but expected \"30.0.16248370\""; python -m unittest discover -s tools/ci -p "test_*.py" -> Ran 33 tests, OK; python tools/docs/check_docs.py -> exit 0.
 - [x] `avatar/` bundle and `app/src/main/assets/avatar/avatar.js` identity check already exists in CI; extend it to `content/` and the GGUF allow-list. `[P]`
   - verified-here: python tools/content/check_content.py -> exit 0, "content references, ids, card images and 17-language labels are consistent; bundle identity and the GGUF allow-list are consistent"; python tools/content/build_content.py --check -> exit 0, "manifest is current: 1622 files"; python -m unittest discover -s tools/content -p "test_*.py" -> Ran 19 tests, OK; python tools/docs/check_docs.py -> exit 0.
 
