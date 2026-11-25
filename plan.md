@@ -301,7 +301,8 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 
 - [ ] Baseline screenshots of all screens (the 12 in `docs/12-screens.md`) into `docs/screens/before/`. `[D]`
 - [ ] One token set for spacing, type, radius and colour across the ten themes; no raw values in composables. `[D]`
-- [ ] Screen inventory: every screen with its purpose, its three primary actions and its exit; anything without a purpose is removed. `[D]`
+- [x] Screen inventory: every screen with its purpose, its three primary actions and its exit; anything without a purpose is removed. `[D]`
+  verified-here: python tools/ux/check_inventory.py -> 8 screens: purpose, three actions and exit present; python -m unittest discover -s tools/ux -> 14 tests, OK
 - [ ] Person-facing screens use larger type, fewer words and one action; officer-facing screens may be denser — the split is explicit. `[D]`
 - [ ] Error and empty states: no model, no camera, no microphone, no second screen, storage full — each with the fix, not an error code. `[D]`
 - [ ] Onboarding: the three first-run steps and the tour, measured for completion time with one officer who has not seen the app. `[D]`
