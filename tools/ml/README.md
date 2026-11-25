@@ -68,7 +68,9 @@ range reads of only the row groups that hold them (`popsign_labels.json` lists t
     python ../isl/retarget_asl.py                     # asl_signs.json, asl_words.json
 
 `runtime.py` runs the exported files in NumPy, so the evaluations score what ships. The latest scores and what they
-mean are in [EVAL.md](EVAL.md); update it when a shipped model changes.
+mean are in [EVAL.md](EVAL.md); update it when a shipped model changes. The per-word table, with n per word and
+the words held to confirmation, is [docs/models/per_word.md](../../docs/models/per_word.md), written by
+`per_word.py`.
 
 `eval_video.py` measures the whole chain on video files rather than on cached landmarks: it tracks each clip with the
 bundled Holistic model, cuts it into signs with the app's own rules, featurizes each sign and reads it with the shipped

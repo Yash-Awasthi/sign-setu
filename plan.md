@@ -313,7 +313,8 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 
 ### M5.3 Sign-language depth
 
-- [ ] Per-word accuracy table for ISL and ASL with n per word; flag every word under a usable threshold and either improve it or mark it "hold to confirm". `[D]`
+- [x] Per-word accuracy table for ISL and ASL with n per word; flag every word under a usable threshold and either improve it or mark it "hold to confirm". `[D]`
+  - verified-here: `SIGNSETU_DATA=C:/ml-data python tools/ml/per_word.py --write` -> 816 INCLUDE test clips top-1 0.979 with 3 words held; 269 ISLRTC new-signer clips 0.546 with 34 held; 2504 ASL Citizen clips 0.702 with 52 held; wrote docs/models/per_word.md, one row per word with n, top-1, top-3 and the first wrong read; threshold 0.60 over n >= 2
 - [ ] The "unclear" path: when two readers disagree, ask the person once with pictures; measure how often that resolves the meaning. `[D]`
 - [ ] Fingerspelling: hold-to-commit timing studied with two signers and tuned; publish the chosen value and the reason. `[D]`
 - [ ] Regional variation: record which signs differ by region and let a department pick a variant. `[D]`

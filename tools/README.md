@@ -47,6 +47,7 @@ See [ml/README.md](ml/README.md) for data, environments and the training order. 
 | `export.py` | Exports a format 1 reader to the content bundle with its Kotlin parity fixture | `export.py [sign_reader or isl_spell or asl_reader] [checkpoint.pt] [cache.pkl]`, then `build_content.py --manifest-only` |
 | `eval_isl.py` | Top-1 and top-3 of the shipped ISL readers, the sign-or-spell gate, a sentence demo through `glossToText`'s rules, and ISLRTC real signers | `eval_isl.py [include.pkl] [isl_spell.pkl] [islrtc.pkl]` |
 | `eval_asl.py` | ASL word top-1 and top-3, fingerspelling character error rate (synthetic, so flattering) and the gate | `eval_asl.py [asl.pkl] [asl_spell_dir]` |
+| `per_word.py` | Per-word top-1 and top-3 of the shipped ISL and ASL word readers on held-out clips, with n per word and the words held to confirmation; writes `docs/models/per_word.md` | `per_word.py [--write]` |
 | `eval_signers.py` | Word-reader checkpoints on a held-out signer split | `eval_signers.py <cache.pkl> <split> <model.pt>...` |
 | `eval_video.py` | Video clips through the app's whole chain: Holistic, the app's segmentation rules, the shipped NumPy reader. A clip's label comes from a `labels.json` beside it, else its file name (mp environment) | `eval_video.py <clip.mp4>...` or `--dir <folder>` |
 
