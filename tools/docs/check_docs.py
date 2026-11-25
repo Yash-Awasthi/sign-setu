@@ -5,7 +5,8 @@ Five checks, all measured here:
   1. every relative link resolves, so a deleted screen or tool leaves no dangling claim;
   2. every screenshot in docs/screens/ is used by docs/12-screens.md, and every
      reference in it exists;
-  3. every docs/*.md is in the document map of docs/README.md;
+  3. every docs/*.md has a row in the index of docs/README.md, with an audience of
+     officer, developer, reviewer or department;
   4. a file a document names by path exists, so a removed file cannot stay described;
   5. the counts the README states (languages, ISL and ASL words, retention hours)
      equal what the bundle and the settings code hold.
@@ -24,6 +25,8 @@ ASSETS = ROOT / "app" / "src" / "main" / "assets" / "content"
 SETTINGS = ROOT / "app" / "src" / "main" / "java" / "app" / "signsetu" / "data" / "settings" / "SettingsStore.kt"
 
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
+INDEX_ROW = re.compile(r"^\|\s*\[[^\]]+\]\(([^)\s]+)\)\s*\|\s*([^|]*)\|", re.MULTILINE)
+AUDIENCES = ("officer", "developer", "reviewer", "department")
 
 
 def markdown_files() -> list[pathlib.Path]:
@@ -59,13 +62,22 @@ def check_screens() -> list[str]:
     ]
 
 
-def check_docs_map() -> list[str]:
-    listed = set(relative_links(DOCS_MAP.read_text(encoding="utf-8")))
-    return [
-        f"docs/{p.name}: not in the document map of docs/README.md"
-        for p in sorted(DOCS.glob("*.md"))
-        if p.name not in listed and p != DOCS_MAP
-    ]
+def check_audiences() -> list[str]:
+    """Every docs/*.md has one row in the index of docs/README.md, naming who it is for."""
+    rows = {
+        target: audience.strip()
+        for target, audience in INDEX_ROW.findall(DOCS_MAP.read_text(encoding="utf-8"))
+    }
+    errors = []
+    for path in sorted(DOCS.glob("*.md")):
+        if path == DOCS_MAP:
+            continue
+        audience = rows.get(path.name)
+        if audience is None:
+            errors.append(f"docs/{path.name}: not in the index of docs/README.md")
+        elif audience not in AUDIENCES:
+            errors.append(f"docs/{path.name}: no audience from officer, developer, reviewer or department")
+    return errors
 
 
 # A path a document names in backticks; an elided, wildcarded or absolute path is not checkable.
@@ -130,7 +142,7 @@ def check_claims() -> list[str]:
 
 
 def check() -> list[str]:
-    return check_links() + check_screens() + check_docs_map() + check_paths() + check_claims()
+    return check_links() + check_screens() + check_audiences() + check_paths() + check_claims()
 
 
 def main() -> int:

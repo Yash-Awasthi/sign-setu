@@ -231,7 +231,8 @@ SQLCipher 4.19.1) moves faster than the test evidence around it.
   - [x] Portal (`portal/`): typecheck and unit tests in CI, plus a check that it never gains a write path to session data. `[F]`
   - verified-here: `python tools/ci/check_portal.py` -> exit 0 (the portal job runs `npm ci`, `npx vp check`, `npx vp test`, `npx vp build`; portal/src has no fetch, XMLHttpRequest, WebSocket, EventSource, sendBeacon, write-method, IndexedDB or app session import; the only localStorage write is the `signsetu.reviews.v1` store in reviews.ts); `python -m unittest discover -s tools/ci -p 'test_*.py'` -> 26 tests OK; `npx vp check` -> pass, `npx vp test` -> 3 files / 10 tests pass, `npx vp build` -> exit 0.
 - **m3.4.2 Docs**
-  - [ ] `docs/README.md` becomes an index with one line per doc and its audience (officer, developer, reviewer, department). `[F]`
+  - [x] `docs/README.md` becomes an index with one line per doc and its audience (officer, developer, reviewer, department). `[F]`
+  - verified-here: python tools/docs/check_docs.py -> exit 0; python -m unittest discover -s tools/docs -p "test_*.py" -v -> Ran 20 tests, OK; the same audience check over HEAD docs/README.md -> 19 of 19 documents have no valid audience (the old map has no audience column).
   - [x] `plan.txt` deleted: every line is either implemented above or recorded in Appendix A, and the raw wording is preserved in Appendix D.
 
 ---

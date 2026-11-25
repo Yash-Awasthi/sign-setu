@@ -33,7 +33,11 @@ class CheckDocsTest(unittest.TestCase):
             "deleted 24 hours after its last activity by default.\n",
             encoding="utf-8",
         )
-        (self.root / "docs" / "README.md").write_text("[Screens](12-screens.md)\n\nLanguages (17)\n", encoding="utf-8")
+        (self.root / "docs" / "README.md").write_text(
+            "| Document | Audience | What it holds |\n| --- | --- | --- |\n"
+            "| [12-screens.md](12-screens.md) | officer | Every screen |\n\nLanguages (17)\n",
+            encoding="utf-8",
+        )
         self.screens_doc().write_text("[Home](screens/01-home.png)\n", encoding="utf-8")
         self.patch()
 
@@ -74,6 +78,23 @@ class CheckDocsTest(unittest.TestCase):
         (self.root / "docs" / "20-new.md").write_text("# New\n", encoding="utf-8")
         errors = check_docs.check()
         self.assertTrue(any("20-new.md" in e for e in errors), errors)
+
+    def test_a_document_in_the_index_without_an_audience_fails(self):
+        (self.root / "docs" / "README.md").write_text(
+            "| [12-screens.md](12-screens.md) | | Every screen |\n\nLanguages (17)\n", encoding="utf-8"
+        )
+        errors = check_docs.check()
+        self.assertTrue(any("no audience" in e for e in errors), errors)
+
+    def test_an_unknown_audience_fails(self):
+        (self.root / "docs" / "20-new.md").write_text("# New\n", encoding="utf-8")
+        (self.root / "docs" / "README.md").write_text(
+            "| [12-screens.md](12-screens.md) | officer | Every screen |\n"
+            "| [20-new.md](20-new.md) | everyone | New |\n\nLanguages (17)\n",
+            encoding="utf-8",
+        )
+        errors = check_docs.check()
+        self.assertTrue(any("20-new.md: no audience" in e for e in errors), errors)
 
     def test_a_named_file_that_does_not_exist_fails(self):
         self.readme().write_text(

@@ -17,44 +17,37 @@ Sign Setu is an offline Android app that helps a police officer communicate with
 | Reviewer portal | [signsetu-portal.pages.dev](https://signsetu-portal.pages.dev) | Vite+ and React on Cloudflare Pages |
 | On-device model | [gemma-3-1b-it-Q4_K_M.gguf](https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf) | About 806 MB; Settings, Offline, Import model file |
 
-## Contents
+## 1. Index
 
-1. [Document map](#1-document-map)
-2. [Overview](#2-overview)
-3. [Data flow](#3-data-flow)
-4. [Quality assurance](#4-quality-assurance)
-5. [Build, release and operation](#5-build-release-and-operation)
-6. [Limitations](#6-limitations)
-7. [Glossary](#7-glossary)
+One row per document: who it is for, and what it holds.
 
-## 1. Document map
-
-| File | Contents |
-| --- | --- |
-| [01-requirements.md](01-requirements.md) | Purpose, users, profiles, constraints, functional and non-functional requirements |
-| [02-architecture.md](02-architecture.md) | Context, wiring, routing, packages, content bundle, data model, hash chain, keys, second screen, assistant, camera, export, build |
-| [03-ux.md](03-ux.md) | Officer and stage screens, flows, accessibility, visual and content style |
-| [04-security.md](04-security.md) | Security controls, MASVS mapping, threat model, key management, review points |
-| [05-avatar-and-gestures.md](05-avatar-and-gestures.md) | Gesture and sign lexicons, the 3D character, the rig, motion pipelines |
-| [06-hardware-baseline-protocol.md](06-hardware-baseline-protocol.md) | Android 10 ARM64 benchmark procedure and thresholds |
-| [07-two-device-bluetooth-test.md](07-two-device-bluetooth-test.md) | Two-device pairing and recovery test |
-| [08-open-source.md](08-open-source.md) | Open-source components, licences and attribution |
-| [09-hand-model-integration.md](09-hand-model-integration.md) | Vision engine, sign readers, sign windows, and the contract for a replacement model |
-| [10-on-device-assistant.md](10-on-device-assistant.md) | The translation assistant, local and online |
-| [11-product-overview.md](11-product-overview.md) | Feature reference for explaining the product |
-| [12-screens.md](12-screens.md) | Every screen, with screenshots in [screens/](screens/) |
-| [13-dpia.md](13-dpia.md) | Data protection impact assessment |
-| [14-attestation-and-pinning.md](14-attestation-and-pinning.md) | Certificate pinning and Key Attestation design for the gateway |
-| [15-gloss-to-text.md](15-gloss-to-text.md) | From read signs to a checked English or Hindi sentence: lattice, calibration, names, phrasebook, checker and output ladder |
-| [16-relay.md](16-relay.md) | The department's iroh relay: what it needs, install, check, and pointing the brain at it |
-| [17-live-speech.md](17-live-speech.md) | The person's words shown live as they speak: flow, local agreement, the seam, end of speech, protocol, privacy, tests and limits |
-| [18-station.md](18-station.md) | The station: the link switch, heartbeat and capabilities, sign reading and AI help in order, sending conversations, the zip format, setup |
-| [19-walkthrough.md](19-walkthrough.md) | Walkthrough of the app, matching the in-app Help: a session step by step, the call and the stage, the conversation, every setting, records, practice, station computer, privacy |
-| [models/sign_reader_v4.md](models/sign_reader_v4.md) | Model card of the ISL word reader |
-| [models/sign_reader_v3.md](models/sign_reader_v3.md) | Model card of the previous ISL word reader |
-| [../portal/README.md](../portal/README.md) | Reviewer portal for content sign-off |
-| [../gateway/README.md](../gateway/README.md) | Department gateway |
-| [../tools/ml/README.md](../tools/ml/README.md), [../tools/isl/README.md](../tools/isl/README.md) | Sign reader training and sign retargeting |
+| Document | Audience | What it holds |
+| --- | --- | --- |
+| [01-requirements.md](01-requirements.md) | department | Purpose, users, profiles, constraints, functional and non-functional requirements |
+| [02-architecture.md](02-architecture.md) | developer | Context, wiring, routing, packages, content bundle, data model, hash chain, keys, second screen, assistant, camera, export, build |
+| [03-ux.md](03-ux.md) | developer | Officer and stage screens, flows, accessibility, visual and content style |
+| [04-security.md](04-security.md) | reviewer | Security controls, MASVS mapping, threat model, key management, review points |
+| [05-avatar-and-gestures.md](05-avatar-and-gestures.md) | developer | Gesture and sign lexicons, the 3D character, the rig, motion pipelines |
+| [06-hardware-baseline-protocol.md](06-hardware-baseline-protocol.md) | developer | Android 10 ARM64 benchmark procedure and thresholds |
+| [07-two-device-bluetooth-test.md](07-two-device-bluetooth-test.md) | developer | Two-device pairing and recovery test |
+| [08-open-source.md](08-open-source.md) | reviewer | Open-source components, licences and attribution |
+| [09-hand-model-integration.md](09-hand-model-integration.md) | developer | Vision engine, sign readers, sign windows, and the contract for a replacement model |
+| [10-on-device-assistant.md](10-on-device-assistant.md) | developer | The translation assistant, local and online |
+| [11-product-overview.md](11-product-overview.md) | department | Feature reference for explaining the product |
+| [12-screens.md](12-screens.md) | officer | Every screen, with screenshots in [screens/](screens/) |
+| [13-dpia.md](13-dpia.md) | department | Data protection impact assessment |
+| [14-attestation-and-pinning.md](14-attestation-and-pinning.md) | developer | Certificate pinning and Key Attestation design for the gateway |
+| [15-gloss-to-text.md](15-gloss-to-text.md) | developer | From read signs to a checked English or Hindi sentence: lattice, calibration, names, phrasebook, checker and output ladder |
+| [16-relay.md](16-relay.md) | developer | The department's iroh relay: what it needs, install, check, and pointing the brain at it |
+| [17-live-speech.md](17-live-speech.md) | developer | The person's words shown live as they speak: flow, local agreement, the seam, end of speech, protocol, privacy, tests and limits |
+| [18-station.md](18-station.md) | developer | The station: the link switch, heartbeat and capabilities, sign reading and AI help in order, sending conversations, the zip format, setup |
+| [19-walkthrough.md](19-walkthrough.md) | officer | Walkthrough of the app, matching the in-app Help: a session step by step, the call and the stage, the conversation, every setting, records, practice, station computer, privacy |
+| [models/sign_reader_v4.md](models/sign_reader_v4.md) | developer | Model card of the ISL word reader |
+| [models/sign_reader_v3.md](models/sign_reader_v3.md) | developer | Model card of the previous ISL word reader |
+| [../portal/README.md](../portal/README.md) | reviewer | Reviewer portal for content sign-off |
+| [../gateway/README.md](../gateway/README.md) | developer | Department gateway |
+| [../tools/ml/README.md](../tools/ml/README.md) | developer | Sign reader training |
+| [../tools/isl/README.md](../tools/isl/README.md) | developer | Sign retargeting |
 
 Conventions: **[confirm]** marks anything that depends on a person or body outside the team; legal summaries come from public sources and are not legal advice; MiB is binary and MB decimal; diagrams are Mermaid source.
 
