@@ -354,7 +354,8 @@ review date.
   - [ ] Release policy: version discipline, a changelog per release, a supported-device matrix, and an upgrade path that keeps sessions readable. `[E]`
 - **m6.3.2 Vendors and incidents**
   - [ ] Vendor and dependency review: SQLCipher, MediaPipe, llama.cpp/GGUF, iroh — licences, update cadence and the security advisory subscription for each. `[E]`
-  - [ ] Incident plan: a compromised device key, a leaked report password (historical), a bad model file, a signing regression — each with the first action and who is told. `[E]`
+  - [x] Incident plan: a compromised device key, a leaked report password (historical), a bad model file, a signing regression — each with the first action and who is told. `[E]`
+    - verified-here: `python tools/docs/check_docs.py` -> exit 0, no output; `python tools/docs/check_version.py` -> exit 0, no output; `grep -n -i Incident docs/04-security.md` -> 243:## 9. Incidents; 247:| Incident | First action, first 15 minutes | Who is told | Why that is the first move |; 260:When a leaked file, ...
 
 ---
 
