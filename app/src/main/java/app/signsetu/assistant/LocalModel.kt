@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.InputStream
 import java.security.DigestInputStream
 import java.security.MessageDigest
 
@@ -61,16 +62,22 @@ class ModelStore(private val context: Context, private val name: String = "assis
     suspend fun import(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         lock.withLock {
             unload()
-            val partial = File(file.parentFile, "$name.part").apply { parentFile?.mkdirs() }
-            val digest = MessageDigest.getInstance("SHA-256")
-            val ok = runCatching {
-                DigestInputStream(context.contentResolver.openInputStream(uri)!!, digest).use { input ->
-                    partial.outputStream().use { input.copyTo(it, 1 shl 20) }
-                }
-                digest.digest().toHexString() in known
-            }.getOrDefault(false)
-            (ok && partial.renameTo(file)).also { if (!it) partial.delete() }
+            runCatching { context.contentResolver.openInputStream(uri)!!.use { acceptLocked(it, file, known) } }.getOrDefault(false)
         }
+    }
+
+    /** The hashing and allow-list decision behind [import], reachable in JVM tests without a real Uri. */
+    internal suspend fun accept(input: InputStream, target: File = file, known: Set<String> = this.known): Boolean =
+        withContext(Dispatchers.IO) { lock.withLock { acceptLocked(input, target, known) } }
+
+    private fun acceptLocked(input: InputStream, target: File, known: Set<String>): Boolean {
+        val partial = File(target.parentFile, "${target.name}.part").apply { parentFile?.mkdirs() }
+        val digest = MessageDigest.getInstance("SHA-256")
+        val ok = runCatching {
+            DigestInputStream(input, digest).use { s -> partial.outputStream().use { s.copyTo(it, 1 shl 20) } }
+            digest.digest().toHexString() in known
+        }.getOrDefault(false)
+        return (ok && partial.renameTo(target)).also { if (!it) partial.delete() }
     }
 
     suspend fun remove() = withContext(Dispatchers.IO) { lock.withLock { unload(); file.delete() } }
