@@ -71,11 +71,12 @@ private val OfficerType = Typography().run {
     )
 }
 
-// Subject captions are read at arm's length by people who may read slowly: larger and looser than the default scale.
+// Subject captions are read at arm's length by people who may read slowly: larger and looser than
+// the officer's scale in every size. tools/ux/check_split.py holds the floors the split promises.
 private val SubjectType = OfficerType.copy(
     headlineMedium = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 34.sp),
-    headlineSmall = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 30.sp),
-    titleLarge = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 26.sp),
+    headlineSmall = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 26.sp, lineHeight = 32.sp),
+    titleLarge = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 28.sp),
     labelLarge = TextStyle(fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 22.sp),
 )
 
