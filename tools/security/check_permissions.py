@@ -20,6 +20,30 @@ DOCS = ROOT / "docs" / "README.md"
 ANDROID = "{http://schemas.android.com/apk/res/android}"
 TOOLS = "{http://schemas.android.com/tools}"
 TABLE_HEAD = "| Permission | `standard` | `nearby` |"
+
+# Every permission this app may ever declare, and why. A new one is a decision about privacy, a Play listing and a
+# department's threat model, so it cannot arrive with a merge: the check fails until it is named here with its reason
+# (plan.md, M2.1). Removing one is just as deliberate: the reason goes with it.
+APPROVED = {
+    "CAMERA": "signing to the camera, and the officer's video call tile; also the shape reader and the skeleton",
+    "VIBRATE": "the tap of an answer felt by the officer holding the phone",
+    "USE_BIOMETRIC": "the officer's screen lock, fingerprint or face before records are opened, left, exported or deleted",
+    "RECEIVE_BOOT_COMPLETED": "keeps the hourly retention sweep scheduled, so a phone nobody opens still forgets",
+    "INTERNET": "the department gateway and the station computer, both off by default",
+    "ACCESS_NETWORK_STATE": "whether the network is up before calling either of them",
+    "ACCESS_LOCAL_NETWORK": "Android 17 otherwise drops the app's sockets to station-network addresses",
+    "RECORD_AUDIO": "push-to-talk to the station's brain and the person's own recorded answer, always after consent",
+    "BLUETOOTH": "finding an unpaired second screen on Android 11 and older",
+    "BLUETOOTH_CONNECT": "talking to the bonded second screen on Android 12 and later",
+    "BLUETOOTH_SCAN": "scanning for an unpaired phone to bond with, never for location",
+    "BLUETOOTH_ADMIN": "the nearby flavour's scan, on Android 11 and older",
+    "BLUETOOTH_ADVERTISE": "the nearby flavour being found by the other phone",
+    "ACCESS_WIFI_STATE": "the nearby flavour's connection to the second screen, on Android 12 and older",
+    "CHANGE_WIFI_STATE": "the nearby flavour's connection to the second screen, on Android 12 and older",
+    "ACCESS_FINE_LOCATION": "required by Nearby Connections on Android 12 and older, never read by the app",
+    "ACCESS_COARSE_LOCATION": "required by Nearby Connections on Android 12 and older, never read by the app",
+    "NEARBY_WIFI_DEVICES": "the nearby flavour's connection to the second screen on Android 13 and later",
+}
 PROSE_START = "| Permissions (standard) |"
 
 
@@ -67,6 +91,28 @@ def table(main: pathlib.Path = MAIN, flavors: dict[str, pathlib.Path] | None = N
     return lines
 
 
+def declared_everywhere(main: pathlib.Path = MAIN, flavors: dict[str, pathlib.Path] | None = None) -> set[str]:
+    """Every permission any flavour of the app declares."""
+    flavors = FLAVORS if flavors is None else flavors
+    return set(declared(main)) | {name for path in flavors.values() for name in declared(path)}
+
+
+def check_approved(names: set[str]) -> list[str]:
+    """A permission is a decision about privacy and a Play listing, so it cannot arrive in a merge request: it has to be
+    named in APPROVED with its reason, and a reason whose permission has gone has to be struck out."""
+    errors = []
+    unapproved = sorted(names - set(APPROVED))
+    if unapproved:
+        errors.append(
+            "a permission this app may not declare arrived: " + ", ".join(unapproved)
+            + " — name it in APPROVED with the reason it is needed, and write it into docs/README.md"
+        )
+    gone = sorted(set(APPROVED) - names)
+    if gone:
+        errors.append("APPROVED names permissions the manifests no longer declare: " + ", ".join(gone) + " — strike them out")
+    return errors
+
+
 def find_table(text: str) -> tuple[int, int] | None:
     """Where the generated table sits in the document, from its head to its last row."""
     lines = text.splitlines()
@@ -99,6 +145,7 @@ def check(main: pathlib.Path = MAIN, flavors: dict[str, pathlib.Path] | None = N
         have = text.splitlines()[placed[0] : placed[1] + 1]
         if have != want:
             errors.append(f"{docs}: the permission table is stale\n  expected:\n    " + "\n    ".join(want))
+    errors.extend(check_approved(declared_everywhere()))
     named = prose_names(text)
     standard = set(declared(main)) | set(declared(flavors["standard"]))
     missing = sorted(standard - named)

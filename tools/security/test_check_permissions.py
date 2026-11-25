@@ -83,6 +83,23 @@ class CheckPermissionsTest(unittest.TestCase):
         check_permissions.write(self.main, self.flavors, self.docs)
         self.assertIn("| `VIBRATE` | yes | yes |", self.docs.read_text(encoding="utf-8"))
 
+    def test_a_permission_nobody_approved_is_refused(self):
+        errors = check_permissions.check_approved(set(check_permissions.APPROVED) | {"SEND_SMS"})
+        self.assertTrue(any("SEND_SMS" in e and "APPROVED" in e for e in errors), errors)
+        self.assertFalse(any("strike them out" in e for e in errors), errors)
+
+    def test_an_approved_permission_the_manifests_dropped_is_reported(self):
+        errors = check_permissions.check_approved({"CAMERA"})
+        self.assertTrue(any("CAMERA" not in e and "no longer declare" in e for e in errors), errors)
+
+    def test_the_repository_manifests_are_all_approved(self):
+        self.assertEqual([], check_permissions.check_approved(check_permissions.declared_everywhere()))
+
+    def test_every_approved_permission_says_why(self):
+        for name, reason in check_permissions.APPROVED.items():
+            self.assertTrue(reason.strip(), name)
+            self.assertGreater(len(reason), 20, f"{name}: say what it is for, not just that it is used")
+
     def test_the_repository_documents_match_the_repository_manifests(self):
         self.assertEqual([], check_permissions.check())
 

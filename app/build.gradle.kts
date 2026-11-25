@@ -90,8 +90,12 @@ android {
         buildConfig = true
     }
 
-    // Security checks fail the release lint gate.
-    lint { error += listOf("HardcodedDebugMode", "SetJavaScriptEnabled", "ExportedService", "AllowBackup") }
+    // Security checks fail the release lint gate, and any error at all stops a build: the tolerated set of warnings lives in
+    // tools/ci/lint-known.json, where it may only shrink (tools/ci/check_lint.py).
+    lint {
+        abortOnError = true
+        error += listOf("HardcodedDebugMode", "SetJavaScriptEnabled", "ExportedService", "AllowBackup")
+    }
 
     // Android calls made in plain JVM tests return defaults instead of throwing (timing marks, log lines).
     testOptions {

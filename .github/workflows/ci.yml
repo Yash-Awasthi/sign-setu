@@ -42,7 +42,10 @@ jobs:
       - name: Test and lint
         run: >-
           ./gradlew --console=plain :app:testStandardDebugUnitTest :app:testNearbyDebugUnitTest
-          :app:compileStandardDebugAndroidTestKotlin :app:lintStandardRelease
+          :app:compileStandardDebugAndroidTestKotlin :app:lintStandardRelease :app:lintStandardDebug
+      # The debug SARIF is the one that also covers androidTest; the known list is keyed to it. python3 is on the runner image, the android job installs no Python.
+      - name: Lint ratchet
+        run: python3 tools/ci/check_lint.py --sarif app/build/reports/lint-results-standardDebug.sarif
       - uses: actions/upload-artifact@v6
         if: failure()
         with:
@@ -50,6 +53,7 @@ jobs:
           path: |
             app/build/reports/tests
             app/build/reports/lint-results-standardRelease.html
+            app/build/reports/lint-results-standardDebug.sarif
 
   avatar:
     runs-on: ubuntu-24.04

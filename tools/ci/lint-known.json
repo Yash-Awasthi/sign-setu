@@ -1,0 +1,115 @@
+{
+  "about": "Android lint findings this repository has today, by rule and file. May only shrink: tools/ci/check_lint.py fails on a new finding, an error, or an entry that no longer occurs.",
+  "known": [
+    {
+      "rule": "AndroidGradlePluginVersion",
+      "file": "gradle/libs.versions.toml",
+      "count": 1
+    },
+    {
+      "rule": "AndroidGradlePluginVersion",
+      "file": "gradle/wrapper/gradle-wrapper.properties",
+      "count": 1
+    },
+    {
+      "rule": "AutoboxingStateCreation",
+      "file": "app/src/main/java/app/signsetu/ui/practice/SignToTypeScreen.kt",
+      "count": 1
+    },
+    {
+      "rule": "AutoboxingStateCreation",
+      "file": "app/src/main/java/app/signsetu/ui/start/SavedSessions.kt",
+      "count": 1
+    },
+    {
+      "rule": "ComposableNaming",
+      "file": "app/src/androidTest/java/app/signsetu/WrapUpPathsDeviceTest.kt",
+      "count": 1
+    },
+    {
+      "rule": "CustomX509TrustManager",
+      "file": "app/src/main/java/app/signsetu/net/BrainClient.kt",
+      "count": 1
+    },
+    {
+      "rule": "GradleDependency",
+      "file": "gradle/libs.versions.toml",
+      "count": 13
+    },
+    {
+      "rule": "IconXmlAndPng",
+      "file": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "count": 1
+    },
+    {
+      "rule": "LocalContextResourcesRead",
+      "file": "app/src/main/java/app/signsetu/ui/help/HelpScreen.kt",
+      "count": 1
+    },
+    {
+      "rule": "LocalContextResourcesRead",
+      "file": "app/src/main/java/app/signsetu/ui/start/SavedSessions.kt",
+      "count": 1
+    },
+    {
+      "rule": "ModifierParameter",
+      "file": "app/src/main/java/app/signsetu/ui/session/ChildMuteExpressBoard.kt",
+      "count": 1
+    },
+    {
+      "rule": "ModifierParameter",
+      "file": "app/src/main/java/app/signsetu/ui/session/SignPredictions.kt",
+      "count": 1
+    },
+    {
+      "rule": "MonochromeLauncherIcon",
+      "file": "app/src/main/res/mipmap-anydpi/ic_launcher.xml",
+      "count": 1
+    },
+    {
+      "rule": "NewerVersionAvailable",
+      "file": "gradle/libs.versions.toml",
+      "count": 8
+    },
+    {
+      "rule": "ObsoleteSdkInt",
+      "file": "app/src/main/java/app/signsetu/data/session/DeviceSeal.kt",
+      "count": 1
+    },
+    {
+      "rule": "PluralsCandidate",
+      "file": "app/src/main/res/values/strings.xml",
+      "count": 5
+    },
+    {
+      "rule": "PluralsCandidate",
+      "file": "app/src/main/res/values/strings_conversation.xml",
+      "count": 1
+    },
+    {
+      "rule": "TrustAllX509TrustManager",
+      "file": ".gradle/caches/modules-2/files-2.1/org.bouncycastle/bcpkix-jdk15to18/1.86/39bc0c0d7d42684c2532f0bf503b344cc091e5d3/bcpkix-jdk15to18-1.86.jar",
+      "count": 1
+    },
+    {
+      "rule": "TypographyDashes",
+      "file": "app/src/main/res/values-hi/strings_help.xml",
+      "count": 1
+    },
+    {
+      "rule": "TypographyDashes",
+      "file": "app/src/main/res/values/strings_help.xml",
+      "count": 1
+    },
+    {
+      "rule": "Typos",
+      "file": "app/src/main/res/values/strings_help.xml",
+      "count": 1
+    },
+    {
+      "rule": "UnusedResources",
+      "file": "app/src/main/res/values/strings.xml",
+      "count": 20
+    }
+  ]
+}
