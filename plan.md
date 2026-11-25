@@ -352,7 +352,8 @@ review date.
 - **m6.3.1 Support and release policy**
   - [x] How an officer reports a bad signing or a failed export, what to attach, and the response window. `[E]`
     - verified-here: python tools/docs/check_docs.py -> exit 0; python tools/docs/check_version.py -> exit 0; grep -n -e '## 1. A bad signing' -e '## 2. A failed export' -e '## 3. What to attach' -e '## 5. Response window' docs/21-support.md -> 5, 13, 23, 44; grep -n -P '[^\x00-\x7F]' docs/21-support.md -> no output
-  - [ ] Release policy: version discipline, a changelog per release, a supported-device matrix, and an upgrade path that keeps sessions readable. `[E]`
+  - [x] Release policy: version discipline, a changelog per release, a supported-device matrix, and an upgrade path that keeps sessions readable. `[E]`
+    - verified-here: python tools/docs/check_release.py -> exit 0 (the newest CHANGELOG.md section is 0.8.52, the build version, and the matrix covers API 29 to 37); python tools/docs/check_version.py -> exit 0; python tools/docs/check_docs.py -> exit 0; python -m unittest discover -s tools/docs -p 'test_*.py' -> Ran 26 tests, OK.
 - **m6.3.2 Vendors and incidents**
   - [x] Vendor and dependency review: SQLCipher, MediaPipe, llama.cpp/GGUF, iroh — licences, update cadence and the security advisory subscription for each. `[E]`
     - verified-here: python tools/docs/check_docs.py -> exit 0; python tools/docs/check_version.py -> exit 0; grep -n -e 'SQLCipher for Android 4.19.1' -e 'MediaPipe Tasks Vision 1.1.1' -e 'llama.cpp v0.5.0' -e 'iroh 1.2.0' docs/20-vendor-review.md -> rows 9-12 of section 1; grep -n 'Advisory subscription' docs/20-vendor-review.md -> 28:## 3. Advisory subscription

@@ -302,7 +302,7 @@ sequenceDiagram
 
 ### 7.2 Data model
 
-Database version 5 (`SessionDatabase`); migrations 1 to 2 add the role, 2 to 3 add `itemId`, `reason`, `shownId` and `via`, 3 to 4 add the session title, 4 to 5 add the event hash. A downgrade drops the tables and tells the officer. No column is meant for a subject's name, address, phone number or photograph; the officer's name for a saved session and the subject's own lesson-sheet answers may hold such details and are encrypted like every row.
+Database version 9 (`SessionDatabase`); migrations 1 to 2 add the role, 2 to 3 add `itemId`, `reason`, `shownId` and `via`, 3 to 4 add the session title, 4 to 5 add the event hash, 5 to 6 the session root hash and signature, 6 to 7 the audio table, 7 to 8 the landmarks table, and 8 to 9 the saved-through, station and phone-head columns. A downgrade drops the tables and tells the officer. No column is meant for a subject's name, address, phone number or photograph; the officer's name for a saved session and the subject's own lesson-sheet answers may hold such details and are encrypted like every row.
 
 ```mermaid
 erDiagram

@@ -62,7 +62,7 @@ The build needs JDK 21, Android SDK 37, NDK `30.0.16248370` and CMake 4.1.2. Dep
 | `./gradlew assembleStandardRelease` | Universal APK, arm64-v8a and x86_64 |
 | `./gradlew assembleStandardRelease -Pabi=arm64-v8a` | Phone APK |
 
-Release builds use R8 with resource shrinking. `-PgatewayUrl=https://...` (or `gatewayUrl=` in `local.properties`) builds in the department gateway; `-PsecureScreen=true` turns Settings, Security, Block screenshots on by default. A green push to `master` makes CI sign both APKs with the release key from repository secrets and publish `v<versionName>`: a new version gets a new release, the same version has its APKs replaced. See [docs/README.md](docs/README.md), section 5.
+Release builds use R8 with resource shrinking. `-PgatewayUrl=https://...` (or `gatewayUrl=` in `local.properties`) builds in the department gateway; `-PsecureScreen=true` turns Settings, Security, Block screenshots on by default. A green push to `master` makes CI sign both APKs with the release key from repository secrets and publish `v<versionName>`: a new version gets a new release, the same version has its APKs replaced. See [docs/README.md](docs/README.md), section 5. The release policy, the version rules and the upgrade path are in [RELEASE.md](RELEASE.md).
 
 ## Architecture
 
