@@ -1,10 +1,12 @@
-"""The documented permission table is generated from the manifests, and the documented
-prose names every permission the app declares.
+"""The documented permission table is generated from the manifests, the documented
+prose names every permission, and the DPIA change log carries a row for every data
+category and every permission, with its purpose and retention.
 
 The merged-manifest gate in `app/build.gradle.kts` refuses a forbidden permission a
 library adds; this check does the other half, for both flavours, from the source
 manifests: what the app declares, with its API limit and its scan flag, is exactly
-what `docs/README.md` says. `--write` regenerates the table.
+what `docs/README.md` says, and `docs/13-dpia.md` records what each one is for and how
+long it is kept. `--write` regenerates the table.
 """
 import argparse
 import pathlib
@@ -16,10 +18,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 MAIN = ROOT / "app" / "src" / "main" / "AndroidManifest.xml"
 FLAVORS = {"standard": ROOT / "app" / "src" / "standard" / "AndroidManifest.xml", "nearby": ROOT / "app" / "src" / "nearby" / "AndroidManifest.xml"}
 DOCS = ROOT / "docs" / "README.md"
+DPIA = ROOT / "docs" / "13-dpia.md"
 
 ANDROID = "{http://schemas.android.com/apk/res/android}"
 TOOLS = "{http://schemas.android.com/tools}"
 TABLE_HEAD = "| Permission | `standard` | `nearby` |"
+CHANGE_HEAD = "| Kind | Name | Purpose | Retention |"
 
 # Every permission this app may ever declare, and why. A new one is a decision about privacy, a Play listing and a
 # department's threat model, so it cannot arrive with a merge: the check fails until it is named here with its reason
@@ -133,7 +137,72 @@ def prose_names(text: str) -> set[str]:
     return set()
 
 
-def check(main: pathlib.Path = MAIN, flavors: dict[str, pathlib.Path] | None = None, docs: pathlib.Path = DOCS) -> list[str]:
+def categories(path: pathlib.Path = DPIA) -> list[str]:
+    """The data categories section 1.2 of the DPIA lists, in order."""
+    if not path.exists():
+        return []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for start, line in enumerate(lines):
+        if line.startswith("### 1.2"):
+            for head, row in enumerate(lines[start + 1 :], start + 1):
+                if row.startswith("| Category |"):
+                    out = []
+                    for body in lines[head + 2 :]:
+                        if not body.startswith("|"):
+                            break
+                        out.append(cells(body)[0])
+                    return out
+    return []
+
+
+def cells(row: str) -> list[str]:
+    """The stripped cells of one markdown table row."""
+    return [cell.strip() for cell in row.strip().strip("|").split("|")]
+
+
+def change_log(path: pathlib.Path = DPIA) -> list[tuple[str, str, str, str]]:
+    """Every row of the DPIA change log: kind, name, purpose, retention."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for start, line in enumerate(lines):
+        if line.strip() == CHANGE_HEAD:
+            rows = []
+            for body in lines[start + 1 :]:
+                if not body.startswith("|"):
+                    break
+                got = cells(body)
+                if all(set(cell) <= {"-", ":"} and cell for cell in got):
+                    continue
+                rows.append(tuple((got + [""] * 4)[:4]))
+            return rows
+    return []
+
+
+def check_dpia(names: set[str], dpia: pathlib.Path = DPIA) -> list[str]:
+    """A data category or permission the app has cannot arrive without a DPIA change-log row that says what
+    it is for and how long it is kept, and a row for something the app no longer has has to be struck out."""
+    if not dpia.exists() or CHANGE_HEAD not in dpia.read_text(encoding="utf-8"):
+        return [f"{dpia}: no change-log table; add the head line {CHANGE_HEAD}"]
+    rows = change_log(dpia)
+    have = {(kind, name): (purpose, retention) for kind, name, purpose, retention in rows}
+    want = [("Permission", name) for name in sorted(names)] + [("Data", name) for name in categories(dpia)]
+    missing = []
+    for kind, name in want:
+        got = have.get((kind, name))
+        if got is None:
+            missing.append(f"{dpia}: no change-log row for {kind} {name} - add its purpose and retention")
+        elif not got[0] or not got[1]:
+            missing.append(f"{dpia}: the change-log row for {kind} {name} needs a purpose and a retention")
+    missing.sort()
+    known = {("Data", name) for name in categories(dpia)} | {("Permission", name) for name in names}
+    stale = [
+        f"{dpia}: the change-log row for {kind} {name} names nothing the app has - strike it out"
+        for kind, name, purpose, retention in rows
+        if (kind, name) not in known
+    ]
+    return missing + stale
+
+
+def check(main: pathlib.Path = MAIN, flavors: dict[str, pathlib.Path] | None = None, docs: pathlib.Path = DOCS, dpia: pathlib.Path = DPIA) -> list[str]:
     flavors = FLAVORS if flavors is None else flavors
     text = docs.read_text(encoding="utf-8")
     want = table(main, flavors)
@@ -151,6 +220,7 @@ def check(main: pathlib.Path = MAIN, flavors: dict[str, pathlib.Path] | None = N
     missing = sorted(standard - named)
     if missing:
         errors.append(f"{docs}: the prose does not name every standard permission: missing {missing}")
+    errors.extend(check_dpia(set(APPROVED), dpia))
     return errors
 
 

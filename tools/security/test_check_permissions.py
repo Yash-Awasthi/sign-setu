@@ -104,5 +104,61 @@ class CheckPermissionsTest(unittest.TestCase):
         self.assertEqual([], check_permissions.check())
 
 
+DPIA = """### 1.2 Data subjects and categories
+
+| Category | Examples | Held in | Retention |
+| --- | --- | --- | --- |
+| Answers | Taps and typed text | Encrypted session database | Deleted with the session |
+| Speech | The person's own voice | Encrypted session database | Deleted with the session |
+
+## 7. Change log
+
+| Kind | Name | Purpose | Retention |
+| --- | --- | --- | --- |
+| Data | Answers | Taps and typed text | Deleted with the session |
+| Data | Speech | The person's own voice | Deleted with the session |
+| Permission | CAMERA | Signing to the camera | Until the officer revokes it |
+"""
+
+
+class CheckDpiaTest(unittest.TestCase):
+    def setUp(self):
+        root = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
+        self.dpia = root / "13-dpia.md"
+        self.dpia.write_text(DPIA, encoding="utf-8")
+
+    def write(self, text):
+        self.dpia.write_text(text, encoding="utf-8")
+
+    def test_a_full_change_log_passes(self):
+        self.assertEqual([], check_permissions.check_dpia({"CAMERA"}, self.dpia))
+
+    def test_a_permission_without_a_row_fails(self):
+        self.write(DPIA.replace("| Permission | CAMERA | Signing to the camera | Until the officer revokes it |\n", ""))
+        errors = check_permissions.check_dpia({"CAMERA"}, self.dpia)
+        self.assertTrue(any("CAMERA" in e and "add its purpose and retention" in e for e in errors), errors)
+
+    def test_a_data_category_without_a_row_fails(self):
+        self.write(DPIA.replace("| Data | Answers | Taps and typed text | Deleted with the session |\n", ""))
+        errors = check_permissions.check_dpia({"CAMERA"}, self.dpia)
+        self.assertTrue(any("Answers" in e for e in errors), errors)
+
+    def test_a_stale_row_fails(self):
+        self.write(DPIA + "| Permission | SEND_SMS | Texts a person | Never |\n")
+        errors = check_permissions.check_dpia({"CAMERA"}, self.dpia)
+        self.assertTrue(any("SEND_SMS" in e and "strike it out" in e for e in errors), errors)
+
+    def test_a_blank_purpose_fails(self):
+        self.write(
+            DPIA.replace(
+                "| Data | Answers | Taps and typed text | Deleted with the session |",
+                "| Data | Answers |  | Deleted with the session |",
+            )
+        )
+        errors = check_permissions.check_dpia({"CAMERA"}, self.dpia)
+        self.assertTrue(errors, errors)
+
+
 if __name__ == "__main__":
     unittest.main()

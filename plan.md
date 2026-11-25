@@ -169,7 +169,8 @@ harm.
 - [ ] A test that the GGUF model is refused unless its SHA-256 is on the allow-list. `[P]`
 - [ ] A test that a session's database file is unreadable without the Keystore key (extract the file, attempt to open). `[P]`
 - [ ] A test that logs contain no transcript text, no names and no paths (grep the log buffer after a scripted session). `[P]`
-- [ ] `docs/13-dpia.md` gains a change-log table: every new data field or permission adds a row with its purpose and retention. `[P]`
+- [x] `docs/13-dpia.md` gains a change-log table: every new data field or permission adds a row with its purpose and retention. `[P]`
+  - verified-here: python tools/security/check_permissions.py -> exit 0; python -m unittest discover -s tools/security -p "test_*.py" -> Ran 41 tests, OK; python tools/docs/check_docs.py -> exit 0.
 
 ### M2.4 Build integrity
 

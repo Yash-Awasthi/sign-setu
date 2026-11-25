@@ -91,3 +91,38 @@ Under s.17(1)(c), the core session is exempt from Chapter III. For the consent-b
 ## 6. Breach handling
 
 A breach of the gateway or a lost device with records still in retention is notified to the Data Protection Board and to affected persons as the 2025 Rules require. CERT-In is notified within six hours under the CERT-In Directions of 28 April 2022.
+
+## 7. Change log
+
+This table records every data category and every permission the app holds, with what it is for and how long it is kept. A change that adds or removes a field or a permission adds or strikes a row here in the same change.
+
+| Kind | Name | Purpose | Retention |
+| --- | --- | --- | --- |
+| Data | Answers | Taps, drawings, typed text, confirmed signs and lesson answers, with the officer's name for a saved session | Deleted with the session; 24 h idle by default, 4 to 72 h when set, or when the officer deletes it |
+| Data | Landmarks | Hand and pose points of signed answers, and cues read from the face, never the face mesh | Deleted with the session; on the station, as the department keeps case files |
+| Data | Camera frames | The live picture while the stage camera shows, for the overlay and gesture proposals | Not stored; one reused buffer in memory |
+| Data | Speech | The person's own voice, recorded only after consent is logged, 60 seconds at most, never the officer's | Deleted with the session; the brain stores nothing |
+| Data | Skeleton drawing | Each sign of every signed answer as a strip of stick figures with its word | As answers: deleted with the session |
+| Data | Officer settings | Language, interpreter contact, security switches, retention period and station link switches | Until cleared |
+| Data | Station pairing | The brain's ticket or address, token and certificate pin, and the phone's iroh key | Until the officer forgets the station computer, clears all data, or the app is reinstalled |
+| Data | Station inbox | A whole conversation, only when the officer sends it | As the department keeps case files |
+| Data | Device enrolment | Device token, hashed on the gateway, and audit rows without subject data | Until revoked |
+| Data | Sign contributions | Debug builds only: a volunteer signer's landmarks, gloss and corrections under a random local signer id, never video or audio | Until the signer deletes them |
+| Permission | CAMERA | Signing to the camera, the officer's video call tile, the shape reader and the skeleton | Until the officer revokes it; frames are not stored |
+| Permission | VIBRATE | The tap of an answer felt by the officer holding the phone | For the length of the tap |
+| Permission | USE_BIOMETRIC | The officer's screen lock before records are opened, left, exported or deleted | Until the officer revokes it; the app stores no biometric data |
+| Permission | RECEIVE_BOOT_COMPLETED | Keeps the hourly retention sweep scheduled so a phone nobody opens still forgets | Always granted; holds no data |
+| Permission | INTERNET | The department gateway and the station computer, both off by default | Until the officer revokes it |
+| Permission | ACCESS_NETWORK_STATE | Whether the network is up before calling the gateway or the station | Read at the time of the call; nothing stored |
+| Permission | ACCESS_LOCAL_NETWORK | Android 17 otherwise drops the app's sockets to station-network addresses | Until the officer revokes it |
+| Permission | RECORD_AUDIO | Push-to-talk to the station's brain and the person's own recorded answer, always after consent | Only while the button is held; the audio follows the session's retention |
+| Permission | BLUETOOTH | Finding an unpaired second screen on Android 11 and older | While the officer looks for a second screen |
+| Permission | BLUETOOTH_CONNECT | Talking to the bonded second screen on Android 12 and later | Until the officer revokes it |
+| Permission | BLUETOOTH_SCAN | Scanning for an unpaired phone to bond with, never for location | While the officer looks for a second screen |
+| Permission | BLUETOOTH_ADMIN | The nearby flavour's scan on Android 11 and older | While the officer looks for a second screen |
+| Permission | BLUETOOTH_ADVERTISE | The nearby flavour being found by the other phone | Until the officer revokes it |
+| Permission | ACCESS_WIFI_STATE | The nearby flavour's connection to the second screen on Android 12 and older | Read at the time of the connection; nothing stored |
+| Permission | CHANGE_WIFI_STATE | The nearby flavour's connection to the second screen on Android 12 and older | Until the officer revokes it |
+| Permission | ACCESS_FINE_LOCATION | Required by Nearby Connections on Android 12 and older, never read by the app | Until the officer revokes it; the app stores no location |
+| Permission | ACCESS_COARSE_LOCATION | Required by Nearby Connections on Android 12 and older, never read by the app | Until the officer revokes it; the app stores no location |
+| Permission | NEARBY_WIFI_DEVICES | The nearby flavour's connection to the second screen on Android 13 and later | Until the officer revokes it |
