@@ -78,7 +78,7 @@ carries `"enabled": false`.
 | Phrasebook | `gloss/Phrasebook.kt` over `intents.json` (44 intents in English and Hindi, built by `tools/content/build_intents.py`); every asking question has at least one intent, enforced by `check_content.py`; review sheet `docs/review/intents_review.csv` |
 | Checker and ladder | `gloss/Ladder.kt`: the faithfulness check, four rungs, alternatives, and a confirmation for risky intents |
 | Speaker gender | Set on the start card and logged as a system row; Hindi shows one form, or both while unset |
-| Sentence helper | `gloss/SentenceHelper.kt`: an optional model imported in Settings (`ModelStore` "sentence"), Qwen2.5 0.5B Instruct Q4_K_M (491 MB, Apache-2.0, hash in `KNOWN_SENTENCE_MODELS`); it only reorders sentences that already passed the checker, when the ladder is unsure |
+| Sentence helper | `gloss/SentenceHelper.kt`: an optional model imported in Settings (`ModelStore` "sentence"), Qwen2.5 0.5B Instruct Q4_K_M (491 MB, Apache-2.0, SHA-256 `74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db`, the only hash in `KNOWN_SENTENCE_MODELS`); it only reorders sentences that already passed the checker, when the ladder is unsure |
 | Station reading | With the station link on, the station's sign reader reads a closed window first (about 2.5 s at most, then the phone's own reading stands); the phone's own reader runs beside it ([18-station.md](18-station.md)) |
 | Camera reads | Nods, shakes, thumbs, points at the body, held fingers, palm, shrug and courtesies reach the officer as "Camera read" on the phone and a paired second screen; the person is never asked to confirm |
 | Face and mouth | `camera/SplitTracker.kt` gives head rotation (nods and shakes) and 19 mouth blendshapes per frame to the recorder |

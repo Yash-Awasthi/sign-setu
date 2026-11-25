@@ -1,17 +1,102 @@
-"""Checks the bundle's references, unique ids, card images and 17-language labels; exits 1 with the errors."""
+"""Checks the bundle's references, unique ids, card images, 17-language labels, bundle identity and
+the GGUF allow-list; exits 1 with the errors."""
+import hashlib
 import json
 import pathlib
+import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 ASSETS = ROOT / "app" / "src" / "main" / "assets" / "content"
+SYMBOLS = ROOT / "content" / "symbols"
+LOCAL_MODEL = ROOT / "app" / "src" / "main" / "java" / "app" / "signsetu" / "assistant" / "LocalModel.kt"
+ASSISTANT_DOC = ROOT / "docs" / "10-on-device-assistant.md"
+SENTENCE_DOC = ROOT / "docs" / "15-gloss-to-text.md"
+HASH = re.compile(r"^[0-9a-f]{64}$")
 
 
 def load(assets: pathlib.Path, name: str) -> dict:
     return json.loads((assets / name).read_text(encoding="utf-8"))
 
 
-def check(assets: pathlib.Path = ASSETS) -> list[str]:
+def check_bundle_identity(assets: pathlib.Path = ASSETS, symbols: pathlib.Path = SYMBOLS) -> list[str]:
+    """The shipped bundle against its sources: every card has a symbol, every symbol a card, hashes current."""
+    errors: list[str] = []
+    mapping = json.loads((symbols / "map.json").read_text(encoding="utf-8"))
+    ids = [card["id"] for card in load(assets, "cards.json")["cards"]]
+    for card in ids:
+        if card not in mapping:
+            errors.append(f"card {card}: no entry in content/symbols/map.json")
+        elif not (symbols / mapping[card]).is_file():
+            errors.append(f"card {card}: map.json names content/symbols/{mapping[card]}, which is absent")
+    referenced = set(mapping.values())
+    for svg in sorted(symbols.rglob("*.svg")):
+        name = svg.relative_to(symbols).as_posix()
+        if name not in referenced:
+            errors.append(f"content/symbols/{name}: orphan, no card in map.json uses it")
+
+    files = load(assets, "manifest.json")["files"]
+    on_disk = {p.relative_to(assets).as_posix() for p in assets.rglob("*")
+               if p.is_file() and p.relative_to(assets).as_posix() != "manifest.json"}
+    for name, expected in sorted(files.items()):
+        path = assets / name
+        if not path.is_file():
+            errors.append(f"manifest.json: lists {name}, which is absent from the bundle")
+            continue
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        if actual != expected:
+            errors.append(f"{name}: sha256 {actual}, manifest.json records {expected}")
+    for name in sorted(on_disk - set(files)):
+        errors.append(f"{name}: present in the bundle, not listed in manifest.json")
+    return errors
+
+
+def kotlin_hashes(source: str, name: str) -> list[str] | None:
+    """The string literals inside `val <name> = setOf(...)`, or None when the set is not declared."""
+    lines = source.splitlines()
+    for start, line in enumerate(lines):
+        if not re.search(rf"\b{name}\s*=\s*setOf\s*\(", line.split("//")[0]):
+            continue
+        depth, body = 0, []
+        for part in (current.split("//")[0] for current in lines[start:]):
+            body.append(part)
+            depth += part.count("(") - part.count(")")
+            if depth <= 0:
+                return re.findall(r'"([^"]*)"', "\n".join(body))
+        return None
+    return None
+
+
+def check_allow_list(model: pathlib.Path = LOCAL_MODEL,
+                     docs: dict[str, pathlib.Path] | None = None) -> list[str]:
+    """Each allowed GGUF hash is a well-formed SHA-256, unique, and stated in the doc that ships it."""
+    errors: list[str] = []
+    docs = docs or {"KNOWN_MODELS": ASSISTANT_DOC, "KNOWN_SENTENCE_MODELS": SENTENCE_DOC}
+    source = model.read_text(encoding="utf-8")
+    seen: dict[str, str] = {}
+    for name, doc in docs.items():
+        hashes = kotlin_hashes(source, name)
+        if hashes is None:
+            errors.append(f"LocalModel.kt: no {name} = setOf(...) declaration")
+            continue
+        if not hashes:
+            errors.append(f"LocalModel.kt: {name} is empty, so no model could be imported")
+        text = doc.read_text(encoding="utf-8")
+        for value in hashes:
+            if not HASH.match(value):
+                errors.append(f"LocalModel.kt: {name} hash {value!r} is not 64 lowercase hex characters")
+                continue
+            if value in seen:
+                errors.append(f"LocalModel.kt: hash {value} appears in both {seen[value]} and {name}")
+            else:
+                seen[value] = name
+            if value not in text:
+                errors.append(f"LocalModel.kt: {name} hash {value} is not stated in {doc.name}")
+    return errors
+
+
+def check(assets: pathlib.Path = ASSETS, symbols: pathlib.Path = SYMBOLS,
+          model: pathlib.Path = LOCAL_MODEL, docs: dict[str, pathlib.Path] | None = None) -> list[str]:
     errors: list[str] = []
 
     cards_file = load(assets, "cards.json")
@@ -128,6 +213,8 @@ def check(assets: pathlib.Path = ASSETS) -> list[str]:
                    if q.get("kind", "QUESTION") != "STATEMENT" and q["id"] not in answered]
         for slot, entries in intents["slots"].items():
             errors += [f"slot {slot}: the reader cannot sign {w!r}" for w in entries if w not in readable]
+    errors += check_bundle_identity(assets, symbols)
+    errors += check_allow_list(model, docs)
     return errors
 
 
@@ -138,4 +225,5 @@ if __name__ == "__main__":
         for problem in problems:
             print(f"  {problem}", file=sys.stderr)
         sys.exit(1)
-    print("content references, ids, card images and 17-language labels are consistent")
+    print("content references, ids, card images and 17-language labels are consistent; "
+          "bundle identity and the GGUF allow-list are consistent")
