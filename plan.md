@@ -353,7 +353,8 @@ review date.
   - [ ] How an officer reports a bad signing or a failed export, what to attach, and the response window. `[E]`
   - [ ] Release policy: version discipline, a changelog per release, a supported-device matrix, and an upgrade path that keeps sessions readable. `[E]`
 - **m6.3.2 Vendors and incidents**
-  - [ ] Vendor and dependency review: SQLCipher, MediaPipe, llama.cpp/GGUF, iroh — licences, update cadence and the security advisory subscription for each. `[E]`
+  - [x] Vendor and dependency review: SQLCipher, MediaPipe, llama.cpp/GGUF, iroh — licences, update cadence and the security advisory subscription for each. `[E]`
+    - verified-here: python tools/docs/check_docs.py -> exit 0; python tools/docs/check_version.py -> exit 0; grep -n -e 'SQLCipher for Android 4.19.1' -e 'MediaPipe Tasks Vision 1.1.1' -e 'llama.cpp v0.5.0' -e 'iroh 1.2.0' docs/20-vendor-review.md -> rows 9-12 of section 1; grep -n 'Advisory subscription' docs/20-vendor-review.md -> 28:## 3. Advisory subscription
   - [x] Incident plan: a compromised device key, a leaked report password (historical), a bad model file, a signing regression — each with the first action and who is told. `[E]`
     - verified-here: `python tools/docs/check_docs.py` -> exit 0, no output; `python tools/docs/check_version.py` -> exit 0, no output; `grep -n -i Incident docs/04-security.md` -> 243:## 9. Incidents; 247:| Incident | First action, first 15 minutes | Who is told | Why that is the first move |; 260:When a leaked file, ...
 
