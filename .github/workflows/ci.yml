@@ -125,6 +125,10 @@ jobs:
         run: python tools/docs/check_docs.py
       - name: The permission table comes from the manifests
         run: python tools/security/check_permissions.py
+      - name: The third-party notices match the resolved component list
+        run: python tools/security/check_notices.py
+      - name: The avatar credit matches the shipped model's metadata
+        run: python tools/security/vrm_credit.py
       - name: The device baseline comes from the build and the memory floors
         run: python tools/docs/baseline.py
       - name: The emulator job runs every instrumented class the emulator can run

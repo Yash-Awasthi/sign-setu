@@ -48,13 +48,13 @@
   "format": "sign-setu-release-evidence/1",
   "generated": "2026-11-26T19:14:56Z",
   "sbom": {
-    "bytes": 78582,
+    "bytes": 110846,
     "components": 276,
     "format": "CycloneDX 1.5",
     "from": "the resolved release runtime classpath in app/gradle.lockfile",
     "path": "release/0.8.52/sign-setu-release.cdx.json",
     "producer": "sbom_lockfile.py",
-    "sha256": "cba8ed65dc0e71e850d8d1dd6d239efa1fcdba5a8ca3ff9ecd6494ecb15656e5"
+    "sha256": "2efcaa99ec4c621361b25ebaaeb08b2ee5e31f608fbdc4ef27a00dfcb6c348c9"
   },
   "verify": "sha256sum -c SHA256SUMS && python tools/security/release_manifest.py --check release/0.8.52",
   "version": "0.8.52",

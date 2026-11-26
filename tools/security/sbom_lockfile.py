@@ -6,7 +6,9 @@ A Syft run remains preferred wherever the binary exists, because Syft reads the 
 files themselves rather than the lockfile coordinates.
 
 One component per lockfile line whose configuration names a release runtime classpath, the
-same filter sbom.py uses, sorted by purl; build-only tools are left out.
+same filter sbom.py uses, sorted by purl; build-only tools are left out. Each component carries
+a CycloneDX `licenses` list taken from the checked-in resolution in data/licences.json; a
+component the resolver could not place is emitted without the field rather than with a guess.
 """
 import argparse
 import json
@@ -17,6 +19,8 @@ import subprocess
 import uuid
 
 from sbom import shipped_lines
+
+import licences
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 LOCK = ROOT / "app" / "gradle.lockfile"
@@ -43,14 +47,20 @@ def purls(lines):
     return sorted(out, key=lambda row: row[3])
 
 
-def document(lines, commit, project=PROJECT, version=None) -> dict:
+def document(lines, commit, project=PROJECT, version=None, licence_map=None) -> dict:
     """A CycloneDX 1.5 document whose serial number is stable for the same inputs."""
     version = version or project_version()
     rows = purls(lines)
-    components = [
-        {"type": "library", "bom-ref": purl, "group": group, "name": artifact, "version": ver, "purl": purl}
-        for group, artifact, ver, purl in rows
-    ]
+    licence_map = licences.load() if licence_map is None else licence_map
+    components = []
+    for group, artifact, ver, purl in rows:
+        component = {"type": "library", "bom-ref": purl, "group": group, "name": artifact,
+                     "version": ver, "purl": purl}
+        declared = licences.ids(f"{group}:{artifact}:{ver}", licence_map)
+        if declared:
+            component["licenses"] = [{"license": {"id": name} if name in licences.SPDX
+                                      else {"name": name}} for name in declared]
+        components.append(component)
     serial = uuid.uuid5(uuid.NAMESPACE_URL, f"{project}@{version}@{commit}:" + ",".join(r[3] for r in rows))
     return {
         "bomFormat": "CycloneDX",
@@ -88,7 +98,7 @@ def main(lock=LOCK, out=OUT, commit=None) -> int:
     lines = lock.read_text(encoding="utf-8").splitlines()
     doc = document(lines, commit_sha(commit))
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    out.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     shipped = len(shipped_lines(lines))
     assert len(doc["components"]) == shipped, f"{len(doc['components'])} components for {shipped} shipped lines"
     print(f"{shipped} shipped components -> {out}")

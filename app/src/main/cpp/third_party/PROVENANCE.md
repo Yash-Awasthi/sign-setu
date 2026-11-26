@@ -22,8 +22,25 @@ Everything else in the archive is left out because the build never uses it: `com
 `tests/`, `app/`, `models/`, `docs/`, `gguf-py/`, `scripts/` and the other top-level files. The options in
 `../CMakeLists.txt` switch off every target that would need them.
 
-Third-party licences that ship inside the included tree: `licenses/LICENSE-jsonhpp`, `vendor/cpp-httplib/LICENSE`,
-`vendor/hash/rotate-bits/LICENSE.md`, `vendor/hash/sha256/LICENSE` and `vendor/hash/xxhash/LICENSE`.
+Third-party licence files that ship inside the included tree, one beside each vendored source:
+
+| Path | Component | Licence |
+| --- | --- | --- |
+| `llama.cpp/LICENSE` | llama.cpp | MIT |
+| `llama.cpp/licenses/LICENSE-jsonhpp` | JSON for Modern C++ (nlohmann) | MIT |
+| `llama.cpp/vendor/miniaudio/LICENSE` | miniaudio | public domain or MIT-0 |
+| `llama.cpp/vendor/nlohmann/LICENSE.MIT` | JSON for Modern C++ (nlohmann) | MIT |
+| `llama.cpp/vendor/sheredom/LICENSE` | subprocess.h | public domain (Unlicense) |
+| `llama.cpp/vendor/stb/LICENSE` | stb_image | MIT or public domain |
+| `llama.cpp/vendor/hash/rotate-bits/LICENSE.md` | rotate-bits | MIT |
+| `llama.cpp/vendor/hash/sha256/LICENSE` | sha256 | public domain |
+| `llama.cpp/vendor/hash/xxhash/LICENSE` | xxHash | BSD-2-Clause |
+
+`vendor/miniaudio/LICENSE`, `vendor/sheredom/LICENSE` and `vendor/stb/LICENSE` are the licence
+statements from the head or tail of the vendored header, copied there unchanged, because upstream
+ships them inside the source file rather than as a separate file. `vendor/nlohmann/LICENSE.MIT` is
+the MIT text the header's `SPDX-License-Identifier: MIT` names. `vendor/cpp-httplib` is not part of
+the archive's included paths and is not vendored here.
 
 ### Checking the vendored copy
 

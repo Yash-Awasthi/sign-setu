@@ -63,6 +63,28 @@ class DocumentTest(unittest.TestCase):
             self.assertEqual(len(doc["components"]), 3)
             self.assertEqual(doc["serialNumber"], sbom_lockfile.document(LINES, "abc123")["serialNumber"])
 
+    def test_a_resolved_licence_becomes_a_cyclonedx_licences_list(self):
+        doc = sbom_lockfile.document(LINES, commit="abc123", project="p", version="1.0", licence_map={
+            "a.first:alpha:1.0": {"licences": ["Apache-2.0"], "source": "gradle-cache-pom"},
+            "m.mid:kernel:3.1": {"licences": ["Android SDK License"], "source": "gradle-cache-pom"},
+        })
+        by_purl = {c["purl"]: c for c in doc["components"]}
+        self.assertEqual(by_purl["pkg:maven/a.first/alpha@1.0"]["licenses"],
+                         [{"license": {"id": "Apache-2.0"}}])
+        self.assertEqual(by_purl["pkg:maven/m.mid/kernel@3.1"]["licenses"],
+                         [{"license": {"name": "Android SDK License"}}])
+
+    def test_an_unresolved_component_has_no_licences_field_rather_than_a_guess(self):
+        doc = sbom_lockfile.document(LINES, commit="abc123", project="p", version="1.0",
+                                     licence_map={})
+        self.assertTrue(all("licenses" not in c for c in doc["components"]))
+
+    def test_every_shipped_component_in_the_real_sbom_names_a_licence(self):
+        lines = LOCK.read_text(encoding="utf-8").splitlines()
+        doc = sbom_lockfile.document(lines, commit="abc123")
+        missing = [c["purl"] for c in doc["components"] if not c.get("licenses")]
+        self.assertEqual(missing, [])
+
     def test_commit_falls_back_to_unknown_when_git_is_unavailable(self):
         with mock.patch.dict("os.environ", {}, clear=True), \
                 mock.patch("subprocess.run", side_effect=OSError("no git")):

@@ -121,7 +121,9 @@ internal fun OfficerIdDialog(initial: String, onSave: (String) -> Unit, onDismis
 }
 
 /** Names and licences stay in English: they are legal identifiers, not interface text. */
-private val LICENCES = listOf(
+internal val LICENCES = listOf(
+    // Generated from the shipped model's VRM metadata; see AvatarCredit.kt.
+    AvatarCredit.ENTRY_NAME to AvatarCredit.TEXT,
     "OpenMoji 17.0.0" to "CC BY-SA 4.0. HfG Schwäbisch Gmünd, openmoji.org",
     "Mulberry Symbols" to "CC BY-SA 4.0. Steve Lee, mulberrysymbols.org",
     "Indic Parler-TTS (recorded prompts)" to "Apache 2.0. AI4Bharat, IIT Madras",

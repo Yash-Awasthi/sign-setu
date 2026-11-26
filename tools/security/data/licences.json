@@ -1,0 +1,1908 @@
+{
+  "components": {
+    "androidx.activity:activity-compose:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.activity:activity-ktx:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.activity:activity:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.annotation:annotation-experimental:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.annotation:annotation-jvm:1.10.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.annotation:annotation:1.10.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.appcompat:appcompat-resources:1.2.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.appcompat:appcompat:1.2.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.arch.core:core-common:2.2.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.arch.core:core-runtime:2.2.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.autofill:autofill:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.biometric:biometric:1.1.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.camera.featurecombinationquery:featurecombinationquery:1.6.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.camera.viewfinder:viewfinder-compose:1.6.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.camera.viewfinder:viewfinder-core:1.6.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.camera:camera-camera2-pipe:1.6.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.camera:camera-camera2:1.6.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.camera:camera-compose:1.6.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.camera:camera-core:1.6.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0",
+        "BSD-3-Clause"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.camera:camera-lifecycle:1.6.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.collection:collection-jvm:1.6.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.collection:collection-ktx:1.6.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.collection:collection:1.6.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.animation:animation-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.animation:animation-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.animation:animation-core-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.animation:animation-core-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.animation:animation-core:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.animation:animation-core:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.animation:animation:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.animation:animation:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.foundation:foundation-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.foundation:foundation-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.foundation:foundation-layout-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.foundation:foundation-layout-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.foundation:foundation-layout:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.foundation:foundation-layout:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.foundation:foundation:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.foundation:foundation:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material3:material3-android:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material3:material3-android:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material3:material3-ripple-android:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material3:material3-ripple:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material3:material3:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material3:material3:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material:material-icons-core-android:1.7.8": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material:material-icons-core:1.7.8": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material:material-ripple-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material:material-ripple-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material:material-ripple:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.material:material-ripple:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-annotation-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-annotation-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-annotation:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-annotation:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-retain-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-retain-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-retain:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-retain:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-saveable-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-saveable-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-saveable:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime-saveable:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.runtime:runtime:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-geometry-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-geometry-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-geometry:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-geometry:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-graphics-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-graphics-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-graphics:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-graphics:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-text-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-text-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-text:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-text:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-tooling-preview-android:1.12.1": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.compose.ui:ui-tooling-preview:1.12.1": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.compose.ui:ui-unit-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-unit-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-unit:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-unit:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-util-android:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-util-android:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-util:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui-util:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui:1.12.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose.ui:ui:1.13.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose:compose-bom:2026.09.00": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.compose:compose-bom:2026.11.01": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.concurrent:concurrent-futures-ktx:1.1.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.concurrent:concurrent-futures:1.1.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.core:core-backported-fixes:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.core:core-ktx:1.19.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.core:core-viewtree:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.core:core:1.19.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.cursoradapter:cursoradapter:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.customview:customview-poolingcontainer:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.customview:customview:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-android:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-core-android:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-core-okio-jvm:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-core-okio:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-core:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-preferences-android:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-preferences-core-android:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-preferences-core:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-preferences-external-protobuf:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "BSD-3-Clause"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-preferences-proto:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore-preferences:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.datastore:datastore:1.2.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.drawerlayout:drawerlayout:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.emoji2:emoji2:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.emoji2:emoji2:1.7.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.exifinterface:exifinterface:1.4.2": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.fragment:fragment-ktx:1.9.1": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.fragment:fragment:1.1.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.fragment:fragment:1.9.1": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.graphics:graphics-path:1.0.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.graphics:graphics-path:1.1.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.graphics:graphics-shapes-android:1.0.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.graphics:graphics-shapes:1.0.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.interpolator:interpolator:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-common-java8:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-common-jvm:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-common:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-livedata-core-ktx:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-livedata-core:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-livedata:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-process:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-runtime-android:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-runtime-compose-android:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-runtime-compose:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-runtime-ktx-android:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-runtime-ktx:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-runtime:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-service:2.11.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel-android:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel-compose-android:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel-navigation3-android:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel-navigation3:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel-savedstate-android:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.lifecycle:lifecycle-viewmodel:2.11.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.loader:loader:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.media3:media3-common:1.11.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.media3:media3-container:1.11.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.media3:media3-database:1.11.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.media3:media3-datasource:1.11.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.media3:media3-decoder:1.11.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.media3:media3-exoplayer:1.11.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.media3:media3-extractor:1.11.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.navigation3:navigation3-runtime-android:1.2.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.navigation3:navigation3-runtime:1.2.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.navigation3:navigation3-ui-android:1.2.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.navigation3:navigation3-ui:1.2.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.navigationevent:navigationevent-android:1.1.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.navigationevent:navigationevent-compose-android:1.1.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.navigationevent:navigationevent-compose:1.1.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.navigationevent:navigationevent:1.1.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.profileinstaller:profileinstaller:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.room:room-common-jvm:2.8.5": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.room:room-common:2.8.5": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.room:room-ktx:2.8.5": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.room:room-runtime-android:2.8.5": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.room:room-runtime:2.8.5": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate-android:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate-android:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate-compose-android:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate-compose-android:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate-compose:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate-compose:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate-ktx:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate-ktx:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate:1.4.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.savedstate:savedstate:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.sqlite:sqlite-android:2.7.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.sqlite:sqlite-framework-android:2.7.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.sqlite:sqlite-framework:2.7.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.sqlite:sqlite-ktx:2.7.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.sqlite:sqlite:2.7.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.startup:startup-runtime:1.1.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.startup:startup-runtime:1.2.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.tracing:tracing-android:1.3.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.tracing:tracing-android:2.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.tracing:tracing-ktx:1.3.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.tracing:tracing-ktx:2.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.tracing:tracing:1.3.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.tracing:tracing:2.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.vectordrawable:vectordrawable-animated:1.1.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.vectordrawable:vectordrawable:1.1.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.versionedparcelable:versionedparcelable:1.1.1": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.viewpager:viewpager:1.0.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.window:window-core-android:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.window:window-core:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.window:window:1.5.0": {
+      "attribution": "The Android Open Source Project",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "androidx.work:work-runtime-ktx:2.12.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "androidx.work:work-runtime:2.12.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "app.rive:rive-android:10.4.4": {
+      "attribution": "Luigi Rosso",
+      "licences": [
+        "MIT"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.android.volley:volley:1.2.1": {
+      "attribution": "The Volley Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.getkeepsafe.relinker:relinker:1.4.5": {
+      "attribution": "KeepSafe Software, Inc.",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.ai.edge.litert:litert-api:1.4.2": {
+      "attribution": "Google AI Edge Authors",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.ai.edge.litert:litert:1.4.2": {
+      "attribution": "Google AI Edge Authors",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.android.datatransport:transport-api:3.0.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.android.datatransport:transport-runtime:3.1.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.android.gms:play-services-base:18.5.0": {
+      "licences": [
+        "Android SDK License"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.android.gms:play-services-basement:18.9.0": {
+      "licences": [
+        "Android SDK License"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.android.gms:play-services-nearby:19.5.1": {
+      "licences": [
+        "Android SDK License"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.android.gms:play-services-tasks:18.2.0": {
+      "licences": [
+        "Android SDK License"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.auto.value:auto-value-annotations:1.6.3": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.code.findbugs:jsr305:3.0.2": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.dagger:dagger:2.59": {
+      "attribution": "Google, Inc.",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.errorprone:error_prone_annotations:2.28.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "com.google.errorprone:error_prone_annotations:2.50.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.firebase:firebase-encoders-proto:16.0.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.firebase:firebase-encoders:17.0.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.flogger:flogger-system-backend:0.6": {
+      "attribution": "Google, Inc.",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.flogger:flogger:0.6": {
+      "attribution": "Google, Inc.",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.guava:failureaccess:1.0.2": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.guava:failureaccess:1.0.3": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.guava:guava:33.3.1-android": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: parent POM com.google.guava:guava-parent:33.3.1-android"
+    },
+    "com.google.guava:guava:33.7.2-android": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.j2objc:j2objc-annotations:3.0.0": {
+      "attribution": "Tom Ball",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.j2objc:j2objc-annotations:3.1": {
+      "attribution": "Tom Ball",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.mediapipe:tasks-core:1.0.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "com.google.mediapipe:tasks-core:1.1.1": {
+      "attribution": "The MediaPipe Authors",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.mediapipe:tasks-vision:1.0.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Google Maven POM"
+    },
+    "com.google.mediapipe:tasks-vision:1.1.1": {
+      "attribution": "The MediaPipe Authors",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.protobuf:protobuf-javalite:4.26.1": {
+      "licences": [
+        "BSD-3-Clause"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.protobuf:protobuf-javalite:4.36.2": {
+      "licences": [
+        "BSD-3-Clause"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.google.zxing:core:3.5.3": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.squareup.okio:okio-jvm:3.9.1": {
+      "attribution": "Square, Inc.",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.squareup.okio:okio:3.9.1": {
+      "attribution": "Square, Inc.",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "com.tom-roush:pdfbox-android:2.0.27.0": {
+      "attribution": "Tom Roush",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "computer.iroh:iroh-android:1.2.0": {
+      "attribution": "n0",
+      "licences": [
+        "MIT",
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "computer.iroh:iroh:1.2.0": {
+      "attribution": "n0",
+      "licences": [
+        "MIT",
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "jakarta.inject:jakarta.inject-api:2.0.1": {
+      "attribution": "Antoine Sabot-Durand",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "javax.inject:javax.inject:1": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Gradle cache POM"
+    },
+    "net.java.dev.jna:jna:5.19.1": {
+      "attribution": "Timothy Wall",
+      "election": {
+        "alternative": "LGPL-2.1-or-later",
+        "basis": "upstream LICENSE: Apache-2.0 OR LGPL-2.1-or-later, freely chosen",
+        "elected": "Apache-2.0"
+      },
+      "licences": [
+        "LGPL-2.1-or-later",
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "net.zetetic:sqlcipher-android:4.19.1": {
+      "licences": [
+        "BSD-3-Clause"
+      ],
+      "source": "override: POM has an empty <name>; upstream sqlcipher/sqlcipher LICENSE.md"
+    },
+    "net.zetetic:sqlcipher-android:4.20.0": {
+      "licences": [
+        "BSD-3-Clause"
+      ],
+      "source": "override: POM has an empty <name>; upstream sqlcipher/sqlcipher LICENSE.md"
+    },
+    "org.bouncycastle:bcpkix-jdk15to18:1.86": {
+      "licences": [
+        "Bouncy Castle Licence"
+      ],
+      "source": "override: Gradle cache POM"
+    },
+    "org.bouncycastle:bcprov-jdk15to18:1.86": {
+      "licences": [
+        "Bouncy Castle Licence"
+      ],
+      "source": "override: Gradle cache POM"
+    },
+    "org.bouncycastle:bcutil-jdk15to18:1.86": {
+      "licences": [
+        "Bouncy Castle Licence"
+      ],
+      "source": "override: Gradle cache POM"
+    },
+    "org.checkerframework:checker-compat-qual:2.5.3": {
+      "attribution": "Michael Ernst",
+      "election": {
+        "alternative": "GPL-2.0-with-classpath-exception",
+        "basis": "POM declares GPL-2.0 with classpath exception or MIT",
+        "elected": "MIT"
+      },
+      "licences": [
+        "GPL-2.0-with-classpath-exception",
+        "MIT"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.checkerframework:checker-qual:3.43.0": {
+      "attribution": "Michael Ernst",
+      "licences": [
+        "MIT"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlin:kotlin-stdlib-common:2.4.21": {
+      "attribution": "Kotlin Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlin:kotlin-stdlib:2.4.21": {
+      "attribution": "Kotlin Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:atomicfu-jvm:0.28.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:atomicfu:0.28.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.11.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.11.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.11.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Maven Central POM"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.12.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Maven Central POM"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.12.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Maven Central POM"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-core:1.12.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.11.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Maven Central POM"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.12.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0": {
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "override: Maven Central POM"
+    },
+    "org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jetbrains:annotations:23.0.0": {
+      "attribution": "JetBrains Team",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jspecify:jspecify:1.0.0": {
+      "attribution": "Kevin Bourrillion",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    },
+    "org.jspecify:jspecify:1.0.1": {
+      "attribution": "Kevin Bourrillion",
+      "licences": [
+        "Apache-2.0"
+      ],
+      "source": "gradle-cache-pom"
+    }
+  },
+  "format": "sign-setu-licences/1",
+  "resolver": "tools/security/licences.py"
+}

@@ -4,6 +4,13 @@
     {
       "bom-ref": "pkg:maven/androidx.activity/activity-compose@1.13.0",
       "group": "androidx.activity",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "activity-compose",
       "purl": "pkg:maven/androidx.activity/activity-compose@1.13.0",
       "type": "library",
@@ -12,6 +19,13 @@
     {
       "bom-ref": "pkg:maven/androidx.activity/activity-ktx@1.13.0",
       "group": "androidx.activity",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "activity-ktx",
       "purl": "pkg:maven/androidx.activity/activity-ktx@1.13.0",
       "type": "library",
@@ -20,6 +34,13 @@
     {
       "bom-ref": "pkg:maven/androidx.activity/activity@1.13.0",
       "group": "androidx.activity",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "activity",
       "purl": "pkg:maven/androidx.activity/activity@1.13.0",
       "type": "library",
@@ -28,6 +49,13 @@
     {
       "bom-ref": "pkg:maven/androidx.annotation/annotation-experimental@1.5.0",
       "group": "androidx.annotation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "annotation-experimental",
       "purl": "pkg:maven/androidx.annotation/annotation-experimental@1.5.0",
       "type": "library",
@@ -36,6 +64,13 @@
     {
       "bom-ref": "pkg:maven/androidx.annotation/annotation-jvm@1.10.0",
       "group": "androidx.annotation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "annotation-jvm",
       "purl": "pkg:maven/androidx.annotation/annotation-jvm@1.10.0",
       "type": "library",
@@ -44,6 +79,13 @@
     {
       "bom-ref": "pkg:maven/androidx.annotation/annotation@1.10.0",
       "group": "androidx.annotation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "annotation",
       "purl": "pkg:maven/androidx.annotation/annotation@1.10.0",
       "type": "library",
@@ -52,6 +94,13 @@
     {
       "bom-ref": "pkg:maven/androidx.appcompat/appcompat-resources@1.2.0",
       "group": "androidx.appcompat",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "appcompat-resources",
       "purl": "pkg:maven/androidx.appcompat/appcompat-resources@1.2.0",
       "type": "library",
@@ -60,6 +109,13 @@
     {
       "bom-ref": "pkg:maven/androidx.appcompat/appcompat@1.2.0",
       "group": "androidx.appcompat",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "appcompat",
       "purl": "pkg:maven/androidx.appcompat/appcompat@1.2.0",
       "type": "library",
@@ -68,6 +124,13 @@
     {
       "bom-ref": "pkg:maven/androidx.arch.core/core-common@2.2.0",
       "group": "androidx.arch.core",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "core-common",
       "purl": "pkg:maven/androidx.arch.core/core-common@2.2.0",
       "type": "library",
@@ -76,6 +139,13 @@
     {
       "bom-ref": "pkg:maven/androidx.arch.core/core-runtime@2.2.0",
       "group": "androidx.arch.core",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "core-runtime",
       "purl": "pkg:maven/androidx.arch.core/core-runtime@2.2.0",
       "type": "library",
@@ -84,6 +154,13 @@
     {
       "bom-ref": "pkg:maven/androidx.autofill/autofill@1.0.0",
       "group": "androidx.autofill",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "autofill",
       "purl": "pkg:maven/androidx.autofill/autofill@1.0.0",
       "type": "library",
@@ -92,6 +169,13 @@
     {
       "bom-ref": "pkg:maven/androidx.biometric/biometric@1.1.0",
       "group": "androidx.biometric",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "biometric",
       "purl": "pkg:maven/androidx.biometric/biometric@1.1.0",
       "type": "library",
@@ -100,6 +184,13 @@
     {
       "bom-ref": "pkg:maven/androidx.camera.featurecombinationquery/featurecombinationquery@1.6.2",
       "group": "androidx.camera.featurecombinationquery",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "featurecombinationquery",
       "purl": "pkg:maven/androidx.camera.featurecombinationquery/featurecombinationquery@1.6.2",
       "type": "library",
@@ -108,6 +199,13 @@
     {
       "bom-ref": "pkg:maven/androidx.camera.viewfinder/viewfinder-compose@1.6.2",
       "group": "androidx.camera.viewfinder",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "viewfinder-compose",
       "purl": "pkg:maven/androidx.camera.viewfinder/viewfinder-compose@1.6.2",
       "type": "library",
@@ -116,6 +214,13 @@
     {
       "bom-ref": "pkg:maven/androidx.camera.viewfinder/viewfinder-core@1.6.2",
       "group": "androidx.camera.viewfinder",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "viewfinder-core",
       "purl": "pkg:maven/androidx.camera.viewfinder/viewfinder-core@1.6.2",
       "type": "library",
@@ -124,6 +229,13 @@
     {
       "bom-ref": "pkg:maven/androidx.camera/camera-camera2-pipe@1.6.2",
       "group": "androidx.camera",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "camera-camera2-pipe",
       "purl": "pkg:maven/androidx.camera/camera-camera2-pipe@1.6.2",
       "type": "library",
@@ -132,6 +244,13 @@
     {
       "bom-ref": "pkg:maven/androidx.camera/camera-camera2@1.6.2",
       "group": "androidx.camera",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "camera-camera2",
       "purl": "pkg:maven/androidx.camera/camera-camera2@1.6.2",
       "type": "library",
@@ -140,6 +259,13 @@
     {
       "bom-ref": "pkg:maven/androidx.camera/camera-compose@1.6.2",
       "group": "androidx.camera",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "camera-compose",
       "purl": "pkg:maven/androidx.camera/camera-compose@1.6.2",
       "type": "library",
@@ -148,6 +274,18 @@
     {
       "bom-ref": "pkg:maven/androidx.camera/camera-core@1.6.2",
       "group": "androidx.camera",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "name": "camera-core",
       "purl": "pkg:maven/androidx.camera/camera-core@1.6.2",
       "type": "library",
@@ -156,6 +294,13 @@
     {
       "bom-ref": "pkg:maven/androidx.camera/camera-lifecycle@1.6.2",
       "group": "androidx.camera",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "camera-lifecycle",
       "purl": "pkg:maven/androidx.camera/camera-lifecycle@1.6.2",
       "type": "library",
@@ -164,6 +309,13 @@
     {
       "bom-ref": "pkg:maven/androidx.collection/collection-jvm@1.6.0",
       "group": "androidx.collection",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "collection-jvm",
       "purl": "pkg:maven/androidx.collection/collection-jvm@1.6.0",
       "type": "library",
@@ -172,6 +324,13 @@
     {
       "bom-ref": "pkg:maven/androidx.collection/collection-ktx@1.6.0",
       "group": "androidx.collection",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "collection-ktx",
       "purl": "pkg:maven/androidx.collection/collection-ktx@1.6.0",
       "type": "library",
@@ -180,6 +339,13 @@
     {
       "bom-ref": "pkg:maven/androidx.collection/collection@1.6.0",
       "group": "androidx.collection",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "collection",
       "purl": "pkg:maven/androidx.collection/collection@1.6.0",
       "type": "library",
@@ -188,6 +354,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.animation/animation-android@1.12.1",
       "group": "androidx.compose.animation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "animation-android",
       "purl": "pkg:maven/androidx.compose.animation/animation-android@1.12.1",
       "type": "library",
@@ -196,6 +369,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.animation/animation-android@1.13.0",
       "group": "androidx.compose.animation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "animation-android",
       "purl": "pkg:maven/androidx.compose.animation/animation-android@1.13.0",
       "type": "library",
@@ -204,6 +384,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.animation/animation-core-android@1.12.1",
       "group": "androidx.compose.animation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "animation-core-android",
       "purl": "pkg:maven/androidx.compose.animation/animation-core-android@1.12.1",
       "type": "library",
@@ -212,6 +399,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.animation/animation-core-android@1.13.0",
       "group": "androidx.compose.animation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "animation-core-android",
       "purl": "pkg:maven/androidx.compose.animation/animation-core-android@1.13.0",
       "type": "library",
@@ -220,6 +414,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.animation/animation-core@1.12.1",
       "group": "androidx.compose.animation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "animation-core",
       "purl": "pkg:maven/androidx.compose.animation/animation-core@1.12.1",
       "type": "library",
@@ -228,6 +429,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.animation/animation-core@1.13.0",
       "group": "androidx.compose.animation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "animation-core",
       "purl": "pkg:maven/androidx.compose.animation/animation-core@1.13.0",
       "type": "library",
@@ -236,6 +444,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.animation/animation@1.12.1",
       "group": "androidx.compose.animation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "animation",
       "purl": "pkg:maven/androidx.compose.animation/animation@1.12.1",
       "type": "library",
@@ -244,6 +459,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.animation/animation@1.13.0",
       "group": "androidx.compose.animation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "animation",
       "purl": "pkg:maven/androidx.compose.animation/animation@1.13.0",
       "type": "library",
@@ -252,6 +474,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.foundation/foundation-android@1.12.1",
       "group": "androidx.compose.foundation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "foundation-android",
       "purl": "pkg:maven/androidx.compose.foundation/foundation-android@1.12.1",
       "type": "library",
@@ -260,6 +489,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.foundation/foundation-android@1.13.0",
       "group": "androidx.compose.foundation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "foundation-android",
       "purl": "pkg:maven/androidx.compose.foundation/foundation-android@1.13.0",
       "type": "library",
@@ -268,6 +504,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.foundation/foundation-layout-android@1.12.1",
       "group": "androidx.compose.foundation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "foundation-layout-android",
       "purl": "pkg:maven/androidx.compose.foundation/foundation-layout-android@1.12.1",
       "type": "library",
@@ -276,6 +519,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.foundation/foundation-layout-android@1.13.0",
       "group": "androidx.compose.foundation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "foundation-layout-android",
       "purl": "pkg:maven/androidx.compose.foundation/foundation-layout-android@1.13.0",
       "type": "library",
@@ -284,6 +534,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.foundation/foundation-layout@1.12.1",
       "group": "androidx.compose.foundation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "foundation-layout",
       "purl": "pkg:maven/androidx.compose.foundation/foundation-layout@1.12.1",
       "type": "library",
@@ -292,6 +549,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.foundation/foundation-layout@1.13.0",
       "group": "androidx.compose.foundation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "foundation-layout",
       "purl": "pkg:maven/androidx.compose.foundation/foundation-layout@1.13.0",
       "type": "library",
@@ -300,6 +564,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.foundation/foundation@1.12.1",
       "group": "androidx.compose.foundation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "foundation",
       "purl": "pkg:maven/androidx.compose.foundation/foundation@1.12.1",
       "type": "library",
@@ -308,6 +579,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.foundation/foundation@1.13.0",
       "group": "androidx.compose.foundation",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "foundation",
       "purl": "pkg:maven/androidx.compose.foundation/foundation@1.13.0",
       "type": "library",
@@ -316,6 +594,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material/material-icons-core-android@1.7.8",
       "group": "androidx.compose.material",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material-icons-core-android",
       "purl": "pkg:maven/androidx.compose.material/material-icons-core-android@1.7.8",
       "type": "library",
@@ -324,6 +609,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material/material-icons-core@1.7.8",
       "group": "androidx.compose.material",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material-icons-core",
       "purl": "pkg:maven/androidx.compose.material/material-icons-core@1.7.8",
       "type": "library",
@@ -332,6 +624,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material/material-ripple-android@1.12.1",
       "group": "androidx.compose.material",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material-ripple-android",
       "purl": "pkg:maven/androidx.compose.material/material-ripple-android@1.12.1",
       "type": "library",
@@ -340,6 +639,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material/material-ripple-android@1.13.0",
       "group": "androidx.compose.material",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material-ripple-android",
       "purl": "pkg:maven/androidx.compose.material/material-ripple-android@1.13.0",
       "type": "library",
@@ -348,6 +654,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material/material-ripple@1.12.1",
       "group": "androidx.compose.material",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material-ripple",
       "purl": "pkg:maven/androidx.compose.material/material-ripple@1.12.1",
       "type": "library",
@@ -356,6 +669,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material/material-ripple@1.13.0",
       "group": "androidx.compose.material",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material-ripple",
       "purl": "pkg:maven/androidx.compose.material/material-ripple@1.13.0",
       "type": "library",
@@ -364,6 +684,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material3/material3-android@1.4.0",
       "group": "androidx.compose.material3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material3-android",
       "purl": "pkg:maven/androidx.compose.material3/material3-android@1.4.0",
       "type": "library",
@@ -372,6 +699,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material3/material3-android@1.5.0",
       "group": "androidx.compose.material3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material3-android",
       "purl": "pkg:maven/androidx.compose.material3/material3-android@1.5.0",
       "type": "library",
@@ -380,6 +714,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material3/material3-ripple-android@1.5.0",
       "group": "androidx.compose.material3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material3-ripple-android",
       "purl": "pkg:maven/androidx.compose.material3/material3-ripple-android@1.5.0",
       "type": "library",
@@ -388,6 +729,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material3/material3-ripple@1.5.0",
       "group": "androidx.compose.material3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material3-ripple",
       "purl": "pkg:maven/androidx.compose.material3/material3-ripple@1.5.0",
       "type": "library",
@@ -396,6 +744,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material3/material3@1.4.0",
       "group": "androidx.compose.material3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material3",
       "purl": "pkg:maven/androidx.compose.material3/material3@1.4.0",
       "type": "library",
@@ -404,6 +759,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.material3/material3@1.5.0",
       "group": "androidx.compose.material3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "material3",
       "purl": "pkg:maven/androidx.compose.material3/material3@1.5.0",
       "type": "library",
@@ -412,6 +774,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-android@1.12.1",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-android",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-android@1.12.1",
       "type": "library",
@@ -420,6 +789,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-android@1.13.0",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-android",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-android@1.13.0",
       "type": "library",
@@ -428,6 +804,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-annotation-android@1.12.1",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-annotation-android",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-annotation-android@1.12.1",
       "type": "library",
@@ -436,6 +819,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-annotation-android@1.13.0",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-annotation-android",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-annotation-android@1.13.0",
       "type": "library",
@@ -444,6 +834,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-annotation@1.12.1",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-annotation",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-annotation@1.12.1",
       "type": "library",
@@ -452,6 +849,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-annotation@1.13.0",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-annotation",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-annotation@1.13.0",
       "type": "library",
@@ -460,6 +864,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-retain-android@1.12.1",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-retain-android",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-retain-android@1.12.1",
       "type": "library",
@@ -468,6 +879,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-retain-android@1.13.0",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-retain-android",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-retain-android@1.13.0",
       "type": "library",
@@ -476,6 +894,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-retain@1.12.1",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-retain",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-retain@1.12.1",
       "type": "library",
@@ -484,6 +909,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-retain@1.13.0",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-retain",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-retain@1.13.0",
       "type": "library",
@@ -492,6 +924,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-saveable-android@1.12.1",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-saveable-android",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-saveable-android@1.12.1",
       "type": "library",
@@ -500,6 +939,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-saveable-android@1.13.0",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-saveable-android",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-saveable-android@1.13.0",
       "type": "library",
@@ -508,6 +954,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-saveable@1.12.1",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-saveable",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-saveable@1.12.1",
       "type": "library",
@@ -516,6 +969,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime-saveable@1.13.0",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime-saveable",
       "purl": "pkg:maven/androidx.compose.runtime/runtime-saveable@1.13.0",
       "type": "library",
@@ -524,6 +984,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime@1.12.1",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime",
       "purl": "pkg:maven/androidx.compose.runtime/runtime@1.12.1",
       "type": "library",
@@ -532,6 +999,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.runtime/runtime@1.13.0",
       "group": "androidx.compose.runtime",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "runtime",
       "purl": "pkg:maven/androidx.compose.runtime/runtime@1.13.0",
       "type": "library",
@@ -540,6 +1014,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-android@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-android@1.12.1",
       "type": "library",
@@ -548,6 +1029,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-android@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-android@1.13.0",
       "type": "library",
@@ -556,6 +1044,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-geometry-android@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-geometry-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-geometry-android@1.12.1",
       "type": "library",
@@ -564,6 +1059,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-geometry-android@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-geometry-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-geometry-android@1.13.0",
       "type": "library",
@@ -572,6 +1074,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-geometry@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-geometry",
       "purl": "pkg:maven/androidx.compose.ui/ui-geometry@1.12.1",
       "type": "library",
@@ -580,6 +1089,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-geometry@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-geometry",
       "purl": "pkg:maven/androidx.compose.ui/ui-geometry@1.13.0",
       "type": "library",
@@ -588,6 +1104,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-graphics-android@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-graphics-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-graphics-android@1.12.1",
       "type": "library",
@@ -596,6 +1119,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-graphics-android@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-graphics-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-graphics-android@1.13.0",
       "type": "library",
@@ -604,6 +1134,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-graphics@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-graphics",
       "purl": "pkg:maven/androidx.compose.ui/ui-graphics@1.12.1",
       "type": "library",
@@ -612,6 +1149,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-graphics@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-graphics",
       "purl": "pkg:maven/androidx.compose.ui/ui-graphics@1.13.0",
       "type": "library",
@@ -620,6 +1164,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-text-android@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-text-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-text-android@1.12.1",
       "type": "library",
@@ -628,6 +1179,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-text-android@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-text-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-text-android@1.13.0",
       "type": "library",
@@ -636,6 +1194,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-text@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-text",
       "purl": "pkg:maven/androidx.compose.ui/ui-text@1.12.1",
       "type": "library",
@@ -644,6 +1209,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-text@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-text",
       "purl": "pkg:maven/androidx.compose.ui/ui-text@1.13.0",
       "type": "library",
@@ -652,6 +1224,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-tooling-preview-android@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-tooling-preview-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-tooling-preview-android@1.12.1",
       "type": "library",
@@ -660,6 +1239,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-tooling-preview@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-tooling-preview",
       "purl": "pkg:maven/androidx.compose.ui/ui-tooling-preview@1.12.1",
       "type": "library",
@@ -668,6 +1254,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-unit-android@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-unit-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-unit-android@1.12.1",
       "type": "library",
@@ -676,6 +1269,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-unit-android@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-unit-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-unit-android@1.13.0",
       "type": "library",
@@ -684,6 +1284,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-unit@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-unit",
       "purl": "pkg:maven/androidx.compose.ui/ui-unit@1.12.1",
       "type": "library",
@@ -692,6 +1299,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-unit@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-unit",
       "purl": "pkg:maven/androidx.compose.ui/ui-unit@1.13.0",
       "type": "library",
@@ -700,6 +1314,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-util-android@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-util-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-util-android@1.12.1",
       "type": "library",
@@ -708,6 +1329,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-util-android@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-util-android",
       "purl": "pkg:maven/androidx.compose.ui/ui-util-android@1.13.0",
       "type": "library",
@@ -716,6 +1344,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-util@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-util",
       "purl": "pkg:maven/androidx.compose.ui/ui-util@1.12.1",
       "type": "library",
@@ -724,6 +1359,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui-util@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui-util",
       "purl": "pkg:maven/androidx.compose.ui/ui-util@1.13.0",
       "type": "library",
@@ -732,6 +1374,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui@1.12.1",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui",
       "purl": "pkg:maven/androidx.compose.ui/ui@1.12.1",
       "type": "library",
@@ -740,6 +1389,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose.ui/ui@1.13.0",
       "group": "androidx.compose.ui",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "ui",
       "purl": "pkg:maven/androidx.compose.ui/ui@1.13.0",
       "type": "library",
@@ -748,6 +1404,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose/compose-bom@2026.09.00",
       "group": "androidx.compose",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "compose-bom",
       "purl": "pkg:maven/androidx.compose/compose-bom@2026.09.00",
       "type": "library",
@@ -756,6 +1419,13 @@
     {
       "bom-ref": "pkg:maven/androidx.compose/compose-bom@2026.11.01",
       "group": "androidx.compose",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "compose-bom",
       "purl": "pkg:maven/androidx.compose/compose-bom@2026.11.01",
       "type": "library",
@@ -764,6 +1434,13 @@
     {
       "bom-ref": "pkg:maven/androidx.concurrent/concurrent-futures-ktx@1.1.0",
       "group": "androidx.concurrent",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "concurrent-futures-ktx",
       "purl": "pkg:maven/androidx.concurrent/concurrent-futures-ktx@1.1.0",
       "type": "library",
@@ -772,6 +1449,13 @@
     {
       "bom-ref": "pkg:maven/androidx.concurrent/concurrent-futures@1.1.0",
       "group": "androidx.concurrent",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "concurrent-futures",
       "purl": "pkg:maven/androidx.concurrent/concurrent-futures@1.1.0",
       "type": "library",
@@ -780,6 +1464,13 @@
     {
       "bom-ref": "pkg:maven/androidx.core/core-backported-fixes@1.0.0",
       "group": "androidx.core",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "core-backported-fixes",
       "purl": "pkg:maven/androidx.core/core-backported-fixes@1.0.0",
       "type": "library",
@@ -788,6 +1479,13 @@
     {
       "bom-ref": "pkg:maven/androidx.core/core-ktx@1.19.1",
       "group": "androidx.core",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "core-ktx",
       "purl": "pkg:maven/androidx.core/core-ktx@1.19.1",
       "type": "library",
@@ -796,6 +1494,13 @@
     {
       "bom-ref": "pkg:maven/androidx.core/core-viewtree@1.0.0",
       "group": "androidx.core",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "core-viewtree",
       "purl": "pkg:maven/androidx.core/core-viewtree@1.0.0",
       "type": "library",
@@ -804,6 +1509,13 @@
     {
       "bom-ref": "pkg:maven/androidx.core/core@1.19.1",
       "group": "androidx.core",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "core",
       "purl": "pkg:maven/androidx.core/core@1.19.1",
       "type": "library",
@@ -812,6 +1524,13 @@
     {
       "bom-ref": "pkg:maven/androidx.cursoradapter/cursoradapter@1.0.0",
       "group": "androidx.cursoradapter",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "cursoradapter",
       "purl": "pkg:maven/androidx.cursoradapter/cursoradapter@1.0.0",
       "type": "library",
@@ -820,6 +1539,13 @@
     {
       "bom-ref": "pkg:maven/androidx.customview/customview-poolingcontainer@1.0.0",
       "group": "androidx.customview",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "customview-poolingcontainer",
       "purl": "pkg:maven/androidx.customview/customview-poolingcontainer@1.0.0",
       "type": "library",
@@ -828,6 +1554,13 @@
     {
       "bom-ref": "pkg:maven/androidx.customview/customview@1.0.0",
       "group": "androidx.customview",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "customview",
       "purl": "pkg:maven/androidx.customview/customview@1.0.0",
       "type": "library",
@@ -836,6 +1569,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-android@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-android",
       "purl": "pkg:maven/androidx.datastore/datastore-android@1.2.1",
       "type": "library",
@@ -844,6 +1584,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-core-android@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-core-android",
       "purl": "pkg:maven/androidx.datastore/datastore-core-android@1.2.1",
       "type": "library",
@@ -852,6 +1599,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-core-okio-jvm@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-core-okio-jvm",
       "purl": "pkg:maven/androidx.datastore/datastore-core-okio-jvm@1.2.1",
       "type": "library",
@@ -860,6 +1614,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-core-okio@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-core-okio",
       "purl": "pkg:maven/androidx.datastore/datastore-core-okio@1.2.1",
       "type": "library",
@@ -868,6 +1629,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-core@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-core",
       "purl": "pkg:maven/androidx.datastore/datastore-core@1.2.1",
       "type": "library",
@@ -876,6 +1644,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-preferences-android@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-preferences-android",
       "purl": "pkg:maven/androidx.datastore/datastore-preferences-android@1.2.1",
       "type": "library",
@@ -884,6 +1659,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-preferences-core-android@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-preferences-core-android",
       "purl": "pkg:maven/androidx.datastore/datastore-preferences-core-android@1.2.1",
       "type": "library",
@@ -892,6 +1674,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-preferences-core@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-preferences-core",
       "purl": "pkg:maven/androidx.datastore/datastore-preferences-core@1.2.1",
       "type": "library",
@@ -900,6 +1689,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-preferences-external-protobuf@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "name": "datastore-preferences-external-protobuf",
       "purl": "pkg:maven/androidx.datastore/datastore-preferences-external-protobuf@1.2.1",
       "type": "library",
@@ -908,6 +1704,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-preferences-proto@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-preferences-proto",
       "purl": "pkg:maven/androidx.datastore/datastore-preferences-proto@1.2.1",
       "type": "library",
@@ -916,6 +1719,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore-preferences@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore-preferences",
       "purl": "pkg:maven/androidx.datastore/datastore-preferences@1.2.1",
       "type": "library",
@@ -924,6 +1734,13 @@
     {
       "bom-ref": "pkg:maven/androidx.datastore/datastore@1.2.1",
       "group": "androidx.datastore",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "datastore",
       "purl": "pkg:maven/androidx.datastore/datastore@1.2.1",
       "type": "library",
@@ -932,6 +1749,13 @@
     {
       "bom-ref": "pkg:maven/androidx.drawerlayout/drawerlayout@1.0.0",
       "group": "androidx.drawerlayout",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "drawerlayout",
       "purl": "pkg:maven/androidx.drawerlayout/drawerlayout@1.0.0",
       "type": "library",
@@ -940,6 +1764,13 @@
     {
       "bom-ref": "pkg:maven/androidx.emoji2/emoji2@1.4.0",
       "group": "androidx.emoji2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "emoji2",
       "purl": "pkg:maven/androidx.emoji2/emoji2@1.4.0",
       "type": "library",
@@ -948,6 +1779,13 @@
     {
       "bom-ref": "pkg:maven/androidx.emoji2/emoji2@1.7.0",
       "group": "androidx.emoji2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "emoji2",
       "purl": "pkg:maven/androidx.emoji2/emoji2@1.7.0",
       "type": "library",
@@ -956,6 +1794,13 @@
     {
       "bom-ref": "pkg:maven/androidx.exifinterface/exifinterface@1.4.2",
       "group": "androidx.exifinterface",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "exifinterface",
       "purl": "pkg:maven/androidx.exifinterface/exifinterface@1.4.2",
       "type": "library",
@@ -964,6 +1809,13 @@
     {
       "bom-ref": "pkg:maven/androidx.fragment/fragment-ktx@1.9.1",
       "group": "androidx.fragment",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "fragment-ktx",
       "purl": "pkg:maven/androidx.fragment/fragment-ktx@1.9.1",
       "type": "library",
@@ -972,6 +1824,13 @@
     {
       "bom-ref": "pkg:maven/androidx.fragment/fragment@1.1.0",
       "group": "androidx.fragment",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "fragment",
       "purl": "pkg:maven/androidx.fragment/fragment@1.1.0",
       "type": "library",
@@ -980,6 +1839,13 @@
     {
       "bom-ref": "pkg:maven/androidx.fragment/fragment@1.9.1",
       "group": "androidx.fragment",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "fragment",
       "purl": "pkg:maven/androidx.fragment/fragment@1.9.1",
       "type": "library",
@@ -988,6 +1854,13 @@
     {
       "bom-ref": "pkg:maven/androidx.graphics/graphics-path@1.0.1",
       "group": "androidx.graphics",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "graphics-path",
       "purl": "pkg:maven/androidx.graphics/graphics-path@1.0.1",
       "type": "library",
@@ -996,6 +1869,13 @@
     {
       "bom-ref": "pkg:maven/androidx.graphics/graphics-path@1.1.0",
       "group": "androidx.graphics",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "graphics-path",
       "purl": "pkg:maven/androidx.graphics/graphics-path@1.1.0",
       "type": "library",
@@ -1004,6 +1884,13 @@
     {
       "bom-ref": "pkg:maven/androidx.graphics/graphics-shapes-android@1.0.1",
       "group": "androidx.graphics",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "graphics-shapes-android",
       "purl": "pkg:maven/androidx.graphics/graphics-shapes-android@1.0.1",
       "type": "library",
@@ -1012,6 +1899,13 @@
     {
       "bom-ref": "pkg:maven/androidx.graphics/graphics-shapes@1.0.1",
       "group": "androidx.graphics",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "graphics-shapes",
       "purl": "pkg:maven/androidx.graphics/graphics-shapes@1.0.1",
       "type": "library",
@@ -1020,6 +1914,13 @@
     {
       "bom-ref": "pkg:maven/androidx.interpolator/interpolator@1.0.0",
       "group": "androidx.interpolator",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "interpolator",
       "purl": "pkg:maven/androidx.interpolator/interpolator@1.0.0",
       "type": "library",
@@ -1028,6 +1929,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-common-java8@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-common-java8",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-common-java8@2.11.0",
       "type": "library",
@@ -1036,6 +1944,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-common-jvm@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-common-jvm",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-common-jvm@2.11.0",
       "type": "library",
@@ -1044,6 +1959,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-common@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-common",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-common@2.11.0",
       "type": "library",
@@ -1052,6 +1974,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-livedata-core-ktx@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-livedata-core-ktx",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-livedata-core-ktx@2.11.0",
       "type": "library",
@@ -1060,6 +1989,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-livedata-core@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-livedata-core",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-livedata-core@2.11.0",
       "type": "library",
@@ -1068,6 +2004,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-livedata@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-livedata",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-livedata@2.11.0",
       "type": "library",
@@ -1076,6 +2019,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-process@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-process",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-process@2.11.0",
       "type": "library",
@@ -1084,6 +2034,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-runtime-android@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-runtime-android",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-runtime-android@2.11.0",
       "type": "library",
@@ -1092,6 +2049,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-runtime-compose-android@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-runtime-compose-android",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-runtime-compose-android@2.11.0",
       "type": "library",
@@ -1100,6 +2064,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-runtime-compose@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-runtime-compose",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-runtime-compose@2.11.0",
       "type": "library",
@@ -1108,6 +2079,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-runtime-ktx-android@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-runtime-ktx-android",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-runtime-ktx-android@2.11.0",
       "type": "library",
@@ -1116,6 +2094,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-runtime-ktx@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-runtime-ktx",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-runtime-ktx@2.11.0",
       "type": "library",
@@ -1124,6 +2109,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-runtime@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-runtime",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-runtime@2.11.0",
       "type": "library",
@@ -1132,6 +2124,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-service@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-service",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-service@2.11.0",
       "type": "library",
@@ -1140,6 +2139,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-android@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel-android",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-android@2.11.0",
       "type": "library",
@@ -1148,6 +2154,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-compose-android@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel-compose-android",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-compose-android@2.11.0",
       "type": "library",
@@ -1156,6 +2169,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-compose@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel-compose",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-compose@2.11.0",
       "type": "library",
@@ -1164,6 +2184,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-ktx@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel-ktx",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-ktx@2.11.0",
       "type": "library",
@@ -1172,6 +2199,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-navigation3-android@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel-navigation3-android",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-navigation3-android@2.11.0",
       "type": "library",
@@ -1180,6 +2214,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-navigation3@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel-navigation3",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-navigation3@2.11.0",
       "type": "library",
@@ -1188,6 +2229,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-savedstate-android@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel-savedstate-android",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-savedstate-android@2.11.0",
       "type": "library",
@@ -1196,6 +2244,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-savedstate@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel-savedstate",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel-savedstate@2.11.0",
       "type": "library",
@@ -1204,6 +2259,13 @@
     {
       "bom-ref": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel@2.11.0",
       "group": "androidx.lifecycle",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "lifecycle-viewmodel",
       "purl": "pkg:maven/androidx.lifecycle/lifecycle-viewmodel@2.11.0",
       "type": "library",
@@ -1212,6 +2274,13 @@
     {
       "bom-ref": "pkg:maven/androidx.loader/loader@1.0.0",
       "group": "androidx.loader",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "loader",
       "purl": "pkg:maven/androidx.loader/loader@1.0.0",
       "type": "library",
@@ -1220,6 +2289,13 @@
     {
       "bom-ref": "pkg:maven/androidx.media3/media3-common@1.11.1",
       "group": "androidx.media3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "media3-common",
       "purl": "pkg:maven/androidx.media3/media3-common@1.11.1",
       "type": "library",
@@ -1228,6 +2304,13 @@
     {
       "bom-ref": "pkg:maven/androidx.media3/media3-container@1.11.1",
       "group": "androidx.media3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "media3-container",
       "purl": "pkg:maven/androidx.media3/media3-container@1.11.1",
       "type": "library",
@@ -1236,6 +2319,13 @@
     {
       "bom-ref": "pkg:maven/androidx.media3/media3-database@1.11.1",
       "group": "androidx.media3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "media3-database",
       "purl": "pkg:maven/androidx.media3/media3-database@1.11.1",
       "type": "library",
@@ -1244,6 +2334,13 @@
     {
       "bom-ref": "pkg:maven/androidx.media3/media3-datasource@1.11.1",
       "group": "androidx.media3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "media3-datasource",
       "purl": "pkg:maven/androidx.media3/media3-datasource@1.11.1",
       "type": "library",
@@ -1252,6 +2349,13 @@
     {
       "bom-ref": "pkg:maven/androidx.media3/media3-decoder@1.11.1",
       "group": "androidx.media3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "media3-decoder",
       "purl": "pkg:maven/androidx.media3/media3-decoder@1.11.1",
       "type": "library",
@@ -1260,6 +2364,13 @@
     {
       "bom-ref": "pkg:maven/androidx.media3/media3-exoplayer@1.11.1",
       "group": "androidx.media3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "media3-exoplayer",
       "purl": "pkg:maven/androidx.media3/media3-exoplayer@1.11.1",
       "type": "library",
@@ -1268,6 +2379,13 @@
     {
       "bom-ref": "pkg:maven/androidx.media3/media3-extractor@1.11.1",
       "group": "androidx.media3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "media3-extractor",
       "purl": "pkg:maven/androidx.media3/media3-extractor@1.11.1",
       "type": "library",
@@ -1276,6 +2394,13 @@
     {
       "bom-ref": "pkg:maven/androidx.navigation3/navigation3-runtime-android@1.2.0",
       "group": "androidx.navigation3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "navigation3-runtime-android",
       "purl": "pkg:maven/androidx.navigation3/navigation3-runtime-android@1.2.0",
       "type": "library",
@@ -1284,6 +2409,13 @@
     {
       "bom-ref": "pkg:maven/androidx.navigation3/navigation3-runtime@1.2.0",
       "group": "androidx.navigation3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "navigation3-runtime",
       "purl": "pkg:maven/androidx.navigation3/navigation3-runtime@1.2.0",
       "type": "library",
@@ -1292,6 +2424,13 @@
     {
       "bom-ref": "pkg:maven/androidx.navigation3/navigation3-ui-android@1.2.0",
       "group": "androidx.navigation3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "navigation3-ui-android",
       "purl": "pkg:maven/androidx.navigation3/navigation3-ui-android@1.2.0",
       "type": "library",
@@ -1300,6 +2439,13 @@
     {
       "bom-ref": "pkg:maven/androidx.navigation3/navigation3-ui@1.2.0",
       "group": "androidx.navigation3",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "navigation3-ui",
       "purl": "pkg:maven/androidx.navigation3/navigation3-ui@1.2.0",
       "type": "library",
@@ -1308,6 +2454,13 @@
     {
       "bom-ref": "pkg:maven/androidx.navigationevent/navigationevent-android@1.1.1",
       "group": "androidx.navigationevent",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "navigationevent-android",
       "purl": "pkg:maven/androidx.navigationevent/navigationevent-android@1.1.1",
       "type": "library",
@@ -1316,6 +2469,13 @@
     {
       "bom-ref": "pkg:maven/androidx.navigationevent/navigationevent-compose-android@1.1.1",
       "group": "androidx.navigationevent",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "navigationevent-compose-android",
       "purl": "pkg:maven/androidx.navigationevent/navigationevent-compose-android@1.1.1",
       "type": "library",
@@ -1324,6 +2484,13 @@
     {
       "bom-ref": "pkg:maven/androidx.navigationevent/navigationevent-compose@1.1.1",
       "group": "androidx.navigationevent",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "navigationevent-compose",
       "purl": "pkg:maven/androidx.navigationevent/navigationevent-compose@1.1.1",
       "type": "library",
@@ -1332,6 +2499,13 @@
     {
       "bom-ref": "pkg:maven/androidx.navigationevent/navigationevent@1.1.1",
       "group": "androidx.navigationevent",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "navigationevent",
       "purl": "pkg:maven/androidx.navigationevent/navigationevent@1.1.1",
       "type": "library",
@@ -1340,6 +2514,13 @@
     {
       "bom-ref": "pkg:maven/androidx.profileinstaller/profileinstaller@1.4.0",
       "group": "androidx.profileinstaller",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "profileinstaller",
       "purl": "pkg:maven/androidx.profileinstaller/profileinstaller@1.4.0",
       "type": "library",
@@ -1348,6 +2529,13 @@
     {
       "bom-ref": "pkg:maven/androidx.room/room-common-jvm@2.8.5",
       "group": "androidx.room",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "room-common-jvm",
       "purl": "pkg:maven/androidx.room/room-common-jvm@2.8.5",
       "type": "library",
@@ -1356,6 +2544,13 @@
     {
       "bom-ref": "pkg:maven/androidx.room/room-common@2.8.5",
       "group": "androidx.room",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "room-common",
       "purl": "pkg:maven/androidx.room/room-common@2.8.5",
       "type": "library",
@@ -1364,6 +2559,13 @@
     {
       "bom-ref": "pkg:maven/androidx.room/room-ktx@2.8.5",
       "group": "androidx.room",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "room-ktx",
       "purl": "pkg:maven/androidx.room/room-ktx@2.8.5",
       "type": "library",
@@ -1372,6 +2574,13 @@
     {
       "bom-ref": "pkg:maven/androidx.room/room-runtime-android@2.8.5",
       "group": "androidx.room",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "room-runtime-android",
       "purl": "pkg:maven/androidx.room/room-runtime-android@2.8.5",
       "type": "library",
@@ -1380,6 +2589,13 @@
     {
       "bom-ref": "pkg:maven/androidx.room/room-runtime@2.8.5",
       "group": "androidx.room",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "room-runtime",
       "purl": "pkg:maven/androidx.room/room-runtime@2.8.5",
       "type": "library",
@@ -1388,6 +2604,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate-android@1.4.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate-android",
       "purl": "pkg:maven/androidx.savedstate/savedstate-android@1.4.0",
       "type": "library",
@@ -1396,6 +2619,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate-android@1.5.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate-android",
       "purl": "pkg:maven/androidx.savedstate/savedstate-android@1.5.0",
       "type": "library",
@@ -1404,6 +2634,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate-compose-android@1.4.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate-compose-android",
       "purl": "pkg:maven/androidx.savedstate/savedstate-compose-android@1.4.0",
       "type": "library",
@@ -1412,6 +2649,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate-compose-android@1.5.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate-compose-android",
       "purl": "pkg:maven/androidx.savedstate/savedstate-compose-android@1.5.0",
       "type": "library",
@@ -1420,6 +2664,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate-compose@1.4.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate-compose",
       "purl": "pkg:maven/androidx.savedstate/savedstate-compose@1.4.0",
       "type": "library",
@@ -1428,6 +2679,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate-compose@1.5.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate-compose",
       "purl": "pkg:maven/androidx.savedstate/savedstate-compose@1.5.0",
       "type": "library",
@@ -1436,6 +2694,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate-ktx@1.4.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate-ktx",
       "purl": "pkg:maven/androidx.savedstate/savedstate-ktx@1.4.0",
       "type": "library",
@@ -1444,6 +2709,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate-ktx@1.5.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate-ktx",
       "purl": "pkg:maven/androidx.savedstate/savedstate-ktx@1.5.0",
       "type": "library",
@@ -1452,6 +2724,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate@1.4.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate",
       "purl": "pkg:maven/androidx.savedstate/savedstate@1.4.0",
       "type": "library",
@@ -1460,6 +2739,13 @@
     {
       "bom-ref": "pkg:maven/androidx.savedstate/savedstate@1.5.0",
       "group": "androidx.savedstate",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "savedstate",
       "purl": "pkg:maven/androidx.savedstate/savedstate@1.5.0",
       "type": "library",
@@ -1468,6 +2754,13 @@
     {
       "bom-ref": "pkg:maven/androidx.sqlite/sqlite-android@2.7.1",
       "group": "androidx.sqlite",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "sqlite-android",
       "purl": "pkg:maven/androidx.sqlite/sqlite-android@2.7.1",
       "type": "library",
@@ -1476,6 +2769,13 @@
     {
       "bom-ref": "pkg:maven/androidx.sqlite/sqlite-framework-android@2.7.1",
       "group": "androidx.sqlite",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "sqlite-framework-android",
       "purl": "pkg:maven/androidx.sqlite/sqlite-framework-android@2.7.1",
       "type": "library",
@@ -1484,6 +2784,13 @@
     {
       "bom-ref": "pkg:maven/androidx.sqlite/sqlite-framework@2.7.1",
       "group": "androidx.sqlite",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "sqlite-framework",
       "purl": "pkg:maven/androidx.sqlite/sqlite-framework@2.7.1",
       "type": "library",
@@ -1492,6 +2799,13 @@
     {
       "bom-ref": "pkg:maven/androidx.sqlite/sqlite-ktx@2.7.1",
       "group": "androidx.sqlite",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "sqlite-ktx",
       "purl": "pkg:maven/androidx.sqlite/sqlite-ktx@2.7.1",
       "type": "library",
@@ -1500,6 +2814,13 @@
     {
       "bom-ref": "pkg:maven/androidx.sqlite/sqlite@2.7.1",
       "group": "androidx.sqlite",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "sqlite",
       "purl": "pkg:maven/androidx.sqlite/sqlite@2.7.1",
       "type": "library",
@@ -1508,6 +2829,13 @@
     {
       "bom-ref": "pkg:maven/androidx.startup/startup-runtime@1.1.1",
       "group": "androidx.startup",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "startup-runtime",
       "purl": "pkg:maven/androidx.startup/startup-runtime@1.1.1",
       "type": "library",
@@ -1516,6 +2844,13 @@
     {
       "bom-ref": "pkg:maven/androidx.startup/startup-runtime@1.2.0",
       "group": "androidx.startup",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "startup-runtime",
       "purl": "pkg:maven/androidx.startup/startup-runtime@1.2.0",
       "type": "library",
@@ -1524,6 +2859,13 @@
     {
       "bom-ref": "pkg:maven/androidx.tracing/tracing-android@1.3.0",
       "group": "androidx.tracing",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tracing-android",
       "purl": "pkg:maven/androidx.tracing/tracing-android@1.3.0",
       "type": "library",
@@ -1532,6 +2874,13 @@
     {
       "bom-ref": "pkg:maven/androidx.tracing/tracing-android@2.0.0",
       "group": "androidx.tracing",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tracing-android",
       "purl": "pkg:maven/androidx.tracing/tracing-android@2.0.0",
       "type": "library",
@@ -1540,6 +2889,13 @@
     {
       "bom-ref": "pkg:maven/androidx.tracing/tracing-ktx@1.3.0",
       "group": "androidx.tracing",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tracing-ktx",
       "purl": "pkg:maven/androidx.tracing/tracing-ktx@1.3.0",
       "type": "library",
@@ -1548,6 +2904,13 @@
     {
       "bom-ref": "pkg:maven/androidx.tracing/tracing-ktx@2.0.0",
       "group": "androidx.tracing",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tracing-ktx",
       "purl": "pkg:maven/androidx.tracing/tracing-ktx@2.0.0",
       "type": "library",
@@ -1556,6 +2919,13 @@
     {
       "bom-ref": "pkg:maven/androidx.tracing/tracing@1.3.0",
       "group": "androidx.tracing",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tracing",
       "purl": "pkg:maven/androidx.tracing/tracing@1.3.0",
       "type": "library",
@@ -1564,6 +2934,13 @@
     {
       "bom-ref": "pkg:maven/androidx.tracing/tracing@2.0.0",
       "group": "androidx.tracing",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tracing",
       "purl": "pkg:maven/androidx.tracing/tracing@2.0.0",
       "type": "library",
@@ -1572,6 +2949,13 @@
     {
       "bom-ref": "pkg:maven/androidx.vectordrawable/vectordrawable-animated@1.1.0",
       "group": "androidx.vectordrawable",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "vectordrawable-animated",
       "purl": "pkg:maven/androidx.vectordrawable/vectordrawable-animated@1.1.0",
       "type": "library",
@@ -1580,6 +2964,13 @@
     {
       "bom-ref": "pkg:maven/androidx.vectordrawable/vectordrawable@1.1.0",
       "group": "androidx.vectordrawable",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "vectordrawable",
       "purl": "pkg:maven/androidx.vectordrawable/vectordrawable@1.1.0",
       "type": "library",
@@ -1588,6 +2979,13 @@
     {
       "bom-ref": "pkg:maven/androidx.versionedparcelable/versionedparcelable@1.1.1",
       "group": "androidx.versionedparcelable",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "versionedparcelable",
       "purl": "pkg:maven/androidx.versionedparcelable/versionedparcelable@1.1.1",
       "type": "library",
@@ -1596,6 +2994,13 @@
     {
       "bom-ref": "pkg:maven/androidx.viewpager/viewpager@1.0.0",
       "group": "androidx.viewpager",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "viewpager",
       "purl": "pkg:maven/androidx.viewpager/viewpager@1.0.0",
       "type": "library",
@@ -1604,6 +3009,13 @@
     {
       "bom-ref": "pkg:maven/androidx.window/window-core-android@1.5.0",
       "group": "androidx.window",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "window-core-android",
       "purl": "pkg:maven/androidx.window/window-core-android@1.5.0",
       "type": "library",
@@ -1612,6 +3024,13 @@
     {
       "bom-ref": "pkg:maven/androidx.window/window-core@1.5.0",
       "group": "androidx.window",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "window-core",
       "purl": "pkg:maven/androidx.window/window-core@1.5.0",
       "type": "library",
@@ -1620,6 +3039,13 @@
     {
       "bom-ref": "pkg:maven/androidx.window/window@1.5.0",
       "group": "androidx.window",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "window",
       "purl": "pkg:maven/androidx.window/window@1.5.0",
       "type": "library",
@@ -1628,6 +3054,13 @@
     {
       "bom-ref": "pkg:maven/androidx.work/work-runtime-ktx@2.12.0",
       "group": "androidx.work",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "work-runtime-ktx",
       "purl": "pkg:maven/androidx.work/work-runtime-ktx@2.12.0",
       "type": "library",
@@ -1636,6 +3069,13 @@
     {
       "bom-ref": "pkg:maven/androidx.work/work-runtime@2.12.0",
       "group": "androidx.work",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "work-runtime",
       "purl": "pkg:maven/androidx.work/work-runtime@2.12.0",
       "type": "library",
@@ -1644,6 +3084,13 @@
     {
       "bom-ref": "pkg:maven/app.rive/rive-android@10.4.4",
       "group": "app.rive",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "name": "rive-android",
       "purl": "pkg:maven/app.rive/rive-android@10.4.4",
       "type": "library",
@@ -1652,6 +3099,13 @@
     {
       "bom-ref": "pkg:maven/com.android.volley/volley@1.2.1",
       "group": "com.android.volley",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "volley",
       "purl": "pkg:maven/com.android.volley/volley@1.2.1",
       "type": "library",
@@ -1660,6 +3114,13 @@
     {
       "bom-ref": "pkg:maven/com.getkeepsafe.relinker/relinker@1.4.5",
       "group": "com.getkeepsafe.relinker",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "relinker",
       "purl": "pkg:maven/com.getkeepsafe.relinker/relinker@1.4.5",
       "type": "library",
@@ -1668,6 +3129,13 @@
     {
       "bom-ref": "pkg:maven/com.google.ai.edge.litert/litert-api@1.4.2",
       "group": "com.google.ai.edge.litert",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "litert-api",
       "purl": "pkg:maven/com.google.ai.edge.litert/litert-api@1.4.2",
       "type": "library",
@@ -1676,6 +3144,13 @@
     {
       "bom-ref": "pkg:maven/com.google.ai.edge.litert/litert@1.4.2",
       "group": "com.google.ai.edge.litert",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "litert",
       "purl": "pkg:maven/com.google.ai.edge.litert/litert@1.4.2",
       "type": "library",
@@ -1684,6 +3159,13 @@
     {
       "bom-ref": "pkg:maven/com.google.android.datatransport/transport-api@3.0.0",
       "group": "com.google.android.datatransport",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "transport-api",
       "purl": "pkg:maven/com.google.android.datatransport/transport-api@3.0.0",
       "type": "library",
@@ -1692,6 +3174,13 @@
     {
       "bom-ref": "pkg:maven/com.google.android.datatransport/transport-runtime@3.1.0",
       "group": "com.google.android.datatransport",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "transport-runtime",
       "purl": "pkg:maven/com.google.android.datatransport/transport-runtime@3.1.0",
       "type": "library",
@@ -1700,6 +3189,13 @@
     {
       "bom-ref": "pkg:maven/com.google.android.gms/play-services-base@18.5.0",
       "group": "com.google.android.gms",
+      "licenses": [
+        {
+          "license": {
+            "name": "Android SDK License"
+          }
+        }
+      ],
       "name": "play-services-base",
       "purl": "pkg:maven/com.google.android.gms/play-services-base@18.5.0",
       "type": "library",
@@ -1708,6 +3204,13 @@
     {
       "bom-ref": "pkg:maven/com.google.android.gms/play-services-basement@18.9.0",
       "group": "com.google.android.gms",
+      "licenses": [
+        {
+          "license": {
+            "name": "Android SDK License"
+          }
+        }
+      ],
       "name": "play-services-basement",
       "purl": "pkg:maven/com.google.android.gms/play-services-basement@18.9.0",
       "type": "library",
@@ -1716,6 +3219,13 @@
     {
       "bom-ref": "pkg:maven/com.google.android.gms/play-services-nearby@19.5.1",
       "group": "com.google.android.gms",
+      "licenses": [
+        {
+          "license": {
+            "name": "Android SDK License"
+          }
+        }
+      ],
       "name": "play-services-nearby",
       "purl": "pkg:maven/com.google.android.gms/play-services-nearby@19.5.1",
       "type": "library",
@@ -1724,6 +3234,13 @@
     {
       "bom-ref": "pkg:maven/com.google.android.gms/play-services-tasks@18.2.0",
       "group": "com.google.android.gms",
+      "licenses": [
+        {
+          "license": {
+            "name": "Android SDK License"
+          }
+        }
+      ],
       "name": "play-services-tasks",
       "purl": "pkg:maven/com.google.android.gms/play-services-tasks@18.2.0",
       "type": "library",
@@ -1732,6 +3249,13 @@
     {
       "bom-ref": "pkg:maven/com.google.auto.value/auto-value-annotations@1.6.3",
       "group": "com.google.auto.value",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "auto-value-annotations",
       "purl": "pkg:maven/com.google.auto.value/auto-value-annotations@1.6.3",
       "type": "library",
@@ -1740,6 +3264,13 @@
     {
       "bom-ref": "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
       "group": "com.google.code.findbugs",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "jsr305",
       "purl": "pkg:maven/com.google.code.findbugs/jsr305@3.0.2",
       "type": "library",
@@ -1748,6 +3279,13 @@
     {
       "bom-ref": "pkg:maven/com.google.dagger/dagger@2.59",
       "group": "com.google.dagger",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "dagger",
       "purl": "pkg:maven/com.google.dagger/dagger@2.59",
       "type": "library",
@@ -1756,6 +3294,13 @@
     {
       "bom-ref": "pkg:maven/com.google.errorprone/error_prone_annotations@2.28.0",
       "group": "com.google.errorprone",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "error_prone_annotations",
       "purl": "pkg:maven/com.google.errorprone/error_prone_annotations@2.28.0",
       "type": "library",
@@ -1764,6 +3309,13 @@
     {
       "bom-ref": "pkg:maven/com.google.errorprone/error_prone_annotations@2.50.0",
       "group": "com.google.errorprone",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "error_prone_annotations",
       "purl": "pkg:maven/com.google.errorprone/error_prone_annotations@2.50.0",
       "type": "library",
@@ -1772,6 +3324,13 @@
     {
       "bom-ref": "pkg:maven/com.google.firebase/firebase-encoders-proto@16.0.0",
       "group": "com.google.firebase",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "firebase-encoders-proto",
       "purl": "pkg:maven/com.google.firebase/firebase-encoders-proto@16.0.0",
       "type": "library",
@@ -1780,6 +3339,13 @@
     {
       "bom-ref": "pkg:maven/com.google.firebase/firebase-encoders@17.0.0",
       "group": "com.google.firebase",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "firebase-encoders",
       "purl": "pkg:maven/com.google.firebase/firebase-encoders@17.0.0",
       "type": "library",
@@ -1788,6 +3354,13 @@
     {
       "bom-ref": "pkg:maven/com.google.flogger/flogger-system-backend@0.6",
       "group": "com.google.flogger",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "flogger-system-backend",
       "purl": "pkg:maven/com.google.flogger/flogger-system-backend@0.6",
       "type": "library",
@@ -1796,6 +3369,13 @@
     {
       "bom-ref": "pkg:maven/com.google.flogger/flogger@0.6",
       "group": "com.google.flogger",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "flogger",
       "purl": "pkg:maven/com.google.flogger/flogger@0.6",
       "type": "library",
@@ -1804,6 +3384,13 @@
     {
       "bom-ref": "pkg:maven/com.google.guava/failureaccess@1.0.2",
       "group": "com.google.guava",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "failureaccess",
       "purl": "pkg:maven/com.google.guava/failureaccess@1.0.2",
       "type": "library",
@@ -1812,6 +3399,13 @@
     {
       "bom-ref": "pkg:maven/com.google.guava/failureaccess@1.0.3",
       "group": "com.google.guava",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "failureaccess",
       "purl": "pkg:maven/com.google.guava/failureaccess@1.0.3",
       "type": "library",
@@ -1820,6 +3414,13 @@
     {
       "bom-ref": "pkg:maven/com.google.guava/guava@33.3.1-android",
       "group": "com.google.guava",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "guava",
       "purl": "pkg:maven/com.google.guava/guava@33.3.1-android",
       "type": "library",
@@ -1828,6 +3429,13 @@
     {
       "bom-ref": "pkg:maven/com.google.guava/guava@33.7.2-android",
       "group": "com.google.guava",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "guava",
       "purl": "pkg:maven/com.google.guava/guava@33.7.2-android",
       "type": "library",
@@ -1836,6 +3444,13 @@
     {
       "bom-ref": "pkg:maven/com.google.guava/listenablefuture@9999.0-empty-to-avoid-conflict-with-guava",
       "group": "com.google.guava",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "listenablefuture",
       "purl": "pkg:maven/com.google.guava/listenablefuture@9999.0-empty-to-avoid-conflict-with-guava",
       "type": "library",
@@ -1844,6 +3459,13 @@
     {
       "bom-ref": "pkg:maven/com.google.j2objc/j2objc-annotations@3.0.0",
       "group": "com.google.j2objc",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "j2objc-annotations",
       "purl": "pkg:maven/com.google.j2objc/j2objc-annotations@3.0.0",
       "type": "library",
@@ -1852,6 +3474,13 @@
     {
       "bom-ref": "pkg:maven/com.google.j2objc/j2objc-annotations@3.1",
       "group": "com.google.j2objc",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "j2objc-annotations",
       "purl": "pkg:maven/com.google.j2objc/j2objc-annotations@3.1",
       "type": "library",
@@ -1860,6 +3489,13 @@
     {
       "bom-ref": "pkg:maven/com.google.mediapipe/tasks-core@1.0.0",
       "group": "com.google.mediapipe",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tasks-core",
       "purl": "pkg:maven/com.google.mediapipe/tasks-core@1.0.0",
       "type": "library",
@@ -1868,6 +3504,13 @@
     {
       "bom-ref": "pkg:maven/com.google.mediapipe/tasks-core@1.1.1",
       "group": "com.google.mediapipe",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tasks-core",
       "purl": "pkg:maven/com.google.mediapipe/tasks-core@1.1.1",
       "type": "library",
@@ -1876,6 +3519,13 @@
     {
       "bom-ref": "pkg:maven/com.google.mediapipe/tasks-vision@1.0.0",
       "group": "com.google.mediapipe",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tasks-vision",
       "purl": "pkg:maven/com.google.mediapipe/tasks-vision@1.0.0",
       "type": "library",
@@ -1884,6 +3534,13 @@
     {
       "bom-ref": "pkg:maven/com.google.mediapipe/tasks-vision@1.1.1",
       "group": "com.google.mediapipe",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "tasks-vision",
       "purl": "pkg:maven/com.google.mediapipe/tasks-vision@1.1.1",
       "type": "library",
@@ -1892,6 +3549,13 @@
     {
       "bom-ref": "pkg:maven/com.google.protobuf/protobuf-javalite@4.26.1",
       "group": "com.google.protobuf",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "name": "protobuf-javalite",
       "purl": "pkg:maven/com.google.protobuf/protobuf-javalite@4.26.1",
       "type": "library",
@@ -1900,6 +3564,13 @@
     {
       "bom-ref": "pkg:maven/com.google.protobuf/protobuf-javalite@4.36.2",
       "group": "com.google.protobuf",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "name": "protobuf-javalite",
       "purl": "pkg:maven/com.google.protobuf/protobuf-javalite@4.36.2",
       "type": "library",
@@ -1908,6 +3579,13 @@
     {
       "bom-ref": "pkg:maven/com.google.zxing/core@3.5.3",
       "group": "com.google.zxing",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "core",
       "purl": "pkg:maven/com.google.zxing/core@3.5.3",
       "type": "library",
@@ -1916,6 +3594,13 @@
     {
       "bom-ref": "pkg:maven/com.squareup.okio/okio-jvm@3.9.1",
       "group": "com.squareup.okio",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "okio-jvm",
       "purl": "pkg:maven/com.squareup.okio/okio-jvm@3.9.1",
       "type": "library",
@@ -1924,6 +3609,13 @@
     {
       "bom-ref": "pkg:maven/com.squareup.okio/okio@3.9.1",
       "group": "com.squareup.okio",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "okio",
       "purl": "pkg:maven/com.squareup.okio/okio@3.9.1",
       "type": "library",
@@ -1932,6 +3624,13 @@
     {
       "bom-ref": "pkg:maven/com.tom-roush/pdfbox-android@2.0.27.0",
       "group": "com.tom-roush",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "pdfbox-android",
       "purl": "pkg:maven/com.tom-roush/pdfbox-android@2.0.27.0",
       "type": "library",
@@ -1940,6 +3639,18 @@
     {
       "bom-ref": "pkg:maven/computer.iroh/iroh-android@1.2.0",
       "group": "computer.iroh",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        },
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "iroh-android",
       "purl": "pkg:maven/computer.iroh/iroh-android@1.2.0",
       "type": "library",
@@ -1948,6 +3659,18 @@
     {
       "bom-ref": "pkg:maven/computer.iroh/iroh@1.2.0",
       "group": "computer.iroh",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        },
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "iroh",
       "purl": "pkg:maven/computer.iroh/iroh@1.2.0",
       "type": "library",
@@ -1956,6 +3679,13 @@
     {
       "bom-ref": "pkg:maven/jakarta.inject/jakarta.inject-api@2.0.1",
       "group": "jakarta.inject",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "jakarta.inject-api",
       "purl": "pkg:maven/jakarta.inject/jakarta.inject-api@2.0.1",
       "type": "library",
@@ -1964,6 +3694,13 @@
     {
       "bom-ref": "pkg:maven/javax.inject/javax.inject@1",
       "group": "javax.inject",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "javax.inject",
       "purl": "pkg:maven/javax.inject/javax.inject@1",
       "type": "library",
@@ -1972,6 +3709,18 @@
     {
       "bom-ref": "pkg:maven/net.java.dev.jna/jna@5.19.1",
       "group": "net.java.dev.jna",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "jna",
       "purl": "pkg:maven/net.java.dev.jna/jna@5.19.1",
       "type": "library",
@@ -1980,6 +3729,13 @@
     {
       "bom-ref": "pkg:maven/net.zetetic/sqlcipher-android@4.19.1",
       "group": "net.zetetic",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "name": "sqlcipher-android",
       "purl": "pkg:maven/net.zetetic/sqlcipher-android@4.19.1",
       "type": "library",
@@ -1988,6 +3744,13 @@
     {
       "bom-ref": "pkg:maven/net.zetetic/sqlcipher-android@4.20.0",
       "group": "net.zetetic",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
       "name": "sqlcipher-android",
       "purl": "pkg:maven/net.zetetic/sqlcipher-android@4.20.0",
       "type": "library",
@@ -1996,6 +3759,13 @@
     {
       "bom-ref": "pkg:maven/org.bouncycastle/bcpkix-jdk15to18@1.86",
       "group": "org.bouncycastle",
+      "licenses": [
+        {
+          "license": {
+            "name": "Bouncy Castle Licence"
+          }
+        }
+      ],
       "name": "bcpkix-jdk15to18",
       "purl": "pkg:maven/org.bouncycastle/bcpkix-jdk15to18@1.86",
       "type": "library",
@@ -2004,6 +3774,13 @@
     {
       "bom-ref": "pkg:maven/org.bouncycastle/bcprov-jdk15to18@1.86",
       "group": "org.bouncycastle",
+      "licenses": [
+        {
+          "license": {
+            "name": "Bouncy Castle Licence"
+          }
+        }
+      ],
       "name": "bcprov-jdk15to18",
       "purl": "pkg:maven/org.bouncycastle/bcprov-jdk15to18@1.86",
       "type": "library",
@@ -2012,6 +3789,13 @@
     {
       "bom-ref": "pkg:maven/org.bouncycastle/bcutil-jdk15to18@1.86",
       "group": "org.bouncycastle",
+      "licenses": [
+        {
+          "license": {
+            "name": "Bouncy Castle Licence"
+          }
+        }
+      ],
       "name": "bcutil-jdk15to18",
       "purl": "pkg:maven/org.bouncycastle/bcutil-jdk15to18@1.86",
       "type": "library",
@@ -2020,6 +3804,18 @@
     {
       "bom-ref": "pkg:maven/org.checkerframework/checker-compat-qual@2.5.3",
       "group": "org.checkerframework",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-with-classpath-exception"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "name": "checker-compat-qual",
       "purl": "pkg:maven/org.checkerframework/checker-compat-qual@2.5.3",
       "type": "library",
@@ -2028,6 +3824,13 @@
     {
       "bom-ref": "pkg:maven/org.checkerframework/checker-qual@3.43.0",
       "group": "org.checkerframework",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
       "name": "checker-qual",
       "purl": "pkg:maven/org.checkerframework/checker-qual@3.43.0",
       "type": "library",
@@ -2036,6 +3839,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlin/kotlin-stdlib-common@2.4.21",
       "group": "org.jetbrains.kotlin",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlin-stdlib-common",
       "purl": "pkg:maven/org.jetbrains.kotlin/kotlin-stdlib-common@2.4.21",
       "type": "library",
@@ -2044,6 +3854,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlin/kotlin-stdlib@2.4.21",
       "group": "org.jetbrains.kotlin",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlin-stdlib",
       "purl": "pkg:maven/org.jetbrains.kotlin/kotlin-stdlib@2.4.21",
       "type": "library",
@@ -2052,6 +3869,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/atomicfu-jvm@0.28.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "atomicfu-jvm",
       "purl": "pkg:maven/org.jetbrains.kotlinx/atomicfu-jvm@0.28.0",
       "type": "library",
@@ -2060,6 +3884,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/atomicfu@0.28.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "atomicfu",
       "purl": "pkg:maven/org.jetbrains.kotlinx/atomicfu@0.28.0",
       "type": "library",
@@ -2068,6 +3899,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-android@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-coroutines-android",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-android@1.11.0",
       "type": "library",
@@ -2076,6 +3914,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-bom@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-coroutines-bom",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-bom@1.11.0",
       "type": "library",
@@ -2084,6 +3929,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-coroutines-core-jvm",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm@1.11.0",
       "type": "library",
@@ -2092,6 +3944,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-core@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-coroutines-core",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-core@1.11.0",
       "type": "library",
@@ -2100,6 +3959,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-play-services@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-coroutines-play-services",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-play-services@1.11.0",
       "type": "library",
@@ -2108,6 +3974,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-bom@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-bom",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-bom@1.11.0",
       "type": "library",
@@ -2116,6 +3989,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-bom@1.12.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-bom",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-bom@1.12.0",
       "type": "library",
@@ -2124,6 +4004,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-core-jvm",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm@1.11.0",
       "type": "library",
@@ -2132,6 +4019,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm@1.12.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-core-jvm",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm@1.12.0",
       "type": "library",
@@ -2140,6 +4034,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-core@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-core",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-core@1.11.0",
       "type": "library",
@@ -2148,6 +4049,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-core@1.12.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-core",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-core@1.12.0",
       "type": "library",
@@ -2156,6 +4064,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-json-jvm",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm@1.11.0",
       "type": "library",
@@ -2164,6 +4079,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm@1.12.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-json-jvm",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm@1.12.0",
       "type": "library",
@@ -2172,6 +4094,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-json@1.11.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-json",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-json@1.11.0",
       "type": "library",
@@ -2180,6 +4109,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-json@1.12.0",
       "group": "org.jetbrains.kotlinx",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "kotlinx-serialization-json",
       "purl": "pkg:maven/org.jetbrains.kotlinx/kotlinx-serialization-json@1.12.0",
       "type": "library",
@@ -2188,6 +4124,13 @@
     {
       "bom-ref": "pkg:maven/org.jetbrains/annotations@23.0.0",
       "group": "org.jetbrains",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "annotations",
       "purl": "pkg:maven/org.jetbrains/annotations@23.0.0",
       "type": "library",
@@ -2196,6 +4139,13 @@
     {
       "bom-ref": "pkg:maven/org.jspecify/jspecify@1.0.0",
       "group": "org.jspecify",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "jspecify",
       "purl": "pkg:maven/org.jspecify/jspecify@1.0.0",
       "type": "library",
@@ -2204,6 +4154,13 @@
     {
       "bom-ref": "pkg:maven/org.jspecify/jspecify@1.0.1",
       "group": "org.jspecify",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "name": "jspecify",
       "purl": "pkg:maven/org.jspecify/jspecify@1.0.1",
       "type": "library",
