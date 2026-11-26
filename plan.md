@@ -274,7 +274,8 @@ ticked-here: a bottom pill on the call slides or taps up to the same five-sectio
 ticked-here: the call's top strip now holds one row with Hold (the stop card) and Messages (onOfficer) as equal 56dp controls, both always drawn; CallLevelsDeviceTest 4 tests exit 0 in 34.8 s; remainder: the corner chat handle is still a spare route.
 - [x] Caption rendering: one line at a time, large type, the current word emphasised correctly (fixes the highlighting bug at the source, not per-screen). `[W]`
 ticked-here: the caption splits at word boundaries and draws one 26sp line, the piece holding the light, with the light moved into that piece's offsets through litWord; CaptionChunksTest 6 JVM tests and CaptionLineDeviceTest 4 tests exit 0 in 19.7 s, CallCaptionLightTest still green; remainder: chunking is character-based at 32 chars, not measured against the device font, and there is no per-language line breaking.
-- [ ] Responsive layout for phone, tablet and a landscape dock with the second screen. `[W]`
+- [x] Responsive layout for phone, tablet and a landscape dock with the second screen. `[W]`
+ticked-here: sessionShape docks a paired landscape (stage 0.62, officer 0.38) and caps a tablet's call at 720dp, phones unchanged; SessionLayoutTest 6 JVM and SessionDockDeviceTest 3 device tests green; the dock was rendered in three configurations, not on a real paired second screen.
 
 ### M4.3 Signing quality (owner: "better hand signs and fingerspellings", "joint restrictions")
 

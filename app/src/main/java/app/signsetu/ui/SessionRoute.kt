@@ -26,6 +26,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -50,6 +56,9 @@ import app.signsetu.ui.session.Conv
 import app.signsetu.ui.session.planLadder
 import androidx.lifecycle.viewModelScope
 import app.signsetu.ui.session.OfficerPane
+import app.signsetu.ui.session.SessionDock
+import app.signsetu.ui.session.SessionShape
+import app.signsetu.ui.session.sessionShape
 import app.signsetu.ui.session.titleToKeep
 import app.signsetu.ui.session.SessionViewModel
 import app.signsetu.ui.session.Stage
@@ -83,7 +92,8 @@ internal fun SessionRoute(
     onSecondScreen: (() -> Unit)?,
     onCallInterpreter: (() -> Unit)?,
 ) {
-    val officerLang = if (LocalConfiguration.current.locales[0].language == "hi") "hi" else "en"
+    val configuration = LocalConfiguration.current
+    val officerLang = if (configuration.locales[0].language == "hi") "hi" else "en"
     val vm: SessionViewModel = viewModel(
         key = sessionId,
         factory = viewModelFactory { initializer { SessionViewModel(sessionId, repo, content, officerLang, report, reader, checkOnResume = true) } },
@@ -148,9 +158,38 @@ internal fun SessionRoute(
     // The app locking takes this screen away: landmarks go with it, though not on a mere configuration change.
     DisposableEffect(Unit) { onDispose { if (activity?.isChangingConfigurations != true) vm.wipeSigns() } }
 
-    Crossfade(targetState = if (paired) Mode.OFFICER else state.mode, animationSpec = motion(tween(220)), label = "mode") { shown ->
-    when (shown) {
-        Mode.OFFICER -> OfficerPane(
+    // The stage and the officer side, each built once: the shape below only decides where they sit.
+    val stageSurface: @Composable () -> Unit = {
+        SubjectTheme {
+            Stage(
+                ui = state,
+                content = signContent,
+                tracker = tracker,
+                cameraOn = cameraOn,
+                gestureSpeed = settings.gestureSpeed,
+                askModes = typedModes(vm.modesFor(state.session.profile, defaultModes(state.session.profile)), settings.islReorder),
+                onCard = vm::answerCard,
+                onYesNo = vm::answerYesNo,
+                onCue = vm::noteCue,
+                onCameraRead = vm::cameraRead,
+                onLanguage = vm::chooseLanguage,
+                onDrawing = vm::submitDrawing,
+                onWritten = vm::answerText,
+                onSignFrame = vm::onSignFrame,
+                onStartSigning = vm::startReading,
+                onDoneSigning = vm::finishReading,
+                onOfficer = backToOfficer,
+                onSignChoice = vm::chooseSign,
+                onNextRule = vm::nextRule,
+                nextIn = nextIn,
+                onPauseEnd = vm::endPause,
+                onGiven = vm::give,
+                onNeed = vm::askNeed,
+            )
+        }
+    }
+    val officerSurface: @Composable () -> Unit = {
+        OfficerPane(
             ui = state,
             vm = vm,
             officerLang = officerLang,
@@ -180,35 +219,27 @@ internal fun SessionRoute(
                 })
             },
         )
+    }
+    val shape = sessionShape(configuration.screenWidthDp, configuration.screenHeightDp, paired)
+
+    Crossfade(targetState = if (paired) Mode.OFFICER else state.mode, animationSpec = motion(tween(220)), label = "mode") { shown ->
+    when (shown) {
+        // A paired phone in landscape docks the stage and the officer side instead of stacking them.
+        Mode.OFFICER -> if (shape == SessionShape.DOCK) {
+            SessionDock(stage = stageSurface, officer = officerSurface)
+        } else {
+            officerSurface()
+        }
         Mode.SHOW -> {
             // Back on the stage does nothing: the officer holds the handle to take the phone back.
             BackHandler { }
-            SubjectTheme {
-                Stage(
-                    ui = state,
-                    content = signContent,
-                    tracker = tracker,
-                    cameraOn = cameraOn,
-                    gestureSpeed = settings.gestureSpeed,
-                    askModes = typedModes(vm.modesFor(state.session.profile, defaultModes(state.session.profile)), settings.islReorder),
-                    onCard = vm::answerCard,
-                    onYesNo = vm::answerYesNo,
-                    onCue = vm::noteCue,
-                    onCameraRead = vm::cameraRead,
-                    onLanguage = vm::chooseLanguage,
-                    onDrawing = vm::submitDrawing,
-                    onWritten = vm::answerText,
-                    onSignFrame = vm::onSignFrame,
-                    onStartSigning = vm::startReading,
-                    onDoneSigning = vm::finishReading,
-                    onOfficer = backToOfficer,
-                    onSignChoice = vm::chooseSign,
-                    onNextRule = vm::nextRule,
-                    nextIn = nextIn,
-                    onPauseEnd = vm::endPause,
-                    onGiven = vm::give,
-                    onNeed = vm::askNeed,
-                )
+            // On a tablet the call keeps a readable column instead of stretching the caption and tiles edge to edge.
+            if (shape == SessionShape.TABLET) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(Modifier.widthIn(max = 720.dp).fillMaxSize()) { stageSurface() }
+                }
+            } else {
+                stageSurface()
             }
         }
     }
