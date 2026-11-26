@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stage_sheet_title">सारे औज़ार</string>
+    <string name="stage_sheet_language">भाषा</string>
+    <string name="stage_sheet_pictures">तस्वीरें</string>
+    <string name="stage_sheet_drawing">चित्र बनाएँ</string>
+    <string name="stage_sheet_emoji">इमोजी</string>
+    <string name="stage_sheet_typing">लिखें</string>
+    <string name="stage_sheet_drawing_unavailable">इस सवाल पर चित्र नहीं बनाया जा सकता।</string>
+    <string name="stage_sheet_typing_unavailable">इस सवाल पर नहीं लिखा जा सकता।</string>
+    <string name="stage_sheet_express">भाव पटल खोलें</string>
+    <string name="stage_sheet_close">बंद करें</string>
+</resources>

@@ -250,7 +250,8 @@ optional polish; they are the reason the app is hard to use today.
 
 - [x] One stage layout with a single primary action, a bottom bar of tools (language, pictures, drawing, emoji, typing) and at most three visible paths. `[W]`
 ticked-here: one primary action, a five-tool bar and exactly three tagged paths (answers/tools/exit); StageToolsDeviceTest 3 tests, exit 0, 36.5 s; emoji picker row 250, slide-to-open sheet row 258, LANGUAGE wiring row 249.
-- [ ] Replace scattered per-feature buttons with a bottom bar and side sheets that show the full toolset on one screen. `[W]`
+- [x] Replace scattered per-feature buttons with a bottom bar and side sheets that show the full toolset on one screen. `[W]`
+ticked-here: the bar opens one sheet holding all five tools; language returns the picked code, pictures answer their card, drawing and typing run their tools, emoji opens the express board; StageToolSheetDeviceTest 5 tests exit 0, 72.9 s; the slide-to-open gesture on the call surface is row 258.
 - [ ] Preset emoji/picture chips that appear automatically when a related word is typed or spoken — water, food, family, home, house, toilet, medicine (owner: "EMOJI SHOULD BE PRESET WHEN related word appears"). `[W]`
 - [ ] One-tap "I need…" express row (water, food, toilet, pain, help, family) that is always reachable and never buried. `[W]`
 - [ ] A single, obvious way to end a session (owner: "easy the closing of session"), with the other exits demoted to one menu. `[W]`

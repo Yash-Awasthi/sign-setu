@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stage_sheet_title">All tools</string>
+    <string name="stage_sheet_language">Language</string>
+    <string name="stage_sheet_pictures">Pictures</string>
+    <string name="stage_sheet_drawing">Drawing</string>
+    <string name="stage_sheet_emoji">Emoji</string>
+    <string name="stage_sheet_typing">Typing</string>
+    <string name="stage_sheet_drawing_unavailable">Drawing is not available on this item.</string>
+    <string name="stage_sheet_typing_unavailable">Typing is not available on this item.</string>
+    <string name="stage_sheet_express">Open the express board</string>
+    <string name="stage_sheet_close">Close</string>
+</resources>

@@ -123,8 +123,10 @@ internal fun VideoCallStage(
     onDoneSigning: () -> Unit = {},
     onDraw: (() -> Unit)? = null,
     onWrite: (() -> Unit)? = null,
-    /** Opens the language grid from the tool bar; LANGUAGE is shown only when this is set (row 249 wires it). */
-    onLanguageTool: (() -> Unit)? = null,
+    /** The language the subject picked in the tool sheet; LANGUAGE is shown only when this is set. */
+    onLanguage: ((String) -> Unit)? = null,
+    /** The item's picture cards, offered in the sheet's PICTURES group. */
+    pictureCards: List<String> = emptyList(),
     /** Drawing, writing, pictures and the other answer panels take the lower part of the call. */
     panel: (@Composable (Modifier) -> Unit)? = null,
     /** The share of the height the panel takes; the character gets the rest. */
@@ -145,6 +147,8 @@ internal fun VideoCallStage(
     var swapped by rememberSaveable { mutableStateOf(false) }
     // The unsure trio stays folded behind one button, so the call shows at most three paths at once.
     var moreAnswers by remember(pending) { mutableStateOf(false) }
+    // One sheet holds the whole toolset; a tool tag names the group to show first.
+    var sheetFor by remember { mutableStateOf<StageTool?>(null) }
 
     // A string resource and its optional argument, resolved where it is drawn so a language change is followed.
     var recentReaction by remember { mutableStateOf<Reaction?>(null) }
@@ -525,8 +529,8 @@ internal fun VideoCallStage(
             // Path two, tools: language and emoji always; drawing, typing and pictures only when this item offers them.
             if (controls && !signing) {
                 val available = buildSet {
-                    if (onLanguageTool != null) add(StageTool.LANGUAGE)
-                    if (describeItem(pending, content, lang).choices.isNotEmpty()) add(StageTool.PICTURES)
+                    if (onLanguage != null) add(StageTool.LANGUAGE)
+                    if (pictureCards.isNotEmpty()) add(StageTool.PICTURES)
                     if (onDraw != null) add(StageTool.DRAWING)
                     add(StageTool.EMOJI)
                     if (onWrite != null) add(StageTool.TYPING)
@@ -539,18 +543,13 @@ internal fun VideoCallStage(
                     modifier = Modifier.fillMaxWidth().testTag(StagePaths.TOOLS),
                 ) {
                     StageToolBar(
-                        selected = null,
+                        selected = sheetFor,
                         available = available,
                         onSelect = { tool ->
                             when (tool) {
-                                StageTool.LANGUAGE -> onLanguageTool?.invoke()
-                                // A picture item takes the stage as tiles, so this tool only appears on a bar rendered alone.
-                                StageTool.PICTURES -> Unit
+                                // The sheet shows the whole toolset; its group opens first for language, pictures and emoji.
+                                StageTool.LANGUAGE, StageTool.PICTURES, StageTool.EMOJI -> sheetFor = tool
                                 StageTool.DRAWING -> onDraw?.invoke()
-                                StageTool.EMOJI -> {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onOpenExpressBoard()
-                                }
                                 StageTool.TYPING -> onWrite?.invoke()
                             }
                         },
@@ -558,6 +557,26 @@ internal fun VideoCallStage(
                     )
                 }
             }
+        }
+
+        if (sheetFor != null) {
+            StageToolSheet(
+                open = true,
+                initial = sheetFor,
+                content = content,
+                lang = lang,
+                pictureCards = pictureCards,
+                onLanguage = { code -> onLanguage?.invoke(code) },
+                onCard = { card -> answer(card) },
+                onDraw = onDraw,
+                onWrite = onWrite,
+                onExpress = {
+                    sheetFor = null
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onOpenExpressBoard()
+                },
+                onDismiss = { sheetFor = null },
+            )
         }
     }
 }
