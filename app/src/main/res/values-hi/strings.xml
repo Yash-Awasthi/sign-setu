@@ -18,7 +18,6 @@
     <string name="start_resume_body">%1$s · %2$s · %3$s बजे शुरू</string>
     <string name="start_resume">जारी रखें</string>
     <string name="start_end">समाप्त करें</string>
-    <string name="start_who">आप किसकी मदद कर रहे हैं?</string>
     <string name="start_language">उनकी भाषा</string>
     <string name="start_language_finder">अगली स्क्रीन पर उनकी भाषा पता करें।</string>
     <string name="start_language_unknown">पता नहीं · उनकी भाषा खोजें</string>
@@ -33,7 +32,6 @@
     <string name="officer_add_pictures">चित्र जोड़ें</string>
     <string name="officer_find_language">उनकी भाषा पता करें</string>
     <string name="officer_draw">उन्हें चित्र बनाने दें</string>
-    <string name="officer_log">सत्र रिकॉर्ड</string>
     <string name="officer_call">दुभाषिया बुलाएँ</string>
     <string name="speech_mute">उनकी आवाज़ बंद करें</string>
     <string name="speech_unmute">उनकी आवाज़ चालू करें</string>
@@ -63,7 +61,6 @@
     <string name="log_system">खोला</string>
     <string name="log_note_hint">टिप्पणी जोड़ें</string>
     <string name="log_add">जोड़ें</string>
-    <string name="log_empty">अभी कुछ दर्ज नहीं हुआ।</string>
 
     <string name="gl_title">उन्होंने क्या किया?</string>
     <string name="gl_where">हाथ कहाँ गया?</string>
@@ -165,6 +162,8 @@
     <string name="theme_yotsuba">योत्सुबा</string>
     <string name="settings_amoled">गहरा काला (AMOLED)</string>
     <string name="settings_amoled_summary">डार्क मोड में काली पृष्ठभूमि, OLED स्क्रीन के लिए</string>
+    <string name="settings_motion">कम गति</string>
+    <string name="settings_motion_summary">साँस लेने और बाकी सजावट को रोकता है; इशारे फिर भी चलते रहते हैं</string>
     <string name="settings_theme_system">डिवाइस डिफ़ॉल्ट</string>
     <string name="settings_theme_light">लाइट</string>
     <string name="settings_theme_dark">डार्क</string>
@@ -216,8 +215,6 @@
     <string name="officer_media_missing">केवल तस्वीर और कैप्शन</string>
     <string name="officer_skeleton_show">कैमरे पर ढाँचा दिखाएँ</string>
     <string name="officer_sign_language">सांकेतिक भाषा</string>
-    <string name="sign_isl">भारतीय (ISL)</string>
-    <string name="sign_asl">अमेरिकी (ASL)</string>
     <string name="log_opened">सत्र खुला: %1$s</string>
     <string name="log_resumed">सत्र फिर शुरू: %1$s</string>
     <string name="log_sign_language">सांकेतिक भाषा %1$s चुनी</string>
@@ -308,8 +305,6 @@
     <string name="role_victim">पीड़ित या गवाह</string>
     <string name="role_accused">आरोपी या हिरासत में</string>
     <string name="report_role">भूमिका</string>
-    <string name="start_juvenile_title">अगर व्यक्ति की उम्र 18 से कम हो सकती है</string>
-    <string name="start_juvenile_body">बच्चे पर किशोर न्याय अधिनियम लागू होता है: न हवालात, न हथकड़ी। बच्चे को बाल कल्याण पुलिस अधिकारी को सौंपें और माता-पिता या अभिभावक को सूचित करें। बच्चे को 24 घंटे के भीतर किशोर न्याय बोर्ड के सामने पेश करें, यात्रा का समय इसमें नहीं गिना जाता। (मसौदा शब्द, कानूनी समीक्षा बाकी।)</string>
     <string name="log_signed">संकेतों में उत्तर</string>
     <string name="signed_app">ऐप ने पढ़ा, जाँचा नहीं गया</string>
     <string name="signed_officer">अधिकारी ने जाँचा</string>
@@ -469,7 +464,6 @@
     <string name="report_not_acted">कोई कार्रवाई नहीं हुई</string>
     <!-- Input ingestion: narrative window and subject choice -->
     <string name="tell_me">मुझे बताइए</string>
-    <string name="tell_me_long">मुझे बताइए: 3 मिनट तक संकेतों में</string>
     <string name="signed_ask">उनसे चुनने को कहें</string>
     <string name="signed_ask_none">किसी संकेत के लिए चुनने को दो अर्थ नहीं हैं। जवाब वाली तस्वीरों के साथ सवाल दिखाएँ, फिर संकेत पढ़ें।</string>
     <string name="signed_ask_hint">उन्हें दो-तीन चित्र और \"इनमें से कोई नहीं\" दिखेगा। अर्थ तभी दर्ज होगा जब वे खुद चुनें।</string>
@@ -505,7 +499,6 @@
     <string name="stage_clear">मिटाएँ</string>
     <string name="stage_next">आगे</string>
     <string name="stage_draw">चित्र बनाएँ</string>
-    <string name="stage_write">लिखें</string>
     <string name="stage_none">इनमें से कोई नहीं</string>
     <string name="stage_back">वापस</string>
     <string name="start_pictures_only">%1$s में व्यक्ति की स्क्रीन पर अभी शब्द नहीं हैं: उन्हें केवल चित्र और संकेत दिखेंगे।</string>
@@ -515,8 +508,6 @@
     <string name="log_jj_notice">अधिकारी को किशोर न्याय की सूचना दिखाई गई</string>
     <string name="log_juvenile">18 से कम उम्र का हो सकता है, यह चिह्नित किया</string>
     <string name="log_juvenile_off">18 से कम उम्र का चिह्न हटाया</string>
-    <string name="start_juvenile_mark">व्यक्ति की उम्र 18 से कम हो सकती है</string>
-    <string name="stage_say">कुछ कहें</string>
     <string name="stage_no_phone">फ़ोन नहीं है</string>
     <string name="stage_fix">बदलें</string>
     <string name="stage_confirm">हाँ, यह सही है</string>
@@ -696,7 +687,6 @@
     <string name="settings_sentence_missing">इंस्टॉल नहीं है। यह वैकल्पिक छोटा मॉडल बिना इंटरनेट के अस्पष्ट इशारों वाले जवाबों के वाक्य क्रम में लगाता है। इसके लिए कम से कम 3 GB मेमोरी वाला फ़ोन चाहिए। अपने विभाग से मिली फ़ाइल इंपोर्ट करें।</string>
     <string name="settings_sentence_remove">वाक्य सहायक हटाएँ</string>
     <string name="reading_helper_pick">सहायक की पसंद: %1$s</string>
-    <string name="start_gender">उनका लिंग (हिंदी शब्दों के लिए)</string>
     <string name="gender_male">पुरुष</string>
     <string name="gender_female">महिला</string>
     <string name="gender_unknown">तय नहीं</string>
@@ -770,14 +760,10 @@
     <string name="voice_too_short">बहुत छोटा। बटन दबाएँ, फिर बोलें।</string>
     <string name="voice_failed">माइक्रोफ़ोन शुरू नहीं हुआ। फिर कोशिश करें।</string>
     <string name="voice_heard_note">ऐप ने सुना (बोली से लिखित, पुष्टि नहीं): %1$s</string>
-    <string name="brain_group">स्थानीय AI</string>
     <string name="brain_title">स्टेशन कंप्यूटर</string>
     <string name="brain_note">स्टेशन कंप्यूटर पर बोली से लिखित, अनुवाद और संकेत क्रम: इसी नेटवर्क से, या उसके टिकट से कहीं से भी। इसके बिना फ़ोन अकेले काम करता है।</string>
     <string name="brain_via_iroh">स्टेशन कंप्यूटर %1$s… (कहीं से भी)</string>
     <string name="brain_not_paired">बंद। स्टेशन कंप्यूटर से जोड़ने के लिए चालू करें।</string>
-    <string name="brain_unreachable">%1$s से जुड़ा, अभी जवाब नहीं</string>
-    <string name="brain_llm_on">भाषा मॉडल तैयार</string>
-    <string name="brain_llm_off">भाषा मॉडल नहीं</string>
     <string name="brain_forget">स्टेशन कंप्यूटर भूल जाएँ</string>
     <string name="brain_pair">स्टेशन कंप्यूटर से जोड़ें</string>
     <string name="brain_pair_help">स्टेशन कंप्यूटर शुरू होने पर जो दिखाए वह लिखें: कहीं से जुड़ने के लिए टिकट और टोकन, या स्टेशन नेटवर्क पर https पता, टोकन और पिन।</string>
@@ -813,11 +799,6 @@
     <string name="settings_offline">ऑफ़लाइन</string>
     <string name="permission_allow">अनुमति दें</string>
     <string name="permission_open_settings">अनुमति के लिए सेटिंग्स खोलें</string>
-    <string name="station_link">स्टेशन लिंक</string>
-    <string name="station_off">बंद</string>
-    <string name="station_connecting">चालू, स्टेशन की प्रतीक्षा</string>
-    <string name="station_online">स्टेशन से जुड़ा</string>
-    <string name="station_not_paired">पहले स्टेशन कंप्यूटर जोड़ें: सेटिंग्स, ऑनलाइन।</string>
     <string name="saved_chosen">%1$d चुने गए</string>
     <string name="saved_delete_chosen">चुने गए सत्र हटाएँ</string>
     <string name="saved_choose">चुनें</string>

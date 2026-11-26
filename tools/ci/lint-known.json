@@ -105,11 +105,6 @@
       "rule": "Typos",
       "file": "app/src/main/res/values/strings_help.xml",
       "count": 1
-    },
-    {
-      "rule": "UnusedResources",
-      "file": "app/src/main/res/values/strings.xml",
-      "count": 20
     }
   ]
 }

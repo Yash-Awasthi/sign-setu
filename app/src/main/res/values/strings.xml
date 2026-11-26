@@ -18,7 +18,6 @@
     <string name="start_resume_body">%1$s · %2$s · started %3$s</string>
     <string name="start_resume">Continue</string>
     <string name="start_end">End it</string>
-    <string name="start_who">Who are you helping?</string>
     <string name="start_language">Their language</string>
     <string name="start_language_finder">You will find their language on the next screen.</string>
     <string name="start_language_unknown">Do not know · find their language</string>
@@ -34,7 +33,6 @@
     <string name="officer_add_pictures">Add pictures</string>
     <string name="officer_find_language">Find their language</string>
     <string name="officer_draw">Let them draw</string>
-    <string name="officer_log">Session log</string>
     <string name="officer_call">Call an interpreter</string>
     <string name="speech_mute">Mute their speech</string>
     <string name="speech_unmute">Unmute their speech</string>
@@ -65,7 +63,6 @@
     <string name="log_system">Opened</string>
     <string name="log_note_hint">Add a note</string>
     <string name="log_add">Add</string>
-    <string name="log_empty">Nothing recorded yet.</string>
 
     <!-- Gesture lookup -->
     <string name="gl_title">What did they do?</string>
@@ -225,8 +222,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="officer_media_missing">Picture and caption only</string>
     <string name="officer_skeleton_show">Show skeleton on camera</string>
     <string name="officer_sign_language">Sign language</string>
-    <string name="sign_isl">Indian (ISL)</string>
-    <string name="sign_asl">American (ASL)</string>
     <string name="log_opened">Session opened: %1$s</string>
     <string name="log_resumed">Session taken up again: %1$s</string>
     <string name="log_sign_language">Sign language set to %1$s</string>
@@ -317,8 +312,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="role_victim">Victim or witness</string>
     <string name="role_accused">Accused or in custody</string>
     <string name="report_role">Role</string>
-    <string name="start_juvenile_title">If the person may be under 18</string>
-    <string name="start_juvenile_body">The Juvenile Justice Act applies to a child: no lock-up and no handcuffs. Hand the child to the child welfare police officer and inform a parent or guardian. Produce the child before the Juvenile Justice Board within 24 hours, not counting travel time. (Draft wording, needs legal review.)</string>
     <string name="log_signed">Signed answer</string>
     <string name="signed_app">read by the app, not checked</string>
     <string name="signed_officer">checked by the officer</string>
@@ -478,7 +471,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="report_not_acted">not acted on</string>
     <!-- Input ingestion: narrative window and subject choice -->
     <string name="tell_me">Tell me</string>
-    <string name="tell_me_long">Tell me: up to 3 minutes of signing</string>
     <string name="signed_ask">Ask them to choose</string>
     <string name="signed_ask_none">No sign has two meanings to choose from. Show a question with answer pictures, then read the signs.</string>
     <string name="signed_ask_hint">They see two or three pictures and \"none of these\". Only their tap records the meaning.</string>
@@ -514,7 +506,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="stage_clear">Clear</string>
     <string name="stage_next">Next</string>
     <string name="stage_draw">Draw</string>
-    <string name="stage_write">Write</string>
     <string name="stage_none">None of these</string>
     <string name="stage_back">Back</string>
     <string name="start_pictures_only">%1$s has no words on the person\'s screen yet: they will see pictures and signs only.</string>
@@ -524,8 +515,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="log_jj_notice">Juvenile Justice notice shown to the officer</string>
     <string name="log_juvenile">Marked as possibly under 18</string>
     <string name="log_juvenile_off">No longer marked as under 18</string>
-    <string name="start_juvenile_mark">The person may be under 18</string>
-    <string name="stage_say">Say something</string>
     <string name="stage_no_phone">No phone</string>
     <string name="stage_fix">Change</string>
     <string name="stage_confirm">Yes, that is right</string>
@@ -705,7 +694,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_sentence_missing">Not installed. This optional small model helps order sentences for unclear signed answers without internet. It needs a phone with 3 GB of memory or more. Import the file your department gives you.</string>
     <string name="settings_sentence_remove">Remove the sentence helper</string>
     <string name="reading_helper_pick">Helper\'s pick: %1$s</string>
-    <string name="start_gender">Their gender (for Hindi wording)</string>
     <string name="gender_male">Male</string>
     <string name="gender_female">Female</string>
     <string name="gender_unknown">Not set</string>
@@ -779,14 +767,10 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="voice_too_short">Too short. Tap the button, then speak.</string>
     <string name="voice_failed">The microphone did not start. Try again.</string>
     <string name="voice_heard_note">Heard by the app (speech to text, not confirmed): %1$s</string>
-    <string name="brain_group">Local AI brain</string>
     <string name="brain_title">Station computer</string>
     <string name="brain_note">Speech to text, translation and sign order on the station computer, over this network or, by its ticket, from anywhere. Without it the phone works alone.</string>
     <string name="brain_via_iroh">station computer %1$s… (from anywhere)</string>
     <string name="brain_not_paired">Off. Turn on to pair with the station computer.</string>
-    <string name="brain_unreachable">Paired with %1$s, not answering now</string>
-    <string name="brain_llm_on">language model ready</string>
-    <string name="brain_llm_off">no language model</string>
     <string name="brain_forget">Forget the station computer</string>
     <string name="brain_pair">Pair with the station computer</string>
     <string name="brain_pair_help">Enter what the station computer shows when it starts: its ticket and token to reach it from anywhere, or its https address, token and pin on the station network.</string>
@@ -822,11 +806,6 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="settings_offline">Offline</string>
     <string name="permission_allow">Allow access</string>
     <string name="permission_open_settings">Open settings to allow</string>
-    <string name="station_link">Station link</string>
-    <string name="station_off">Off</string>
-    <string name="station_connecting">On, waiting for the station</string>
-    <string name="station_online">Connected to the station</string>
-    <string name="station_not_paired">Pair the station computer first: Settings, Online.</string>
     <string name="saved_chosen">%1$d chosen</string>
     <string name="saved_delete_chosen">Delete the chosen sessions</string>
     <string name="saved_choose">Choose</string>

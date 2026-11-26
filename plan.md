@@ -225,7 +225,8 @@ SQLCipher 4.19.1) moves faster than the test evidence around it.
 - **m3.2.1 Splitting**
   - [ ] Name the ten largest Kotlin files with their line counts, then split by responsibility. `[F]`
 - **m3.2.2 Dead weight**
-  - [ ] Remove dead resources and strings; assert `lint --check UnusedResources` is clean. `[F]`
+  - [x] Remove dead resources and strings; assert `lint --check UnusedResources` is clean. `[F]`
+  verified-here: ./gradlew --console=plain :app:lintStandardDebug -> exit 0 with UnusedResources 0 in both the debug (15:20) and release (15:35) SARIF; the gate is proven by the new module-level app/lint.xml (no build-file change) raising UnusedResources to error: the same tree without it -> exit 0 with 22 findings, with it -> exit 1 with 22 errors, and a fresh run after the deletions -> exit 0 with 0; 22 unreferenced strings went, 44 entries across values/ and values-hi/ (21 plus 21 in strings.xml, ask_next in both strings_conversation.xml), each name grepped whole-tree first and station_link/station_off DataStore keys in SettingsStore.kt left alone; tools/ci/lint-known.json loses only its UnusedResources app/src/main/res/values/strings.xml x20 entry; :app:compileStandardDebugKotlin :app:compileStandardDebugAndroidTestKotlin exit 0; two Hindi strings added in the same pair of files for settings_motion and settings_motion_summary, whose MissingTranslation errors already broke lint at HEAD (97712c7); tools/ci/check_lint.py still exits 1 on four findings that exist at HEAD in files this row did not touch (AutoboxingStateValueProperty TapToSignDeviceTest, ConfigurationScreenWidthHeight SessionDockDeviceTest and ui/SessionRoute.kt, ModifierParameter ui/session/VideoCallStage.kt), not whitelisted; kept none: no deleted string was referenced by a dirty sibling. tools/ci/test_check_lint.py 11 passed.
 
 ### M3.3 Measured performance
 

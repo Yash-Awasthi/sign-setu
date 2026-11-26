@@ -29,7 +29,6 @@
     <string name="run_remove">Remove from run</string>
     <string name="run_add">Add to run</string>
     <string name="ask_again">Ask again</string>
-    <string name="ask_next">Ask next: %1$s</string>
     <string name="run_basics">Safety basics</string>
     <string name="run_title">%1$d questions ready. Send asks them one after another, each after the last is answered. Tap one to ask only that one.</string>
 
