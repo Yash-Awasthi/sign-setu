@@ -1,6 +1,9 @@
 """The release evidence beside the APKs: sums that catch one changed byte, and a signing status read from the file."""
+import hashlib
 import json
 import pathlib
+import struct
+import subprocess
 import tempfile
 import unittest
 import zipfile
@@ -18,6 +21,26 @@ def fake_apk(path: pathlib.Path, signed=False) -> pathlib.Path:
     return path
 
 
+def add_signing_block(apk: pathlib.Path) -> pathlib.Path:
+    """Insert an empty APK Signing Block where the format puts one: before the central directory."""
+    data = apk.read_bytes()
+    at = data.rfind(b"PK\x05\x06")
+    offset = struct.unpack("<L", data[at + 16:at + 20])[0]
+    size = 24  # the block's two size fields and its 16-byte magic, with no id-value pairs
+    block = struct.pack("<Q", size) + struct.pack("<Q", size) + release_manifest.SIGNING_MAGIC
+    moved = data[:offset] + block + data[offset:]
+    at += len(block)
+    moved = moved[:at + 16] + struct.pack("<L", offset + len(block)) + moved[at + 20:]
+    apk.write_bytes(moved)
+    return apk
+
+
+def git(root: pathlib.Path, *args: str) -> str:
+    result = subprocess.run(["git", "-C", str(root), "-c", "commit.gpgsign=false", *args],
+                            capture_output=True, text=True, check=True)
+    return result.stdout.strip()
+
+
 def fake_sbom(path: pathlib.Path, components=2) -> pathlib.Path:
     doc = {
         "bomFormat": "CycloneDX",
@@ -26,7 +49,8 @@ def fake_sbom(path: pathlib.Path, components=2) -> pathlib.Path:
         "version": 1,
         "metadata": {"tools": [{"vendor": "test", "name": "sbom_lockfile.py", "version": "1.0"}]},
         "components": [
-            {"type": "library", "bom-ref": f"pkg:maven/g/a{i}@1.0", "name": f"a{i}", "version": "1.0"}
+            {"type": "library", "bom-ref": f"pkg:maven/g/a{i}@1.0", "name": f"a{i}", "version": "1.0",
+             "purl": f"pkg:maven/g/a{i}@1.0"}
             for i in range(components)
         ],
     }
@@ -132,11 +156,123 @@ class Evidence(unittest.TestCase):
         errors = release_manifest.check(self.dir)
         self.assertTrue(any("verification-metadata.xml" in error for error in errors))
 
-    def test_a_record_from_another_commit_is_not_held_to_the_live_file(self):
+    def test_a_record_from_another_commit_is_read_at_that_commit(self):
         if not release_manifest.VERIFICATION.is_file():
             self.skipTest("no gradle/verification-metadata.xml on this machine")
-        self.cut(commit="0" * 40)
+        self.cut(commit="0" * 40)  # git does not have this commit, so the working tree is the source
         self.assertEqual(release_manifest.check(self.dir), [])
+
+    def test_a_recorded_lockfile_digest_is_read_from_the_bytes(self):
+        self.cut()
+        path = self.dir / "PROVENANCE.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        doc["dependencyLocks"][0]["sha256"] = "0" * 64
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        errors = release_manifest.check(self.dir)
+        self.assertTrue(any("app/gradle.lockfile" in error and "SHA-256" in error for error in errors), errors)
+
+    def test_a_recorded_gradle_pin_is_checked_against_the_wrapper(self):
+        if not release_manifest.gradle_wrapper():
+            self.skipTest("no gradle wrapper properties on this machine")
+        self.cut()
+        path = self.dir / "PROVENANCE.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        doc["build"]["gradle"]["sha256"] = "0" * 64
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        errors = release_manifest.check(self.dir)
+        self.assertTrue(any("Gradle sha256" in error for error in errors), errors)
+
+    def test_a_component_without_a_purl_fails(self):
+        self.cut()
+        path = self.dir / "sign-setu-release.cdx.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        del doc["components"][0]["purl"]
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        errors = release_manifest.check(self.dir)
+        self.assertTrue(any("has no purl" in error for error in errors), errors)
+
+    def test_a_spec_version_the_record_does_not_declare_fails(self):
+        self.cut()
+        path = self.dir / "sign-setu-release.cdx.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        doc["specVersion"] = "1.6"
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        errors = release_manifest.check(self.dir)
+        self.assertTrue(any("specVersion is 1.6" in error for error in errors), errors)
+
+    def test_a_rewritten_sbom_is_caught_even_when_the_hashes_agree(self):
+        """The SBOM is re-derived from the lockfile at the recorded commit, so re-hashing one does not pass."""
+        with tempfile.TemporaryDirectory() as repo, tempfile.TemporaryDirectory() as out:
+            root = pathlib.Path(repo)
+            lock = root / "app" / "gradle.lockfile"
+            lock.parent.mkdir()
+            lock.write_text("g:a:1.0=releaseRuntimeClasspath\n", encoding="utf-8")
+            (root / "settings-gradle.lockfile").write_text("", encoding="utf-8")
+            git(root, "init", "-q")
+            git(root, "add", "app/gradle.lockfile", "settings-gradle.lockfile")
+            git(root, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "one")
+            commit = git(root, "rev-parse", "HEAD")
+            saved = (release_manifest.ROOT, release_manifest.LOCK, release_manifest.SETTINGS_LOCK,
+                     release_manifest.VERIFICATION, release_manifest.SBOM_BUILD)
+            release_manifest.ROOT, release_manifest.LOCK = root, lock
+            release_manifest.SETTINGS_LOCK = root / "settings-gradle.lockfile"
+            release_manifest.VERIFICATION = root / "gradle" / "verification-metadata.xml"
+            release_manifest.SBOM_BUILD = root / "missing.cdx.json"
+            try:
+                directory = pathlib.Path(out)
+                fake_apk(directory / "sign-setu-0.8.52-arm64.apk")
+                self.assertEqual(release_manifest.write(directory, version="0.8.52", commit=commit,
+                                                        generated="2026-11-26T19:14:56Z"), 0)
+                self.assertEqual(release_manifest.check(directory), [])
+                sbom = directory / "sign-setu-release.cdx.json"
+                doc = json.loads(sbom.read_text(encoding="utf-8"))
+                doc["components"][0]["version"] = "9.9.9"
+                sbom.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                digest = release_manifest.sha256_file(sbom)
+                sums = directory / "SHA256SUMS"
+                rewritten = []
+                for line in sums.read_text(encoding="utf-8").splitlines():
+                    _, name = line.split("  ", 1)
+                    rewritten.append(f"{digest}  {name}" if name == release_manifest.SBOM_NAME else line)
+                sums.write_text("\n".join(rewritten) + "\n", encoding="utf-8")
+                path = directory / "PROVENANCE.json"
+                provenance = json.loads(path.read_text(encoding="utf-8"))
+                provenance["sbom"]["sha256"] = digest
+                provenance["sbom"]["bytes"] = sbom.stat().st_size
+                path.write_text(json.dumps(provenance), encoding="utf-8")
+                errors = release_manifest.check(directory)
+                self.assertTrue(any("not what sbom_lockfile.py writes" in error for error in errors), errors)
+            finally:
+                (release_manifest.ROOT, release_manifest.LOCK, release_manifest.SETTINGS_LOCK,
+                 release_manifest.VERIFICATION, release_manifest.SBOM_BUILD) = saved
+
+    def test_a_digest_is_read_at_the_recorded_commit_not_at_head(self):
+        with tempfile.TemporaryDirectory() as repo:
+            root = pathlib.Path(repo)
+            path = root / "app" / "gradle.lockfile"
+            path.parent.mkdir()
+            path.write_bytes(b"one=1\n")
+            git(root, "init", "-q")
+            git(root, "add", "app/gradle.lockfile")
+            git(root, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "one")
+            first = git(root, "rev-parse", "HEAD")
+            path.write_bytes(b"two=2\n")
+            git(root, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qam", "two")
+            self.assertEqual(release_manifest.digest_at(path, first, root=root),
+                             (hashlib.sha256(b"one=1\n").hexdigest(), f"commit {first[:12]}"))
+            self.assertEqual(release_manifest.digest_at(path, "0" * 40, root=root)[0],
+                             hashlib.sha256(b"two=2\n").hexdigest())
+
+    def test_a_signing_block_before_the_central_directory_is_signed(self):
+        self.assertEqual(release_manifest.apk_signing(self.apk), "unsigned")
+        add_signing_block(self.apk)
+        self.assertEqual(release_manifest.apk_signing(self.apk), "signed")
+        with zipfile.ZipFile(self.apk) as archive:
+            self.assertIn("classes.dex", archive.namelist())
+
+    def test_the_signing_magic_outside_the_block_is_not_a_signature(self):
+        self.apk.write_bytes(self.apk.read_bytes() + release_manifest.SIGNING_MAGIC)
+        self.assertEqual(release_manifest.apk_signing(self.apk), "unsigned")
 
     def test_a_missing_sums_file_is_bad_input_not_a_mismatch(self):
         self.cut()

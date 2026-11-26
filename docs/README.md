@@ -49,6 +49,7 @@ One row per document: who it is for, and what it holds.
 | [24-deployment-package.md](24-deployment-package.md) | department | Signed APK, SBOM, SHA256SUMS, DPIA, walkthrough, model allow-list procedure and report verification in one release-to-install page |
 | [25-screen-inventory.md](25-screen-inventory.md) | developer | Every screen the app can open, its purpose, its three primary actions and its exit, checked against the navigation in AppRoot.kt |
 | [26-theme-contrast.md](26-theme-contrast.md) | developer | Every colour pair the app draws, measured across the ten themes in light, dark and OLED, with the floors that ContrastTest enforces |
+| [30-release-verification.md](30-release-verification.md) | reviewer | The committed 0.8.52 evidence checked offline: the commands and exit codes, the hashes verified against bytes, the red proofs, and what the unsigned APKs do and do not let a verifier conclude |
 | [28-dependency-audit.md](28-dependency-audit.md) | reviewer | The lockfile's 276 shipped triples checked against OSV: what was queried, the two hits, and whether each is fixable by a pin |
 | [29-android-posture.md](29-android-posture.md) | reviewer | Shipped APK security posture: manifest flags, permissions and call sites, exported components, cleartext, backup, logging, WebView, keys, and the gate |
 | [31-test-map.md](31-test-map.md) | developer | Unit test map: what the JVM suite covers on the critical paths |

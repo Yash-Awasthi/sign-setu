@@ -9,13 +9,18 @@ and writes three files there:
                     of `gradle/verification-metadata.xml`, the lockfile digests, the SBOM producer
   (the SBOM itself, CycloneDX JSON, from the resolved release runtime classpath)
 
-The signing status is read from each APK's bytes, not taken on trust: the APK Signing Block or a
-`META-INF/*.RSA|DSA|EC` entry means signed. A release APK built without the release keystore is
-recorded `unsigned` with `shippable: false`, because it is not installable as a release.
+The signing status is read from each APK's bytes, not taken on trust: an APK Signing Block
+immediately before the central directory of the zip, or a `META-INF/*.RSA|DSA|EC` entry, means
+signed. A release APK built without the release keystore is recorded `unsigned` with
+`shippable: false`, because it is not installable as a release.
 
 `release_manifest.py --check <dir>` recomputes every hash, fails on one byte of difference, and
-fails when an APK or the SBOM present in the directory is missing from SHA256SUMS. Files listed
-but absent (the published APKs are never committed) are reported and skipped.
+fails when an APK or the SBOM present in the directory is missing from SHA256SUMS. The digests of
+`gradle/verification-metadata.xml` and the two lockfiles are compared with their bytes at the
+recorded commit (read through git, so a later HEAD cannot excuse a wrong digest), the Gradle
+distribution with the pin in `gradle/wrapper/gradle-wrapper.properties`, and the SBOM with what a
+CycloneDX document must be: a specVersion, and a name, version and purl on every component. Files
+listed but absent (the published APKs are never committed) are reported and skipped.
 
 Exit codes: 0 the evidence matches, 1 a mismatch, 2 bad input.
 """
@@ -26,6 +31,7 @@ import json
 import pathlib
 import re
 import struct
+import subprocess
 import sys
 import zipfile
 
@@ -43,6 +49,9 @@ SUMS_NAME = "SHA256SUMS"
 PROVENANCE_NAME = "PROVENANCE.json"
 API = "1"
 SIGNING_MAGIC = b"APK Sig Block 42"
+EOCD = b"PK\x05\x06"
+EOCD_MIN = 22
+EOCD_WINDOW = 1 << 16
 CHUNK = 1 << 20
 
 
@@ -58,6 +67,43 @@ def sha256_file(path: pathlib.Path) -> str:
     return digest.hexdigest()
 
 
+def git_bytes(root: pathlib.Path, rel: str, commit) -> bytes | None:
+    """The bytes of `rel` at `commit` from git, or None when git does not have that object."""
+    if not commit or commit == "unknown":
+        return None
+    try:
+        result = subprocess.run(["git", "-C", str(root), "show", f"{commit}:{rel}"],
+                                capture_output=True, check=False)
+    except OSError:
+        return None
+    return result.stdout if result.returncode == 0 else None
+
+
+def digest_at(path: pathlib.Path, commit, root: pathlib.Path = ROOT) -> tuple[str, str]:
+    """(sha256, where) of the file's bytes at `commit`, else of the working tree when git lacks them."""
+    try:
+        rel = path.relative_to(root).as_posix()
+    except ValueError:
+        rel = None
+    if rel:
+        data = git_bytes(root, rel, commit)
+        if data is not None:
+            return hashlib.sha256(data).hexdigest(), f"commit {str(commit)[:12]}"
+    return sha256_file(path), "the working tree"
+
+
+def digest_problem(path: pathlib.Path, recorded, commit) -> list[str]:
+    """One error when a recorded SHA-256 is not the digest of the bytes at the recorded commit."""
+    actual, source = digest_at(path, commit)
+    if recorded == actual:
+        return []
+    try:
+        name = path.relative_to(ROOT).as_posix()
+    except ValueError:
+        name = path.name
+    return [f"{name}: SHA-256 is {actual} at {source}, {PROVENANCE_NAME} says {recorded}"]
+
+
 def version_code(build=BUILD) -> str:
     """versionCode from the app module, or unknown when the file is not readable."""
     try:
@@ -67,21 +113,48 @@ def version_code(build=BUILD) -> str:
     return found.group(1) if found else "unknown"
 
 
+def zip_end(handle, size: int) -> tuple[int, int]:
+    """(central directory offset, entry count) from the ZIP end-of-central-directory record."""
+    window = min(size, EOCD_WINDOW)
+    handle.seek(size - window)
+    tail = handle.read(window)
+    at = tail.rfind(EOCD)
+    if at < 0 or len(tail) - at < EOCD_MIN:
+        raise struct.error("no end-of-central-directory record")
+    _, _, _, _, entries, _, offset, _ = struct.unpack("<4s4H2LH", tail[at:at + EOCD_MIN])
+    if offset == 0xFFFFFFFF:
+        raise struct.error("zip64 central directory")
+    return offset, entries
+
+
 def apk_signing(path: pathlib.Path) -> str:
-    """signed when the APK carries an APK Signing Block or a v1 certificate, else unsigned."""
+    """signed when an APK Signing Block sits before the central directory, or a v1 certificate exists.
+
+    The block is read where the format puts it: its 16-byte magic ends exactly where the central
+    directory starts, and the 8-byte size before the block repeats the size at its end. The same
+    magic anywhere else in the file is not a signature.
+    """
     try:
-        if path.stat().st_size < 32:
+        size = path.stat().st_size
+        if size < EOCD_MIN + 8:
             return "unsigned"
         with path.open("rb") as handle:
-            handle.seek(max(0, path.stat().st_size - 4096))
-            if SIGNING_MAGIC in handle.read():
-                return "signed"
+            offset, entries = zip_end(handle, size)
+            if entries and offset >= 24:
+                handle.seek(offset - 16)
+                if handle.read(16) == SIGNING_MAGIC:
+                    handle.seek(offset - 24)
+                    block = struct.unpack("<Q", handle.read(8))[0]
+                    if 24 <= block <= offset - 8:
+                        handle.seek(offset - block - 8)
+                        if struct.unpack("<Q", handle.read(8))[0] == block:
+                            return "signed"
         if zipfile.is_zipfile(path):
             with zipfile.ZipFile(path) as archive:
                 for name in archive.namelist():
                     if name.startswith("META-INF/") and name.upper().endswith((".RSA", ".DSA", ".EC")):
                         return "signed"
-    except (OSError, zipfile.BadZipFile, struct.error):
+    except (OSError, zipfile.BadZipFile, struct.error, ValueError):
         pass
     return "unsigned"
 
@@ -127,12 +200,43 @@ def sbom_components(path: pathlib.Path) -> int:
     return len(doc.get("components") or [])
 
 
+def sbom_document_problems(path: pathlib.Path) -> tuple[str, list[str]]:
+    """(specVersion, what the document is missing: CycloneDX form, a version, a name/version/purl per component)."""
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise EvidenceError(f"{path} is not JSON: {error}") from error
+    problems = []
+    if doc.get("bomFormat") != "CycloneDX":
+        problems.append(f"{path.name}: bomFormat is {doc.get('bomFormat')!r}, not CycloneDX")
+    spec = str(doc.get("specVersion") or "")
+    if not re.fullmatch(r"\d+\.\d+", spec):
+        problems.append(f"{path.name}: specVersion is {spec!r}, not <major>.<minor>")
+    for number, component in enumerate(doc.get("components") or [], 1):
+        if not isinstance(component, dict):
+            problems.append(f"{path.name}: component {number} is not an object")
+            continue
+        for field in ("name", "version", "purl"):
+            if not isinstance(component.get(field), str) or not component[field]:
+                problems.append(f"{path.name}: component {number} has no {field}")
+    return spec, problems
+
+
 def label(directory: pathlib.Path, name: str) -> str:
     """The file's path from the repository root when it lives there, else directory/name."""
     try:
         return (directory.resolve() / name).relative_to(ROOT).as_posix()
     except ValueError:
         return f"{directory.name}/{name}"
+
+
+def sbom_expected(commit, version) -> bytes | None:
+    """The bytes sbom_lockfile.py writes for the lockfile at `commit`, or None when git lacks it."""
+    data = git_bytes(ROOT, LOCK.relative_to(ROOT).as_posix(), commit)
+    if data is None:
+        return None
+    doc = sbom_document(data.decode("utf-8").splitlines(), commit, version=version)
+    return (json.dumps(doc, indent=2, sort_keys=True) + "\n").encode("utf-8")
 
 
 def gradle_wrapper() -> dict:
@@ -305,9 +409,21 @@ def check(directory: pathlib.Path, sbom_current=False) -> list[str]:
         digest = sha256_file(sbom_path)
         if sbom_row.get("sha256") not in (None, digest):
             errors.append(f"{SBOM_NAME}: SHA-256 is {digest}, {PROVENANCE_NAME} says {sbom_row['sha256']}")
+        spec, problems = sbom_document_problems(sbom_path)
+        errors.extend(problems)
+        if spec and sbom_row.get("format") not in (None, f"CycloneDX {spec}"):
+            errors.append(f"{SBOM_NAME}: specVersion is {spec}, {PROVENANCE_NAME} says {sbom_row.get('format')}")
         if sbom_row.get("components") not in (None, sbom_components(sbom_path)):
             errors.append(f"{SBOM_NAME}: {sbom_components(sbom_path)} components, "
                           f"{PROVENANCE_NAME} says {sbom_row['components']}")
+        if sbom_row.get("producer") == "sbom_lockfile.py":
+            expected = sbom_expected(provenance.get("commit"), provenance.get("version"))
+            if expected is None:
+                print(f"{SBOM_NAME}: the lockfile at {provenance.get('commit')} is not in git; "
+                      f"its bytes are not re-derived")
+            elif expected != sbom_path.read_bytes():
+                errors.append(f"{SBOM_NAME}: the bytes are not what sbom_lockfile.py writes for the "
+                              f"lockfile at {str(provenance.get('commit'))[:12]}")
         if sbom_current:
             wanted = len(shipped_lines(LOCK.read_text(encoding="utf-8").splitlines()))
             if sbom_components(sbom_path) != wanted:
@@ -320,15 +436,22 @@ def check(directory: pathlib.Path, sbom_current=False) -> list[str]:
         errors.append(f"dependencyVerification says {verification.get('status')}, "
                       f"gradle/verification-metadata.xml is {expected_status}")
     elif expected_status == "present":
-        digest = sha256_file(VERIFICATION)
-        # The record is of one commit: a later commit may legitimately move the file, and the
-        # release job re-cuts this evidence anyway. Only the commit that cut it is held to the byte.
-        if provenance.get("commit") == commit_sha() and verification.get("sha256") != digest:
-            errors.append(f"gradle/verification-metadata.xml: SHA-256 is {digest}, "
-                          f"{PROVENANCE_NAME} says {verification.get('sha256')}")
-        elif provenance.get("commit") != commit_sha():
-            print(f"gradle/verification-metadata.xml: recorded at {provenance.get('commit')}, "
-                  f"not HEAD; its digest is not compared")
+        errors.extend(digest_problem(VERIFICATION, verification.get("sha256"), provenance.get("commit")))
+
+    for row in provenance.get("dependencyLocks") or []:
+        rel = str(row.get("path") or "")
+        target = ROOT / rel if rel else ROOT
+        if not rel or not target.is_file():
+            errors.append(f"{PROVENANCE_NAME}: dependency lock {rel or '(unnamed)'} is not in the tree")
+        else:
+            errors.extend(digest_problem(target, row.get("sha256"), provenance.get("commit")))
+
+    gradle = (provenance.get("build") or {}).get("gradle") or {}
+    pin = gradle_wrapper()
+    if pin:
+        for field in ("distribution", "sha256"):
+            if gradle.get(field) != pin.get(field):
+                errors.append(f"Gradle {field} is {pin.get(field)}, {PROVENANCE_NAME} says {gradle.get(field)}")
 
     if not provenance.get("artefacts"):
         errors.append(f"{PROVENANCE_NAME} lists no artefact")
