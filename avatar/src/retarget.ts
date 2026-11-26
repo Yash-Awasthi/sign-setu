@@ -79,8 +79,7 @@ export function elbowAngle(upper: number, fore: number, d: number): number {
  * and no nearer than the elbow limits allow. */
 export function solveArm(s: Vector3, t: Vector3, pole: Vector3, upper: number, fore: number): { elbow: Vector3; wrist: Vector3 } {
   const dir = t.clone().sub(s);
-  const reach = (deg: number) =>
-    Math.sqrt(upper * upper + fore * fore - 2 * upper * fore * Math.cos(MathUtils.degToRad(deg)));
+  const reach = (deg: number) => Math.sqrt(upper * upper + fore * fore - 2 * upper * fore * Math.cos(MathUtils.degToRad(deg)));
   // A target on the shoulder leaves no direction to bend in; aim it down like the bend fallback below.
   if (dir.lengthSq() < 1e-12) dir.set(0, -1, 0);
   const d = MathUtils.clamp(
