@@ -3,6 +3,7 @@ package app.signsetu.export
 import app.signsetu.BuildConfig
 import app.signsetu.camera.LandmarkFrame
 import app.signsetu.data.session.DeviceSeal
+import app.signsetu.data.session.Provenance
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.sign.SignGuess
@@ -33,6 +34,8 @@ object StationExport {
         val events = repo.eventsNow(sessionId)
         val seal = repo.currentSeal(sessionId)
         val key = DeviceSeal.publicKey()
+        // The opening row's named provenance, also written as its own field below.
+        val provenance = events.firstNotNullOfOrNull { Provenance.inLog(it.text.orEmpty()) }
         val out = ByteArrayOutputStream()
         ZipOutputStream(out).use { zip ->
             // WAV and PNG barely shrink and the landmarks are gzipped already: the fastest level saves the phone's CPU.
@@ -51,6 +54,14 @@ object StationExport {
                 put("subjectLang", session.subjectLang)
                 put("seal", seal?.let { s -> buildJsonObject { put("line", s.line); put("count", s.count); put("head", s.head); put("root", s.root); put("signature", s.sig) } } ?: JsonNull)
                 put("deviceKey", key?.let { java.util.Base64.getEncoder().encodeToString(it) })
+                put("provenance", provenance?.let { p ->
+                    buildJsonObject {
+                        put("app", p.app)
+                        put("content", p.content)
+                        put("deviceKey", p.deviceKey)
+                        put("officer", p.officer)
+                    }
+                } ?: JsonNull)
             }.toString().toByteArray())
             val rows = ArrayList<JsonElement>(events.size)
             for (e in events.sortedBy { it.id }) {
@@ -128,6 +139,10 @@ object StationExport {
         |
         |session.json  the session: title, times, language, and its seal: the Merkle root over every row's hash, the
         |              line the phone's device key signed, the signature, and that key (X.509, base64).
+        |              "provenance" names what produced the record, as recorded in its opening row: "app" (version
+        |              and build), "content" (the content bundle's hash), "deviceKey" (the signing key's SHA-256, first
+        |              16 hex: a stable identifier for this install, deliberately kept so a record can be traced to
+        |              the phone that wrote it) and "officer" (the service number the officer recorded, when set).
         |events.json   every row in the order written. "hash" is the row's link in the hash chain; "drawing", "audio"
         |              and "signs" name the file the row holds, when it holds one. On the app's reading of signs,
         |              "reason" is "read:" and per sign the read word's probability, then s (spelled), ~ (ambiguous),

@@ -62,6 +62,8 @@ class OnlineAssistant(
     private val builtIn: Direct? = null,
     /** Holds the key the officer saves for a direct service. */
     private val customVault: TokenVault? = null,
+    /** Values that identify the officer or the phone, masked even when short (a service number has no six digits). */
+    private val identifiers: () -> Collection<String> = { emptyList() },
     private val online: () -> Boolean,
 ) {
     // Defaults are encoded: a request option left at its default must still reach the service; nulls are left out.
@@ -182,7 +184,7 @@ class OnlineAssistant(
         val d = direct
         val token = if (viaGateway) withContext(Dispatchers.IO) { vault.get() } ?: return null else directKey() ?: return null
         if (!online()) return fallBack(Notice.FALLBACK_OFFLINE)
-        val mask = Pseudonymizer(names, details)
+        val mask = Pseudonymizer(names, details, identifiers())
         suspend fun once(): Reply? = withContext(Dispatchers.IO) {
             runCatching {
                 if (viaGateway) http.call("POST", "$base/v1/assist", json.encodeToString(AssistReq.serializer(), AssistReq(system, mask.mask(user), maxTokens)), token, timeoutMs)

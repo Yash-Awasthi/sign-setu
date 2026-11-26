@@ -34,6 +34,7 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.SessionEvent
+import app.signsetu.data.session.Provenance
 import app.signsetu.export.ReportText
 import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.start.profileTitle
@@ -99,9 +100,14 @@ internal fun reportText(res: Resources, ui: SessionUi, content: ContentBundle): 
     )
 }
 
-/** The session log as plain lines, for the optional cloud report. */
-internal fun sessionLog(events: List<SessionEvent>) = events.joinToString("\n") { ev ->
-    "[${ev.type.name}] [${ev.source.name}] text=${ev.text ?: ""} card=${ev.cardId ?: ""} lang=${ev.lang ?: ""}"
+/** The session log as plain lines, for the optional cloud report. The opening row names the device key and the
+ * officer; both are removed from its text here, so the text that leaves the phone does not carry them. */
+internal fun sessionLog(events: List<SessionEvent>): String {
+    val provenance = events.firstNotNullOfOrNull { ev -> ev.text?.let { Provenance.parse(it) } }
+    return events.joinToString("\n") { ev ->
+        val text = ev.text?.let { provenance?.redact(it) ?: it } ?: ""
+        "[${ev.type.name}] [${ev.source.name}] text=$text card=${ev.cardId ?: ""} lang=${ev.lang ?: ""}"
+    }
 }
 
 internal fun eventDetail(res: Resources, e: SessionEvent, by: Map<Long, ShownBy> = emptyMap(), idle: Set<Long> = emptySet()): String = when {

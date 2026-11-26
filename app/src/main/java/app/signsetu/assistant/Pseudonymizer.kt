@@ -2,9 +2,16 @@ package app.signsetu.assistant
 
 /** Swaps what the officer's phone knows to be personal for stand-ins before text leaves it, and swaps them back
  * in what returns. */
-class Pseudonymizer(names: Collection<String>, details: Collection<String> = emptyList()) {
+class Pseudonymizer(
+    names: Collection<String>,
+    details: Collection<String> = emptyList(),
+    /** Values that identify the officer or the phone: masked even when short, as a service number often is. */
+    identifiers: Collection<String> = emptyList(),
+) {
     private val known = names.map { it.trim() }.filter { it.length >= 2 }.distinct()
     private val extra = details.map { it.trim() }.filter { it.length >= 3 && it.any(Char::isLetter) && it !in known }.distinct()
+    // A service number or key is shorter than the digit rule below and has no letters, so it is masked by value.
+    private val ids = identifiers.map { it.trim() }.filter { it.length >= 2 && it !in known && it !in extra }.distinct()
     private var forward: Map<Regex, String>? = null
     private val back = LinkedHashMap<String, String>()
 
@@ -19,6 +26,11 @@ class Pseudonymizer(names: Collection<String>, details: Collection<String> = emp
         }
         for ((i, value) in extra.withIndex()) {
             val tag = "[detail ${i + 1}]"
+            back[tag] = value
+            standIn.putIfAbsent(value, tag)
+        }
+        for ((i, value) in ids.withIndex()) {
+            val tag = "[id ${i + 1}]"
             back[tag] = value
             standIn.putIfAbsent(value, tag)
         }

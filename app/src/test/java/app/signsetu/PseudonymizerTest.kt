@@ -83,6 +83,22 @@ class PseudonymizerTest {
     }
 
     @Test
+    fun identifiersAreMaskedEvenWhenTooShortForTheDigitRule() {
+        val p = Pseudonymizer(
+            listOf("Sita"),
+            identifiers = listOf("4521", "0123456789abcdef"),
+        )
+
+        val sent = p.mask("Sita met officer 4521, key 0123456789abcdef, in 2024")
+
+        assertFalse(sent.contains("4521"))
+        assertFalse(sent.contains("0123456789abcdef"))
+        assertTrue("an unrelated year must survive", sent.contains("2024"))
+        assertEquals("Ravi met officer [id 1], key [id 2], in 2024", sent)
+        assertEquals("Sita met officer 4521, key 0123456789abcdef, in 2024", p.restore(sent))
+    }
+
+    @Test
     fun aStandInInTheReplyIsRestoredToTheRightPerson() {
         val p = Pseudonymizer(listOf("Sita", "Mohan"))
         p.mask("Sita and Mohan")
