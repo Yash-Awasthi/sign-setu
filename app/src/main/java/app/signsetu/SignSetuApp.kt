@@ -54,6 +54,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicBoolean
 import androidx.core.content.edit
 
 class SignSetuApp : Application() {
@@ -124,6 +125,27 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     /** Signs recorded for training, uploaded only on the signer's opt-in. */
     val contributions = Contributions(File(app.filesDir, "contrib"), BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), { isOnline(app) }, scope)
+
+    private val warmStarted = AtomicBoolean(false)
+    private val _warmDone = MutableStateFlow(false)
+    /** True once the content bundle, the landmark model and every sign reader finished loading, or failed to. */
+    val warmDone: StateFlow<Boolean> = _warmDone.asStateFlow()
+
+    /** Loads what the first question needs ahead of it, once per process. A failed part stays lazy and is retried at its
+     * first real use, as it was before. */
+    fun warm() {
+        if (!warmStarted.compareAndSet(false, true)) return
+        scope.launch(Dispatchers.IO) {
+            try {
+                runCatching { content.load() }
+                runCatching { landmarkTracker?.warm() }
+                runCatching { SignLanguage.entries.forEach { signReader(it) } }
+            } finally {
+                _warmDone.value = true
+            }
+        }
+    }
+
     init {
         scope.launch(Dispatchers.IO) { settings.current().let { onlineAssistant.restoreCustom(it.devAiUrl, it.devAiModel); brain.setOn(it.stationLink) } }
         // The officer's choice of what goes to the station applies as soon as it changes in Settings.
@@ -143,6 +165,7 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
             })
         }
         contributions.kick()
+        warm()
     }
     private var database: SessionDatabase? = null
     private var backgroundedAt = 0L

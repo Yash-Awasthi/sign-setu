@@ -273,7 +273,8 @@ ticked-here: one primary action, a five-tool bar and exactly three tagged paths 
 ### M4.4 Speed (owner: "smoother faster flow")
 
 - [ ] Measure the current time from tap to first signed frame, per screen; publish the numbers and target the three worst. `[W]`
-- [ ] Pre-warm the stage and the sign readers so the first question does not wait on model load. `[W]`
+- [x] Pre-warm the stage and the sign readers so the first question does not wait on model load. `[W]`
+    - verified-here: ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.PrewarmDeviceTest -> 1 test, 0 failures on CI34 API 34; the second content load after warm-up stayed under 250 ms
 - [ ] Remove blocking work from the main thread in the stage and sign-window paths; verify with a jank count before/after. `[W]`
 
 ### M4.5 Richer communication (owner: "more feature richness")
