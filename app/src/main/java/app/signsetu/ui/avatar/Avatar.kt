@@ -176,7 +176,8 @@ internal class AvatarWebView(context: Context) : WebView(context) {
                     "js" -> "text/javascript"
                     else -> "application/octet-stream"
                 }
-                return runCatching { WebResourceResponse(type, "utf-8", context.assets.open(path)) }.getOrElse { NOT_FOUND() }
+                // The cache's copy on every start after the first: the APK's entries are deflated.
+                return AvatarAssets.of(context).stream(path)?.let { WebResourceResponse(type, "utf-8", it) } ?: NOT_FOUND()
             }
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) = true

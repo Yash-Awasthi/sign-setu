@@ -132,6 +132,8 @@ Every recorded performer signs the consent form; raw footage is kept only until 
 
 The character is rendered live by the avatar module (`avatar/`, three.js and three-vrm, built into `app/src/main/assets/avatar/`) in a WebView that loads only those assets and makes no network request. It plays authored and recorded keyframes with jointed fingers and facial expression beside the picture card, and plays recorded sentence clips (48 body and hand points a frame, `app/src/main/assets/content/clips.json`, from `tools/text2isl`) when a typed sentence matches one.
 
+The APK stores `avatar/index.html`, `avatar.js` and `model.vrm` deflated (4,490,834 B for 11,506,037 B in `app-standard-debug.apk`), and every process start inflated them again for the WebView. The first request of a file copies it to `cacheDir/avatar-assets/<versionCode>/` and later starts read that plain file, so the inflate happens once per app version; `AvatarAssets` drops every other version's copy and writes each file under `.part` before renaming it, so a killed copy is never served. The bytes still cross into the WebView and three.js still parses `model.vrm` on every start: this cache removes the inflate only, not the scene build.
+
 ### 5.5 Size
 
 Motions are JSON keyframes: `gestures.json`, `signs.json` and `isl_signs.json` together are a small fraction of the APK. Pre-rendered clips would cost about 75 KB each (480 by 480, H.264, about 400 kbit/s, 1.5 s), so the roughly 1,000 current motions (42 gestures, 156 authored, 517 ISL and 286 ASL) would add well over 60 MB; the character model itself is 11 MB.
