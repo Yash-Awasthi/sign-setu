@@ -64,7 +64,7 @@ These are the values the runs hold. Any change to them is a different experiment
 - AGP 9.4.1, Kotlin 2.4.21, KSP 2.3.12, read from `gradle/libs.versions.toml`.
 - SDK: `compileSdk` 37, `targetSdk` 37, `minSdk` 29.
 - NDK 30.0.16248370 and CMake 4.1.2, as pinned in `app/build.gradle.kts`.
-- `local.properties` (untracked, copied into the build tree): `sdk.dir=C:\work\android-sdk`,
+- `local.properties` (untracked, copied into the build tree): `sdk.dir` set from `ANDROID_SDK_ROOT`,
   `gatewayUrl=https://signsetu-gateway.onrender.com`, and the `assistUserAgent` client name
   the assistant service expects. The two runs use one copy of this file.
 - Locale: `English_United States` (code page 1252), preferred encoding UTF-8. Timezone:
