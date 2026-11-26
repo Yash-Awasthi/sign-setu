@@ -11,6 +11,16 @@ import app.signsetu.data.content.chain
 import app.signsetu.data.content.planText
 import app.signsetu.data.content.signBack
 
+/** The language tiles the finder shows. The tour below walks exactly this list, so no shown tile is skipped. */
+internal fun languageTiles(content: ContentBundle) = content.languages
+
+/** One step of the language finder: a tile lit, and its greeting when a recording exists (Gondi and Halbi have none). */
+internal data class FinderStep(val code: String, val audio: String?)
+
+/** The tour is the tile list itself: a language without a recording still lights, silently, instead of being skipped. */
+internal fun finderTour(content: ContentBundle): List<FinderStep> =
+    languageTiles(content).map { FinderStep(it.code, content.greetingAudio(it.code)) }
+
 /** the reader's top labels a signed answer's confirm or say-back signs back before asking. */
 fun readBackLabels(ui: SessionUi): List<String> {
     val confirm = ui.confirm?.takeIf { it.queue.isNotEmpty() }

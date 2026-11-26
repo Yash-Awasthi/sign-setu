@@ -43,8 +43,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -151,6 +153,8 @@ internal fun CallCaption(
     highlight: IntRange?,
     onWordTap: ((Int) -> Unit)?,
     onTextLayout: ((TextLayoutResult) -> Unit)? = null,
+    /** Set from the subject's language: an Urdu caption reads right to left even inside the LTR call layout. */
+    direction: TextDirection = TextDirection.Ltr,
 ) {
     // One line is the piece holding the lit word; the light is moved into that piece's own offsets, so it always lands
     // on the word of the string actually drawn rather than on a neighbouring line.
@@ -173,6 +177,7 @@ internal fun CallCaption(
         styled, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = CAPTION_SP.sp, color = Color.White,
         textAlign = TextAlign.Center, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible,
         onTextLayout = { layout = it; onTextLayout?.invoke(it) }, modifier = tap,
+        style = LocalTextStyle.current.copy(textDirection = direction),
     )
 }
 

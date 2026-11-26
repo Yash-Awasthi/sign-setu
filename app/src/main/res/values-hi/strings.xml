@@ -164,6 +164,13 @@
     <string name="settings_amoled_summary">डार्क मोड में काली पृष्ठभूमि, OLED स्क्रीन के लिए</string>
     <string name="settings_motion">कम गति</string>
     <string name="settings_motion_summary">साँस लेने और बाकी सजावट को रोकता है; इशारे फिर भी चलते रहते हैं</string>
+    <string name="settings_access">सुगम्यता</string>
+    <string name="settings_switch_off">बंद</string>
+    <string name="settings_switch_dwell">ठहराव</string>
+    <string name="settings_switch_step">चरण</string>
+    <string name="settings_switch_off_summary">जवाब टैप करके दिए जाते हैं, या कीबोर्ड या D-pad से चुने जाते हैं।</string>
+    <string name="settings_switch_dwell_summary">हाइलाइट अपने आप आगे बढ़ता है; स्विच दबाने पर जो रोशन है उसका जवाब चला जाता है।</string>
+    <string name="settings_switch_step_summary">स्विच दबाने पर हाइलाइट आगे बढ़ता है; जवाब देने के लिए उसे दबाए रखें।</string>
     <string name="settings_theme_system">डिवाइस डिफ़ॉल्ट</string>
     <string name="settings_theme_light">लाइट</string>
     <string name="settings_theme_dark">डार्क</string>

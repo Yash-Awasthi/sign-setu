@@ -414,10 +414,9 @@ fun Stage(
                 hearing = null
                 if (ui.chosenLanguage != null) return@LaunchedEffect
                 delay(1_500)
-                for (l in content.languages) {
-                    val audio = content.greetingAudio(l.code) ?: continue
-                    hearing = l.code
-                    speech.play(audio)
+                for (step in finderTour(content)) {
+                    hearing = step.code
+                    step.audio?.let { speech.play(it) }
                     delay(GREETING_STEP_MS)
                 }
                 hearing = null
