@@ -15,9 +15,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -56,12 +59,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
@@ -125,6 +130,8 @@ fun OfficerPane(
     val signLanguage = ui.signLanguage
     val content = remember(vm.content, signLanguage) { vm.content.forSignLanguage(signLanguage) }
     val ink = LocalInk.current
+    // The header's one End control names itself; the same string is its content description.
+    val endLabel = stringResource(R.string.wrap_end_now)
     val subjectLang = ui.session.subjectLang
     val subjectLanguage = content.language(subjectLang)
     var sheet by rememberSaveable { mutableStateOf<Sheet?>(null) }
@@ -319,6 +326,17 @@ fun OfficerPane(
                     canChangeSignLanguage = paired == null || ui.onStage == null,
                     onEnd = { askEnd = true },
                 )
+                // The one obvious way to finish: on the surface, no menu to open, at the same level as the icons.
+                Button(
+                    onClick = { askEnd = true },
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("officer.end")
+                        .semantics { contentDescription = endLabel },
+                ) {
+                    Text(endLabel, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                }
             }
         }
 
@@ -345,7 +363,6 @@ fun OfficerPane(
                 onAddToRun = addToRun,
                 onTool = onTool,
                 onSecondScreen = onSecondScreen,
-                onFinish = { askEnd = true },
                 onCounsel = if ((station?.online == true && cloud.stationUp()) || (cloud.available && cloud.enrolled)) startCounsel else null,
                 auto = vm.auto,
                 modifier = Modifier.weight(1f),

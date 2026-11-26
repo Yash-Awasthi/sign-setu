@@ -259,7 +259,8 @@ ticked-here: the bar opens one sheet holding all five tools; language returns th
 ticked-here: six preset groups (water, food, family, home, toilet, medicine) match whole words in English, Devanagari and romanised spelling from the prompt and the camera's read words; chips sit under the caption and tap through answer(); RelatedChipsTest 9 tests and RelatedChipsDeviceTest 4 tests exit 0, 27.9 s; a dedicated emoji picker beyond these presets is not added.
 - [x] One-tap "I need…" express row (water, food, toilet, pain, help, family) that is always reachable and never buried. `[W]`
 ticked-here: NeedRow.kt pins six one-tap tiles (water, food, toilet, pain, help, family) above every state, including an open panel and the faded controls; each calls onNeed(id) and the officer still confirms the need. NeedRowDeviceTest 4 tests exit 0 in 27.9 s; family has no picture asset, so its tile is emoji plus label.
-- [ ] A single, obvious way to end a session (owner: "easy the closing of session"), with the other exits demoted to one menu. `[W]`
+- [x] A single, obvious way to end a session (owner: "easy the closing of session"), with the other exits demoted to one menu. `[W]`
+ticked-here: the officer header now carries one End session button that opens the existing wrap-up dialog in one tap, the More page no longer offers a second End row, and the overflow menu keeps the only secondary route. EndSessionDeviceTest 4 tests exit 0 in 24.1 s; WrapUpPathsDeviceTest still 4/4; the dialog still holds thank, save and delete by design.
 - [ ] Question-suggestion strip: the next three likely questions for the selected role, one tap each. `[W]`
 
 ### M4.2 The video-call surface (owner: "better ui on video call")

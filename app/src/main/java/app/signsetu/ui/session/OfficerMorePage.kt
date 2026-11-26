@@ -70,7 +70,6 @@ import app.signsetu.data.session.EventType
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Close
@@ -101,7 +100,8 @@ internal fun MorePage(
     onAddToRun: (Question) -> Unit,
     onTool: (Tool) -> Unit,
     onSecondScreen: (() -> Unit)?,
-    onFinish: () -> Unit,
+    /** Kept for callers; ending a session is the officer header's one End control now, not this page. */
+    @Suppress("UNUSED_PARAMETER") onFinish: () -> Unit = {},
     onCounsel: (() -> Unit)?,
     modifier: Modifier,
     auto: AutoPilot? = null,
@@ -212,9 +212,6 @@ internal fun MorePage(
             onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, onClick = it) }
             MoreRow(rememberVectorPainter(Icons.Filled.Refresh), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
             MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.stage_help), null) { help = true }
-        }
-        OfficerCard(Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.sm), padding = 0.dp) {
-            MoreRow(rememberVectorPainter(Icons.AutoMirrored.Filled.ExitToApp), stringResource(R.string.officer_end), null, first = true, onClick = onFinish)
         }
     }
 }
