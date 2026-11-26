@@ -135,6 +135,10 @@ jobs:
         run: python tools/ci/check_workflows.py
       - name: The portal has no write path to session data
         run: python tools/ci/check_portal.py
+      - name: No pinned dependency is below its fixed release
+        run: python tools/security/check_dependencies.py --offline
+      - name: The shipped manifest keeps its security posture
+        run: python tools/security/check_android_posture.py
       - name: The release evidence matches its hashes
         run: |
           latest=$(ls -d release/*/ | sort -V | tail -1)
@@ -150,6 +154,7 @@ jobs:
           python tools/ux/check_split.py
           python tools/ux/check_baselines.py
           python tools/ux/check_error_copies.py
+          python tools/ux/contrast.py
       - name: Content manifest is current
         run: python tools/content/build_content.py --check
       - name: Content references, ids and language coverage
