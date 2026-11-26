@@ -26,6 +26,9 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.LocalCall
 import java.util.Locale
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
 
 /** A related word and the preset card it offers. Six groups, in one canonical order. */
 private val RelatedWords: Map<String, String> = linkedMapOf(
@@ -74,31 +77,31 @@ internal fun RelatedChipRow(
 ) {
     if (cards.isEmpty()) return
     val call = LocalCall.current
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(stringResource(R.string.stage_chips_related), fontSize = 11.sp, color = call.muted)
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
+        Text(stringResource(R.string.stage_chips_related), fontSize = TypeSize.s11, color = call.muted)
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).testTag("stage.chips"),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(Space.s6),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             cards.forEach { id ->
                 Surface(
                     onClick = { onCard(id) },
-                    shape = RoundedCornerShape(50),
+                    shape = Radius.pill,
                     color = call.surface,
-                    border = BorderStroke(1.dp, call.line),
-                    modifier = Modifier.heightIn(min = 48.dp).testTag("stage.chip." + id),
+                    border = BorderStroke(Space.hair, call.line),
+                    modifier = Modifier.heightIn(min = Space.s48).testTag("stage.chip." + id),
                 ) {
                     Row(
-                        modifier = Modifier.padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(start = Space.s10, end = Space.md, top = Space.s6, bottom = Space.s6),
+                        horizontalArrangement = Arrangement.spacedBy(Space.s6),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(ChipGlyphs[id].orEmpty(), fontSize = 18.sp)
-                        CardImage(id, Modifier.size(28.dp))
+                        Text(ChipGlyphs[id].orEmpty(), fontSize = TypeSize.s18)
+                        CardImage(id, Modifier.size(Space.s28))
                         Text(
                             content.cards[id]?.label?.get(lang) ?: id,
-                            fontSize = 13.sp,
+                            fontSize = TypeSize.s13,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )

@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.signsetu.ui.theme.LocalInk
+import app.signsetu.ui.theme.Space
 
 /** The officer side's main action: the brand gradient while enabled, plain grey while not. */
 @Composable
@@ -31,11 +32,11 @@ fun BrandButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boo
             disabledContainerColor = colors.surfaceContainerHighest,
             disabledContentColor = colors.onSurfaceVariant,
         ),
-        contentPadding = PaddingValues(0.dp),
+        contentPadding = PaddingValues(Space.none),
         modifier = modifier,
     ) {
         Row(
-            Modifier.fillMaxSize().then(if (enabled) Modifier.background(LocalInk.current.brush) else Modifier).padding(horizontal = 24.dp),
+            Modifier.fillMaxSize().then(if (enabled) Modifier.background(LocalInk.current.brush) else Modifier).padding(horizontal = Space.xl),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
             content = content,

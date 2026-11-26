@@ -26,7 +26,8 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.Question
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Role
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 /** The first [limit] of [questions] that were not already asked, in content order, with no id twice. */
 internal fun threeSuggestions(questions: List<Question>, asked: Set<String>, limit: Int = 3): List<Question> {
@@ -75,26 +76,26 @@ internal fun SuggestionStrip(
             stringResource(R.string.suggest_title),
             style = MaterialTheme.typography.labelSmall,
             color = colors.onSurfaceVariant,
-            modifier = Modifier.padding(start = Spacing.lg, end = Spacing.lg, bottom = 2.dp),
+            modifier = Modifier.padding(start = Space.lg, end = Space.lg, bottom = Space.xxs),
         )
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = Spacing.lg, end = Spacing.lg).padding(bottom = Spacing.sm),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            modifier = Modifier.fillMaxWidth().padding(start = Space.lg, end = Space.lg).padding(bottom = Space.sm),
+            horizontalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
             questions.forEach { q ->
                 val label = q.text[officerLang] ?: q.text["en"] ?: q.id
                 Surface(
                     onClick = { onAsk(q) },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Radius.r16),
                     color = colors.secondaryContainer,
                     contentColor = colors.onSecondaryContainer,
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 48.dp)
+                        .heightIn(min = Space.s48)
                         .testTag("stage.suggestion." + q.id)
                         .semantics { contentDescription = label },
                 ) {
-                    Box(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.padding(horizontal = Space.sm, vertical = Space.s6), contentAlignment = Alignment.Center) {
                         Text(
                             label,
                             style = MaterialTheme.typography.labelMedium,

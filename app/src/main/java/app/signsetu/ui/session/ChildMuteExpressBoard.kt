@@ -63,69 +63,76 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.or
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
+import app.signsetu.ui.theme.StageScheme
+import app.signsetu.ui.theme.ExpressTones
+import app.signsetu.ui.theme.Tone
 
 /** A picture card on the express board; its words come from the card's reviewed labels. */
-private class ExpressCard(val id: String, val tab: String, val accent: Color, val ink: Color)
+private class ExpressCard(val id: String, val tab: String, val tone: Tone)
 
 /** The board's tabs are content card categories, so their titles exist in every language. */
 private val Tabs = listOf("feelings", "needs", "alert", "safety", "people", "places", "answers", "body")
 
 /** The things a frightened child or a person who cannot speak most needs to say. */
 private val ExpressCards = listOf(
-    ExpressCard("pain", "feelings", Color(0xFFFFD4D4), Color(0xFF8B1D1D)),
-    ExpressCard("scared", "feelings", Color(0xFFFFF1C2), Color(0xFF8C5800)),
-    ExpressCard("sick", "feelings", Color(0xFFFFE0D0), Color(0xFF8C2E00)),
-    ExpressCard("stop", "feelings", Color(0xFFFFCDD2), Color(0xFFB71C1C)),
-    ExpressCard("police", "feelings", Color(0xFFD6E4FF), Color(0xFF1D3B8B)),
-    ExpressCard("okay", "feelings", Color(0xFFD1F2D9), Color(0xFF1B6B32)),
-    ExpressCard("sad", "feelings", Color(0xFFEDE9FE), Color(0xFF5B21B6)),
-    ExpressCard("angry", "feelings", Color(0xFFFFEDD5), Color(0xFF9A3412)),
-    ExpressCard("water", "needs", Color(0xFFD8F3FF), Color(0xFF026AA7)),
-    ExpressCard("toilet", "needs", Color(0xFFE8DEFF), Color(0xFF5521B5)),
-    ExpressCard("food", "needs", Color(0xFFFFECCC), Color(0xFF8C5500)),
-    ExpressCard("rest", "needs", Color(0xFFEFE3D3), Color(0xFF4F4539)),
-    ExpressCard("phone", "needs", Color(0xFFC7F9CC), Color(0xFF145A32)),
-    ExpressCard("medicine", "needs", Color(0xFFCCFBF1), Color(0xFF115E59)),
-    ExpressCard("mother", "people", Color(0xFFFFD6E0), Color(0xFF881337)),
-    ExpressCard("father", "people", Color(0xFFDBEAFE), Color(0xFF1E40AF)),
-    ExpressCard("brother", "people", Color(0xFFD9E6DD), Color(0xFF2B4A3A)),
-    ExpressCard("sister", "people", Color(0xFFFCE7F3), Color(0xFF9D174D)),
-    ExpressCard("friends", "people", Color(0xFFDCFCE7), Color(0xFF166534)),
-    ExpressCard("someone_else", "people", Color(0xFFFEE2E2), Color(0xFF991B1B)),
-    ExpressCard("home", "places", Color(0xFFFEF3C7), Color(0xFF92400E)),
-    ExpressCard("school", "places", Color(0xFFE0F2FE), Color(0xFF0369A1)),
-    ExpressCard("hospital", "places", Color(0xFFFFE4E6), Color(0xFF9F1239)),
-    ExpressCard("bus_stand", "places", Color(0xFFF2EADF), Color(0xFF4F4539)),
-    ExpressCard("road", "places", Color(0xFFF3F4F6), Color(0xFF374151)),
-    ExpressCard("yes", "answers", Color(0xFFC2F0C2), Color(0xFF0F5132)),
-    ExpressCard("no", "answers", Color(0xFFFFC5C5), Color(0xFF842029)),
-    ExpressCard("dont_know", "answers", Color(0xFFEFE3D3), Color(0xFF4F4539)),
-    ExpressCard("dont_understand", "answers", Color(0xFFFFF3CD), Color(0xFF664D03)),
-    ExpressCard("thank_you", "answers", Color(0xFFE0F2FE), Color(0xFF0369A1)),
-    ExpressCard("pain", "alert", Color(0xFFFFD4D4), Color(0xFF8B1D1D)),
-    ExpressCard("sick", "alert", Color(0xFFFFE0D0), Color(0xFF8C2E00)),
-    ExpressCard("doctor", "alert", Color(0xFFCCFBF1), Color(0xFF115E59)),
-    ExpressCard("hospital", "alert", Color(0xFFFFE4E6), Color(0xFF9F1239)),
-    ExpressCard("medicine", "alert", Color(0xFFCCFBF1), Color(0xFF115E59)),
-    ExpressCard("toilet", "alert", Color(0xFFE8DEFF), Color(0xFF5521B5)),
-    ExpressCard("cold", "alert", Color(0xFFD8F3FF), Color(0xFF026AA7)),
-    ExpressCard("hot", "alert", Color(0xFFFFEDD5), Color(0xFF9A3412)),
-    ExpressCard("break", "alert", Color(0xFFEFE3D3), Color(0xFF4F4539)),
-    ExpressCard("help", "safety", Color(0xFFFFCDD2), Color(0xFFB71C1C)),
-    ExpressCard("stop", "safety", Color(0xFFFFCDD2), Color(0xFFB71C1C)),
-    ExpressCard("police", "safety", Color(0xFFD6E4FF), Color(0xFF1D3B8B)),
-    ExpressCard("scared", "safety", Color(0xFFFFF1C2), Color(0xFF8C5800)),
-    ExpressCard("alone", "safety", Color(0xFFEDE9FE), Color(0xFF5B21B6)),
-    ExpressCard("someone_else", "safety", Color(0xFFFEE2E2), Color(0xFF991B1B)),
-    ExpressCard("home", "safety", Color(0xFFFEF3C7), Color(0xFF92400E)),
-    ExpressCard("knife", "safety", Color(0xFFF3F4F6), Color(0xFF374151)),
-    ExpressCard("okay", "safety", Color(0xFFD1F2D9), Color(0xFF1B6B32)),
-    ExpressCard("head", "body", Color(0xFFFFE4E6), Color(0xFF9F1239)),
-    ExpressCard("throat", "body", Color(0xFFFEF3C7), Color(0xFF92400E)),
-    ExpressCard("stomach", "body", Color(0xFFFFECCC), Color(0xFF8C5500)),
-    ExpressCard("arm", "body", Color(0xFFD9E6DD), Color(0xFF2B4A3A)),
-    ExpressCard("leg", "body", Color(0xFFDCFCE7), Color(0xFF166534)),
-    ExpressCard("back", "body", Color(0xFFF3E8FF), Color(0xFF6B21A8)),
+    ExpressCard("pain", "feelings", ExpressTones.pain),
+    ExpressCard("scared", "feelings", ExpressTones.scared),
+    ExpressCard("sick", "feelings", ExpressTones.sick),
+    ExpressCard("stop", "feelings", ExpressTones.stop),
+    ExpressCard("police", "feelings", ExpressTones.police),
+    ExpressCard("okay", "feelings", ExpressTones.okay),
+    ExpressCard("sad", "feelings", ExpressTones.sad),
+    ExpressCard("angry", "feelings", ExpressTones.angry),
+    ExpressCard("water", "needs", ExpressTones.water),
+    ExpressCard("toilet", "needs", ExpressTones.toilet),
+    ExpressCard("food", "needs", ExpressTones.food),
+    ExpressCard("rest", "needs", ExpressTones.rest),
+    ExpressCard("phone", "needs", ExpressTones.phone),
+    ExpressCard("medicine", "needs", ExpressTones.medicine),
+    ExpressCard("mother", "people", ExpressTones.mother),
+    ExpressCard("father", "people", ExpressTones.father),
+    ExpressCard("brother", "people", ExpressTones.brother),
+    ExpressCard("sister", "people", ExpressTones.sister),
+    ExpressCard("friends", "people", ExpressTones.friends),
+    ExpressCard("someone_else", "people", ExpressTones.someoneElse),
+    ExpressCard("home", "places", ExpressTones.home),
+    ExpressCard("school", "places", ExpressTones.school),
+    ExpressCard("hospital", "places", ExpressTones.hospital),
+    ExpressCard("bus_stand", "places", ExpressTones.busStand),
+    ExpressCard("road", "places", ExpressTones.road),
+    ExpressCard("yes", "answers", ExpressTones.yes),
+    ExpressCard("no", "answers", ExpressTones.no),
+    ExpressCard("dont_know", "answers", ExpressTones.dontKnow),
+    ExpressCard("dont_understand", "answers", ExpressTones.dontUnderstand),
+    ExpressCard("thank_you", "answers", ExpressTones.thankYou),
+    ExpressCard("pain", "alert", ExpressTones.pain),
+    ExpressCard("sick", "alert", ExpressTones.sick),
+    ExpressCard("doctor", "alert", ExpressTones.doctor),
+    ExpressCard("hospital", "alert", ExpressTones.hospital),
+    ExpressCard("medicine", "alert", ExpressTones.medicine),
+    ExpressCard("toilet", "alert", ExpressTones.toilet),
+    ExpressCard("cold", "alert", ExpressTones.cold),
+    ExpressCard("hot", "alert", ExpressTones.hot),
+    ExpressCard("break", "alert", ExpressTones.breakTime),
+    ExpressCard("help", "safety", ExpressTones.help),
+    ExpressCard("stop", "safety", ExpressTones.stop),
+    ExpressCard("police", "safety", ExpressTones.police),
+    ExpressCard("scared", "safety", ExpressTones.scared),
+    ExpressCard("alone", "safety", ExpressTones.alone),
+    ExpressCard("someone_else", "safety", ExpressTones.someoneElse),
+    ExpressCard("home", "safety", ExpressTones.home),
+    ExpressCard("knife", "safety", ExpressTones.knife),
+    ExpressCard("okay", "safety", ExpressTones.okay),
+    ExpressCard("head", "body", ExpressTones.head),
+    ExpressCard("throat", "body", ExpressTones.throat),
+    ExpressCard("stomach", "body", ExpressTones.stomach),
+    ExpressCard("arm", "body", ExpressTones.arm),
+    ExpressCard("leg", "body", ExpressTones.leg),
+    ExpressCard("back", "body", ExpressTones.back),
 )
 
 /** Speaks a tapped card aloud in the subject's language; silent when the phone has no offline voice for it. */
@@ -161,16 +168,16 @@ fun FullChildMuteCommunicationBoard(
     val closeName = stringResource(R.string.close)
     fun label(id: String) = content.cards[id]?.label?.or(lang) ?: id
 
-    Surface(color = Color(0xFFFFFBF2), modifier = modifier.fillMaxSize().semantics { contentDescription = boardName }) {
-        Column(Modifier.fillMaxSize().padding(12.dp)) {
-            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Surface(color = StageTones.board, modifier = modifier.fillMaxSize().semantics { contentDescription = boardName }) {
+        Column(Modifier.fillMaxSize().padding(Space.md)) {
+            Row(Modifier.fillMaxWidth().padding(bottom = Space.sm), verticalAlignment = Alignment.CenterVertically) {
                 AnimatedVisibility(said != null, Modifier.weight(1f), enter = fadeIn() + slideInVertically(), exit = fadeOut() + slideOutVertically()) {
                     said?.let { card ->
-                        Surface(shape = RoundedCornerShape(16.dp), color = card.accent, border = BorderStroke(2.dp, card.ink)) {
-                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                CardImage(card.id, Modifier.size(32.dp))
-                                Text(label(card.id), Modifier.weight(1f), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = card.ink)
-                                Icon(Icons.Filled.Check, contentDescription = null, tint = card.ink)
+                        Surface(shape = RoundedCornerShape(Radius.r16), color = card.tone.bg, border = BorderStroke(Space.xxs, card.tone.ink)) {
+                            Row(Modifier.padding(Space.s10), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.s10)) {
+                                CardImage(card.id, Modifier.size(Space.xxl))
+                                Text(label(card.id), Modifier.weight(1f), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s15, color = card.tone.ink)
+                                Icon(Icons.Filled.Check, contentDescription = null, tint = card.tone.ink)
                             }
                         }
                     }
@@ -178,23 +185,23 @@ fun FullChildMuteCommunicationBoard(
                 if (said == null) Spacer(Modifier.weight(1f))
                 Surface(
                     shape = CircleShape,
-                    color = Color(0xFFEFE3D3),
-                    modifier = Modifier.padding(start = 8.dp).size(48.dp).clickable { onDismiss() }.semantics { role = Role.Button; contentDescription = closeName },
+                    color = StageScheme.surfaceVariant,
+                    modifier = Modifier.padding(start = Space.sm).size(Space.s48).clickable { onDismiss() }.semantics { role = Role.Button; contentDescription = closeName },
                 ) {
-                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Close, contentDescription = null, tint = Color(0xFF4F4539)) }
+                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Close, contentDescription = null, tint = StageScheme.onSurfaceVariant) }
                 }
             }
 
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 6.dp).horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Modifier.fillMaxWidth().padding(vertical = Space.s6).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(Space.sm),
             ) {
                 Tabs.forEach { id ->
                     val selected = tab == id
                     val title = content.categories.firstOrNull { it.id == id }?.label?.or(lang) ?: id
-                    val fill by animateColorAsState(if (selected) Color(0xFF1C6E74) else Color(0xFFF2EADF))
+                    val fill by animateColorAsState(if (selected) StageScheme.primary else StageScheme.surfaceContainer)
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(Radius.r14),
                         color = fill,
                         modifier = Modifier.minimumInteractiveComponentSize().clickable { tab = id }.semantics { role = Role.Tab; contentDescription = title; this.selected = selected },
                     ) {
@@ -202,9 +209,9 @@ fun FullChildMuteCommunicationBoard(
                             title,
                             fontFamily = Baloo,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 13.sp,
-                            color = if (selected) Color.White else Color(0xFF4F4539),
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            fontSize = TypeSize.s13,
+                            color = if (selected) Color.White else StageScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = Space.s14, vertical = Space.sm),
                         )
                     }
                 }
@@ -219,21 +226,21 @@ fun FullChildMuteCommunicationBoard(
             val extra = map || (tab == "feelings" && onFeeling != null) || (tab == "people" && onCall != null)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(top = Space.xs, bottom = Space.md),
+                horizontalArrangement = Arrangement.spacedBy(Space.s10),
+                verticalArrangement = Arrangement.spacedBy(Space.s10),
                 modifier = Modifier.weight(if (extra) 0.38f else 1f),
             ) {
                 items(ExpressCards.filter { it.tab == tab }, key = { it.id }) { card ->
                     val chosen = chosenCard == card.id
                     val text = label(card.id)
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = card.accent,
-                        border = BorderStroke(if (chosen) 3.dp else 1.dp, if (chosen) card.ink else card.ink.copy(alpha = 0.2f)),
-                        shadowElevation = if (chosen) 6.dp else 2.dp,
+                        shape = RoundedCornerShape(Radius.r20),
+                        color = card.tone.bg,
+                        border = BorderStroke(if (chosen) Space.s3 else Space.hair, if (chosen) card.tone.ink else card.tone.ink.copy(alpha = 0.2f)),
+                        shadowElevation = if (chosen) Space.s6 else Space.xxs,
                         modifier = Modifier
-                            .height(108.dp)
+                            .height(Space.s108)
                             .clickable {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 said = card
@@ -242,15 +249,15 @@ fun FullChildMuteCommunicationBoard(
                             }
                             .semantics { role = Role.Button; contentDescription = text },
                     ) {
-                        Column(Modifier.fillMaxSize().padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            CardImage(card.id, Modifier.size(46.dp))
-                            Spacer(Modifier.height(4.dp))
+                        Column(Modifier.fillMaxSize().padding(Space.s6), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            CardImage(card.id, Modifier.size(Space.s46))
+                            Spacer(Modifier.height(Space.xs))
                             Text(
                                 text,
                                 fontFamily = Baloo,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                color = card.ink,
+                                fontSize = TypeSize.s13,
+                                color = card.tone.ink,
                                 textAlign = TextAlign.Center,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,

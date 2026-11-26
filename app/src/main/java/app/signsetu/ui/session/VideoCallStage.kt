@@ -84,6 +84,10 @@ import androidx.compose.foundation.layout.imePadding
 import app.signsetu.ui.theme.Baloo
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
 
 /** The transient reaction chip: plain text, or a counted noun that needs a plural form. */
 private sealed interface Reaction {
@@ -362,41 +366,41 @@ internal fun VideoCallStage(
                             .background(LocalCall.current.surface),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(painterResource(R.drawable.ic_videocam), contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(24.dp))
+                        Icon(painterResource(R.drawable.ic_videocam), contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(Space.xl))
                     }
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (showVictimSkeleton) LocalCall.current.bg.copy(alpha = 0.87f) else Color(0x99000000),
-                    border = BorderStroke(1.dp, if (showVictimSkeleton) Color(0xFFFBBF24) else Color(0x44FFFFFF)),
+                    shape = RoundedCornerShape(Radius.r12),
+                    color = if (showVictimSkeleton) LocalCall.current.bg.copy(alpha = 0.87f) else StageTones.chromeVeil,
+                    border = BorderStroke(Space.hair, if (showVictimSkeleton) StageTones.victimBorder else StageTones.hairline),
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(6.dp)
+                        .padding(Space.s6)
                         .toggleable(value = showVictimSkeleton, role = Role.Switch) { showVictimSkeleton = it },
                 ) {
                     Text(
                         text = stringResource(if (showVictimSkeleton) R.string.call_skeleton_on else R.string.call_skeleton_off),
-                        fontSize = 9.sp,
-                        color = if (showVictimSkeleton) Color(0xFFFDE68A) else LocalCall.current.text,
+                        fontSize = TypeSize.s9,
+                        color = if (showVictimSkeleton) StageTones.victimInk else LocalCall.current.text,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                        modifier = Modifier.padding(horizontal = Space.s6, vertical = Space.s3),
                     )
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (signing) Color(0xFF10B981) else Color(0xCC000000),
+                    shape = RoundedCornerShape(Radius.r8),
+                    color = if (signing) StageTones.signing else StageTones.veil,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(6.dp),
+                        .padding(Space.s6),
                 ) {
                     Text(
                         text = stringResource(if (signing) R.string.call_signing else R.string.call_you),
                         color = Color.White,
-                        fontSize = 10.sp,
+                        fontSize = TypeSize.s10,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        modifier = Modifier.padding(horizontal = Space.s6, vertical = Space.xxs),
                     )
                 }
             }
@@ -407,36 +411,36 @@ internal fun VideoCallStage(
             Column(Modifier.fillMaxSize().imePadding().padding(bottom = NEED_ROW_HEIGHT)) {
                 Box(Modifier.weight(if (panelCollapsed) 1f else 1f - panelShare).fillMaxWidth()) { avatarView() }
                 Text(
-                    litWord(promptText, captionLight?.inText(promptText)), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White,
-                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    litWord(promptText, captionLight?.inText(promptText)), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s17, color = Color.White,
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.s6),
                 )
-                if (panelCollapsed) PanelStrip(onExpandPanel, Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp))
-                else panel(Modifier.weight(panelShare).fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp).popIn(rememberPopIn(0)))
+                if (panelCollapsed) PanelStrip(onExpandPanel, Modifier.fillMaxWidth().navigationBarsPadding().padding(start = Space.lg, end = Space.lg, bottom = Space.lg))
+                else panel(Modifier.weight(panelShare).fillMaxWidth().navigationBarsPadding().padding(start = Space.lg, end = Space.lg, bottom = Space.lg).popIn(rememberPopIn(0)))
             }
         } else Box(
-            modifier = Modifier.fillMaxSize().padding(bottom = if (swapped && cameraOn) 0.dp else 90.dp),
+            modifier = Modifier.fillMaxSize().padding(bottom = if (swapped && cameraOn) Space.none else Space.s90),
             contentAlignment = Alignment.Center,
         ) { if (swapped && cameraOn) cameraView() else avatarView() }
 
         if (cameraOn) {
-            val pipWidth = 130.dp
-            val pipShape = RoundedCornerShape(20.dp)
+            val pipWidth = Space.s130
+            val pipShape = RoundedCornerShape(Radius.r20)
 
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = if (swapped) 44.dp else 13.dp, end = 13.dp)
+                    .padding(top = if (swapped) Space.s44 else Space.s13, end = Space.s13)
                     .offset { IntOffset(pipOffsetX.roundToInt(), pipOffsetY.roundToInt()) }
                     .size(pipWidth, pipWidth * (16f / 9f))
                     .clip(pipShape)
                     .border(
                         BorderStroke(
-                            if (signing) 3.dp else 2.dp,
-                            if (signing) Color(0xFF10B981) else Color(0x88FFFFFF),
+                            if (signing) Space.s3 else Space.xxs,
+                            if (signing) StageTones.signing else StageTones.veilSoft,
                         ),
                         pipShape,
                     )
-                    .shadow(8.dp, pipShape)
+                    .shadow(Space.sm, pipShape)
                     .pointerInput(Unit) {
                         detectDragGestures { change, dragAmount ->
                             change.consume()
@@ -456,9 +460,9 @@ internal fun VideoCallStage(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .padding(top = 6.dp, start = 12.dp, end = if (cameraOn) 148.dp else 12.dp)
+                .padding(top = Space.s6, start = Space.md, end = if (cameraOn) Space.s148 else Space.md)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
             CallHeader(
                 avatarName = stringResource(R.string.call_avatar_name),
@@ -478,7 +482,7 @@ internal fun VideoCallStage(
 
         // The open panel has its own Stop row; folded or absent, Stop waits in the corner, below the chrome.
         if (panel == null || panelCollapsed) StopOctagon(content.subjectText("stop", lang) ?: stringResource(R.string.stage_stop), ui.answeredCard == "stop", { answer("stop") },
-            Modifier.align(Alignment.TopStart).padding(top = 156.dp, start = 12.dp).testTag(StagePaths.EXIT))
+            Modifier.align(Alignment.TopStart).padding(top = Space.s156, start = Space.md).testTag(StagePaths.EXIT))
 
         // Pinned for every state: content, not a control, so it never fades and an open panel never buries it.
         NeedRow(
@@ -500,7 +504,7 @@ internal fun VideoCallStage(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
+                .padding(start = Space.md, end = Space.md, bottom = Space.sm),
         )
         if (panel != null) return@Box
 
@@ -510,7 +514,7 @@ internal fun VideoCallStage(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = NEED_ROW_HEIGHT + 8.dp)
+                .padding(bottom = NEED_ROW_HEIGHT + Space.sm)
                 .pointerInput(Unit) {
                     detectVerticalDragGestures(
                         onDragEnd = {
@@ -519,7 +523,7 @@ internal fun VideoCallStage(
                         },
                         onVerticalDrag = { change, dy ->
                             change.consume()
-                            slideUp = (slideUp - dy / 240.dp.toPx()).coerceIn(0f, 1f)
+                            slideUp = (slideUp - dy / Space.s240.toPx()).coerceIn(0f, 1f)
                         },
                     )
                 },
@@ -534,10 +538,10 @@ internal fun VideoCallStage(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 56.dp + NEED_ROW_HEIGHT, start = 16.dp, end = 16.dp)
+                .padding(bottom = Space.s56 + NEED_ROW_HEIGHT, start = Space.lg, end = Space.lg)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
             // One dot per sign seen, never the reader's words: those are proposals the subject has not confirmed.
             SeenSigns(ui.reading.orEmpty(), Modifier)
@@ -545,9 +549,9 @@ internal fun VideoCallStage(
 
             AnimatedVisibility(visible = recentReaction != null) {
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(Radius.r20),
                     color = LocalCall.current.surface.copy(alpha = 0.93f),
-                    border = BorderStroke(1.dp, LocalCall.current.accent),
+                    border = BorderStroke(Space.hair, LocalCall.current.accent),
                 ) {
                     Text(
                         text = when (val reaction = recentReaction) {
@@ -557,64 +561,64 @@ internal fun VideoCallStage(
                         },
                         fontFamily = Baloo,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
+                        fontSize = TypeSize.s13,
                         color = LocalCall.current.accent,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = Space.lg, vertical = Space.s6),
                     )
                 }
             }
 
             Surface(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(Radius.r24),
                 color = LocalCall.current.bg.copy(alpha = 0.87f),
-                border = BorderStroke(1.5.dp, Color(0x44FFFFFF)),
-                shadowElevation = 10.dp,
+                border = BorderStroke(Space.s1_5, StageTones.hairline),
+                shadowElevation = Space.s10,
                 modifier = Modifier.fillMaxWidth().testTag("call.caption"),
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = Space.s18, vertical = Space.md),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     CallCaption(promptText, captionLight?.inText(promptText), onWordTap)
                     // Preset chips for the related words on this call; content, so they stay after the controls fade.
-                    if (related.isNotEmpty()) RelatedChipRow(related, content, lang, { answer(it) }, Modifier.padding(top = 8.dp))
+                    if (related.isNotEmpty()) RelatedChipRow(related, content, lang, { answer(it) }, Modifier.padding(top = Space.sm))
                     rightsNotice?.let {
-                        Text(it, fontSize = 13.sp, color = LocalCall.current.accentSoft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+                        Text(it, fontSize = TypeSize.s13, color = LocalCall.current.accentSoft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Space.xs))
                     }
                     // A young child is not made to read instructions; the character and the guide show them.
                     if (!ui.child && !statement && caption != null) (idleLine ?: hint)?.let {
                         // Lit and larger while the character acts it out, and the reassurance takes its place when idle.
                         val lit = hintLit || idleLine != null
-                        Text(litWord(it, idleHighlight?.inText(it).takeIf { lit }), fontSize = if (lit) 15.sp else 11.sp, color = if (lit) Color.White else LocalCall.current.muted, fontWeight = if (lit) FontWeight.Bold else null, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
+                        Text(litWord(it, idleHighlight?.inText(it).takeIf { lit }), fontSize = if (lit) TypeSize.s15 else TypeSize.s11, color = if (lit) Color.White else LocalCall.current.muted, fontWeight = if (lit) FontWeight.Bold else null, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Space.xxs))
                     }
                 }
             }
 
             // Path one, answers: one primary action and the needs; the unsure trio waits behind More.
             val answers = LocalAnswerColors.current
-            if (signing || controls) Column(Modifier.fillMaxWidth().testTag(StagePaths.ANSWERS), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (signing || controls) Column(Modifier.fillMaxWidth().testTag(StagePaths.ANSWERS), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6), verticalAlignment = Alignment.CenterVertically) {
                     when {
                         signing -> StagePrimaryAction(stringResource(R.string.stage_primary_done), onDoneSigning, Modifier.weight(1.6f))
                         onNext != null -> StagePrimaryAction(stringResource(R.string.stage_next), onNext, Modifier.weight(1.6f))
                         !statement -> StagePrimaryAction(content.subjectText("yes", lang) ?: stringResource(R.string.stage_primary_yes), { answer("yes") }, Modifier.weight(1.6f))
                     }
                     if (!signing) {
-                        if (!statement && onNext == null) SmallAnswer("no", null, cardLabel(content, "no", lang), Color(0xFFB91C1C), Color.White, false, { answer("no") }, Modifier.weight(1f), height = 52.dp, icon = rememberVectorPainter(Icons.Filled.Close))
-                        if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1.6f), height = 52.dp)
+                        if (!statement && onNext == null) SmallAnswer("no", null, cardLabel(content, "no", lang), StageTones.answerNo, Color.White, false, { answer("no") }, Modifier.weight(1f), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Close))
+                        if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1.6f), height = Space.s52)
                     }
                     if (controls) {
-                        SmallAnswer("water", null, cardLabel(content, "water", lang), Color(0xFF0369A1), Color.White, false, { answer("water") }, Modifier.weight(1f), height = 52.dp)
-                        SmallAnswer("food", null, cardLabel(content, "food", lang), Color(0xFFD97706), Color.White, false, { answer("food") }, Modifier.weight(1f), height = 52.dp)
-                        SmallAnswer("express", null, cardLabel(content, "help", lang), Color(0xFF7C3AED), Color.White, false, { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenExpressBoard() }, Modifier.weight(1f), height = 52.dp, icon = rememberVectorPainter(Icons.Filled.Favorite))
+                        SmallAnswer("water", null, cardLabel(content, "water", lang), StageTones.answerWater, Color.White, false, { answer("water") }, Modifier.weight(1f), height = Space.s52)
+                        SmallAnswer("food", null, cardLabel(content, "food", lang), StageTones.answerFood, Color.White, false, { answer("food") }, Modifier.weight(1f), height = Space.s52)
+                        SmallAnswer("express", null, cardLabel(content, "help", lang), StageTones.answerExpress, Color.White, false, { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenExpressBoard() }, Modifier.weight(1f), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Favorite))
                         if (!signing && pending != null && !statement) StageMoreAnswers(moreAnswers, { moreAnswers = !moreAnswers }, Modifier.weight(1f))
                     }
                 }
                 // The trio keeps its old calls, haptics and selected states; only its visibility now waits on More.
-                if (!signing && pending != null && !statement && moreAnswers) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know))
-                    SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand))
-                    SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong))
+                if (!signing && pending != null && !statement && moreAnswers) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6)) {
+                    SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = Space.s64, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know))
+                    SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = Space.s64, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand))
+                    SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = Space.s64, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong))
                 }
             }
 
@@ -630,10 +634,10 @@ internal fun VideoCallStage(
                         if (onWrite != null) add(StageTool.TYPING)
                     }
                     Surface(
-                        shape = RoundedCornerShape(32.dp),
+                        shape = RoundedCornerShape(Radius.r32),
                         color = LocalCall.current.surface.copy(alpha = 0.93f),
-                        border = BorderStroke(1.dp, LocalCall.current.line),
-                        shadowElevation = 12.dp,
+                        border = BorderStroke(Space.hair, LocalCall.current.line),
+                        shadowElevation = Space.md,
                         modifier = Modifier.fillMaxWidth().testTag(StagePaths.TOOLS),
                     ) {
                         StageToolBar(
@@ -648,7 +652,7 @@ internal fun VideoCallStage(
                                     StageTool.TYPING -> onWrite?.invoke()
                                 }
                             },
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = Space.sm, vertical = Space.s6),
                         )
                     }
                 }

@@ -72,7 +72,7 @@ import app.signsetu.data.content.PhraseSlot
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.components.PictureCard
 import app.signsetu.ui.start.LanguagePicker
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import app.signsetu.ui.components.FilterObscuredTouches
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.filled.PlayArrow
@@ -81,6 +81,8 @@ import app.signsetu.sign.SignSegment
 import app.signsetu.sign.SkeletonPlayer
 import app.signsetu.sign.rememberReplayState
 import kotlin.math.roundToInt
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
 
 private const val FAVOURITES = "*favourites"
 
@@ -92,16 +94,16 @@ internal fun <T : Any> stateListSaver() = listSaver<SnapshotStateList<T>, T>(sav
 @Composable
 fun PhraseSheet(phrase: Phrase, content: ContentBundle, lang: String, onPick: (PhraseSlot) -> Unit, onDismiss: () -> Unit) {
     OfficerSheet(onDismiss) {
-        Column(Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.lg)) {
+        Column(Modifier.padding(horizontal = Space.lg).padding(bottom = Space.lg)) {
             SheetTitle(phrase.label.get(lang) ?: phrase.id)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                contentPadding = PaddingValues(top = Spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(Space.sm),
+                verticalArrangement = Arrangement.spacedBy(Space.sm),
+                contentPadding = PaddingValues(top = Space.md),
             ) {
                 items(phrase.slots, key = { it.card }) { slot ->
-                    PictureCard(slot.card, content.cards[slot.card]?.label?.get(lang), onClick = { onPick(slot) }, minSize = 104.dp)
+                    PictureCard(slot.card, content.cards[slot.card]?.label?.get(lang), onClick = { onPick(slot) }, minSize = Space.s104)
                 }
             }
         }
@@ -129,7 +131,7 @@ fun BoardSheet(
             (query.isBlank() || c.label.values.any { it.contains(query.trim(), ignoreCase = true) })
     }
     OfficerSheet({ onDraft(chosen.toList()); onDismiss() }) {
-        Column(Modifier.fillMaxHeight(0.92f).padding(horizontal = Spacing.lg)) {
+        Column(Modifier.fillMaxHeight(0.92f).padding(horizontal = Space.lg)) {
             SheetTitle(stringResource(R.string.board_title))
             OutlinedTextField(
                 value = query,
@@ -139,13 +141,13 @@ fun BoardSheet(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(vertical = Spacing.md)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(Space.sm), contentPadding = PaddingValues(vertical = Space.md)) {
                 item {
                     FilterChip(
                         selected = category == FAVOURITES,
                         onClick = { category = FAVOURITES },
                         label = { Text(stringResource(R.string.board_favourites)) },
-                        leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(Space.s18)) },
                     )
                 }
                 item { FilterChip(selected = category == null, onClick = { category = null }, label = { Text(stringResource(R.string.board_all)) }) }
@@ -154,9 +156,9 @@ fun BoardSheet(
                 }
             }
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(104.dp),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                columns = GridCells.Adaptive(Space.s104),
+                horizontalArrangement = Arrangement.spacedBy(Space.sm),
+                verticalArrangement = Arrangement.spacedBy(Space.sm),
                 modifier = Modifier.weight(1f),
             ) {
                 items(cards, key = { it.id }) { card ->
@@ -166,20 +168,20 @@ fun BoardSheet(
                             label = card.label.get(lang),
                             selected = card.id in chosen,
                             onClick = { if (card.id in chosen) chosen.remove(card.id) else chosen.add(card.id) },
-                            minSize = 104.dp,
+                            minSize = Space.s104,
                         )
                         val starred = card.id in favourites
                         IconToggleButton(
                             checked = starred,
                             onCheckedChange = { onFavourite(card.id) },
-                            modifier = Modifier.align(Alignment.TopStart).padding(start = 6.dp, top = 6.dp).size(48.dp),
+                            modifier = Modifier.align(Alignment.TopStart).padding(start = Space.s6, top = Space.s6).size(Space.s48),
                         ) {
                             Icon(
                                 Icons.Filled.Star,
                                 contentDescription = stringResource(R.string.board_favourite),
                                 // Both at least 3:1 on the picture well.
-                                tint = if (starred) Color(0xFFB86E00) else Color(0xFF8A7760),
-                                modifier = Modifier.size(20.dp),
+                                tint = if (starred) StageTones.starOn else StageTones.starOff,
+                                modifier = Modifier.size(Space.s20),
                             )
                         }
                     }
@@ -188,7 +190,7 @@ fun BoardSheet(
             BrandButton(
                 onClick = { onUse(chosen.toList()) },
                 enabled = chosen.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = Spacing.md).height(52.dp),
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = Space.md).height(Space.s52),
             ) { Text(stringResource(R.string.board_use, chosen.size)) }
         }
     }
@@ -203,8 +205,8 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry, Li
     OfficerSheet(onDismiss) {
         LazyColumn(
             Modifier.fillMaxHeight(0.92f),
-            contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.xxl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            contentPadding = PaddingValues(start = Space.lg, end = Space.lg, bottom = Space.xxl),
+            verticalArrangement = Arrangement.spacedBy(Space.md),
         ) {
             item { SheetTitle(stringResource(R.string.gl_title)) }
             item { SectionLabel(stringResource(R.string.gl_where)) }
@@ -214,7 +216,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry, Li
                 }
             }
             item {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     BodyLocation.entries.forEach { l ->
                         FilterChip(selected = location == l, onClick = { location = if (location == l) null else l }, label = { Text(stringResource(l.label())) })
                     }
@@ -222,7 +224,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry, Li
             }
             item { SectionLabel(stringResource(R.string.gl_what)) }
             item {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     HandAction.entries.forEach { a ->
                         FilterChip(selected = action == a, onClick = { action = if (action == a) null else a }, label = { Text(stringResource(a.label())) })
                     }
@@ -253,7 +255,7 @@ fun GestureSheet(content: ContentBundle, lang: String, onPick: (LexiconEntry, Li
 @Composable
 fun ChangeSheet(content: ContentBundle, subjectLang: String, onLanguage: (String) -> Unit, onDismiss: () -> Unit) {
     OfficerSheet(onDismiss, expanded = false) {
-        Column(Modifier.padding(horizontal = Spacing.lg).navigationBarsPadding().padding(bottom = Spacing.xl)) {
+        Column(Modifier.padding(horizontal = Space.lg).navigationBarsPadding().padding(bottom = Space.xl)) {
             SheetTitle(stringResource(R.string.start_language))
             LanguagePicker(content, subjectLang, onPick = onLanguage)
         }
@@ -267,10 +269,10 @@ fun OfficerSheet(onDismiss: () -> Unit, expanded: Boolean = true, content: @Comp
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = expanded),
-        dragHandle = { Box(Modifier.sizeIn(minWidth = 48.dp), contentAlignment = Alignment.Center) { BottomSheetDefaults.DragHandle() } },
+        dragHandle = { Box(Modifier.sizeIn(minWidth = Space.s48), contentAlignment = Alignment.Center) { BottomSheetDefaults.DragHandle() } },
         content = {
             FilterObscuredTouches()
-            TextButton(onClick = onDismiss, modifier = Modifier.padding(horizontal = Spacing.sm)) { Text(stringResource(R.string.back)) }
+            TextButton(onClick = onDismiss, modifier = Modifier.padding(horizontal = Space.sm)) { Text(stringResource(R.string.back)) }
             content()
         },
     )
@@ -281,7 +283,7 @@ fun SheetTitle(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.padding(bottom = Spacing.lg).semantics { heading() },
+        modifier = Modifier.padding(bottom = Space.lg).semantics { heading() },
     )
 }
 
@@ -316,8 +318,8 @@ fun SignedSheet(
     OfficerSheet({ onDraft(words.toList()); onDismiss() }) {
         LazyColumn(
             Modifier.fillMaxHeight(0.92f).imePadding(),
-            contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.xxl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            contentPadding = PaddingValues(start = Space.lg, end = Space.lg, bottom = Space.xxl),
+            verticalArrangement = Arrangement.spacedBy(Space.md),
         ) {
             item { SheetTitle(stringResource(R.string.log_signed)) }
             item { SkeletonPlayer(replay, Modifier.fillMaxWidth()) }
@@ -330,17 +332,17 @@ fun SignedSheet(
                 Surface(
                     shape = MaterialTheme.shapes.medium,
                     color = if (current) colors.surfaceContainerHigh else colors.surfaceContainerLow,
-                    border = if (current) BorderStroke(2.dp, colors.primary) else null,
+                    border = if (current) BorderStroke(Space.xxs, colors.primary) else null,
                 ) {
-                    Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Column(Modifier.padding(Space.md), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val name = stringResource(R.string.signed_sign, i + 1)
-                            TextButton(onClick = { replay.play(i) }, modifier = Modifier.heightIn(min = 48.dp)) {
-                                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text(name, modifier = Modifier.padding(start = Spacing.xs))
+                            TextButton(onClick = { replay.play(i) }, modifier = Modifier.heightIn(min = Space.s48)) {
+                                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(Space.s18))
+                                Text(name, modifier = Modifier.padding(start = Space.xs))
                             }
                         }
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                             s.guesses.orEmpty().forEach { g ->
                                 FilterChip(selected = words[i] == g.word, onClick = { words[i] = g.word }, label = { Text("${g.word}  ${(g.score * 100).roundToInt()}%") })
                             }
@@ -360,15 +362,15 @@ fun SignedSheet(
             item {
                 BrandButton(
                     onClick = { onAccept(words.map { it.trim().ifEmpty { "?" } }) },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier.fillMaxWidth().height(Space.s52),
                 ) { Text(stringResource(R.string.signed_accept)) }
             }
             // Only the subject's own pick makes a reading their answer.
             onAsk?.let { ask ->
                 item {
                     val possible = canAsk(words.toList())
-                    OutlinedButton(onClick = { ask(words.toList()) }, enabled = possible, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.signed_ask)) }
-                    Text(stringResource(if (possible) R.string.signed_ask_hint else R.string.signed_ask_none), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = Spacing.xs))
+                    OutlinedButton(onClick = { ask(words.toList()) }, enabled = possible, modifier = Modifier.fillMaxWidth().heightIn(min = Space.s52)) { Text(stringResource(R.string.signed_ask)) }
+                    Text(stringResource(if (possible) R.string.signed_ask_hint else R.string.signed_ask_none), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = Space.xs))
                 }
             }
         }
@@ -378,7 +380,7 @@ fun SignedSheet(
 /** The picture a gesture stands for; the character signs it once it is shown back. */
 @Composable
 private fun GesturePreview(entry: LexiconEntry) {
-    Surface(shape = RoundedCornerShape(16.dp), color = LocalStageColors.current.skyTop, modifier = Modifier.size(72.dp)) {
-        CardImage(entry.card, Modifier.padding(10.dp))
+    Surface(shape = RoundedCornerShape(Radius.r16), color = LocalStageColors.current.skyTop, modifier = Modifier.size(Space.s72)) {
+        CardImage(entry.card, Modifier.padding(Space.s10))
     }
 }

@@ -43,27 +43,29 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.sign.SignChoice
 import app.signsetu.sign.SignSegment
 import app.signsetu.ui.theme.LocalStageColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.delay
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
 
 private const val SLOWER_CUE_MS = 3_000L
 
 /** A hairline round the white tiles, so they keep an edge on the light stage. */
-internal val TileEdge = BorderStroke(1.dp, Color(0x22000000))
+internal val TileEdge = BorderStroke(Space.hair, StageTones.tileEdge)
 
 /** The subject says what their sign meant: two or three pictures, in their language, and "none of these".
  * Nothing is pre-selected and nothing counts until they tap. */
 @Composable
 internal fun SignChoicePanel(choices: List<SignChoice>, content: ContentBundle, lang: String, onChoose: (SignChoice?) -> Unit, modifier: Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.md)) {
         Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), modifier = Modifier.fillMaxWidth()) {
             choices.forEach { c ->
                 if (c.card != null) {
                     ChoiceTile(c.card, content.cards[c.card]?.label?.get(lang), false, { onChoose(c) }, Modifier.weight(1f), name = content.cards[c.card]?.label?.get("en"))
                 } else {
-                    PressableSurface(onClick = { onChoose(c) }, shape = RoundedCornerShape(20.dp), color = Color.White, border = TileEdge, modifier = Modifier.weight(1f).heightIn(min = 96.dp)) {
-                        Box(contentAlignment = Alignment.Center) { Text(c.text, style = MaterialTheme.typography.titleLarge, color = Ink, textAlign = TextAlign.Center, modifier = Modifier.padding(8.dp)) }
+                    PressableSurface(onClick = { onChoose(c) }, shape = RoundedCornerShape(Radius.r20), color = Color.White, border = TileEdge, modifier = Modifier.weight(1f).heightIn(min = Space.s96)) {
+                        Box(contentAlignment = Alignment.Center) { Text(c.text, style = MaterialTheme.typography.titleLarge, color = Ink, textAlign = TextAlign.Center, modifier = Modifier.padding(Space.sm)) }
                     }
                 }
             }
@@ -73,14 +75,14 @@ internal fun SignChoicePanel(choices: List<SignChoice>, content: ContentBundle, 
         val stage = LocalStageColors.current
         PressableSurface(
             onClick = { onChoose(null) },
-            shape = RoundedCornerShape(50),
+            shape = Radius.pill,
             color = stage.tool,
             border = stage.toolEdge,
-            modifier = Modifier.fillMaxWidth().height(56.dp).semantics { contentDescription = none ?: noneName },
+            modifier = Modifier.fillMaxWidth().height(Space.s56).semantics { contentDescription = none ?: noneName },
         ) {
             Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Close, contentDescription = null, tint = stage.onTool)
-                none?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = stage.onTool, modifier = Modifier.padding(start = Spacing.sm)) }
+                none?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = stage.onTool, modifier = Modifier.padding(start = Space.sm)) }
             }
         }
         Spacer(Modifier.weight(1f))
@@ -94,13 +96,13 @@ internal fun SeenSigns(segments: List<SignSegment>, modifier: Modifier) {
     if (segments.isEmpty()) return
     Box(modifier, contentAlignment = Alignment.Center) {
         Row(
-            Modifier.background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            Modifier.background(Color.Black.copy(alpha = 0.4f), Radius.pill).padding(horizontal = Space.s10, vertical = Space.s6),
+            horizontalArrangement = Arrangement.spacedBy(Space.s6),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val shown = segments.takeLast(12)
             // The newest dot is a little larger, so each new sign is seen to land.
-            shown.forEachIndexed { i, _ -> Box(Modifier.size(if (i == shown.lastIndex) 12.dp else 9.dp).background(Color.White.copy(alpha = 0.9f), CircleShape)) }
+            shown.forEachIndexed { i, _ -> Box(Modifier.size(if (i == shown.lastIndex) Space.md else Space.s9).background(Color.White.copy(alpha = 0.9f), CircleShape)) }
         }
     }
 }
@@ -115,10 +117,10 @@ internal fun SignSlowerCue(failed: Any?, content: ContentBundle, lang: String, m
         if (visible) { delay(SLOWER_CUE_MS); visible = false }
     }
     AnimatedVisibility(visible, enter = fadeIn(), exit = fadeOut(), modifier = modifier) {
-        Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.94f)) {
-            Row(Modifier.padding(horizontal = Spacing.md, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(R.drawable.ic_slow_hand), contentDescription = null, tint = Ink, modifier = Modifier.size(28.dp))
-                content.subjectText("sign_slower", lang)?.let { Text(it, style = MaterialTheme.typography.titleSmall, color = Ink, maxLines = 2, modifier = Modifier.padding(start = Spacing.sm)) }
+        Surface(shape = Radius.pill, color = Color.White.copy(alpha = 0.94f)) {
+            Row(Modifier.padding(horizontal = Space.md, vertical = Space.s6), verticalAlignment = Alignment.CenterVertically) {
+                Icon(painterResource(R.drawable.ic_slow_hand), contentDescription = null, tint = Ink, modifier = Modifier.size(Space.s28))
+                content.subjectText("sign_slower", lang)?.let { Text(it, style = MaterialTheme.typography.titleSmall, color = Ink, maxLines = 2, modifier = Modifier.padding(start = Space.sm)) }
             }
         }
     }

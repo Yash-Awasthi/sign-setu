@@ -33,7 +33,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
 
 /** Shown whenever the database is closed; the officer's screen lock opens it (OfficerAuth). */
 @Composable
@@ -53,26 +54,26 @@ fun LockScreen(
 
     val ink = LocalInk.current
     Column(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding().padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding().padding(horizontal = Space.xl, vertical = Space.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
                 Text(
                     stringResource(R.string.app_name),
                     fontFamily = Baloo,
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = 22.sp,
+                    fontSize = TypeSize.s22,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.weight(1f))
-                Box(Modifier.size(72.dp).background(ink.brush, CircleShape), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Lock, contentDescription = null, tint = ink.onBand, modifier = Modifier.size(28.dp))
+                Box(Modifier.size(Space.s72).background(ink.brush, CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Lock, contentDescription = null, tint = ink.onBand, modifier = Modifier.size(Space.s28))
                 }
                 Text(
                     stringResource(R.string.lock_title),
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = Spacing.lg, bottom = Spacing.sm),
+                    modifier = Modifier.padding(top = Space.lg, bottom = Space.sm),
                 )
                 Text(
                     stringResource(R.string.lock_body),
@@ -81,7 +82,7 @@ fun LockScreen(
                     textAlign = TextAlign.Center,
                 )
                 if (failed) {
-                    Text(stringResource(R.string.lock_failed), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Spacing.sm))
+                    Text(stringResource(R.string.lock_failed), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Space.sm))
                 }
                 Spacer(Modifier.weight(1f))
                 BrandButton(
@@ -89,16 +90,16 @@ fun LockScreen(
                         failed = false
                         onUnlock { failed = true }
                     },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(Space.s56),
                 ) { Text(stringResource(R.string.lock_button), style = MaterialTheme.typography.titleMedium) }
-                Spacer(Modifier.height(Spacing.sm))
+                Spacer(Modifier.height(Space.sm))
                 stageButton?.invoke()
                 Text(
                     stringResource(R.string.notice_aid),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = Spacing.lg),
+                    modifier = Modifier.padding(top = Space.lg),
                 )
     }
 }

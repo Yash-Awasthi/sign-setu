@@ -52,7 +52,7 @@ import app.signsetu.data.content.ContentRepository
 import androidx.compose.foundation.background
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.PictureWell
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import app.signsetu.ui.theme.SubjectCardMin
 
 val LocalOnlineAssistant = staticCompositionLocalOf<app.signsetu.assistant.OnlineAssistant> { error("OnlineAssistant not provided") }
@@ -110,16 +110,16 @@ fun PictureCard(
             },
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = if (selected) BorderStroke(4.dp, answer.selection) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = if (selected) 0.dp else 1.dp,
+        border = if (selected) BorderStroke(Space.xs, answer.selection) else BorderStroke(Space.hair, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = if (selected) Space.none else Space.hair,
     ) {
         Box {
             Column(
-                Modifier.padding(Spacing.md),
+                Modifier.padding(Space.md),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Space.sm),
             ) {
-                CardImage(cardId, Modifier.fillMaxWidth().aspectRatio(1f).background(PictureWell, MaterialTheme.shapes.medium).padding(Spacing.sm))
+                CardImage(cardId, Modifier.fillMaxWidth().aspectRatio(1f).background(PictureWell, MaterialTheme.shapes.medium).padding(Space.sm))
                 if (label != null) {
                     Text(
                         label,
@@ -135,9 +135,9 @@ fun PictureCard(
                 Surface(
                     shape = MaterialTheme.shapes.extraLarge,
                     color = answer.selection,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(Spacing.sm).size(28.dp),
+                    modifier = Modifier.align(Alignment.TopEnd).padding(Space.sm).size(Space.s28),
                 ) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.padding(4.dp))
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.padding(Space.xs))
                 }
             }
         }
@@ -146,14 +146,14 @@ fun PictureCard(
 
 /** The officer-side white card: border instead of shadow, so it holds in dark theme and in sunlight. */
 @Composable
-fun OfficerCard(modifier: Modifier = Modifier, padding: Dp = Spacing.lg, content: @Composable ColumnScope.() -> Unit) {
+fun OfficerCard(modifier: Modifier = Modifier, padding: Dp = Space.lg, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(Space.hair, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(if (padding > 0.dp) Spacing.md else 0.dp), content = content)
+        Column(Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(if (padding > Space.none) Space.md else Space.none), content = content)
     }
 }
 
@@ -162,17 +162,17 @@ fun OfficerCard(modifier: Modifier = Modifier, padding: Dp = Spacing.lg, content
 fun ChoiceTile(selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
-        modifier = modifier.heightIn(min = 56.dp).clip(MaterialTheme.shapes.medium).selectable(selected, onClick = onClick, role = Role.RadioButton),
+        modifier = modifier.heightIn(min = Space.s56).clip(MaterialTheme.shapes.medium).selectable(selected, onClick = onClick, role = Role.RadioButton),
         shape = MaterialTheme.shapes.medium,
         color = if (selected) colors.primaryContainer else colors.surfaceContainerHigh,
         contentColor = if (selected) colors.onPrimaryContainer else colors.onSurface,
-        border = if (selected) BorderStroke(2.dp, colors.primary) else null,
+        border = if (selected) BorderStroke(Space.xxs, colors.primary) else null,
     ) {
-        Box(Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.sm), contentAlignment = Alignment.Center) {
+        Box(Modifier.padding(horizontal = Space.sm, vertical = Space.sm), contentAlignment = Alignment.Center) {
             content()
             if (selected) {
-                Surface(shape = CircleShape, color = colors.primary, modifier = Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp).size(18.dp)) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.padding(2.dp))
+                Surface(shape = CircleShape, color = colors.primary, modifier = Modifier.align(Alignment.TopEnd).offset(x = Space.xs, y = (-Space.xs)).size(Space.s18)) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.padding(Space.xxs))
                 }
             }
         }

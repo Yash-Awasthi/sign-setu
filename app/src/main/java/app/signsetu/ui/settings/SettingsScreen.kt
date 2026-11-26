@@ -58,7 +58,7 @@ import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.data.settings.AppSettings
 import app.signsetu.data.settings.InterpreterApp
 import app.signsetu.data.settings.SettingsStore
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -194,7 +194,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                     colors = ItemColors,
                     supportingContent = {
                         val built = LocalDate.ofEpochDay(BuildConfig.BUILD_EPOCH_DAY).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                             Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, built))
                             // the notice appears in About as well as on first run.
                             Text(stringResource(R.string.notice_aid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -204,7 +204,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                 LanguageItem(R.string.settings_isl_status, R.string.settings_isl_status_summary, R.string.settings_isl_badge, warn = false)
                 LanguageItem(R.string.settings_asl_status, R.string.settings_asl_status_summary, R.string.asl_experimental_badge, warn = true)
             }
-            Spacer(Modifier.height(Spacing.xl))
+            Spacer(Modifier.height(Space.xl))
         }
     }
 

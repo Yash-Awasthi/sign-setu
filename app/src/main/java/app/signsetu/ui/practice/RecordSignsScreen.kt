@@ -52,7 +52,7 @@ import app.signsetu.gloss.Contributions
 import app.signsetu.gloss.DebugRecorder
 import app.signsetu.sign.SignSegment
 import app.signsetu.ui.components.CardImage
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -127,17 +127,17 @@ fun RecordSignsScreen(tracker: LandmarkTracker?, contributions: Contributions, o
         })
     }) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = Spacing.lg).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            Modifier.fillMaxSize().padding(padding).padding(horizontal = Space.lg).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(Space.md),
         ) {
             if (!started) {
                 // The consent card: plain English and Hindi, what leaves the phone, for how long, and how to undo it.
                 OutlinedCard(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Column(Modifier.padding(Space.md), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                         Text(stringResource(R.string.record_consent_title), style = MaterialTheme.typography.titleMedium)
                         Text(stringResource(R.string.record_consent_en), style = MaterialTheme.typography.bodyMedium)
                         Text(stringResource(R.string.record_consent_hi), style = MaterialTheme.typography.bodyMedium)
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                             Switch(checked = consent, onCheckedChange = { consent = it; contributions.setConsent(it) })
                             Text(stringResource(if (consent) R.string.record_consent_on else R.string.record_consent_off))
                         }
@@ -148,18 +148,18 @@ fun RecordSignsScreen(tracker: LandmarkTracker?, contributions: Contributions, o
                     }
                 }
                 Text(stringResource(R.string.record_hand))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     listOf("right" to R.string.record_hand_right, "left" to R.string.record_hand_left).forEach { (k, s) ->
                         FilterChip(selected = hand == k, onClick = { hand = k }, label = { Text(stringResource(s)) })
                     }
                 }
                 Text(stringResource(R.string.record_light))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     listOf("bright" to R.string.record_light_bright, "dim" to R.string.record_light_dim, "backlit" to R.string.record_light_backlit).forEach { (k, s) ->
                         FilterChip(selected = light == k, onClick = { light = k }, label = { Text(stringResource(s)) })
                     }
                 }
-                Button(onClick = { started = true }, enabled = prompts.isNotEmpty() && tracker != null, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                Button(onClick = { started = true }, enabled = prompts.isNotEmpty() && tracker != null, modifier = Modifier.fillMaxWidth().height(Space.s52)) {
                     Text(stringResource(R.string.record_start))
                 }
                 return@Column
@@ -177,12 +177,12 @@ fun RecordSignsScreen(tracker: LandmarkTracker?, contributions: Contributions, o
                 return@Column
             }
             Text("${index + 1} / ${prompts.size}", style = MaterialTheme.typography.labelLarge)
-            prompt.card?.let { CardImage(it, Modifier.size(140.dp)) }
+            prompt.card?.let { CardImage(it, Modifier.size(Space.s140)) }
             Text(prompt.en, style = MaterialTheme.typography.headlineSmall)
             Text(prompt.hi, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             CameraMirror(
                 tracker = tracker,
-                modifier = Modifier.fillMaxWidth().height(260.dp),
+                modifier = Modifier.fillMaxWidth().height(Space.s260),
                 onFrame = { f -> if (phase == "recording") frames += f },
                 placeholder = {},
             )
@@ -203,7 +203,7 @@ fun RecordSignsScreen(tracker: LandmarkTracker?, contributions: Contributions, o
                 "recording" -> Button(onClick = { glossText = prompt.gloss.joinToString(" "); phase = "review" }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.record_stop)) }
                 "review" -> {
                     OutlinedTextField(glossText, { glossText = it }, label = { Text(stringResource(R.string.record_gloss)) }, modifier = Modifier.fillMaxWidth())
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                         OutlinedButton(onClick = { phase = "ready" }) { Text(stringResource(R.string.record_redo)) }
                         Button(onClick = {
                             val gloss = glossText.trim().split(Regex("\\s+")).filter { it.isNotBlank() }

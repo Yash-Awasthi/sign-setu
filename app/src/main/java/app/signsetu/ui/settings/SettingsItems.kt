@@ -27,7 +27,8 @@ import app.signsetu.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import app.signsetu.data.settings.InterpreterApp
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 @StringRes
 internal fun appName(app: InterpreterApp) = when (app) {
@@ -38,13 +39,13 @@ internal fun appName(app: InterpreterApp) = when (app) {
 
 @Composable
 internal fun Group(@StringRes title: Int, content: @Composable ColumnScope.() -> Unit) {
-    SectionLabel(stringResource(title), Modifier.padding(start = Spacing.xxl, end = Spacing.lg, top = Spacing.xl, bottom = Spacing.sm))
-    OfficerCard(Modifier.padding(horizontal = Spacing.lg), padding = 0.dp) {
+    SectionLabel(stringResource(title), Modifier.padding(start = Space.xxl, end = Space.lg, top = Space.xl, bottom = Space.sm))
+    OfficerCard(Modifier.padding(horizontal = Space.lg), padding = Space.none) {
         val divider = MaterialTheme.colorScheme.outlineVariant
         // Opaque items 1 dp apart over a line drawn from 16 dp: inset dividers without one per call site.
         Column(
-            Modifier.drawBehind { drawRect(divider, topLeft = Offset(Spacing.lg.toPx(), 0f)) },
-            verticalArrangement = Arrangement.spacedBy(1.dp),
+            Modifier.drawBehind { drawRect(divider, topLeft = Offset(Space.lg.toPx(), 0f)) },
+            verticalArrangement = Arrangement.spacedBy(Space.hair),
             content = content,
         )
     }
@@ -86,11 +87,11 @@ internal fun LanguageItem(@StringRes title: Int, @StringRes summary: Int, @Strin
         colors = ItemColors,
         trailingContent = {
             Surface(
-                shape = RoundedCornerShape(4.dp),
+                shape = RoundedCornerShape(Radius.r4),
                 color = if (warn) colors.errorContainer else colors.primaryContainer,
                 contentColor = if (warn) colors.onErrorContainer else colors.onPrimaryContainer,
             ) {
-                Text(stringResource(badge), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                Text(stringResource(badge), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = Space.s6, vertical = Space.xxs))
             }
         },
     )
@@ -104,7 +105,7 @@ internal fun Item(title: String, summary: String, note: String? = null, destruct
     ListItem(
         headlineContent = { Text(title, color = if (destructive) colors.error else colors.onSurface) },
         supportingContent = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 if (summary.isNotEmpty()) Text(summary)
                 note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
             }

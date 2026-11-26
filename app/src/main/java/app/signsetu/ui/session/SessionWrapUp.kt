@@ -35,7 +35,7 @@ import app.signsetu.R
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.ui.components.GuardedAlertDialog
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 
 /** The name a session is saved under until the officer types their own: its start, as the phone writes dates. */
 fun defaultTitle(res: android.content.res.Resources, startedAt: Long): String =
@@ -83,9 +83,9 @@ internal fun WrapUpDialog(
         icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null) },
         title = { Text(stringResource(R.string.wrap_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.sm)) {
                 Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest, shape = MaterialTheme.shapes.medium) {
-                    Column(Modifier.fillMaxWidth().padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(Space.md), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                         Fact(pluralStringResource(R.plurals.wrap_minutes, summary.minutes, summary.minutes))
                         Fact(pluralStringResource(R.plurals.wrap_shown, summary.shown, summary.shown))
                         Fact(pluralStringResource(R.plurals.wrap_answers, summary.answers, summary.answers))
@@ -106,13 +106,13 @@ internal fun WrapUpDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(checked = includeSummary, onCheckedChange = null)
-                    Text(stringResource(R.string.wrap_include_summary), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = Spacing.sm))
+                    Text(stringResource(R.string.wrap_include_summary), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = Space.sm))
                 }
                 Text(stringResource(if (historyOff) R.string.wrap_rooted_note else R.string.wrap_saved_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         confirmButton = {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
                 onThank?.let { OutlinedButton(onClick = it, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wrap_thank)) } }
                 if (!historyOff) Button(onClick = onSave, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wrap_save)) }
                 // Three ways out at most (the owner's rule): thank them, save, or delete. A kept report is exported
@@ -142,8 +142,8 @@ internal fun WrapUpDialog(
 
 @Composable
 private fun Fact(text: String, warn: Boolean = false) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        if (warn) Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(16.dp))
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+        if (warn) Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(Space.lg))
         Text(text, style = MaterialTheme.typography.bodyMedium, color = if (warn) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface)
     }
 }

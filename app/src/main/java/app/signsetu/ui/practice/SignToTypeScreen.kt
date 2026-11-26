@@ -54,7 +54,7 @@ import app.signsetu.sign.decideRead
 import app.signsetu.sign.glossOf
 import app.signsetu.sign.handEnergy
 import app.signsetu.ui.components.OfflineVoice
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -88,15 +88,15 @@ fun SignToTypeScreen(content: ContentBundle, tracker: LandmarkTracker?, reader: 
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) } },
         )
     }) { pad ->
-        Column(Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Column(Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(Space.lg), verticalArrangement = Arrangement.spacedBy(Space.md)) {
             Text(stringResource(R.string.sign_to_type_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             CameraMirror(
                 tracker = tracker,
-                modifier = Modifier.fillMaxWidth().height(300.dp),
+                modifier = Modifier.fillMaxWidth().height(Space.s300),
                 onFrame = if (on) engine::frame else null,
                 placeholder = { Text(stringResource(R.string.sign_to_type_no_camera)) },
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                 Button(onClick = { if (on) engine.stop() else engine.start(); on = !on }, enabled = tracker != null && reader != null) {
                     Text(stringResource(if (on) R.string.sign_to_type_stop else R.string.sign_to_type_start))
                 }
@@ -108,7 +108,7 @@ fun SignToTypeScreen(content: ContentBundle, tracker: LandmarkTracker?, reader: 
             )
             if (spelling.isNotEmpty()) Text(stringResource(R.string.reading_spelled, spelling.uppercase()), style = MaterialTheme.typography.titleSmall)
             // Each word cycles through its top 3 on a tap, and a long sentence wraps.
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s6), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
                 words.forEach { w ->
                     FilterChip(selected = w.picked > 0, onClick = { w.picked = (w.picked + 1) % w.choices.size.coerceAtLeast(1) }, label = { Text(w.text.replace('_', ' ')) })
                 }
@@ -118,7 +118,7 @@ fun SignToTypeScreen(content: ContentBundle, tracker: LandmarkTracker?, reader: 
                 val draft = glossToText(gloss, content.words)
                 Text(draft.en, style = MaterialTheme.typography.titleMedium)
                 Text(draft.hi, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     OutlinedButton(onClick = { voice.speak(draft.en, "en") }) { Text(stringResource(R.string.sign_to_type_say_en)) }
                     OutlinedButton(onClick = { voice.speak(draft.hi, "hi") }) { Text(stringResource(R.string.sign_to_type_say_hi)) }
                 }

@@ -28,7 +28,8 @@ import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.ui.components.PictureCard
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 /** One side sheet with the whole toolset on a single screen: language, pictures, drawing, emoji and typing. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,9 +57,9 @@ internal fun StageToolSheet(
                 .fillMaxWidth()
                 .testTag("stage.sheet")
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.lg)
-                .padding(bottom = Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                .padding(horizontal = Space.lg)
+                .padding(bottom = Space.xl),
+            verticalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
             Text(stringResource(R.string.stage_sheet_title), style = MaterialTheme.typography.titleLarge)
             TextButton(onClick = onDismiss, modifier = Modifier.testTag("stage.sheet.close")) {
@@ -70,14 +71,14 @@ internal fun StageToolSheet(
                 content.languages.forEach { language ->
                     Surface(
                         onClick = { onLanguage(language.code) },
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(Radius.r14),
                         color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("stage.sheet.lang." + language.code),
+                        border = BorderStroke(Space.hair, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = Space.s48).testTag("stage.sheet.lang." + language.code),
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            modifier = Modifier.padding(horizontal = Space.s14, vertical = Space.s10),
+                            horizontalArrangement = Arrangement.spacedBy(Space.sm),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(language.name, style = MaterialTheme.typography.bodyLarge)
@@ -90,9 +91,9 @@ internal fun StageToolSheet(
             SheetSection(StageTool.PICTURES, initial) {
                 SectionLabel(stringResource(R.string.stage_sheet_pictures))
                 pictureCards.chunked(3).forEach { row ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                         row.forEach { card ->
-                            PictureCard(card, content.cards[card]?.label?.get(lang), onClick = { onCard(card) }, modifier = Modifier.weight(1f), minSize = 96.dp)
+                            PictureCard(card, content.cards[card]?.label?.get(lang), onClick = { onCard(card) }, modifier = Modifier.weight(1f), minSize = Space.s96)
                         }
                     }
                 }
@@ -130,10 +131,10 @@ private fun SheetSection(tool: StageTool, initial: StageTool?, content: @Composa
     val highlighted = tool == initial
     Surface(
         color = if (highlighted) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(Radius.r16),
         modifier = Modifier.fillMaxWidth().testTag("stage.sheet." + tool.key),
     ) {
-        Column(Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Column(Modifier.padding(horizontal = Space.sm, vertical = Space.sm), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
             content()
         }
     }
@@ -143,11 +144,11 @@ private fun SheetSection(tool: StageTool, initial: StageTool?, content: @Composa
 private fun SheetButton(label: String, tag: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(Radius.r14),
         color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(tag),
+        modifier = Modifier.fillMaxWidth().heightIn(min = Space.s48).testTag(tag),
     ) {
-        Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+        Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.padding(horizontal = Space.s14, vertical = Space.md)) {
             Text(label, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Start)
         }
     }

@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.ui.components.GuardedAlertDialog
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 
 /** The subject's language: a field that opens a list. A dialog, not a dropdown menu, so seventeen languages
  * never open upward over the header or misplace inside a bottom sheet. With [onUnknown], "Do not know" heads the list. */
@@ -58,14 +58,14 @@ fun LanguagePicker(
     val text = if (unknown) unknownText else current?.let { "${it.name}  ·  ${it.english}" } ?: selected
     Surface(
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).clip(MaterialTheme.shapes.medium)
+        border = BorderStroke(Space.hair, MaterialTheme.colorScheme.outline),
+        modifier = modifier.fillMaxWidth().heightIn(min = Space.s56).clip(MaterialTheme.shapes.medium)
             .clickable(role = Role.Button, onClickLabel = label) { open = true }
             .semantics { label?.let { stateDescription = text } },
     ) {
-        Row(Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = Space.md, vertical = Space.sm), verticalAlignment = Alignment.CenterVertically) {
             Icon(painterResource(R.drawable.ic_translate), contentDescription = null)
-            Column(Modifier.weight(1f).padding(horizontal = Spacing.md)) {
+            Column(Modifier.weight(1f).padding(horizontal = Space.md)) {
                 label?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) }
                 Text(text, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -77,13 +77,13 @@ fun LanguagePicker(
             onDismissRequest = { open = false },
             title = label?.let { { Text(it) } },
             text = {
-                LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                LazyColumn(Modifier.heightIn(max = Space.s420)) {
                     onUnknown?.let { pick ->
                         item(key = "unknown") {
                             Row(
-                                Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(MaterialTheme.shapes.small)
+                                Modifier.fillMaxWidth().heightIn(min = Space.s52).clip(MaterialTheme.shapes.small)
                                     .selectable(unknown, role = Role.RadioButton) { pick(); open = false }
-                                    .padding(horizontal = Spacing.sm),
+                                    .padding(horizontal = Space.sm),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(unknownText, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
@@ -93,9 +93,9 @@ fun LanguagePicker(
                     }
                     items(content.languages, key = { it.code }) { l ->
                         Row(
-                            Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(MaterialTheme.shapes.small)
+                            Modifier.fillMaxWidth().heightIn(min = Space.s52).clip(MaterialTheme.shapes.small)
                                 .selectable(!unknown && l.code == selected, role = Role.RadioButton) { onPick(l.code); open = false }
-                                .padding(horizontal = Spacing.sm),
+                                .padding(horizontal = Space.sm),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text("${l.name}  ·  ${l.english}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))

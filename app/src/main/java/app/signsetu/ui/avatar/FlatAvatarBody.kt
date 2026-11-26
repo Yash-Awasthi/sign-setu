@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
 import kotlin.math.atan2
 import kotlin.math.hypot
+import app.signsetu.ui.theme.AvatarTones
 
 internal fun DrawScope.drawTorso(k: Kit, liftR: Float, liftL: Float) {
     val b = k.build
@@ -49,7 +50,7 @@ internal fun DrawScope.drawTorso(k: Kit, liftR: Float, liftL: Float) {
         drawRect(look.trousers, Offset(c - w, 239f), Size(w * 2f, 23f))
     } else {
         drawRect(look.trousers, Offset(c - w, 241f), Size(w * 2f, 21f))
-        drawRect(Color(0xFF2B2F3A), Offset(c - w, 236f), Size(w * 2f, 5f))
+        drawRect(AvatarTones.brow, Offset(c - w, 236f), Size(w * 2f, 5f))
         drawRoundRect(look.trim, Offset(c - 3f, 236f), Size(6f, 5f), CornerRadius(1f))
     }
     val collar = sy - 17f - (liftR + liftL) / 2f
@@ -133,10 +134,10 @@ internal fun DrawScope.drawHead(k: Kit, pose: Pose, blink: Float) {
         } else {
             val rx = 5.2f
             val ry = 3.7f * open
-            drawOval(Color(0xFFF6EFE6), Offset(ex - rx, eyeY - ry), Size(rx * 2, ry * 2))
+            drawOval(AvatarTones.eyeWhite, Offset(ex - rx, eyeY - ry), Size(rx * 2, ry * 2))
             val irisY = eyeY + 0.3f + pose.gaze * 1.2f
             val ir = minOf(3.4f, ry + 0.2f)
-            drawCircle(lerp(look.iris, Color(0xFF8A5A36), 0.35f), ir, Offset(ex, irisY))
+            drawCircle(lerp(look.iris, AvatarTones.irisRim, 0.35f), ir, Offset(ex, irisY))
             drawCircle(look.iris, ir * 0.55f, Offset(ex, irisY))
             drawCircle(Color.White, 1f, Offset(ex + 1.1f, irisY - 1.2f))
             // An upper lid arc instead of a flat line keeps the adult calm rather than sleepy.
@@ -225,7 +226,7 @@ private fun DrawScope.drawMouth(k: Kit, x: Float, y: Float, f: Face) {
         p.quadraticTo(x, y + s * 6.5f + open, x - w, corner)
         p.close()
         drawPath(p, look.lip)
-        drawOval(Color(0xFFE58A86), Offset(x - w * 0.45f, y + s * 2f + open * 0.45f), Size(w * 0.9f, open * 0.45f + 1f))
+        drawOval(AvatarTones.mouth, Offset(x - w * 0.45f, y + s * 2f + open * 0.45f), Size(w * 0.9f, open * 0.45f + 1f))
     } else {
         p.moveTo(x - w, corner)
         p.quadraticTo(x, y + s * 6.5f, x + w, corner)
@@ -314,8 +315,8 @@ internal fun DrawScope.drawArm(
 
     if (h.prop == "stick") {
         // A walking stick from the fist to the floor, behind the fingers.
-        drawLine(Color(0xFF6B4423), Offset(w.x + 1f, w.y - 6f), Offset(w.x + 4f, 262f), 5f, StrokeCap.Round)
-        drawLine(Color(0xFF8A5A33), Offset(w.x + 1f, w.y - 6f), Offset(w.x + 4f, 262f), 2f, StrokeCap.Round)
+        drawLine(AvatarTones.hairLine, Offset(w.x + 1f, w.y - 6f), Offset(w.x + 4f, 262f), 5f, StrokeCap.Round)
+        drawLine(AvatarTones.hairHighlight, Offset(w.x + 1f, w.y - 6f), Offset(w.x + 4f, 262f), 2f, StrokeCap.Round)
     }
     k.contactStroke = front
     handFrame(w, angle, b.handScale) { drawHand(k, h) }

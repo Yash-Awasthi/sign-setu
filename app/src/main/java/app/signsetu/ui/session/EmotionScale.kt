@@ -41,6 +41,10 @@ import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.or
 import java.util.Locale
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
+import app.signsetu.ui.theme.StageScheme
 
 /** The face the person points at; its id is a content card, so every language already has the word. */
 enum class Mood(val card: String) { OKAY("okay"), SAD("sad"), SCARED("scared"), ANGRY("angry"), PAIN("pain") }
@@ -69,35 +73,35 @@ data class Feeling(val mood: Mood, val pain: Int) {
 internal fun FeelingPanel(content: ContentBundle, lang: String, onFeeling: (Feeling) -> Unit, modifier: Modifier = Modifier) {
     var mood by remember { mutableStateOf<Mood?>(null) }
     var pain by remember { mutableIntStateOf(0) }
-    val ink = Color(0xFF4F4539)
-    val chosenFill = Color(0xFFFFE0B2)
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    val ink = StageScheme.onSurfaceVariant
+    val chosenFill = StageTones.chosenFill
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Space.s6)) {
         Text(stringResource(R.string.feel_title), style = MaterialTheme.typography.labelLarge)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
             Mood.entries.forEach { m ->
                 val label = content.cards[m.card]?.label?.or(lang) ?: m.card
                 val chosen = m == mood
                 Box(
-                    Modifier.size(56.dp).clip(CircleShape)
+                    Modifier.size(Space.s56).clip(CircleShape)
                         .background(if (chosen) chosenFill else Color.Transparent)
                         .clickable(role = Role.RadioButton) { mood = m; onFeeling(Feeling(m, pain)) }
                         .semantics { selected = chosen; contentDescription = label },
                     contentAlignment = Alignment.Center,
-                ) { Canvas(Modifier.size(44.dp)) { drawFace(m, ink) } }
+                ) { Canvas(Modifier.size(Space.s44)) { drawFace(m, ink) } }
             }
         }
         mood?.let { m ->
             Text(stringResource(R.string.feel_pain, pain), style = MaterialTheme.typography.labelLarge)
             for (row in listOf(0..5, 6..PAIN_MAX)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
                     for (n in row) {
                         val chosen = n == pain
                         val painName = stringResource(R.string.feel_pain, n)
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (chosen) chosenFill else Color(0xFFF2EADF),
-                            border = BorderStroke(if (chosen) 3.dp else 1.dp, ink.copy(alpha = if (chosen) 1f else 0.25f)),
-                            modifier = Modifier.size(48.dp)
+                            shape = RoundedCornerShape(Radius.r12),
+                            color = if (chosen) chosenFill else StageScheme.surfaceContainer,
+                            border = BorderStroke(if (chosen) Space.s3 else Space.hair, ink.copy(alpha = if (chosen) 1f else 0.25f)),
+                            modifier = Modifier.size(Space.s48)
                                 .clickable { pain = n; onFeeling(Feeling(m, n)) }
                                 .semantics { selected = chosen; contentDescription = painName },
                         ) {
@@ -114,8 +118,8 @@ internal fun FeelingPanel(content: ContentBundle, lang: String, onFeeling: (Feel
 internal fun DrawScope.drawFace(mood: Mood, line: Color) {
     val w = size.width
     val h = size.height
-    val stroke = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
-    drawCircle(Color(0xFFFFE8D2), w * 0.46f, Offset(w / 2, h / 2))
+    val stroke = Stroke(width = Space.s2_5.toPx(), cap = StrokeCap.Round)
+    drawCircle(StageTones.bodySkin, w * 0.46f, Offset(w / 2, h / 2))
     drawCircle(line, w * 0.46f, Offset(w / 2, h / 2), style = stroke)
     drawCircle(line, w * 0.045f, Offset(w * 0.38f, h * 0.40f))
     drawCircle(line, w * 0.045f, Offset(w * 0.62f, h * 0.40f))
@@ -127,20 +131,20 @@ internal fun DrawScope.drawFace(mood: Mood, line: Color) {
         // An open mouth and raised brows.
         Mood.SCARED -> {
             drawCircle(line, w * 0.10f, Offset(w * 0.50f, h * 0.66f), style = stroke)
-            drawLine(line, Offset(w * 0.28f, h * 0.26f), Offset(w * 0.44f, h * 0.20f), 2.dp.toPx())
-            drawLine(line, Offset(w * 0.72f, h * 0.26f), Offset(w * 0.56f, h * 0.20f), 2.dp.toPx())
+            drawLine(line, Offset(w * 0.28f, h * 0.26f), Offset(w * 0.44f, h * 0.20f), Space.xxs.toPx())
+            drawLine(line, Offset(w * 0.72f, h * 0.26f), Offset(w * 0.56f, h * 0.20f), Space.xxs.toPx())
         }
         // Brows driven down over a flat mouth.
         Mood.ANGRY -> {
-            drawLine(line, Offset(w * 0.26f, h * 0.30f), Offset(w * 0.46f, h * 0.38f), 2.5.dp.toPx())
-            drawLine(line, Offset(w * 0.74f, h * 0.30f), Offset(w * 0.54f, h * 0.38f), 2.5.dp.toPx())
-            drawLine(line, Offset(w * 0.36f, h * 0.68f), Offset(w * 0.64f, h * 0.68f), 2.5.dp.toPx())
+            drawLine(line, Offset(w * 0.26f, h * 0.30f), Offset(w * 0.46f, h * 0.38f), Space.s2_5.toPx())
+            drawLine(line, Offset(w * 0.74f, h * 0.30f), Offset(w * 0.54f, h * 0.38f), Space.s2_5.toPx())
+            drawLine(line, Offset(w * 0.36f, h * 0.68f), Offset(w * 0.64f, h * 0.68f), Space.s2_5.toPx())
         }
         // A grimace and a tear.
         Mood.PAIN -> {
-            drawLine(line, Offset(w * 0.36f, h * 0.66f), Offset(w * 0.64f, h * 0.66f), 2.5.dp.toPx())
+            drawLine(line, Offset(w * 0.36f, h * 0.66f), Offset(w * 0.64f, h * 0.66f), Space.s2_5.toPx())
             drawCircle(line, w * 0.05f, Offset(w * 0.36f, h * 0.52f))
-            drawLine(line, Offset(w * 0.36f, h * 0.44f), Offset(w * 0.36f, h * 0.40f), 2.dp.toPx())
+            drawLine(line, Offset(w * 0.36f, h * 0.44f), Offset(w * 0.36f, h * 0.40f), Space.xxs.toPx())
         }
     }
 }

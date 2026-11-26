@@ -14,7 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.Alignment
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import app.signsetu.ui.theme.amoled
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -56,6 +56,7 @@ import app.signsetu.data.settings.SettingsStore
 import app.signsetu.data.settings.ThemeMode
 import app.signsetu.ui.theme.paletteOf
 import kotlinx.coroutines.launch
+import app.signsetu.ui.theme.Radius
 
 /** Light or dark, pure black for OLED, and the colour theme, kept off the main settings list. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,8 +96,8 @@ fun AppearanceScreen(store: SettingsStore, onBack: () -> Unit) {
             }
             Group(R.string.settings_color_theme) {
                 LazyRow(
-                    contentPadding = PaddingValues(Spacing.lg),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    contentPadding = PaddingValues(Space.lg),
+                    horizontalArrangement = Arrangement.spacedBy(Space.md),
                     modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest),
                 ) {
                     items(ColorTheme.entries) { theme ->
@@ -113,41 +114,41 @@ fun AppearanceScreen(store: SettingsStore, onBack: () -> Unit) {
 /** A small picture of the app in a colour theme: bar, two cards and a navigation bar, as Mihon shows its themes. */
 @Composable
 private fun ThemePreview(label: String, c: ColorScheme, selected: Boolean, onPick: () -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(Radius.r14)
     Column(
-        Modifier.width(92.dp).selectable(selected, role = Role.RadioButton, onClick = onPick),
+        Modifier.width(Space.s92).selectable(selected, role = Role.RadioButton, onClick = onPick),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        verticalArrangement = Arrangement.spacedBy(Space.xs),
     ) {
         Column(
             Modifier.fillMaxWidth().aspectRatio(9f / 16f).clip(shape).background(c.background)
-                .border(if (selected) 3.dp else 1.dp, if (selected) c.primary else c.outlineVariant, shape)
-                .padding(6.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+                .border(if (selected) Space.s3 else Space.hair, if (selected) c.primary else c.outlineVariant, shape)
+                .padding(Space.s6),
+            verticalArrangement = Arrangement.spacedBy(Space.s5),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(Modifier.width(36.dp).height(6.dp).clip(CircleShape).background(c.onBackground))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
+                Box(Modifier.width(Space.s36).height(Space.s6).clip(CircleShape).background(c.onBackground))
                 Box(Modifier.weight(1f))
-                Box(Modifier.size(8.dp).clip(CircleShape).background(c.primary))
+                Box(Modifier.size(Space.sm).clip(CircleShape).background(c.primary))
             }
             repeat(2) {
                 Column(
-                    Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(6.dp)).background(c.surfaceContainer).padding(5.dp),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                    Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(Radius.r6)).background(c.surfaceContainer).padding(Space.s5),
+                    verticalArrangement = Arrangement.spacedBy(Space.s3),
                 ) {
-                    Box(Modifier.fillMaxWidth(0.8f).height(4.dp).clip(CircleShape).background(c.onSurface))
-                    Box(Modifier.fillMaxWidth(0.5f).height(4.dp).clip(CircleShape).background(c.onSurfaceVariant))
+                    Box(Modifier.fillMaxWidth(0.8f).height(Space.xs).clip(CircleShape).background(c.onSurface))
+                    Box(Modifier.fillMaxWidth(0.5f).height(Space.xs).clip(CircleShape).background(c.onSurfaceVariant))
                     Box(Modifier.weight(1f))
-                    Box(Modifier.width(26.dp).height(8.dp).clip(CircleShape).background(c.primary))
+                    Box(Modifier.width(Space.s26).height(Space.sm).clip(CircleShape).background(c.primary))
                 }
             }
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(c.surfaceContainerHigh).padding(4.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.r6)).background(c.surfaceContainerHigh).padding(Space.xs),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Box(Modifier.width(14.dp).height(6.dp).clip(CircleShape).background(c.secondaryContainer))
-                Box(Modifier.size(6.dp).clip(CircleShape).background(c.onSurfaceVariant))
-                Box(Modifier.size(6.dp).clip(CircleShape).background(c.onSurfaceVariant))
+                Box(Modifier.width(Space.s14).height(Space.s6).clip(CircleShape).background(c.secondaryContainer))
+                Box(Modifier.size(Space.s6).clip(CircleShape).background(c.onSurfaceVariant))
+                Box(Modifier.size(Space.s6).clip(CircleShape).background(c.onSurfaceVariant))
             }
         }
         Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)

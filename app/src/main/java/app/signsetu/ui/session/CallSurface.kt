@@ -34,9 +34,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.signsetu.R
 import app.signsetu.ui.theme.LocalCall
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
 
 /** The height of one header tile; the stage keeps the Stop octagon clear below it. */
-internal val CALL_TILE_HEIGHT = 48.dp
+internal val CALL_TILE_HEIGHT = Space.s48
 
 /** One participant on the call: their view, a name chip at the bottom-left, an accent edge while they sign. */
 @Composable
@@ -49,29 +52,29 @@ internal fun CallTile(
 ) {
     val call = LocalCall.current
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(Radius.r16),
         color = call.surface.copy(alpha = 0.92f),
-        border = BorderStroke(if (speaking) 3.dp else 1.dp, if (speaking) call.accent else call.line),
+        border = BorderStroke(if (speaking) Space.s3 else Space.hair, if (speaking) call.accent else call.line),
         modifier = modifier.semantics { contentDescription = name },
     ) {
         Box(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { content() }
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(Radius.r8),
                 color = call.bg.copy(alpha = 0.72f),
-                modifier = Modifier.align(Alignment.BottomStart).padding(4.dp),
+                modifier = Modifier.align(Alignment.BottomStart).padding(Space.xs),
             ) {
-                Column(Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) {
+                Column(Modifier.padding(horizontal = Space.s6, vertical = Space.xxs)) {
                     Text(
                         name,
                         color = call.text,
-                        fontSize = 10.sp,
+                        fontSize = TypeSize.s10,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     sub?.let {
-                        Text(it, color = call.muted, fontSize = 8.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(it, color = call.muted, fontSize = TypeSize.s8, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -89,7 +92,7 @@ internal fun CallHeader(
 ) {
     Row(
         modifier.fillMaxWidth().testTag("call.header"),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(Space.sm),
     ) {
         CallTile(
             name = avatarName,
@@ -97,7 +100,7 @@ internal fun CallHeader(
             speaking = false,
             modifier = Modifier.weight(1f).height(CALL_TILE_HEIGHT).testTag("call.tile.avatar"),
         ) {
-            Text("\uD83D\uDC64", fontSize = 20.sp)
+            Text("\uD83D\uDC64", fontSize = TypeSize.s20)
         }
         CallTile(
             name = personName,
@@ -105,7 +108,7 @@ internal fun CallHeader(
             speaking = signing,
             modifier = Modifier.weight(1f).height(CALL_TILE_HEIGHT).testTag("call.tile.person"),
         ) {
-            Text("\uD83D\uDCF9", fontSize = 18.sp)
+            Text("\uD83D\uDCF9", fontSize = TypeSize.s18)
         }
     }
 }
@@ -121,11 +124,11 @@ internal fun SlidePanelHandle(
     val label = stringResource(R.string.call_slide_tools)
     val pull = dragFraction.coerceIn(0f, 1f)
     Surface(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(Radius.r22),
         color = call.surface.copy(alpha = 0.45f + 0.35f * pull),
         modifier = modifier
-            .width(120.dp)
-            .height(44.dp)
+            .width(Space.s120)
+            .height(Space.s44)
             .clickable(onClickLabel = label, role = Role.Button) { onOpen() }
             .testTag("call.slide")
             .semantics { contentDescription = label },
@@ -135,12 +138,12 @@ internal fun SlidePanelHandle(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Canvas(Modifier.width(56.dp).height(10.dp)) {
-                val stroke = 2.dp.toPx() + 2.dp.toPx() * pull
+            Canvas(Modifier.width(Space.s56).height(Space.s10)) {
+                val stroke = Space.xxs.toPx() + Space.xxs.toPx() * pull
                 drawLine(call.muted, Offset(size.width * 0.15f, size.height * 0.75f), Offset(size.width * 0.5f, size.height * 0.25f), stroke, StrokeCap.Round)
                 drawLine(call.muted, Offset(size.width * 0.5f, size.height * 0.25f), Offset(size.width * 0.85f, size.height * 0.75f), stroke, StrokeCap.Round)
             }
-            Text(stringResource(R.string.stage_sheet_title), color = call.text, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.stage_sheet_title), color = call.text, fontSize = TypeSize.s9, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -157,7 +160,7 @@ internal fun CallLevelRow(
 ) {
     Row(
         modifier.fillMaxWidth().testTag("call.levels"),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(Space.sm),
     ) {
         LevelButton(holdLabel, "call.hold", onHold, holdSelected, Modifier.weight(1f))
         LevelButton(messagesLabel, "call.messages", onMessages, false, Modifier.weight(1f))
@@ -177,12 +180,12 @@ private fun LevelButton(
     Surface(
         onClick = { onClick?.invoke() },
         enabled = onClick != null,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(Radius.r16),
         color = if (selectedNow) call.accent else call.surface.copy(alpha = 0.9f),
         contentColor = if (selectedNow) call.bg else call.text,
-        border = BorderStroke(1.dp, if (selectedNow) call.accent else call.line),
+        border = BorderStroke(Space.hair, if (selectedNow) call.accent else call.line),
         modifier = modifier
-            .height(56.dp)
+            .height(Space.s56)
             .testTag(tag)
             .semantics {
                 role = Role.Button
@@ -190,10 +193,10 @@ private fun LevelButton(
                 selected = selectedNow
             },
     ) {
-        Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxSize().padding(horizontal = Space.sm), contentAlignment = Alignment.Center) {
             Text(
                 label,
-                fontSize = 13.sp,
+                fontSize = TypeSize.s13,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

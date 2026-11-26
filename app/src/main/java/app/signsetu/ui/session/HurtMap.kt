@@ -38,6 +38,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import java.util.Locale
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
+import app.signsetu.ui.theme.StageScheme
 
 enum class BodySide(val key: String) { FRONT("hurt_front"), BACK("hurt_back") }
 
@@ -126,20 +130,20 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subject
     var side by rememberSaveable { mutableStateOf(BodySide.FRONT) }
     var zoom by remember { mutableStateOf<Pair<BodyPart, Rect>?>(null) }
     val marks = remember { mutableStateListOf<BodyTouch>() }
-    val ink = Color(0xFF4F4539)
-    val skin = Color(0xFFFFE8D2)
-    val mark = Color(0xFFD32F2F)
+    val ink = StageScheme.onSurfaceVariant
+    val skin = StageTones.bodySkin
+    val mark = StageTones.bodyMark
     val description = stringResource(R.string.hurt_map)
     val touch by rememberUpdatedState(onTouch)
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Space.s6)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
             for (s in BodySide.entries) {
-                FilterChip(side == s, { side = s }, { Text(subjectText(s.key) ?: stringResource(if (s == BodySide.FRONT) R.string.hurt_front else R.string.hurt_back)) }, shape = RoundedCornerShape(14.dp),
-                    leadingIcon = { Canvas(Modifier.size(18.dp)) { drawSideGlyph(s, ink, skin) } })
+                FilterChip(side == s, { side = s }, { Text(subjectText(s.key) ?: stringResource(if (s == BodySide.FRONT) R.string.hurt_front else R.string.hurt_back)) }, shape = RoundedCornerShape(Radius.r14),
+                    leadingIcon = { Canvas(Modifier.size(Space.s18)) { drawSideGlyph(s, ink, skin) } })
             }
         }
         Canvas(
-            Modifier.weight(1f).aspectRatio(0.5f, matchHeightConstraintsFirst = true).padding(4.dp)
+            Modifier.weight(1f).aspectRatio(0.5f, matchHeightConstraintsFirst = true).padding(Space.xs)
                 .semantics { contentDescription = description }
                 .pointerInput(side) {
                     detectTapGestures { p ->
@@ -154,8 +158,8 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subject
             drawBody(side, ink, skin)
             marks.filter { it.side == side }.forEach { t ->
                 val c = Offset(t.x * size.width, t.y * size.height)
-                drawCircle(mark.copy(alpha = 0.25f), 14.dp.toPx(), c)
-                drawCircle(mark, 6.dp.toPx(), c)
+                drawCircle(mark.copy(alpha = 0.25f), Space.s14.toPx(), c)
+                drawCircle(mark, Space.s6.toPx(), c)
             }
         }
         zoom?.let { (part, box) ->
@@ -176,23 +180,23 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subject
  * record keeps. [mark] is the touch already placed, shown so a correction is visible. */
 @Composable
 private fun ZoomPad(part: BodyPart, box: Rect, mark: Offset?, onPick: (Float, Float) -> Unit) {
-    val ink = Color(0xFF4F4539)
-    val skin = Color(0xFFFFE8D2)
-    val markColor = Color(0xFFD32F2F)
+    val ink = StageScheme.onSurfaceVariant
+    val skin = StageTones.bodySkin
+    val markColor = StageTones.bodyMark
     val name = stringResource(R.string.hurt_zoom, stringResource(part.label))
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(part.label), style = MaterialTheme.typography.labelLarge)
         Canvas(
-            Modifier.fillMaxWidth().height(104.dp).padding(4.dp)
+            Modifier.fillMaxWidth().height(Space.s104).padding(Space.xs)
                 .semantics { contentDescription = name }
                 .pointerInput(part) { detectTapGestures { p -> onPick(p.x / size.width, p.y / size.height) } },
         ) {
-            drawRoundRect(Color.White, Offset.Zero, Size(size.width, size.height), CornerRadius(16.dp.toPx()))
+            drawRoundRect(Color.White, Offset.Zero, Size(size.width, size.height), CornerRadius(Space.lg.toPx()))
             drawZoomPart(part, ink, skin)
             mark?.let { m ->
                 val f = zoomFraction(box, m)
-                drawCircle(markColor.copy(alpha = 0.25f), 14.dp.toPx(), Offset(f.x * size.width, f.y * size.height))
-                drawCircle(markColor, 6.dp.toPx(), Offset(f.x * size.width, f.y * size.height))
+                drawCircle(markColor.copy(alpha = 0.25f), Space.s14.toPx(), Offset(f.x * size.width, f.y * size.height))
+                drawCircle(markColor, Space.s6.toPx(), Offset(f.x * size.width, f.y * size.height))
             }
         }
     }
@@ -219,7 +223,7 @@ private fun DrawScope.drawSideGlyph(side: BodySide, ink: Color, skin: Color) {
 private fun DrawScope.drawBody(side: BodySide, ink: Color, skin: Color) {
     val w = size.width
     val h = size.height
-    val line = Stroke(2.dp.toPx())
+    val line = Stroke(Space.xxs.toPx())
     fun part(r: Rect, round: Float) {
         val tl = Offset(r.left * w, r.top * h)
         val sz = Size(r.width * w, r.height * h)
@@ -243,6 +247,6 @@ private fun DrawScope.drawBody(side: BodySide, ink: Color, skin: Color) {
         drawCircle(ink, 0.012f * w, Offset(0.55f * w, 0.055f * h))
         drawArc(ink, 20f, 140f, false, Offset(0.45f * w, 0.07f * h), Size(0.1f * w, 0.03f * h), style = line)
     } else {
-        drawLine(ink, Offset(0.5f * w, 0.19f * h), Offset(0.5f * w, 0.47f * h), 1.5.dp.toPx())
+        drawLine(ink, Offset(0.5f * w, 0.19f * h), Offset(0.5f * w, 0.47f * h), Space.s1_5.toPx())
     }
 }

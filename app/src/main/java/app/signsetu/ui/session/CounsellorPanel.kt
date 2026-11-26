@@ -19,14 +19,14 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 
 /** The officer's view of the AI counsellor: the next line before it is shown, and Take over at every step. */
 @Composable
 internal fun CounsellorPanel(state: Counsel, counsellor: Counsellor, onResume: () -> Unit, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
-    Surface(color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, shape = MaterialTheme.shapes.large, modifier = modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs).fillMaxWidth()) {
-        Column(Modifier.padding(Spacing.md).semantics { liveRegion = LiveRegionMode.Polite }, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Surface(color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, shape = MaterialTheme.shapes.large, modifier = modifier.padding(horizontal = Space.lg, vertical = Space.xs).fillMaxWidth()) {
+        Column(Modifier.padding(Space.md).semantics { liveRegion = LiveRegionMode.Polite }, verticalArrangement = Arrangement.spacedBy(Space.sm)) {
             Text(stringResource(R.string.ai_tag), style = MaterialTheme.typography.labelMedium, color = colors.primary)
             when (state) {
                 Counsel.Off -> Unit
@@ -36,7 +36,7 @@ internal fun CounsellorPanel(state: Counsel, counsellor: Counsellor, onResume: (
                     Text(state.line.say, style = MaterialTheme.typography.titleMedium)
                     state.line.caption?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     Text(stringResource(R.string.counsel_next), style = MaterialTheme.typography.labelSmall)
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                         Button(onClick = counsellor::sendNow) { Text(stringResource(R.string.counsel_send_now)) }
                         OutlinedButton(onClick = counsellor::skip) { Text(stringResource(R.string.counsel_skip)) }
                         TextButton(onClick = counsellor::takeOver) { Text(stringResource(R.string.counsel_take_over)) }
@@ -54,7 +54,7 @@ internal fun CounsellorPanel(state: Counsel, counsellor: Counsellor, onResume: (
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                         OutlinedButton(onClick = onResume) { Text(stringResource(R.string.counsel_resume)) }
                         Button(onClick = counsellor::takeOver) { Text(stringResource(R.string.counsel_take_over)) }
                     }
@@ -66,8 +66,8 @@ internal fun CounsellorPanel(state: Counsel, counsellor: Counsellor, onResume: (
 
 @Composable
 private fun Status(text: String, counsellor: Counsellor) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(top = 12.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
+        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(top = Space.md))
         Button(onClick = counsellor::takeOver) { Text(stringResource(R.string.counsel_take_over)) }
     }
 }

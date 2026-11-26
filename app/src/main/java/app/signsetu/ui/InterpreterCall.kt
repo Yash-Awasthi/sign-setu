@@ -23,7 +23,7 @@ import android.content.ClipData
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import app.signsetu.data.settings.AppSettings
@@ -56,7 +56,7 @@ internal fun SandesHandoffDialog(
         icon = { Icon(Icons.Filled.Call, contentDescription = null) },
         title = { Text(stringResource(R.string.sandes_handoff_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 Text(
                     stringResource(R.string.sandes_handoff_body),
                     style = MaterialTheme.typography.bodyMedium,
@@ -66,7 +66,7 @@ internal fun SandesHandoffDialog(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Column(Modifier.padding(Spacing.md)) {
+                    Column(Modifier.padding(Space.md)) {
                         Text(
                             stringResource(R.string.sandes_contact_label),
                             style = MaterialTheme.typography.labelMedium,
@@ -76,7 +76,7 @@ internal fun SandesHandoffDialog(
                             contact,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 4.dp),
+                            modifier = Modifier.padding(top = Space.xs),
                         )
                     }
                 }
@@ -84,7 +84,7 @@ internal fun SandesHandoffDialog(
         },
         confirmButton = {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(Space.sm),
             ) {
                 OutlinedButton(
                     onClick = {

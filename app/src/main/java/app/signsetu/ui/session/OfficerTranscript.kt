@@ -66,29 +66,31 @@ import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalInk
 import app.signsetu.ui.theme.PictureWell
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import androidx.compose.material.icons.filled.PlayArrow
 import app.signsetu.sign.SignSegment
 import app.signsetu.ui.pair.linkText
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageLight
 
 /** The conversation so far: what was shown on the right, the subject's answers on the left, newest at the bottom. */
 @Composable
 internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Map<Long, List<SignSegment>>, onReplay: (Long) -> Unit, modifier: Modifier, onSayBack: (SessionEvent) -> Unit = {}, drawing: suspend (Long) -> ByteArray? = { null }, onAskAgain: ((SessionEvent) -> Unit)? = null, onPlayAudio: (Long) -> Unit = {}) {
     if (events.isEmpty()) {
-        Column(modifier.padding(Spacing.xxl), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            MiniFace(72.dp, Color(0xFFFFDDBE))
+        Column(modifier.padding(Space.xxl), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            MiniFace(Space.s72, StageLight.skyTop)
             Text(
                 stringResource(R.string.chat_empty_title),
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = Spacing.lg),
+                modifier = Modifier.padding(top = Space.lg),
             )
             Text(
                 stringResource(R.string.chat_empty_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = Spacing.xs),
+                modifier = Modifier.padding(top = Space.xs),
             )
         }
         return
@@ -107,8 +109,8 @@ internal fun Transcript(events: List<SessionEvent>, profile: Profile, signed: Ma
     LazyColumn(
         modifier,
         reverseLayout = true,
-        contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.xl),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        contentPadding = PaddingValues(start = Space.lg, end = Space.lg, top = Space.lg, bottom = Space.xl),
+        verticalArrangement = Arrangement.spacedBy(Space.md),
     ) {
         items(newestFirst, key = { it.id }) { e ->
             Box(Modifier.animateItem()) {
@@ -154,13 +156,13 @@ private fun timeOf(e: SessionEvent) = clockTime(e.ts)
 @Composable
 internal fun Shown(e: SessionEvent, by: ShownBy? = null, onAskAgain: (() -> Unit)? = null) {
     val ink = LocalInk.current
-    Column(Modifier.fillMaxWidth().padding(start = 48.dp), horizontalAlignment = Alignment.End) {
+    Column(Modifier.fillMaxWidth().padding(start = Space.s48), horizontalAlignment = Alignment.End) {
         Box(
             Modifier
-                .widthIn(max = 300.dp)
-                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 6.dp))
+                .widthIn(max = Space.s300)
+                .clip(RoundedCornerShape(topStart = Space.s20, topEnd = Space.s20, bottomStart = Space.s20, bottomEnd = Space.s6))
                 .background(ink.brush)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = Space.s14, vertical = Space.s10),
         ) {
             Text(e.text ?: "—", style = MaterialTheme.typography.bodyLarge, color = Color.White)
         }
@@ -173,9 +175,9 @@ internal fun Shown(e: SessionEvent, by: ShownBy? = null, onAskAgain: (() -> Unit
             "${stringResource(e.type.label())} · ${timeOf(e)}$tags",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 2.dp, end = 4.dp),
+            modifier = Modifier.padding(top = Space.xxs, end = Space.xs),
         )
-        onAskAgain?.let { TextButton(onClick = it, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(stringResource(R.string.ask_again), style = MaterialTheme.typography.labelMedium) } }
+        onAskAgain?.let { TextButton(onClick = it, contentPadding = PaddingValues(horizontal = Space.sm)) { Text(stringResource(R.string.ask_again), style = MaterialTheme.typography.labelMedium) } }
     }
 }
 
@@ -201,26 +203,26 @@ private fun Answered(
         e.type == EventType.ANSWER_UNCLEAR -> colors.tertiaryContainer
         else -> PictureWell
     }
-    Row(Modifier.fillMaxWidth().padding(end = 48.dp), verticalAlignment = Alignment.Bottom) {
-        MiniFace(28.dp, Color(0xFFFFDDBE))
-        Column(Modifier.padding(start = Spacing.sm)) {
+    Row(Modifier.fillMaxWidth().padding(end = Space.s48), verticalAlignment = Alignment.Bottom) {
+        MiniFace(Space.s28, StageLight.skyTop)
+        Column(Modifier.padding(start = Space.sm)) {
             Surface(
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 6.dp, bottomEnd = 20.dp),
+                shape = RoundedCornerShape(topStart = Space.s20, topEnd = Space.s20, bottomStart = Space.s6, bottomEnd = Space.s20),
                 color = colors.surfaceContainerLowest,
-                border = trailBorder(trail) ?: BorderStroke(1.dp, colors.outlineVariant),
+                border = trailBorder(trail) ?: BorderStroke(Space.hair, colors.outlineVariant),
             ) {
-                Row(Modifier.padding(start = 8.dp, end = 14.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = RoundedCornerShape(12.dp), color = well, modifier = Modifier.size(40.dp)) {
+                Row(Modifier.padding(start = Space.sm, end = Space.s14, top = Space.sm, bottom = Space.sm), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = RoundedCornerShape(Radius.r12), color = well, modifier = Modifier.size(Space.s40)) {
                         when {
-                            e.cardId != null -> CardImage(e.cardId, Modifier.padding(5.dp))
-                            e.drawingId != null -> Icon(Icons.Filled.Create, contentDescription = null, modifier = Modifier.padding(10.dp))
-                            given?.first == Method.BOARD -> Icon(painterResource(R.drawable.ic_grid), contentDescription = null, modifier = Modifier.padding(10.dp))
-                            e.type == EventType.ANSWER_TEXT -> Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.padding(10.dp))
-                            else -> Icon(painterResource(R.drawable.ic_hand), contentDescription = null, modifier = Modifier.padding(10.dp))
+                            e.cardId != null -> CardImage(e.cardId, Modifier.padding(Space.s5))
+                            e.drawingId != null -> Icon(Icons.Filled.Create, contentDescription = null, modifier = Modifier.padding(Space.s10))
+                            given?.first == Method.BOARD -> Icon(painterResource(R.drawable.ic_grid), contentDescription = null, modifier = Modifier.padding(Space.s10))
+                            e.type == EventType.ANSWER_TEXT -> Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.padding(Space.s10))
+                            else -> Icon(painterResource(R.drawable.ic_hand), contentDescription = null, modifier = Modifier.padding(Space.s10))
                         }
                     }
                     val signed = e.type == EventType.ANSWER_SIGNED
-                    Column(Modifier.padding(start = 10.dp).weight(1f, fill = false)) {
+                    Column(Modifier.padding(start = Space.s10).weight(1f, fill = false)) {
                         Text(
                             if (signed) signedDisplay(LocalResources.current, e.text) else if (e.type == EventType.ANSWER_SPOKEN) stringResource(R.string.spoken_bubble, e.text.orEmpty()) else e.text ?: stringResource(e.type.label()),
                             style = MaterialTheme.typography.titleSmall,
@@ -229,7 +231,7 @@ private fun Answered(
                         reading?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
                     }
                     onReplay?.let { play ->
-                        IconButton(onClick = play, modifier = Modifier.padding(start = 4.dp)) {
+                        IconButton(onClick = play, modifier = Modifier.padding(start = Space.xs)) {
                             Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(if (e.type == EventType.ANSWER_SPOKEN) R.string.spoken_play else R.string.signed_replay), tint = colors.primary)
                         }
                     }
@@ -251,11 +253,11 @@ private fun Aside(text: String, note: Boolean) {
     val colors = MaterialTheme.colorScheme
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Surface(
-            shape = RoundedCornerShape(50),
+            shape = Radius.pill,
             color = if (note) colors.tertiaryContainer else colors.surfaceContainerHigh,
             contentColor = if (note) colors.onTertiaryContainer else colors.onSurfaceVariant,
         ) {
-            Text(text, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            Text(text, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = Space.md, vertical = Space.s6))
         }
     }
 }
@@ -272,8 +274,8 @@ private fun DrawingThumb(id: Long, load: suspend (Long) -> ByteArray?) {
     image?.let { img ->
         Image(
             img, contentDescription = name,
-            modifier = Modifier.padding(top = Spacing.xs).widthIn(max = 220.dp).heightIn(max = 220.dp)
-                .clip(RoundedCornerShape(14.dp)).border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+            modifier = Modifier.padding(top = Space.xs).widthIn(max = Space.s220).heightIn(max = Space.s220)
+                .clip(RoundedCornerShape(Radius.r14)).border(Space.hair, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(Radius.r14))
                 .clickable(role = Role.Button) { open = true },
         )
         if (open) GuardedAlertDialog(

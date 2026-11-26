@@ -93,8 +93,9 @@ import app.signsetu.ui.session.defaultTitle
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalInk
 import app.signsetu.ui.theme.LocalStageColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.launch
+import app.signsetu.ui.theme.TypeSize
 
 /** Once per process: coming back from a session the name is already in place. */
 private var introPlayed = false
@@ -157,9 +158,9 @@ fun StartScreen(
         if (cameraWanted && !hasCameraPermission(context)) askCamera.launch(Manifest.permission.CAMERA) else begin(profile)
     }
 
-    val header = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+    val header = RoundedCornerShape(bottomStart = Space.xl, bottomEnd = Space.xl)
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding()) {
-        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = header, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
+        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = header, shadowElevation = Space.xs, modifier = Modifier.fillMaxWidth()) {
             // On launch the name sits in the middle and settles into place while the character loads, then fades in.
             val intro = remember { Animatable(if (introPlayed || !motionOn) 1f else 0f) }
             LaunchedEffect(Unit) { introPlayed = true; intro.animateTo(1f, tween(1000, easing = FastOutSlowInEasing)) }
@@ -167,20 +168,20 @@ fun StartScreen(
             var resting by remember { mutableStateOf<Offset?>(null) }
             var avatarReady by remember { mutableStateOf(false) }
             val avatarIn by animateFloatAsState(if (avatarReady) 1f else 0f, motion(tween(500)), label = "avatar")
-            Box(Modifier.background(ink.brush).statusBarsPadding().height(230.dp).fillMaxWidth().clip(RectangleShape).onGloballyPositioned { centre = it.boundsInRoot().center }) {
+            Box(Modifier.background(ink.brush).statusBarsPadding().height(Space.s230).fillMaxWidth().clip(RectangleShape).onGloballyPositioned { centre = it.boundsInRoot().center }) {
                 // Shown head and shoulders only: the officer's screen, where the character just says hello.
                 Avatar(
                     gesture = content.gestures["namaste"],
                     playKey = Unit,
                     onReady = { avatarReady = true },
-                    modifier = Modifier.align(Alignment.BottomCenter).requiredSize(243.dp, 277.dp).offset(y = 27.dp)
-                        .graphicsLayer { alpha = avatarIn; translationY = (1f - avatarIn) * 24.dp.toPx() },
+                    modifier = Modifier.align(Alignment.BottomCenter).requiredSize(Space.s243, Space.s277).offset(y = Space.s27)
+                        .graphicsLayer { alpha = avatarIn; translationY = (1f - avatarIn) * Space.xl.toPx() },
                 )
                 Column {
-                    Row(Modifier.fillMaxWidth().offset(y = (-10).dp).height(56.dp).padding(start = Spacing.lg, end = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().offset(y = (-Space.s10)).height(Space.s56).padding(start = Space.lg, end = Space.xs), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f)) {
                             Text(
-                                stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp,
+                                stringResource(R.string.app_name), fontFamily = Baloo, fontWeight = FontWeight.ExtraBold, fontSize = TypeSize.s22,
                                 modifier = Modifier.semantics { heading() }
                                     .onGloballyPositioned { resting = it.boundsInRoot().center }
                                     .graphicsLayer {
@@ -199,8 +200,8 @@ fun StartScreen(
             }
         }
                 Column(
-                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.lg).padding(top = Spacing.lg, bottom = Spacing.sm),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Space.lg).padding(top = Space.lg, bottom = Space.sm),
+                    verticalArrangement = Arrangement.spacedBy(Space.md),
                 ) {
                     if (expired) Notice(stringResource(R.string.start_expired_title), stringResource(R.string.start_expired_body), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
                     if (content.damaged) {
@@ -212,7 +213,7 @@ fun StartScreen(
                     if (rooted) Notice(null, stringResource(R.string.start_rooted), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                     onCallInterpreter?.let { call ->
                         OfficerCard {
-                            Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = call), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                            Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = call), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.md)) {
                                 Icon(Icons.Filled.Call, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Column(Modifier.weight(1f)) {
                                     Text(stringResource(R.string.officer_call), style = MaterialTheme.typography.titleMedium)
@@ -223,7 +224,7 @@ fun StartScreen(
                     }
                     onTour?.let { tour ->
                         OfficerCard {
-                            Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = tour), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                            Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = tour), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.md)) {
                                 Icon(Icons.Filled.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Column(Modifier.weight(1f)) {
                                     Text(stringResource(R.string.shell_take_tour), style = MaterialTheme.typography.titleMedium)
@@ -264,10 +265,10 @@ fun StartScreen(
                 BrandButton(
                     onClick = onStart,
                     enabled = !expired && !content.damaged && !starting,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.md).height(56.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.md).height(Space.s56),
                 ) {
                     Text(stringResource(R.string.start_button), style = MaterialTheme.typography.titleMedium)
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.padding(start = Spacing.sm))
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.padding(start = Space.sm))
                 }
     }
 }
@@ -275,9 +276,9 @@ fun StartScreen(
 @Composable
 private fun Notice(title: String?, body: String, container: Color, content: Color) {
     Surface(color = container, contentColor = content, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(horizontal = Spacing.md, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Warning, contentDescription = null, modifier = Modifier.size(20.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Row(Modifier.padding(horizontal = Space.md, vertical = Space.s10), horizontalArrangement = Arrangement.spacedBy(Space.md), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Warning, contentDescription = null, modifier = Modifier.size(Space.s20))
+            Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                 title?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
                 Text(body, style = MaterialTheme.typography.bodySmall)
             }
@@ -289,8 +290,8 @@ private fun Notice(title: String?, body: String, container: Color, content: Colo
 private fun ResumeCard(session: Session, languageName: String, onResume: () -> Unit, onEnd: () -> Unit) {
     OfficerCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            MiniFace(40.dp, LocalStageColors.current.skyTop)
-            Column(Modifier.weight(1f).padding(start = Spacing.md)) {
+            MiniFace(Space.s40, LocalStageColors.current.skyTop)
+            Column(Modifier.weight(1f).padding(start = Space.md)) {
                 Text(stringResource(R.string.start_resume_title), style = MaterialTheme.typography.titleMedium)
                 Text(
                     stringResource(
@@ -305,9 +306,9 @@ private fun ResumeCard(session: Session, languageName: String, onResume: () -> U
                 )
             }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.End)) {
-            TextButton(onClick = onEnd, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.start_end), color = MaterialTheme.colorScheme.error) }
-            FilledTonalButton(onClick = onResume, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.sm, Alignment.End)) {
+            TextButton(onClick = onEnd, modifier = Modifier.heightIn(min = Space.s48)) { Text(stringResource(R.string.start_end), color = MaterialTheme.colorScheme.error) }
+            FilledTonalButton(onClick = onResume, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = Space.s48)) {
                 Text(stringResource(R.string.start_resume))
             }
         }

@@ -55,7 +55,7 @@ import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.ui.components.rememberSpeechPlayer
 import app.signsetu.ui.components.SubjectSpeech
 import app.signsetu.ui.theme.LocalAnswerColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 
 /** The stage: what the subject sees while the phone faces them, laid out as a one-to-one video call. */
 @Composable
@@ -320,13 +320,13 @@ fun Stage(
                     if (line == null && focus == null && !reacting) finishedPlays++
                     reacting = false; focus = null
                 },
-                modifier = Modifier.fillMaxSize().padding(16.dp).aspectRatio(AVATAR_ASPECT).align(Alignment.Center),
+                modifier = Modifier.fillMaxSize().padding(Space.lg).aspectRatio(AVATAR_ASPECT).align(Alignment.Center),
             )
             val spelled = if (focus == null) beat?.letters else null
-            if (spelled != null) LetterTile(spelled, letter, Modifier.align(Alignment.CenterEnd).padding(end = Spacing.lg))
+            if (spelled != null) LetterTile(spelled, letter, Modifier.align(Alignment.CenterEnd).padding(end = Space.lg))
             val replayable = gesture != null || (audio != null && profile != Profile.ISL_USER)
             // Replay sits left of the character, clear of Stop and the answer bar.
-            Column(Modifier.align(Alignment.CenterStart).padding(start = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            Column(Modifier.align(Alignment.CenterStart).padding(start = Space.sm), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
                 if (pending != null && !drawing && replayable) {
                     ReplayControls(
                         pace = pace,
@@ -350,7 +350,7 @@ fun Stage(
     val pauseRow: @Composable () -> Unit = { PauseRow(content, lang, ui.answeredCard, onCard) }
     val panel: (@Composable (Modifier) -> Unit)? = when {
         choices != null -> { m ->
-            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Column(m, verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 val last = ui.confirm.queue.size == 1
                 SignChoicePanel(choices, content, lang, {
                     onSignChoice(it)
@@ -361,7 +361,7 @@ fun Stage(
             }
         }
         drawing -> { m ->
-            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Column(m, verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 // Only a picture that was asked for has nothing to go back to.
                 DrawingPanel(
                     content, lang, drawn,
@@ -378,7 +378,7 @@ fun Stage(
             }
         }
         drawingSent -> { m ->
-            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Column(m, verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 HandBackPanel(content, lang, onDrawMore = { drawn.clear(); drawingSent = false; drawing = true }, modifier = Modifier.weight(1f))
                 pauseRow()
             }
@@ -410,7 +410,7 @@ fun Stage(
                 }
                 hearing = null
             }
-            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Column(m, verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 LanguageGrid(content, ui.chosenLanguage ?: hearing, Modifier.weight(1f)) { code ->
                     onLanguage(code)
                     content.greetingAudio(code)?.let { speech.play(it) }
@@ -419,7 +419,7 @@ fun Stage(
             }
         }
         item.choices.isNotEmpty() && !signing && !settled -> { m ->
-            Column(m, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Column(m, verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 ChoiceGrid(item.choices, item.numbers, ui.answeredCard, content, lang, pick, Modifier.weight(1f), picked)
                 pauseRow()
             }

@@ -52,6 +52,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import app.signsetu.data.content.SignLanguage
 import app.signsetu.ui.components.FilterObscuredTouches
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 /** A menu row that toggles: TalkBack hears its state, as a Checkbox or Switch with its own handler would give. */
 private fun Modifier.toggleState(on: Boolean, kind: Role) = semantics {
@@ -99,18 +101,18 @@ internal fun OfficerMenu(
                 text = { Text(stringResource(R.string.officer_sign_language)) },
                 leadingIcon = { Icon(painterResource(R.drawable.ic_videocam), contentDescription = null) },
                 trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
                         Text(signLanguage.name)
                         if (signLanguage == SignLanguage.ASL) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = RoundedCornerShape(Radius.r4),
                                 color = MaterialTheme.colorScheme.errorContainer,
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
                             ) {
                                 Text(
                                     stringResource(R.string.asl_experimental_badge),
                                     style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                    modifier = Modifier.padding(horizontal = Space.xs, vertical = Space.hair),
                                 )
                             }
                         }

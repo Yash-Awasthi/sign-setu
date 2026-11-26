@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.net.BrainClient
 import kotlinx.coroutines.launch
+import app.signsetu.ui.theme.Space
 
 /** Settings, Local AI brain. One row, with a switch like the online assistant's: off, the phone works alone; on, it
  * connects to the station computer (pairing first when none is paired). While on, the station's services are listed
@@ -70,7 +71,7 @@ internal fun BrainItems(brain: BrainClient, off: Set<String>, onOff: (Set<String
     ListItem(
         headlineContent = { Text(stringResource(R.string.brain_title)) },
         supportingContent = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 Text(summary)
                 Text(stringResource(R.string.brain_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -86,7 +87,7 @@ internal fun BrainItems(brain: BrainClient, off: Set<String>, onOff: (Set<String
             }
         },
     )
-    if (on) Column(Modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(bottom = 6.dp)) {
+    if (on) Column(Modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest).padding(bottom = Space.s6)) {
         Listed.forEach { f ->
             val has = station.online && station.offered?.contains(f) == true
             val sent = has && f.key !in off
@@ -114,7 +115,7 @@ internal fun BrainItems(brain: BrainClient, off: Set<String>, onOff: (Set<String
             onDismissRequest = { pairing = false; linkAfterPair = false },
             title = { Text(stringResource(R.string.brain_pair)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Space.sm)) {
                     Text(stringResource(R.string.brain_pair_help))
                     OutlinedTextField(url, { url = it.trim() }, singleLine = true, label = { Text(stringResource(R.string.brain_url)) })
                     OutlinedTextField(token, { token = it.trim() }, singleLine = true, visualTransformation = PasswordVisualTransformation(), label = { Text(stringResource(R.string.brain_token)) })
@@ -158,7 +159,7 @@ private fun PhoneIdItem() {
     ListItem(
         headlineContent = { Text(label) },
         supportingContent = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 Text(shown, fontFamily = FontFamily.Monospace)
                 Text(stringResource(R.string.brainui_phone_id_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -179,8 +180,8 @@ private fun PhoneIdItem() {
 @Composable
 private fun ServiceRow(name: String, has: Boolean, sent: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 44.dp).toggleable(value = sent, role = Role.Switch) { onClick() }
-            .padding(start = 40.dp, end = 16.dp),
+        Modifier.fillMaxWidth().heightIn(min = Space.s44).toggleable(value = sent, role = Role.Switch) { onClick() }
+            .padding(start = Space.s40, end = Space.lg),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).alpha(if (has) 1f else 0.38f))

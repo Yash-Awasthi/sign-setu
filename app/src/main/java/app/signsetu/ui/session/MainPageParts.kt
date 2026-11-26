@@ -65,7 +65,8 @@ import app.signsetu.data.content.templatesFor
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.theme.LocalAnswerColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 /** Colour for what the character will do with a word; spelled words stay plain so they stand out by contrast. */
 @Composable
@@ -116,34 +117,34 @@ fun CompletionRows(content: ContentBundle, text: String, officerLang: String, on
     }
     if (completions.isEmpty() && templates.isEmpty()) return
     val colors = MaterialTheme.colorScheme
-    Column(Modifier.padding(bottom = Spacing.sm), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (completions.isNotEmpty()) LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(horizontal = Spacing.lg)) {
+    Column(Modifier.padding(bottom = Space.sm), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
+        if (completions.isNotEmpty()) LazyRow(horizontalArrangement = Arrangement.spacedBy(Space.s6), contentPadding = PaddingValues(horizontal = Space.lg)) {
             items(completions, key = { it.form }) { c ->
                 val name = stringResource(R.string.complete_word, c.form, stringResource(c.kind.label()))
                 val dot = signabilityColor(c.kind) ?: colors.outline
                 Surface(
                     onClick = { onComplete(text.dropLast(token.length) + c.form + " ") },
-                    shape = RoundedCornerShape(50),
+                    shape = Radius.pill,
                     color = colors.surfaceContainerHigh,
-                    modifier = Modifier.height(36.dp).semantics { contentDescription = name },
+                    modifier = Modifier.height(Space.s36).semantics { contentDescription = name },
                 ) {
-                    Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
-                        Text(c.form, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 6.dp))
+                    Row(Modifier.padding(horizontal = Space.md), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(Space.sm).clip(CircleShape).background(dot))
+                        Text(c.form, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = Space.s6))
                     }
                 }
             }
         }
-        if (templates.isNotEmpty()) LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(horizontal = Spacing.lg)) {
+        if (templates.isNotEmpty()) LazyRow(horizontalArrangement = Arrangement.spacedBy(Space.s6), contentPadding = PaddingValues(horizontal = Space.lg)) {
             items(templates, key = { (p, s) -> "${p.id}:${s.card}" }) { (p, s) ->
                 Surface(
                     onClick = { onTemplate(p, s) },
-                    shape = RoundedCornerShape(50),
+                    shape = Radius.pill,
                     color = colors.secondaryContainer,
                     contentColor = colors.onSecondaryContainer,
-                    modifier = Modifier.height(36.dp),
+                    modifier = Modifier.height(Space.s36),
                 ) {
-                    Box(Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.padding(horizontal = Space.md), contentAlignment = Alignment.Center) {
                         Text(s.text.get(officerLang) ?: s.card, style = MaterialTheme.typography.labelLarge)
                     }
                 }
@@ -159,7 +160,7 @@ fun AnswerMeta(grade: Grade?, trail: Trail?, position: Pair<Int, Int>?, onSayBac
     val res = LocalResources.current
     val colors = MaterialTheme.colorScheme
     val answer = LocalAnswerColors.current
-    FlowRow(Modifier.padding(start = 4.dp, top = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(2.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+    FlowRow(Modifier.padding(start = Space.xs, top = Space.xxs), horizontalArrangement = Arrangement.spacedBy(Space.s6), verticalArrangement = Arrangement.spacedBy(Space.xxs), itemVerticalAlignment = Alignment.CenterVertically) {
         grade?.let { g ->
             val (bg, fg) = when (g) {
                 Grade.CONFIRMED -> answer.yesContainer to answer.onYesContainer
@@ -168,8 +169,8 @@ fun AnswerMeta(grade: Grade?, trail: Trail?, position: Pair<Int, Int>?, onSayBac
                 Grade.UNCLEAR -> colors.tertiaryContainer to colors.onTertiaryContainer
                 Grade.SAID -> colors.secondaryContainer to colors.onSecondaryContainer
             }
-            Surface(shape = RoundedCornerShape(50), color = bg, contentColor = fg) {
-                Text(stringResource(g.label()), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+            Surface(shape = Radius.pill, color = bg, contentColor = fg) {
+                Text(stringResource(g.label()), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = Space.sm, vertical = Space.xxs))
             }
         }
         val line = listOfNotNull(
@@ -178,13 +179,13 @@ fun AnswerMeta(grade: Grade?, trail: Trail?, position: Pair<Int, Int>?, onSayBac
             trail?.let { trailText(res, it) },
         ).joinToString(" · ")
         if (line.isNotEmpty()) Text(line, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
-        onSayBack?.let { TextButton(onClick = it, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(stringResource(R.string.say_back), style = MaterialTheme.typography.labelMedium) } }
+        onSayBack?.let { TextButton(onClick = it, contentPadding = PaddingValues(horizontal = Space.sm)) { Text(stringResource(R.string.say_back), style = MaterialTheme.typography.labelMedium) } }
     }
 }
 
 /** A gentle flag on a bubble whose answer changed or came slowly: worth a second look, nothing more. */
 @Composable
-fun trailBorder(trail: Trail?): BorderStroke? = if (trail?.unsteady == true) BorderStroke(2.dp, MaterialTheme.colorScheme.tertiary) else null
+fun trailBorder(trail: Trail?): BorderStroke? = if (trail?.unsteady == true) BorderStroke(Space.xxs, MaterialTheme.colorScheme.tertiary) else null
 
 /** The officer edits their reading of an answer line; the subject's own words are pre-filled as written. */
 @Composable
@@ -194,7 +195,7 @@ fun SayBackDialog(e: SessionEvent, draft: String, onDraft: (String) -> Unit, onS
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.say_back_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 Text(stringResource(R.string.say_back_body), style = MaterialTheme.typography.bodyMedium)
                 OutlinedTextField(
                     value = words,
@@ -221,18 +222,18 @@ fun RunTray(run: List<Question>, officerLang: String, onRemove: (Question) -> Un
         shape = MaterialTheme.shapes.medium,
         color = colors.primaryContainer,
         contentColor = colors.onPrimaryContainer,
-        modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm).fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = Space.lg).padding(bottom = Space.sm).fillMaxWidth(),
     ) {
-        Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(Space.md), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
             Text(stringResource(R.string.run_title, run.size), style = MaterialTheme.typography.labelMedium, color = colors.primary)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s6), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
                 run.forEachIndexed { i, q ->
-                    Surface(onClick = { onAsk(q) }, shape = RoundedCornerShape(50), color = colors.surfaceContainerLowest, modifier = Modifier.heightIn(min = 48.dp)) {
-                        Row(Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(onClick = { onAsk(q) }, shape = Radius.pill, color = colors.surfaceContainerLowest, modifier = Modifier.heightIn(min = Space.s48)) {
+                        Row(Modifier.padding(start = Space.md), verticalAlignment = Alignment.CenterVertically) {
                             // Ellipsised so a long question never pushes its remove button out of the chip.
                             Text("${i + 1}  ${q.text.get(officerLang) ?: q.id}", style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                            IconButton(onClick = { onRemove(q) }, modifier = Modifier.size(48.dp)) {
-                                Icon(Icons.Filled.Close, contentDescription = remove, modifier = Modifier.size(16.dp))
+                            IconButton(onClick = { onRemove(q) }, modifier = Modifier.size(Space.s48)) {
+                                Icon(Icons.Filled.Close, contentDescription = remove, modifier = Modifier.size(Space.lg))
                             }
                         }
                     }

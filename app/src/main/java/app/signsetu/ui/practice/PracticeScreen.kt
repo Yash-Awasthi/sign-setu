@@ -50,7 +50,8 @@ import app.signsetu.ui.avatar.AVATAR_ASPECT
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.data.content.negatedText
 import app.signsetu.data.content.questionKind
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 /** Type anything and watch the character sign it: the same planner the session uses, with nothing to record and
  * no one to ask. */
@@ -88,8 +89,8 @@ fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
                 // The keyboard covers the field and Sign it otherwise; edge-to-edge windows do not resize themselves.
                 .imePadding()
                 .navigationBarsPadding()
-                .padding(horizontal = Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                .padding(horizontal = Space.lg),
+            verticalArrangement = Arrangement.spacedBy(Space.md),
         ) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Avatar(
@@ -100,15 +101,15 @@ fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
                     question = question,
                     negated = negated,
                     // Beside the word list rather than filling the panel: the character reads better at stage size.
-                    modifier = Modifier.heightIn(max = 520.dp).aspectRatio(AVATAR_ASPECT),
+                    modifier = Modifier.heightIn(max = Space.s520).aspectRatio(AVATAR_ASPECT),
                 )
             }
             if (plan != null && plan.beats.isNotEmpty()) {
                 // Wraps, so a long sentence's later words scroll into view instead of running off the right edge.
                 FlowRow(
-                    Modifier.fillMaxWidth().heightIn(max = 112.dp).verticalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                    Modifier.fillMaxWidth().heightIn(max = Space.s112).verticalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(Space.xs),
+                    verticalArrangement = Arrangement.spacedBy(Space.xs),
                 ) {
                     for (beat in plan.beats) {
                         val word = text.substring(beat.range)
@@ -116,9 +117,9 @@ fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
                         val spelled = beat.letters != null && beat.card == null
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(Radius.r10),
                         ) {
-                            Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                            Column(Modifier.padding(horizontal = Space.s10, vertical = Space.s6)) {
                                 Text(word, style = MaterialTheme.typography.labelLarge)
                                 Text(
                                     if (spelled) stringResource(R.string.practice_spelled) else stringResource(R.string.practice_signed),
@@ -149,7 +150,7 @@ fun PracticeScreen(content: ContentBundle, onBack: () -> Unit) {
             Button(
                 onClick = { plays++ },
                 enabled = gesture != null,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(Space.s52),
             ) { Text(stringResource(R.string.practice_sign)) }
         }
     }

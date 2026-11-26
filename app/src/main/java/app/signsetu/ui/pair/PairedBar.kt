@@ -35,29 +35,30 @@ import app.signsetu.ui.session.AnswerEvents
 import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.describe
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.StageTones
 
 /** Above the officer's page while paired: the device, what is on it, the last answer, and any alert. */
 @Composable
 fun PairedBar(pane: PairedPane, ui: SessionUi, content: ContentBundle, officerLang: String) {
     val colors = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.sm), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
         val s = pane.status
         val low = s != null && s.battery < 15 && !s.charging
         Surface(
             shape = MaterialTheme.shapes.medium,
-            color = if (low) Color(0xFFFFC857) else colors.secondaryContainer,
-            contentColor = if (low) Color(0xFF3A2A00) else colors.onSecondaryContainer,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            color = if (low) StageTones.lowBattery else colors.secondaryContainer,
+            contentColor = if (low) StageTones.onLowBattery else colors.onSecondaryContainer,
+            modifier = Modifier.fillMaxWidth().heightIn(min = Space.s48),
         ) {
-            Row(Modifier.padding(horizontal = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Phone, contentDescription = null, modifier = Modifier.size(20.dp))
+            Row(Modifier.padding(horizontal = Space.md), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Phone, contentDescription = null, modifier = Modifier.size(Space.s20))
                 Text(
                     if (s != null) stringResource(R.string.second_screen_chip, pane.label, s.battery) else pane.label,
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = Spacing.sm),
+                    modifier = Modifier.padding(start = Space.sm),
                 )
             }
         }
@@ -76,8 +77,8 @@ fun PairedBar(pane: PairedPane, ui: SessionUi, content: ContentBundle, officerLa
         }
         if (ui.mode == Mode.SHOW) {
             Surface(shape = MaterialTheme.shapes.medium, color = colors.primaryContainer, contentColor = colors.onPrimaryContainer) {
-                Row(Modifier.fillMaxWidth().padding(start = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f).padding(vertical = Spacing.sm)) {
+                Row(Modifier.fillMaxWidth().padding(start = Space.md), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f).padding(vertical = Space.sm)) {
                         Text(
                             stringResource(R.string.second_screen_on, ui.onStage?.let { describe(it, content, officerLang) } ?: stringResource(R.string.second_screen_idle)),
                             style = MaterialTheme.typography.titleSmall,
@@ -101,7 +102,7 @@ private fun Alert(text: String, vararg actions: Pair<String, () -> Unit>) {
     val colors = MaterialTheme.colorScheme
     // Announced as it appears: a lost or ended second screen must reach an officer using TalkBack.
     Surface(shape = MaterialTheme.shapes.medium, color = colors.errorContainer, contentColor = colors.onErrorContainer, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-        Column(Modifier.fillMaxWidth().padding(start = Spacing.md, end = Spacing.xs, top = Spacing.sm)) {
+        Column(Modifier.fillMaxWidth().padding(start = Space.md, end = Space.xs, top = Space.sm)) {
             Text(text, style = MaterialTheme.typography.titleSmall)
             Row(Modifier.align(Alignment.End)) {
                 actions.forEach { (label, onClick) -> TextButton(onClick = onClick) { Text(label, color = colors.onErrorContainer) } }

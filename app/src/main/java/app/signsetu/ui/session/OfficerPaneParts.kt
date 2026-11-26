@@ -30,19 +30,20 @@ import app.signsetu.data.content.SignMode
 import app.signsetu.data.session.Profile
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.LocalAnswerColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 @Composable
 internal fun StopBanner(onOk: () -> Unit) {
     val answer = LocalAnswerColors.current
-    Surface(shape = MaterialTheme.shapes.large, color = answer.pause, contentColor = answer.onPause, shadowElevation = 4.dp, modifier = Modifier.padding(top = Spacing.md).semantics { liveRegion = LiveRegionMode.Polite }) {
-        Row(Modifier.padding(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-            CardImage("stop", Modifier.size(40.dp))
-            Column(Modifier.weight(1f).padding(horizontal = Spacing.md)) {
+    Surface(shape = MaterialTheme.shapes.large, color = answer.pause, contentColor = answer.onPause, shadowElevation = Space.xs, modifier = Modifier.padding(top = Space.md).semantics { liveRegion = LiveRegionMode.Polite }) {
+        Row(Modifier.padding(Space.lg), verticalAlignment = Alignment.CenterVertically) {
+            CardImage("stop", Modifier.size(Space.s40))
+            Column(Modifier.weight(1f).padding(horizontal = Space.md)) {
                 Text(stringResource(R.string.officer_stop_title), style = MaterialTheme.typography.titleSmall)
                 Text(stringResource(R.string.officer_stop_body), style = MaterialTheme.typography.bodySmall)
             }
-            TextButton(onClick = onOk, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ok), color = answer.onPause) }
+            TextButton(onClick = onOk, modifier = Modifier.heightIn(min = Space.s48)) { Text(stringResource(R.string.ok), color = answer.onPause) }
         }
     }
 }
@@ -70,16 +71,16 @@ internal fun AslExperimentalBanner(modifier: Modifier = Modifier) {
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
-        shape = RoundedCornerShape(12.dp),
-        modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+        shape = RoundedCornerShape(Radius.r12),
+        modifier = modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.xs),
     ) {
         Row(
-            Modifier.padding(Spacing.md),
+            Modifier.padding(Space.md),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
             Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 Text(
                     stringResource(R.string.asl_experimental_title),
                     style = MaterialTheme.typography.titleSmall,

@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import app.signsetu.ui.theme.Space
 
 /** The parts too small or too crowded on the whole figure to point at exactly; each gets a close-up. */
 internal val ZOOM_PARTS = setOf(BodyPart.HAND, BodyPart.FOOT, BodyPart.CHEST, BodyPart.BELLY)
@@ -24,7 +25,7 @@ internal fun zoomFraction(box: Rect, p: Offset): Offset =
 internal fun DrawScope.drawZoomPart(part: BodyPart, line: Color, fill: Color) {
     val w = size.width
     val h = size.height
-    val stroke = Stroke(width = 2.dp.toPx())
+    val stroke = Stroke(width = Space.xxs.toPx())
     fun box(l: Float, t: Float, r: Float, b: Float, round: Float) {
         val tl = Offset(l * w, t * h)
         val sz = Size((r - l) * w, (b - t) * h)
@@ -47,9 +48,9 @@ internal fun DrawScope.drawZoomPart(part: BodyPart, line: Color, fill: Color) {
         }
         BodyPart.CHEST -> {
             box(0.18f, 0.16f, 0.82f, 0.94f, 0.10f)
-            drawLine(line, Offset(0.50f * w, 0.20f * h), Offset(0.24f * w, 0.34f * h), 2.dp.toPx())
-            drawLine(line, Offset(0.50f * w, 0.20f * h), Offset(0.76f * w, 0.34f * h), 2.dp.toPx())
-            drawLine(line, Offset(0.50f * w, 0.34f * h), Offset(0.50f * w, 0.86f * h), 1.5.dp.toPx())
+            drawLine(line, Offset(0.50f * w, 0.20f * h), Offset(0.24f * w, 0.34f * h), Space.xxs.toPx())
+            drawLine(line, Offset(0.50f * w, 0.20f * h), Offset(0.76f * w, 0.34f * h), Space.xxs.toPx())
+            drawLine(line, Offset(0.50f * w, 0.34f * h), Offset(0.50f * w, 0.86f * h), Space.s1_5.toPx())
         }
         BodyPart.BELLY -> {
             box(0.22f, 0.12f, 0.78f, 0.94f, 0.12f)

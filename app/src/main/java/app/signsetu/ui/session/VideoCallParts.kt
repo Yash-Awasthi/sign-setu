@@ -62,36 +62,39 @@ import app.signsetu.R
 import app.signsetu.ui.theme.LocalCall
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
 
 @Composable
 internal fun CallActionButton(icon: String, label: String, backgroundColor: Color, highlight: Boolean = false, onClick: () -> Unit) {
     val pulse = if (highlight) rememberInfiniteTransition(label = "guide").animateFloat(1f, 1.18f, infiniteRepeatable(tween(600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse").value else 1f
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(Space.xs),
         modifier = Modifier
             .clickable(role = Role.Button, onClick = onClick),
     ) {
         Surface(
             shape = CircleShape,
             color = backgroundColor,
-            border = if (highlight) BorderStroke(3.dp, Color.White) else null,
-            modifier = Modifier.size(50.dp).scale(pulse),
-            shadowElevation = 4.dp,
+            border = if (highlight) BorderStroke(Space.s3, Color.White) else null,
+            modifier = Modifier.size(Space.s50).scale(pulse),
+            shadowElevation = Space.xs,
         ) {
             Box(contentAlignment = Alignment.Center) {
                 when (icon) {
-                    "yes" -> Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
-                    "no" -> Icon(Icons.Filled.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
-                    "express" -> Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-                    else -> CardImage(icon, Modifier.size(28.dp))
+                    "yes" -> Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(Space.s26))
+                    "no" -> Icon(Icons.Filled.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(Space.s26))
+                    "express" -> Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color.White, modifier = Modifier.size(Space.xl))
+                    else -> CardImage(icon, Modifier.size(Space.s28))
                 }
             }
         }
         Text(
             text = label,
             fontFamily = Baloo,
-            fontSize = 11.sp,
+            fontSize = TypeSize.s11,
             fontWeight = FontWeight.Bold,
             color = LocalCall.current.text,
         )
@@ -104,12 +107,12 @@ internal fun PanelStrip(onClick: () -> Unit, modifier: Modifier) {
     val label = stringResource(R.string.stage_show_answers)
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(Radius.r24),
         color = LocalCall.current.surface.copy(alpha = 0.93f),
-        border = BorderStroke(1.dp, LocalCall.current.line),
-        modifier = modifier.height(48.dp).semantics { contentDescription = label },
+        border = BorderStroke(Space.hair, LocalCall.current.line),
+        modifier = modifier.height(Space.s48).semantics { contentDescription = label },
     ) {
-        Box(contentAlignment = Alignment.Center) { Text("︿", fontSize = 22.sp, color = LocalCall.current.text) }
+        Box(contentAlignment = Alignment.Center) { Text("︿", fontSize = TypeSize.s22, color = LocalCall.current.text) }
     }
 }
 
@@ -121,10 +124,10 @@ internal fun StopOctagon(label: String, chosen: Boolean, onClick: () -> Unit, mo
         onClick = onClick,
         shape = Octagon,
         color = answers.pause,
-        border = if (chosen) BorderStroke(3.dp, answers.onPause) else null,
-        modifier = modifier.size(56.dp).semantics { role = Role.Button; contentDescription = label },
+        border = if (chosen) BorderStroke(Space.s3, answers.onPause) else null,
+        modifier = modifier.size(Space.s56).semantics { role = Role.Button; contentDescription = label },
     ) {
-        Box(contentAlignment = Alignment.Center) { CardImage("stop", Modifier.size(30.dp)) }
+        Box(contentAlignment = Alignment.Center) { CardImage("stop", Modifier.size(Space.s30)) }
     }
 }
 
@@ -162,7 +165,7 @@ internal fun CallCaption(
     val onTap by rememberUpdatedState(onWordTap)
     // The action's target is at least 48 dp tall; taps are read inside the text itself, then moved to the whole line.
     val tap = if (onWordTap == null) Modifier else Modifier
-        .heightIn(min = 48.dp)
+        .heightIn(min = Space.s48)
         .semantics { onClick(replayName) { onTap?.invoke(offset); true } }
         .wrapContentHeight()
         .pointerInput(offset) { detectTapGestures { p -> layout?.let { onTap?.invoke(offset + it.getOffsetForPosition(p)) } } }

@@ -48,6 +48,10 @@ import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.data.session.SessionEvent
 import kotlin.random.Random
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
+import app.signsetu.ui.theme.AnswerLight
 
 /** Answers after which the subject gets a calm pause that only they end. */
 internal val PauseCards = setOf("stop", "break")
@@ -112,13 +116,13 @@ internal fun PauseLayer(label: String?, onReady: () -> Unit, modifier: Modifier 
                 }
             },
         ) {
-            drawRect(Brush.verticalGradient(listOf(Color(0xEB0D1B3E), Color(0xEB1E3A6E))))
+            drawRect(Brush.verticalGradient(listOf(StageTones.pauseTop, StageTones.pauseBottom)))
             val centre = Offset(size.width / 2f, size.height * 0.42f)
             // Read in the draw phase only, so the breath redraws the canvas without recomposing the layer.
             val breath = if (still) 0.5f else breathAt(clock)
             val radius = size.minDimension * (0.16f + 0.1f * breath)
-            drawCircle(Color(0x3384C5FF), radius * 1.35f, centre)
-            drawCircle(Color(0x6684C5FF), radius, centre)
+            drawCircle(StageTones.pauseGlowSoft, radius * 1.35f, centre)
+            drawCircle(StageTones.pauseGlow, radius, centre)
             // One dot per second of the current phase, lit as it passes: the count is the guide, in any language.
             val ms = (clock % BREATH_MS).toInt()
             val (count, into) = when {
@@ -130,27 +134,27 @@ internal fun PauseLayer(label: String?, onReady: () -> Unit, modifier: Modifier 
             val dotY = centre.y + size.minDimension * 0.36f
             for (i in 0 until count) {
                 val lit = !still && i <= into / 1000
-                drawCircle(if (lit) Color(0xCCFFFFFF) else Color(0x33FFFFFF), gap * 0.25f, Offset(centre.x + (i - (count - 1) / 2f) * gap, dotY))
+                drawCircle(if (lit) StageTones.dotOn else StageTones.dotOff, gap * 0.25f, Offset(centre.x + (i - (count - 1) / 2f) * gap, dotY))
             }
-            bubbles.forEach { b -> drawCircle(Color(0x66FFFFFF), size.width * 0.06f, at(b, size.width, size.height)) }
+            bubbles.forEach { b -> drawCircle(StageTones.bubble, size.width * 0.06f, at(b, size.width, size.height)) }
         }
         Surface(
             onClick = onReady,
-            shape = RoundedCornerShape(50),
-            color = Color(0xFF1F7F54),
+            shape = Radius.pill,
+            color = AnswerLight.yes,
             contentColor = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
-                .height(96.dp)
-                .widthIn(min = 96.dp)
+                .padding(bottom = Space.lg)
+                .height(Space.s96)
+                .widthIn(min = Space.s96)
                 .semantics { contentDescription = ready },
         ) {
-            Row(Modifier.padding(horizontal = 28.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(40.dp))
-                label?.let { Text(it, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(start = 12.dp)) }
+            Row(Modifier.padding(horizontal = Space.s28), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(Space.s40))
+                label?.let { Text(it, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(start = Space.md)) }
             }
         }
-        stop?.invoke(Modifier.align(Alignment.BottomCenter).padding(bottom = 128.dp).width(180.dp))
+        stop?.invoke(Modifier.align(Alignment.BottomCenter).padding(bottom = Space.s128).width(Space.s180))
     }
 }

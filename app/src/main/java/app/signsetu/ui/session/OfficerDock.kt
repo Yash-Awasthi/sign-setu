@@ -81,9 +81,11 @@ import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.LocalInk
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import androidx.compose.ui.text.input.VisualTransformation
 import app.signsetu.data.content.PhraseSlot
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
 
 /** Prepared questions an officer needs most often, offered on the main page until each has been asked. */
 private val QuickQuestions = listOf("s2", "n1", "n2", "n3", "h2", "f2", "i2", "l1")
@@ -146,11 +148,11 @@ internal fun Dock(
         nextQuestions(content, ui.selectedGroup, ui.session.role, ui.session.profile, askedIds)
     }
     val suggesting = answeredLast && pending == null && run.isEmpty() && !typing
-    Surface(color = colors.surfaceContainerLowest, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), shadowElevation = 8.dp) {
-        Column(Modifier.navigationBarsPadding().padding(top = Spacing.md)) {
+    Surface(color = colors.surfaceContainerLowest, shape = RoundedCornerShape(topStart = Space.xl, topEnd = Space.xl), shadowElevation = Space.sm) {
+        Column(Modifier.navigationBarsPadding().padding(top = Space.md)) {
             if (suggesting) SuggestionStrip(suggestions, officerLang, onAsk = onAskNow)
             AnimatedVisibility(!typing && quick.isNotEmpty(), enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(horizontal = Spacing.lg), modifier = Modifier.padding(bottom = Spacing.sm)) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(Space.sm), contentPadding = PaddingValues(horizontal = Space.lg), modifier = Modifier.padding(bottom = Space.sm)) {
                     if (noLanguage) item(key = "translate") {
                         val context = LocalContext.current
                         CategoryChip(stringResource(R.string.open_translate), false, locked = false) {
@@ -185,9 +187,9 @@ internal fun Dock(
             }
 
             AnimatedVisibility(!typing && aiFollowUps.isNotEmpty(), enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-                Column(Modifier.padding(horizontal = Spacing.lg).padding(bottom = 6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(13.dp))
+                Column(Modifier.padding(horizontal = Space.lg).padding(bottom = Space.s6)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
+                        Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(Space.s13))
                         Text(
                             text = stringResource(R.string.ai_followups_title),
                             style = MaterialTheme.typography.labelSmall,
@@ -196,25 +198,25 @@ internal fun Dock(
                         )
                     }
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Space.sm),
+                        contentPadding = PaddingValues(top = Space.xs),
                     ) {
                         items(aiFollowUps, key = { it }) { prompt ->
                             Surface(
-                                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(Radius.r14),
                                 color = MaterialTheme.colorScheme.tertiaryContainer,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f)),
+                                border = BorderStroke(Space.hair, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.4f)),
                                 modifier = Modifier
                                     .minimumInteractiveComponentSize()
                                     .clickable { onText(prompt) }
                                     .semantics { role = Role.Button; contentDescription = prompt },
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = Space.s10, vertical = Space.s6),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(Space.xs),
                                 ) {
-                                    Text("✨", fontSize = 12.sp)
+                                    Text("✨", fontSize = TypeSize.s12)
                                     Text(
                                         text = prompt,
                                         style = MaterialTheme.typography.labelMedium,
@@ -231,17 +233,17 @@ internal fun Dock(
 
             if (typing || attached.isNotEmpty()) {
                 FlowRow(
-                    Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    Modifier.padding(horizontal = Space.lg).padding(bottom = Space.sm),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s6),
+                    verticalArrangement = Arrangement.spacedBy(Space.s6),
                 ) {
                     if (assistant && typing) AssistChip(thinking, onAssist)
                     ModeLabels.forEach { (mode, label) -> ModeChip(stringResource(label), mode in modes) { onMode(mode) } }
                     attached.forEach { id ->
-                        Surface(shape = RoundedCornerShape(50), color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = Modifier.height(32.dp)) {
-                            Row(Modifier.padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                CardImage(id, Modifier.size(20.dp))
-                                Text(content.cards[id]?.label?.get(officerLang) ?: id, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 4.dp))
+                        Surface(shape = Radius.pill, color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = Modifier.height(Space.xxl)) {
+                            Row(Modifier.padding(horizontal = Space.s10), verticalAlignment = Alignment.CenterVertically) {
+                                CardImage(id, Modifier.size(Space.s20))
+                                Text(content.cards[id]?.label?.get(officerLang) ?: id, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = Space.xs))
                             }
                         }
                     }
@@ -257,7 +259,7 @@ internal fun Dock(
             } else if (typing && draft != null) {
                 AssistantCard(draft, null, content.language(subjectLang)?.english ?: subjectLang, onDraftOff)
             } else if (typing && noHelp) {
-                Text(stringResource(R.string.ai_none), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm))
+                Text(stringResource(R.string.ai_none), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, modifier = Modifier.padding(horizontal = Space.lg).padding(bottom = Space.sm))
             }
 
             Composer(
@@ -282,15 +284,15 @@ internal fun Ready(pending: Pending, content: ContentBundle, officerLang: String
         shape = MaterialTheme.shapes.medium,
         color = colors.primaryContainer,
         contentColor = colors.onPrimaryContainer,
-        modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm).fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = Space.lg).padding(bottom = Space.sm).fillMaxWidth(),
     ) {
-        Row(Modifier.padding(start = Spacing.md, top = Spacing.sm, bottom = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(start = Space.md, top = Space.sm, bottom = Space.sm), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.chat_ready), style = MaterialTheme.typography.labelSmall, color = colors.primary)
                 Text(describe(pending, content, officerLang), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (pending is Pending.Ask) MediaSummary(pending.question, content, subjectLang, profile)
                 if (pending is Pending.Ask && content.isRights(pending.question)) {
-                    Text(stringResource(R.string.rights_notice_officer), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp, end = Spacing.sm))
+                    Text(stringResource(R.string.rights_notice_officer), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = Space.xs, end = Space.sm))
                 }
             }
             IconButton(onClick = onClear) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel)) }
@@ -311,13 +313,13 @@ private fun Composer(
 ) {
     val colors = MaterialTheme.colorScheme
     val ink = LocalInk.current
-    Row(Modifier.fillMaxWidth().padding(start = Spacing.sm, end = Spacing.md, bottom = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onPictures, modifier = Modifier.size(48.dp)) {
-            Surface(shape = CircleShape, color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(if (text.isEmpty()) R.string.action_board else R.string.officer_add_pictures), modifier = Modifier.padding(8.dp))
+    Row(Modifier.fillMaxWidth().padding(start = Space.sm, end = Space.md, bottom = Space.md), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onPictures, modifier = Modifier.size(Space.s48)) {
+            Surface(shape = CircleShape, color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = Modifier.size(Space.s40)) {
+                Icon(Icons.Filled.Add, contentDescription = stringResource(if (text.isEmpty()) R.string.action_board else R.string.officer_add_pictures), modifier = Modifier.padding(Space.sm))
             }
         }
-        Surface(shape = RoundedCornerShape(24.dp), color = colors.surfaceContainerHigh, modifier = Modifier.weight(1f).padding(horizontal = 4.dp)) {
+        Surface(shape = RoundedCornerShape(Radius.r24), color = colors.surfaceContainerHigh, modifier = Modifier.weight(1f).padding(horizontal = Space.xs)) {
             BasicTextField(
                 value = text,
                 onValueChange = onText,
@@ -328,7 +330,7 @@ private fun Composer(
                 cursorBrush = SolidColor(colors.primary),
                 visualTransformation = visualTransformation,
                 maxLines = 4,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = Spacing.lg, vertical = 13.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = Space.s48).padding(horizontal = Space.lg, vertical = Space.s13),
                 decorationBox = { field ->
                     if (text.isEmpty()) Text(stringResource(R.string.quick_hint), style = MaterialTheme.typography.bodyLarge, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     field()
@@ -336,28 +338,28 @@ private fun Composer(
             )
         }
         if (text.isEmpty()) onVoice?.let { voice ->
-            IconButton(onClick = voice, modifier = Modifier.size(48.dp)) { Icon(painterResource(R.drawable.ic_mic), contentDescription = stringResource(R.string.voice_title)) }
+            IconButton(onClick = voice, modifier = Modifier.size(Space.s48)) { Icon(painterResource(R.drawable.ic_mic), contentDescription = stringResource(R.string.voice_title)) }
         }
         // Reading signs is the other half of the conversation, so it sits beside Send; typed text goes first.
         onRead?.let { read ->
             val name = stringResource(R.string.officer_read_signs)
             Surface(
                 onClick = read,
-                shape = RoundedCornerShape(50),
+                shape = Radius.pill,
                 color = colors.tertiaryContainer,
                 contentColor = colors.onTertiaryContainer,
-                modifier = Modifier.padding(start = 4.dp).height(48.dp).widthIn(min = 48.dp).semantics { contentDescription = name },
+                modifier = Modifier.padding(start = Space.xs).height(Space.s48).widthIn(min = Space.s48).semantics { contentDescription = name },
             ) {
-                Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Icon(painterResource(R.drawable.ic_hand), contentDescription = null, modifier = Modifier.size(22.dp))
-                    if (text.isEmpty()) Text(name, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.padding(start = 6.dp))
+                Row(Modifier.padding(horizontal = Space.md), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Icon(painterResource(R.drawable.ic_hand), contentDescription = null, modifier = Modifier.size(Space.s22))
+                    if (text.isEmpty()) Text(name, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.padding(start = Space.s6))
                 }
             }
         }
         Box(
             Modifier
-                .padding(start = 4.dp)
-                .size(48.dp)
+                .padding(start = Space.xs)
+                .size(Space.s48)
                 .clip(CircleShape)
                 .background(if (canSend) ink.brush else SolidColor(colors.surfaceContainerHighest))
                 .clickable(enabled = canSend, role = Role.Button, onClickLabel = stringResource(R.string.officer_show), onClick = onSend),
@@ -372,13 +374,13 @@ private fun Composer(
 internal fun CategoryChip(label: String, selected: Boolean, locked: Boolean, onLongClick: (() -> Unit)? = null, longClickLabel: String? = null, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
-        shape = RoundedCornerShape(50),
+        shape = Radius.pill,
         color = if (selected) colors.primary else colors.surfaceContainerHigh,
         contentColor = if (selected) colors.onPrimary else colors.onSurfaceVariant,
-        modifier = Modifier.minimumInteractiveComponentSize().height(36.dp).clip(RoundedCornerShape(50)).runnable(onClick, onLongClick, longClickLabel).semantics { this.selected = selected },
+        modifier = Modifier.minimumInteractiveComponentSize().height(Space.s36).clip(Radius.pill).runnable(onClick, onLongClick, longClickLabel).semantics { this.selected = selected },
     ) {
-        Row(Modifier.padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (locked) Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(14.dp))
+        Row(Modifier.padding(horizontal = Space.s14), verticalAlignment = Alignment.CenterVertically) {
+            if (locked) Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.padding(end = Space.xs).size(Space.s14))
             Text(label, style = MaterialTheme.typography.labelLarge)
         }
     }
@@ -390,17 +392,17 @@ private fun AssistChip(thinking: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .minimumInteractiveComponentSize()
-            .height(32.dp)
-            .clip(RoundedCornerShape(50))
+            .height(Space.xxl)
+            .clip(Radius.pill)
             .background(ink.brush)
             .clickable(enabled = !thinking, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = Space.md),
         contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (thinking) CircularProgressIndicator(Modifier.size(14.dp), color = Color.White, strokeWidth = 2.dp)
-            else Icon(Icons.Filled.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-            Text(stringResource(if (thinking) R.string.ai_working else R.string.ai_suggest), style = MaterialTheme.typography.labelMedium, color = Color.White, modifier = Modifier.padding(start = 4.dp))
+            if (thinking) CircularProgressIndicator(Modifier.size(Space.s14), color = Color.White, strokeWidth = Space.xxs)
+            else Icon(Icons.Filled.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(Space.s14))
+            Text(stringResource(if (thinking) R.string.ai_working else R.string.ai_suggest), style = MaterialTheme.typography.labelMedium, color = Color.White, modifier = Modifier.padding(start = Space.xs))
         }
     }
 }
@@ -413,10 +415,10 @@ private fun AssistantCard(caption: String, meaning: String?, languageName: Strin
         shape = MaterialTheme.shapes.medium,
         color = colors.secondaryContainer,
         contentColor = colors.onSecondaryContainer,
-        modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm).fillMaxWidth(),
+        modifier = Modifier.padding(horizontal = Space.lg).padding(bottom = Space.sm).fillMaxWidth(),
     ) {
-        Row(Modifier.padding(start = Spacing.md, top = Spacing.sm, bottom = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.padding(start = Space.md, top = Space.sm, bottom = Space.sm), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                 Text(stringResource(R.string.ai_caption, languageName), style = MaterialTheme.typography.labelSmall, color = colors.tertiary)
                 Text(caption, style = MaterialTheme.typography.titleSmall)
                 if (meaning != null) {
@@ -434,13 +436,13 @@ private fun ModeChip(label: String, on: Boolean, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
+        shape = Radius.pill,
         color = if (on) colors.primary else colors.surfaceContainerHigh,
         contentColor = if (on) colors.onPrimary else colors.onSurfaceVariant,
-        modifier = Modifier.minimumInteractiveComponentSize().height(32.dp).semantics { selected = on },
+        modifier = Modifier.minimumInteractiveComponentSize().height(Space.xxl).semantics { selected = on },
     ) {
-        Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (on) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.padding(end = 4.dp).size(14.dp))
+        Row(Modifier.padding(horizontal = Space.md), verticalAlignment = Alignment.CenterVertically) {
+            if (on) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.padding(end = Space.xs).size(Space.s14))
             Text(label, style = MaterialTheme.typography.labelMedium)
         }
     }
@@ -455,20 +457,20 @@ private fun MediaSummary(question: Question, content: ContentBundle, subjectLang
         if (profile != Profile.ISL_USER) add(R.string.media_audio to (content.questionAudio(question.id, subjectLang) != null))
         add(R.string.media_gesture to (content.gestureFor(question) != null))
     }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 4.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s6), verticalArrangement = Arrangement.spacedBy(Space.xs), modifier = Modifier.padding(top = Space.xs)) {
         items.forEach { (label, present) ->
             val name = stringResource(label)
             Surface(
-                shape = RoundedCornerShape(50),
+                shape = Radius.pill,
                 color = if (present) MaterialTheme.colorScheme.surfaceContainerLowest else MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = if (present) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onTertiaryContainer,
             ) {
-                Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(if (present) Icons.Filled.Check else Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(14.dp))
+                Row(Modifier.padding(horizontal = Space.s10, vertical = Space.xs), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(if (present) Icons.Filled.Check else Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(Space.s14))
                     Text(
                         if (present) name else stringResource(R.string.media_missing, name),
                         style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(start = 4.dp),
+                        modifier = Modifier.padding(start = Space.xs),
                     )
                 }
             }

@@ -75,6 +75,7 @@ import app.signsetu.pair.ByeReason
 import app.signsetu.pair.LinkRole
 import app.signsetu.pair.LinkState
 import app.signsetu.ui.pair.rememberPairedStage
+import app.signsetu.ui.theme.Space
 
 @Composable
 internal fun SessionRoute(
@@ -236,7 +237,7 @@ internal fun SessionRoute(
             // On a tablet the call keeps a readable column instead of stretching the caption and tiles edge to edge.
             if (shape == SessionShape.TABLET) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Box(Modifier.widthIn(max = 720.dp).fillMaxSize()) { stageSurface() }
+                    Box(Modifier.widthIn(max = Space.s720).fillMaxSize()) { stageSurface() }
                 }
             } else {
                 stageSurface()

@@ -57,32 +57,35 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalAnswerColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import androidx.compose.ui.graphics.painter.Painter
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
 
 @Composable
 internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, name: String? = label) {
     val answer = LocalAnswerColors.current
     PressableSurface(
         onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(Radius.r20),
         color = Color.White,
-        border = if (chosen) BorderStroke(4.dp, answer.selection) else TileEdge,
-        modifier = modifier.heightIn(min = 96.dp).semantics {
+        border = if (chosen) BorderStroke(Space.xs, answer.selection) else TileEdge,
+        modifier = modifier.heightIn(min = Space.s96).semantics {
             role = Role.Button
             (label ?: name)?.let { contentDescription = it }
             selected = chosen
         },
     ) {
         Box {
-            Column(Modifier.padding(8.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.padding(Space.sm).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 // Without a word in their language the picture carries the meaning alone, so it gets the room.
-                CardImage(cardId, Modifier.size(if (label != null) 58.dp else 76.dp))
+                CardImage(cardId, Modifier.size(if (label != null) Space.s58 else Space.s76))
                 label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
             // A tick a confused subject can see at a glance, not just a coloured edge.
-            if (chosen) Surface(shape = CircleShape, color = answer.selection, modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(30.dp)) {
-                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.padding(4.dp))
+            if (chosen) Surface(shape = CircleShape, color = answer.selection, modifier = Modifier.align(Alignment.TopEnd).padding(Space.s6).size(Space.s30)) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.padding(Space.xs))
             }
         }
     }
@@ -103,7 +106,7 @@ internal fun NumberButton(digit: String, chosen: Boolean, onClick: () -> Unit, m
         },
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(digit, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 26.sp, color = if (chosen) answer.onSelection else Ink)
+            Text(digit, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s26, color = if (chosen) answer.onSelection else Ink)
         }
     }
 }
@@ -112,7 +115,7 @@ internal fun NumberButton(digit: String, chosen: Boolean, onClick: () -> Unit, m
 @Composable
 internal fun PauseRow(content: ContentBundle, lang: String, chosenCard: String?, onCard: (String) -> Unit, compact: Boolean = false) {
     val answer = LocalAnswerColors.current
-    SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosenCard == "stop", { onCard("stop") }, Modifier.fillMaxWidth(), height = if (compact) 48.dp else 52.dp)
+    SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, chosenCard == "stop", { onCard("stop") }, Modifier.fillMaxWidth(), height = if (compact) Space.s48 else Space.s52)
 }
 
 /** A picture over its word, for the three answers that keep a conversation honest. */
@@ -121,19 +124,19 @@ internal fun StripAnswer(cardId: String, label: String?, name: String, chosen: B
     val answer = LocalAnswerColors.current
     PressableSurface(
         onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(Radius.r20),
         color = answer.unsure,
-        border = if (chosen) BorderStroke(3.dp, answer.onUnsure) else null,
-        modifier = modifier.height(76.dp).semantics {
+        border = if (chosen) BorderStroke(Space.s3, answer.onUnsure) else null,
+        modifier = modifier.height(Space.s76).semantics {
             role = Role.Button
             contentDescription = label ?: name
             selected = chosen
         },
     ) {
-        Column(Modifier.padding(horizontal = 4.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            CardImage(cardId, Modifier.size(if (label != null) 28.dp else 44.dp))
+        Column(Modifier.padding(horizontal = Space.xs, vertical = Space.s6), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            CardImage(cardId, Modifier.size(if (label != null) Space.s28 else Space.s44))
             label?.let {
-                Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 16.sp, color = answer.onUnsure, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s14, lineHeight = TypeSize.s16, color = answer.onUnsure, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -142,16 +145,16 @@ internal fun StripAnswer(cardId: String, label: String?, name: String, chosen: B
 
 @Composable
 internal fun SmallAnswer(
-    cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, height: Dp = 52.dp,
+    cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, height: Dp = Space.s52,
     icon: Painter? = null,
     /** A short word under the picture, for buttons too narrow for a label beside it. */
     caption: String? = null,
 ) {
     PressableSurface(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
+        shape = Radius.pill,
         color = color,
-        border = if (chosen) BorderStroke(3.dp, onColor) else null,
+        border = if (chosen) BorderStroke(Space.s3, onColor) else null,
         modifier = modifier.height(height).semantics {
             role = Role.Button
             contentDescription = label ?: name
@@ -159,12 +162,12 @@ internal fun SmallAnswer(
         },
     ) {
         if (caption != null) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            CardImage(cardId, Modifier.size(26.dp))
-            Text(caption, fontSize = 11.sp, lineHeight = 12.sp, color = onColor, textAlign = TextAlign.Center, maxLines = 2, modifier = Modifier.padding(horizontal = 4.dp))
+            CardImage(cardId, Modifier.size(Space.s26))
+            Text(caption, fontSize = TypeSize.s11, lineHeight = TypeSize.s12, color = onColor, textAlign = TextAlign.Center, maxLines = 2, modifier = Modifier.padding(horizontal = Space.xs))
         } else Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            if (icon != null) Icon(icon, null, tint = onColor, modifier = Modifier.size(30.dp))
-            else CardImage(cardId, Modifier.size(if (label != null) 30.dp else 40.dp))
-            label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = onColor, modifier = Modifier.padding(start = Spacing.sm)) }
+            if (icon != null) Icon(icon, null, tint = onColor, modifier = Modifier.size(Space.s30))
+            else CardImage(cardId, Modifier.size(if (label != null) Space.s30 else Space.s40))
+            label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = onColor, modifier = Modifier.padding(start = Space.sm)) }
         }
     }
 }
@@ -177,7 +180,7 @@ internal fun PressableSurface(
     color: Color,
     modifier: Modifier = Modifier,
     border: BorderStroke? = null,
-    shadowElevation: Dp = 0.dp,
+    shadowElevation: Dp = Space.none,
     content: @Composable () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -203,22 +206,22 @@ internal fun PressableSurface(
 @Composable
 internal fun LanguageGrid(content: ContentBundle, chosen: String?, modifier: Modifier, onLanguage: (String) -> Unit) {
     val answer = LocalAnswerColors.current
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
         content.languages.chunked(3).forEach { row ->
-            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                 row.forEach { l ->
                     val selected = chosen == l.code
                     PressableSurface(
                         onClick = { onLanguage(l.code) },
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(Radius.r18),
                         color = Color.White,
-                        border = if (selected) BorderStroke(4.dp, answer.selection) else TileEdge,
-                        shadowElevation = 1.dp,
+                        border = if (selected) BorderStroke(Space.xs, answer.selection) else TileEdge,
+                        shadowElevation = Space.hair,
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                     ) {
-                        Column(Modifier.padding(horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Text(l.name, fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(l.english, fontSize = 11.sp, color = Color(0xFF6B5E50), maxLines = 1)
+                        Column(Modifier.padding(horizontal = Space.s6), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            Text(l.name, fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = TypeSize.s19, color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(l.english, fontSize = TypeSize.s11, color = StageTones.captionMuted, maxLines = 1)
                         }
                     }
                 }
@@ -228,4 +231,4 @@ internal fun LanguageGrid(content: ContentBundle, chosen: String?, modifier: Mod
     }
 }
 
-internal val StageColors.toolEdge get() = BorderStroke(1.dp, onTool.copy(alpha = 0.16f))
+internal val StageColors.toolEdge get() = BorderStroke(Space.hair, onTool.copy(alpha = 0.16f))

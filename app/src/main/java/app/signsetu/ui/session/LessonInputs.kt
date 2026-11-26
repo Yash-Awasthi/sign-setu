@@ -84,12 +84,17 @@ import app.signsetu.data.content.valid
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalAnswerColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
+import app.signsetu.ui.theme.StageScheme
+import app.signsetu.ui.theme.AnswerLight
 
-private val Soft = Color(0xFFFFE7BF)
-private val OnSoft = Color(0xFF3D2700)
+private val Soft = AnswerLight.pause
+private val OnSoft = AnswerLight.onPause
 /** A Done that cannot be pressed yet. */
-internal val Off = Color(0xFFBFD8CB)
+internal val Off = StageTones.lessonOff
 
 /** The question on stage, when it takes a lesson-sheet answer input instead of the answer rails. */
 fun lessonQuestion(pending: Pending?): Question? = (pending as? Pending.Ask)?.question?.takeIf { it.answer != null }
@@ -111,7 +116,7 @@ internal fun AnswerPanel(
     var readBack by remember(q.id) { mutableStateOf<Given?>(null) }
     var accepted by remember(q.id) { mutableStateOf<Given?>(null) }
     val entered = { g: Given -> readBack = g; accepted = null; onGiven(g) }
-    Column(modifier.imePadding(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(modifier.imePadding(), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             val back = readBack
             val done = accepted
@@ -146,19 +151,19 @@ internal fun AnswerPanel(
 @Composable
 private fun ReadBack(text: String, content: ContentBundle, lang: String, onYes: (() -> Unit)?, onFix: () -> Unit) {
     val answer = LocalAnswerColors.current
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterVertically)) {
-        Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
-            Column(Modifier.padding(Spacing.lg), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Space.sm, Alignment.CenterVertically)) {
+        Surface(shape = RoundedCornerShape(Radius.r24), color = Color.White, shadowElevation = Space.xs, modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
+            Column(Modifier.padding(Space.lg), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (onYes != null) content.subjectText("is_this_right", lang)?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = Ink) }
-                else Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYesContainer, modifier = Modifier.size(32.dp))
+                else Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYesContainer, modifier = Modifier.size(Space.xxl))
                 Text(
-                    text, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 44.sp, color = Ink,
+                    text, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s40, lineHeight = TypeSize.s44, color = Ink,
                     textAlign = TextAlign.Center, maxLines = 3, overflow = TextOverflow.Ellipsis,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 40.sp),
+                    autoSize = TextAutoSize.StepBased(minFontSize = TypeSize.s16, maxFontSize = TypeSize.s40),
                 )
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.md)) {
             BigButton(rememberVectorPainter(Icons.Filled.Edit), content.subjectText("fix", lang), stringResource(R.string.stage_fix), Soft, OnSoft, Modifier.weight(1f), onFix)
             onYes?.let { BigButton(rememberVectorPainter(Icons.Filled.Check), content.subjectText("yes", lang), stringResource(R.string.stage_confirm), answer.yes, answer.onYes, Modifier.weight(1f), it) }
         }
@@ -167,10 +172,10 @@ private fun ReadBack(text: String, content: ContentBundle, lang: String, onYes: 
 
 @Composable
 private fun BigButton(icon: Painter, label: String?, name: String, color: Color, onColor: Color, modifier: Modifier, onClick: () -> Unit) {
-    PressableSurface(onClick = onClick, shape = RoundedCornerShape(50), color = color, modifier = modifier.height(64.dp).semantics { contentDescription = label ?: name }) {
+    PressableSurface(onClick = onClick, shape = Radius.pill, color = color, modifier = modifier.height(Space.s64).semantics { contentDescription = label ?: name }) {
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, contentDescription = null, tint = onColor)
-            label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = onColor, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = Spacing.sm)) }
+            label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = onColor, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = Space.sm)) }
         }
     }
 }
@@ -185,23 +190,23 @@ private fun NumberPad(type: AnswerType, title: (@Composable () -> Unit)? = null,
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // Four 48 dp key rows need this much at normal sizes; below it the gaps shrink and the display takes what is left.
         val tight = maxHeight < (4 * 48 + 52 + 4 * 6 + if (hand) HAND_ROW_DP + 6 else 0).dp
-        val gap = if (tight) 4.dp else 6.dp
+        val gap = if (tight) Space.xs else Space.s6
         val handHeight = HAND_ROW_DP.dp
-        val display = if (!tight) 52.dp else (maxHeight - 49.dp * 4 - gap * (if (hand) 5 else 4) - if (hand) handHeight else 0.dp).coerceIn(32.dp, 52.dp)
+        val display = if (!tight) Space.s52 else (maxHeight - Space.s49 * 4 - gap * (if (hand) 5 else 4) - if (hand) handHeight else Space.none).coerceIn(Space.xxl, Space.s52)
         // Keys never shrink below 48 dp: with less room than that the pad scrolls instead.
-        val scroll = maxHeight < 48.dp * 4 + 32.dp + gap * (if (hand) 5 else 4) + (if (hand) handHeight else 0.dp)
-        val keyRow = if (scroll) Modifier.height(48.dp) else Modifier
+        val scroll = maxHeight < Space.s48 * 4 + Space.xxl + gap * (if (hand) 5 else 4) + (if (hand) handHeight else Space.none)
+        val keyRow = if (scroll) Modifier.height(Space.s48) else Modifier
         Column(
             (if (scroll) Modifier.fillMaxWidth().verticalScroll(rememberScrollState()) else Modifier.fillMaxSize()),
             verticalArrangement = Arrangement.spacedBy(gap),
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
                 title?.invoke()
-                Surface(shape = RoundedCornerShape(18.dp), color = Color.White, modifier = Modifier.weight(1f).height(display)) {
+                Surface(shape = RoundedCornerShape(Radius.r18), color = Color.White, modifier = Modifier.weight(1f).height(display)) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             if (type == AnswerType.PHONE) groupPhone(digits) else digits, fontFamily = Baloo, fontWeight = FontWeight.Bold, color = Ink, maxLines = 1,
-                            autoSize = TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 34.sp),
+                            autoSize = TextAutoSize.StepBased(minFontSize = TypeSize.s16, maxFontSize = TypeSize.s34),
                         )
                     }
                 }
@@ -210,18 +215,18 @@ private fun NumberPad(type: AnswerType, title: (@Composable () -> Unit)? = null,
             if (hand) {
                 LazyRow(
                     modifier = Modifier.fillMaxWidth().height(handHeight),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s6),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     items(10) { index ->
                         val num = (index + 1).toString()
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (digits == num) Color(0xFFFFB300) else Color.White,
-                            border = BorderStroke(1.dp, Color(0xFFD7C9B8)),
+                            shape = RoundedCornerShape(Radius.r12),
+                            color = if (digits == num) StageTones.digitLit else Color.White,
+                            border = BorderStroke(Space.hair, StageScheme.outlineVariant),
                             modifier = Modifier
                                 .height(HAND_ROW_DP.dp)
-                                .padding(horizontal = 2.dp)
+                                .padding(horizontal = Space.xxs)
                                 .clickable {
                                     digits = num
                                     if (valid(type, num)) {
@@ -230,23 +235,23 @@ private fun NumberPad(type: AnswerType, title: (@Composable () -> Unit)? = null,
                                 },
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = Space.s10, vertical = Space.s6),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Space.xs),
                             ) {
-                                Text("🖐", fontSize = 14.sp)
-                                Text(num, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Ink)
+                                Text("🖐", fontSize = TypeSize.s14)
+                                Text(num, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s16, color = Ink)
                             }
                         }
                     }
                 }
             }
             listOf("123", "456", "789").forEach { row ->
-                Row((if (scroll) keyRow else Modifier.weight(1f)).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row((if (scroll) keyRow else Modifier.weight(1f)).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6)) {
                     row.forEach { c -> PadKey(c.toString(), Modifier.weight(1f)) { digits = padPress(type, digits, c) } }
                 }
             }
-            Row((if (scroll) keyRow else Modifier.weight(1f)).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row((if (scroll) keyRow else Modifier.weight(1f)).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6)) {
                 PadIcon(rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowBack), stringResource(R.string.pad_delete), Soft, OnSoft, Modifier.weight(1f)) { digits = digits.dropLast(1) }
                 PadKey("0", Modifier.weight(1f)) { digits = padPress(type, digits, '0') }
                 PadIcon(rememberVectorPainter(Icons.Filled.Check), stringResource(R.string.stage_done), if (ok) answer.yes else Off, answer.onYes, Modifier.weight(1f)) { if (ok) onEnter(digits) }
@@ -260,15 +265,15 @@ private const val HAND_ROW_DP = 48
 
 @Composable
 private fun PadKey(digit: String, modifier: Modifier, onClick: () -> Unit) {
-    PressableSurface(onClick = onClick, shape = RoundedCornerShape(16.dp), color = Color.White, modifier = modifier.fillMaxSize().heightIn(min = 48.dp)) {
-        Box(contentAlignment = Alignment.Center) { Text(digit, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Ink) }
+    PressableSurface(onClick = onClick, shape = RoundedCornerShape(Radius.r16), color = Color.White, modifier = modifier.fillMaxSize().heightIn(min = Space.s48)) {
+        Box(contentAlignment = Alignment.Center) { Text(digit, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s28, color = Ink) }
     }
 }
 
 @Composable
 private fun PadIcon(icon: Painter, name: String, color: Color, onColor: Color, modifier: Modifier, onClick: () -> Unit) {
-    PressableSurface(onClick = onClick, shape = RoundedCornerShape(16.dp), color = color, modifier = modifier.fillMaxSize().heightIn(min = 48.dp).semantics { contentDescription = name }) {
-        Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.size(28.dp)) }
+    PressableSurface(onClick = onClick, shape = RoundedCornerShape(Radius.r16), color = color, modifier = modifier.fillMaxSize().heightIn(min = Space.s48).semantics { contentDescription = name }) {
+        Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = onColor, modifier = Modifier.size(Space.s28)) }
     }
 }
 
@@ -280,7 +285,7 @@ private fun SiblingPads(content: ContentBundle, lang: String, onEnter: (String) 
     key(card) {
         NumberPad(AnswerType.SIBLINGS, title = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CardImage(card, Modifier.size(36.dp))
+                CardImage(card, Modifier.size(Space.s36))
                 content.subjectText(if (brothers == null) "brothers" else "sisters", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = Ink) }
             }
         }) { n -> brothers?.let { onEnter("$it/$n") } ?: run { brothers = n } }
@@ -290,15 +295,15 @@ private fun SiblingPads(content: ContentBundle, lang: String, onEnter: (String) 
 @Composable
 private fun ClassGrid(content: ContentBundle, lang: String, onPick: (String) -> Unit) {
     val named = mapOf("college" to stringResource(R.string.stage_college), "not_in_school" to stringResource(R.string.stage_not_in_school))
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
         CLASSES.take(12).chunked(4).forEach { row ->
-            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6)) {
                 row.forEach { c -> PadKey(c, Modifier.weight(1f)) { onPick(c) } }
             }
         }
-        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6)) {
             CLASSES.drop(12).forEach { c ->
-                PressableSurface(onClick = { onPick(c) }, shape = RoundedCornerShape(16.dp), color = Color.White, modifier = Modifier.weight(1f).fillMaxSize().heightIn(min = 48.dp)) {
+                PressableSurface(onClick = { onPick(c) }, shape = RoundedCornerShape(Radius.r16), color = Color.White, modifier = Modifier.weight(1f).fillMaxSize().heightIn(min = Space.s48)) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(content.subjectText(c, lang) ?: named.getValue(c), style = MaterialTheme.typography.titleMedium, color = Ink, textAlign = TextAlign.Center, maxLines = 2)
                     }
@@ -336,15 +341,15 @@ private fun PlacePicker(type: AnswerType, content: ContentBundle, lang: String, 
 
 @Composable
 private fun PickList(title: String?, items: List<Pair<String, String>>, onBack: (() -> Unit)?, onPick: (String) -> Unit) {
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
             onBack?.let { Back(it) }
             title?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = Ink) }
         }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
             items(items, key = { it.first }) { (id, name) ->
-                PressableSurface(onClick = { onPick(id) }, shape = RoundedCornerShape(16.dp), color = Color.White, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                    Box(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm), contentAlignment = Alignment.CenterStart) {
+                PressableSurface(onClick = { onPick(id) }, shape = RoundedCornerShape(Radius.r16), color = Color.White, modifier = Modifier.fillMaxWidth().heightIn(min = Space.s52)) {
+                    Box(Modifier.padding(horizontal = Space.lg, vertical = Space.sm), contentAlignment = Alignment.CenterStart) {
                         Text(name, style = MaterialTheme.typography.titleMedium, color = Ink)
                     }
                 }
@@ -356,7 +361,7 @@ private fun PickList(title: String?, items: List<Pair<String, String>>, onBack: 
 @Composable
 private fun Back(onClick: () -> Unit) {
     val name = stringResource(R.string.stage_back)
-    PressableSurface(onClick = onClick, shape = CircleShape, color = Soft, modifier = Modifier.size(48.dp).semantics { contentDescription = name }) {
+    PressableSurface(onClick = onClick, shape = CircleShape, color = Soft, modifier = Modifier.size(Space.s48).semantics { contentDescription = name }) {
         Box(contentAlignment = Alignment.Center) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = OnSoft) }
     }
 }
@@ -370,9 +375,9 @@ private fun WordEntry(type: AnswerType, title: String?, onBack: (() -> Unit)? = 
     val answer = LocalAnswerColors.current
     val ok = valid(type, text)
     val max = if (type == AnswerType.NAME) NAME_MAX else TEXT_MAX
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
         title?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = Ink) }
-        Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 4.dp, modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Surface(shape = RoundedCornerShape(Radius.r24), color = Color.White, shadowElevation = Space.xs, modifier = Modifier.weight(1f).fillMaxWidth()) {
             BasicTextField(
                 value = text,
                 onValueChange = { if (it.length <= max) text = it },
@@ -380,10 +385,10 @@ private fun WordEntry(type: AnswerType, title: String?, onBack: (() -> Unit)? = 
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, autoCorrectEnabled = false, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { if (ok) onDone(text) }),
                 cursorBrush = SolidColor(Ink),
-                modifier = Modifier.fillMaxSize().padding(Spacing.lg).focusRequester(focus),
+                modifier = Modifier.fillMaxSize().padding(Space.lg).focusRequester(focus),
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
             onBack?.let { Back(it) }
             onSkip?.let { BigButton(rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowBack), null, stringResource(R.string.stage_skip), Soft, OnSoft, Modifier.weight(1f), it) }
             BigButton(rememberVectorPainter(Icons.Filled.Check), null, stringResource(R.string.stage_done), if (ok) answer.yes else Off, answer.onYes, Modifier.weight(1f)) { if (ok) onDone(text) }
@@ -396,8 +401,8 @@ private fun WordEntry(type: AnswerType, title: String?, onBack: (() -> Unit)? = 
 private fun PictureChoices(cards: List<String>, content: ContentBundle, lang: String, onDone: (List<String>) -> Unit) {
     val picked = remember(cards) { mutableStateListOf<String>() }
     val answer = LocalAnswerColors.current
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        LazyVerticalGrid(GridCells.Fixed(3), Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
+        LazyVerticalGrid(GridCells.Fixed(3), Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
             items(cards.filter { it in content.cards }.distinct(), key = { it }) { id ->
                 ChoiceTile(id, content.cards[id]?.label?.get(lang), id in picked, { if (!picked.remove(id)) picked += id }, Modifier, name = content.cards[id]?.label?.get("en"))
             }
@@ -413,7 +418,7 @@ private fun PictureChoices(cards: List<String>, content: ContentBundle, lang: St
 @Composable
 private fun WaysOut(content: ContentBundle, lang: String, chosen: String?, onCard: (String) -> Unit, onSign: (() -> Unit)?, extra: String? = null) {
     val answer = LocalAnswerColors.current
-    Row(Modifier.fillMaxWidth().height(64.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+    Row(Modifier.fillMaxWidth().height(Space.s64), horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
         extra?.let { Way(it, content.cards[it]?.label?.get(lang), stringResource(R.string.stage_no_phone), Color.White, Ink, chosen == it) { onCard(it) } }
         Way("dont_know", content.subjectText("dont_know", lang), stringResource(R.string.stage_dont_know), answer.unsure, answer.onUnsure, chosen == "dont_know") { onCard("dont_know") }
         Way(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answer.unsure, answer.onUnsure, chosen == DONT_UNDERSTAND) { onCard(DONT_UNDERSTAND) }
@@ -423,10 +428,10 @@ private fun WaysOut(content: ContentBundle, lang: String, chosen: String?, onCar
             val name = word ?: stringResource(R.string.officer_read_signs)
             val stage = LocalStageColors.current
             // A tool colour and a word, so the camera never reads as a second Stop beside it.
-            PressableSurface(onClick = it, shape = RoundedCornerShape(16.dp), color = stage.tool, border = stage.toolEdge, modifier = Modifier.weight(1f).fillMaxSize().semantics { contentDescription = name }) {
+            PressableSurface(onClick = it, shape = RoundedCornerShape(Radius.r16), color = stage.tool, border = stage.toolEdge, modifier = Modifier.weight(1f).fillMaxSize().semantics { contentDescription = name }) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(painterResource(R.drawable.ic_videocam), contentDescription = null, tint = stage.onTool, modifier = Modifier.size(24.dp))
-                    word?.let { w -> Text(w, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = stage.onTool, maxLines = 1) }
+                    Icon(painterResource(R.drawable.ic_videocam), contentDescription = null, tint = stage.onTool, modifier = Modifier.size(Space.xl))
+                    word?.let { w -> Text(w, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s11, color = stage.onTool, maxLines = 1) }
                 }
             }
         }
@@ -438,14 +443,14 @@ private fun WaysOut(content: ContentBundle, lang: String, chosen: String?, onCar
 private fun RowScope.Way(cardId: String, label: String?, name: String, color: Color, onColor: Color, chosen: Boolean, onClick: () -> Unit) {
     PressableSurface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(Radius.r16),
         color = color,
-        border = if (chosen) BorderStroke(3.dp, onColor) else null,
+        border = if (chosen) BorderStroke(Space.s3, onColor) else null,
         modifier = Modifier.weight(1f).fillMaxSize().semantics { contentDescription = label ?: name },
     ) {
-        Column(Modifier.padding(2.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            CardImage(cardId, Modifier.size(if (label != null) 24.dp else 36.dp))
-            label?.let { Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 12.sp, color = onColor, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+        Column(Modifier.padding(Space.xxs), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            CardImage(cardId, Modifier.size(if (label != null) Space.xl else Space.s36))
+            label?.let { Text(it, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s11, lineHeight = TypeSize.s12, color = onColor, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis) }
         }
     }
 }

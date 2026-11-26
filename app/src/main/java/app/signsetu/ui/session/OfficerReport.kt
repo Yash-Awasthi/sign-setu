@@ -39,7 +39,7 @@ import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.start.profileTitle
 import app.signsetu.ui.start.roleTitle
 import app.signsetu.data.session.Role as SessionRole
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import java.io.File
 import app.signsetu.ui.pair.linkText
 import androidx.compose.material.icons.filled.Star
@@ -120,8 +120,8 @@ internal fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () 
             onDismissRequest = {},
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
             text = {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.lg)) {
-                    CircularProgressIndicator(Modifier.size(32.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.lg)) {
+                    CircularProgressIndicator(Modifier.size(Space.xxl))
                     Text(stringResource(R.string.export_working))
                 }
             },
@@ -136,8 +136,8 @@ internal fun ExportDialog(state: ExportState, onShare: () -> Unit, onFinish: () 
             text = { Text(stringResource(R.string.export_body)) },
             confirmButton = {
                 Button(onClick = onShare) {
-                    Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(stringResource(R.string.export_share), modifier = Modifier.padding(start = Spacing.sm))
+                    Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(Space.s18))
+                    Text(stringResource(R.string.export_share), modifier = Modifier.padding(start = Space.sm))
                 }
             },
             dismissButton = {

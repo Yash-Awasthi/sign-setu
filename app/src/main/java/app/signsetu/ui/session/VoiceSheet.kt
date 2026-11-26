@@ -37,11 +37,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.net.BrainClient
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import app.signsetu.voice.VoiceCapture
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import app.signsetu.ui.theme.Radius
 
 /** Tap, and the person speaks: their voice is kept in the session record, encrypted and sealed like every answer.
  * With a station brain paired, their words appear as they talk and the take stops by itself when they finish; the
@@ -106,11 +107,11 @@ internal fun VoiceSheet(
     }
 
     ModalBottomSheet(onDismissRequest = { capture.clear(); onDismiss() }) {
-        Column(Modifier.fillMaxWidth().padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Column(Modifier.fillMaxWidth().padding(Space.lg), verticalArrangement = Arrangement.spacedBy(Space.md)) {
             Text(stringResource(R.string.voice_title), style = MaterialTheme.typography.titleMedium)
             if (!consented) {
                 Text(stringResource(R.string.voice_consent), style = MaterialTheme.typography.bodyMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.md)) {
                     androidx.compose.material3.Button(onClick = onConsent) { Text(stringResource(R.string.voice_consent_yes)) }
                     androidx.compose.material3.OutlinedButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
                 }
@@ -121,9 +122,9 @@ internal fun VoiceSheet(
             LinearProgressIndicator(progress = { level }, modifier = Modifier.fillMaxWidth())
             val label = stringResource(if (recording) R.string.voice_stop else R.string.voice_them)
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(Radius.r20),
                 color = if (recording) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer,
-                modifier = Modifier.fillMaxWidth().height(96.dp).semantics { contentDescription = label }
+                modifier = Modifier.fillMaxWidth().height(Space.s96).semantics { contentDescription = label }
                     .clickable(enabled = granted, role = Role.Button) {
                         if (recording) finish()
                         else if (capture.start()) { heard = null; status = R.string.voice_listening; recording = true }
@@ -131,7 +132,7 @@ internal fun VoiceSheet(
                     },
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(Spacing.md))
+                    Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(Space.md))
                 }
             }
             heard?.takeIf { it.text.isNotBlank() || it.tentative.isNotBlank() }?.let { h ->

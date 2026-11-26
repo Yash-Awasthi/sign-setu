@@ -65,7 +65,7 @@ import app.signsetu.sign.SignSegment
 import app.signsetu.sign.parseSentences
 import app.signsetu.sign.sentencePrompt
 import app.signsetu.ui.components.LocalOnlineAssistant
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 
 private const val PREDICTIONS = 4
 
@@ -193,14 +193,14 @@ internal fun SignPredictions(
     val guesses = segments.map { s -> s.guesses.orEmpty().take(PREDICTIONS).map { it.word } }
     val rung = reading.rung
     if (segments.isEmpty() && cameraText != null) {
-        SuggestionChip(onClick = { onPick(listOf(cameraText), cameraText) }, label = { Text(stringResource(R.string.reading_camera, cameraText)) }, modifier = modifier.padding(horizontal = Spacing.lg))
+        SuggestionChip(onClick = { onPick(listOf(cameraText), cameraText) }, label = { Text(stringResource(R.string.reading_camera, cameraText)) }, modifier = modifier.padding(horizontal = Space.lg))
         return
     }
     if (guesses.all { it.isEmpty() } && rung == null) return
     // The words the sentence stands on, one per sign, so the record keeps them beside the sentence.
     fun wordsOf(m: IntentMatch) = segments.mapIndexed { i, s -> m.fills.firstOrNull { it.token == i }?.label ?: s.word ?: "?" }
     // A long account reads as many signs; the guesses scroll so the conversation above stays in view.
-    Column(modifier.fillMaxWidth().animateContentSize(motion(spring())).heightIn(max = 220.dp).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.lg, vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+    Column(modifier.fillMaxWidth().animateContentSize(motion(spring())).heightIn(max = Space.s220).verticalScroll(rememberScrollState()).padding(horizontal = Space.lg, vertical = Space.xs), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
         if (picked.isEmpty()) when (rung) {
             is Rung.Sentence -> SentenceCard(rung.en, rung.hi, null, rung.confirm) { onPick(wordsOf(rung.match), rung.en) }
             is Rung.FixWords -> SentenceCard(rung.en, rung.hi, rung.doubtful.mapNotNull { segments.getOrNull(it)?.word }, rung.confirm) { onPick(wordsOf(rung.match), rung.en) }
@@ -219,7 +219,7 @@ internal fun SignPredictions(
         guesses.forEachIndexed { i, words ->
             if (words.isEmpty()) return@forEachIndexed
             if (segments[i].ambiguous && picked[i] == null) Text(stringResource(R.string.reading_ambiguous, words.take(2).joinToString(" / ") { it.replace('_', ' ') }), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                 val choice = picked[i]
                 (if (choice != null) listOf(choice) else words).forEach { w ->
                     FilterChip(
@@ -256,7 +256,7 @@ internal fun SignPredictions(
 internal fun LiveReading(live: kotlinx.coroutines.flow.StateFlow<LiveRead>, segments: List<SignSegment> = emptyList(), modifier: Modifier = Modifier) {
     val now by live.collectAsStateWithLifecycle()
     if (now.guesses.isEmpty() && now.spelled.isEmpty() && segments.isEmpty()) return
-    Column(modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.xs), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
         // The sentence so far, one word per closed sign ("…" while the reader is still on it), in signing order.
         if (segments.isNotEmpty()) Text(
             stringResource(R.string.reading_so_far, segments.joinToString("  ") { s -> s.guesses?.let { (s.word ?: "?").replace('_', ' ') + if (s.ambiguous) "?" else "" } ?: "…" }),
@@ -274,7 +274,7 @@ internal fun LiveReading(live: kotlinx.coroutines.flow.StateFlow<LiveRead>, segm
 @Composable
 private fun SentenceCard(en: String, hi: String, check: List<String>?, confirm: Boolean, onUse: () -> Unit) {
     OutlinedCard(onClick = onUse, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.padding(horizontal = Space.md, vertical = Space.sm), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
             Text(en, style = MaterialTheme.typography.titleSmall)
             Text(hi, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (!check.isNullOrEmpty()) Text(stringResource(R.string.reading_check, check.joinToString(", ") { it.replace('_', ' ') }), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)

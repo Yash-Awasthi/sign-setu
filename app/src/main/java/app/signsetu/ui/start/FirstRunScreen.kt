@@ -58,7 +58,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalDensity
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 private class Step(@StringRes val title: Int, @StringRes val body: Int, val gesture: String, val icon: @Composable () -> Painter)
 
@@ -83,18 +84,18 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit, onTour: (
                 Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                    .padding(horizontal = Space.lg, vertical = Space.md),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
                     Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(Space.sm),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     STEPS.indices.forEach { i ->
                         Box(
                             Modifier
-                                .size(if (i == index) 10.dp else 8.dp)
+                                .size(if (i == index) Space.s10 else Space.sm)
                                 .background(
                                     if (i == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                     CircleShape,
@@ -106,7 +107,7 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit, onTour: (
                 if (!last) TextButton(onClick = onDone) { Text(stringResource(R.string.skip)) }
                 BrandButton(
                     onClick = { if (last) onDone() else index++ },
-                    modifier = Modifier.padding(start = Spacing.sm).height(48.dp),
+                    modifier = Modifier.padding(start = Space.sm).height(Space.s48),
                 ) { Text(stringResource(if (last) R.string.intro_done else R.string.intro_next)) }
             }
         },
@@ -116,13 +117,13 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit, onTour: (
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
+                .padding(horizontal = Space.xl),
+            verticalArrangement = Arrangement.spacedBy(Space.lg),
         ) {
-            Spacer(Modifier.size(Spacing.lg))
+            Spacer(Modifier.size(Space.lg))
             // Capped so the step text, not the character, leads on the officer's screen.
             val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-            val stageHeight = minOf(windowHeight * 0.32f, 240.dp)
+            val stageHeight = minOf(windowHeight * 0.32f, Space.s240)
             Box(Modifier.fillMaxWidth().height(stageHeight).clip(MaterialTheme.shapes.large)) {
                 Backdrop(Modifier.fillMaxSize())
                 Avatar(
@@ -130,9 +131,9 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit, onTour: (
                     playKey = index,
                     modifier = Modifier.fillMaxHeight(0.94f).aspectRatio(1f).align(Alignment.BottomCenter),
                 )
-                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.padding(14.dp).size(48.dp)) {
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.padding(Space.s14).size(Space.s48)) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(step.icon(), contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
+                        Icon(step.icon(), contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(Space.xl))
                     }
                 }
             }
@@ -149,20 +150,20 @@ fun FirstRunScreen(gestures: Map<String, Gesture>, onDone: () -> Unit, onTour: (
             Text(stringResource(step.body), style = MaterialTheme.typography.bodyLarge)
             if (last) onTour?.let { tour ->
                 OutlinedButton(onClick = tour) {
-                    Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.padding(end = Spacing.sm).size(18.dp))
+                    Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.padding(end = Space.sm).size(Space.s18))
                     Text(stringResource(R.string.shell_take_tour))
                 }
             }
             if (index == 0) {
                 // the officer picks the language of the app before anything else.
                 val current = OfficerLocale.get(context)
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     OfficerLocale.CHOICES.forEach { tag ->
                         FilterChip(
                             selected = current == tag,
                             onClick = { OfficerLocale.set(context, tag); (context as? Activity)?.recreate() },
                             label = { Text(stringResource(languageName(tag)), style = MaterialTheme.typography.labelLarge) },
-                            shape = RoundedCornerShape(50),
+                            shape = Radius.pill,
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimary,

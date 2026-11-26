@@ -36,6 +36,9 @@ import app.signsetu.R
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalCall
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
 
 /** The five things the stage's tool bar offers. The key is also the test tag suffix. */
 internal enum class StageTool(val key: String) {
@@ -82,37 +85,37 @@ internal fun StageToolBar(
             val chosen = tool == selected
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(Space.xs),
                 modifier = Modifier
                     .testTag("stage.tool." + tool.key)
-                    .widthIn(min = 48.dp)
-                    .heightIn(min = 48.dp)
+                    .widthIn(min = Space.s48)
+                    .heightIn(min = Space.s48)
                     .clickable(role = Role.Button) { onSelect(tool) }
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                    .padding(horizontal = Space.xs, vertical = Space.xxs)
                     .semantics { contentDescription = label },
             ) {
                 Surface(
                     shape = CircleShape,
                     color = if (chosen) call.accent else call.surface,
-                    border = BorderStroke(1.dp, if (chosen) call.accentDeep else call.line),
-                    shadowElevation = 4.dp,
-                    modifier = Modifier.size(44.dp),
+                    border = BorderStroke(Space.hair, if (chosen) call.accentDeep else call.line),
+                    shadowElevation = Space.xs,
+                    modifier = Modifier.size(Space.s44),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         val tint = if (chosen) call.bg else call.text
                         when (tool) {
-                            StageTool.LANGUAGE -> Icon(painterResource(R.drawable.ic_translate), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-                            StageTool.PICTURES -> Icon(painterResource(R.drawable.ic_grid), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-                            StageTool.DRAWING -> Icon(Icons.Filled.Create, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-                            StageTool.EMOJI -> Icon(Icons.Filled.Face, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-                            StageTool.TYPING -> Icon(painterResource(R.drawable.ic_keyboard), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+                            StageTool.LANGUAGE -> Icon(painterResource(R.drawable.ic_translate), contentDescription = null, tint = tint, modifier = Modifier.size(Space.s22))
+                            StageTool.PICTURES -> Icon(painterResource(R.drawable.ic_grid), contentDescription = null, tint = tint, modifier = Modifier.size(Space.s22))
+                            StageTool.DRAWING -> Icon(Icons.Filled.Create, contentDescription = null, tint = tint, modifier = Modifier.size(Space.s22))
+                            StageTool.EMOJI -> Icon(Icons.Filled.Face, contentDescription = null, tint = tint, modifier = Modifier.size(Space.s22))
+                            StageTool.TYPING -> Icon(painterResource(R.drawable.ic_keyboard), contentDescription = null, tint = tint, modifier = Modifier.size(Space.s22))
                         }
                     }
                 }
                 Text(
                     text = label,
                     fontFamily = Baloo,
-                    fontSize = 10.sp,
+                    fontSize = TypeSize.s10,
                     fontWeight = FontWeight.Bold,
                     color = call.text,
                     maxLines = 1,
@@ -129,18 +132,18 @@ internal fun StagePrimaryAction(label: String, onClick: () -> Unit, modifier: Mo
     val call = LocalCall.current
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(Radius.r18),
         color = call.accent,
-        border = BorderStroke(2.dp, call.accentDeep),
-        shadowElevation = 6.dp,
-        modifier = modifier.heightIn(min = 52.dp).testTag("stage.primary"),
+        border = BorderStroke(Space.xxs, call.accentDeep),
+        shadowElevation = Space.s6,
+        modifier = modifier.heightIn(min = Space.s52).testTag("stage.primary"),
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = Space.md, vertical = Space.md)) {
             Text(
                 text = label,
                 fontFamily = Baloo,
                 fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
+                fontSize = TypeSize.s15,
                 color = call.bg,
                 maxLines = 1,
                 textAlign = TextAlign.Center,
@@ -156,16 +159,16 @@ internal fun StageMoreAnswers(expanded: Boolean, onToggle: () -> Unit, modifier:
     val label = stringResource(R.string.stage_more_answers)
     Surface(
         onClick = onToggle,
-        shape = RoundedCornerShape(50),
+        shape = Radius.pill,
         color = answer.unsure,
-        border = if (expanded) BorderStroke(2.dp, answer.onUnsure) else null,
+        border = if (expanded) BorderStroke(Space.xxs, answer.onUnsure) else null,
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = Space.s48)
             .testTag("stage.more")
             .semantics { contentDescription = label },
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
-            Text(label, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = answer.onUnsure, maxLines = 2, textAlign = TextAlign.Center)
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = Space.sm, vertical = Space.s6)) {
+            Text(label, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s12, color = answer.onUnsure, maxLines = 2, textAlign = TextAlign.Center)
         }
     }
 }

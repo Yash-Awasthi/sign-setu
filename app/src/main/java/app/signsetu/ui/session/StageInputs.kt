@@ -79,19 +79,23 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalStageColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import java.io.ByteArrayOutputStream
 import androidx.compose.ui.res.painterResource
 import app.signsetu.pair.TEXT_CAP
 import androidx.compose.foundation.layout.RowScope
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
+import app.signsetu.ui.theme.StageLight
 
 internal class DrawStroke(val points: List<Offset>, val color: Color = Ink)
 
 /** Dark brown text and ink on white cards and paper. */
-internal val Ink = Color(0xFF2B2118)
+internal val Ink = StageLight.onBubble
 
 /** Dark ink, and red, blue, green and brown, so a person can mark where it hurts or what colour something was. */
-private val InkColors = listOf(Ink, Color(0xFFD32F2F), Color(0xFF1E5BD8), Color(0xFF2E7D32), Color(0xFF8D5524))
+private val InkColors = listOf(Ink, StageTones.bodyMark, StageTones.crayonBlue, StageTones.crayonGreen, StageTones.crayonBrown)
 
 private fun Offset.fraction(size: IntSize) = Offset(x / size.width.coerceAtLeast(1), y / size.height.coerceAtLeast(1))
 private fun Offset.scaled(size: IntSize) = Offset(x * size.width, y * size.height)
@@ -110,8 +114,8 @@ internal fun WritingPanel(
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     val send = { if (text.isNotBlank()) onDone(text) }
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        Surface(shape = RoundedCornerShape(20.dp), color = Color.White, border = TileEdge, shadowElevation = 2.dp, modifier = Modifier.weight(1f).fillMaxWidth()) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.md)) {
+        Surface(shape = RoundedCornerShape(Radius.r20), color = Color.White, border = TileEdge, shadowElevation = Space.xxs, modifier = Modifier.weight(1f).fillMaxWidth()) {
             BasicTextField(
                 value = text,
                 // Input past the cap is ignored, never cut later: the receiver logs what was sent.
@@ -121,14 +125,14 @@ internal fun WritingPanel(
                 keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { send() }),
                 cursorBrush = SolidColor(Ink),
-                modifier = Modifier.fillMaxSize().padding(20.dp).focusRequester(focus),
+                modifier = Modifier.fillMaxSize().padding(Space.s20).focusRequester(focus),
             )
         }
         if (text.length > TEXT_CAP - 200) {
             Text(stringResource(R.string.write_count, text.length, TEXT_CAP), style = MaterialTheme.typography.labelLarge, modifier = Modifier.align(Alignment.End))
         }
         pauseRow()
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.md)) {
             BackButton(content, lang, onBack)
             DoneButton(content, lang, enabled = text.isNotBlank(), onClick = send)
         }
@@ -142,13 +146,13 @@ private fun RowScope.DoneButton(content: ContentBundle, lang: String, enabled: B
     val word = content.subjectText("done", lang)
     PressableSurface(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
+        shape = Radius.pill,
         color = if (enabled) answer.yes else Off,
-        modifier = Modifier.weight(1f).height(56.dp).named(R.string.stage_done, word == null),
+        modifier = Modifier.weight(1f).height(Space.s56).named(R.string.stage_done, word == null),
     ) {
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Check, contentDescription = null, tint = answer.onYes)
-            word?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = answer.onYes, modifier = Modifier.padding(start = Spacing.sm)) }
+            word?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = answer.onYes, modifier = Modifier.padding(start = Space.sm)) }
         }
     }
 }
@@ -163,7 +167,7 @@ private fun BackButton(content: ContentBundle, lang: String, onBack: () -> Unit)
         shape = CircleShape,
         color = stage.tool,
         border = stage.toolEdge,
-        modifier = Modifier.size(56.dp).semantics {
+        modifier = Modifier.size(Space.s56).semantics {
             role = Role.Button
             contentDescription = content.subjectText("back", lang) ?: name
         },
@@ -193,12 +197,12 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
     val shape by rememberUpdatedState(tool)
     val paper = Color.White
     val board = stringResource(R.string.stage_draw_board)
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.md)) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(Radius.r20),
             color = paper,
             border = TileEdge,
-            shadowElevation = 2.dp,
+            shadowElevation = Space.xxs,
             modifier = Modifier.weight(1f).fillMaxWidth(),
         ) {
             Canvas(
@@ -228,55 +232,55 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
                         moveTo(s.points[0].x, s.points[0].y)
                         s.points.drop(1).forEach { lineTo(it.x, it.y) }
                     }
-                    drawPath(path, s.color, style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                    drawPath(path, s.color, style = Stroke(width = Space.sm.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
                 }
             }
         }
         val stage = LocalStageColors.current
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
             DrawTool.entries.forEach { t ->
                 val name = stringResource(t.nameId())
                 val chosen = t == tool
                 Box(
-                    Modifier.size(48.dp).clip(CircleShape)
+                    Modifier.size(Space.s48).clip(CircleShape)
                         .background(if (chosen) stage.tool else Color.Transparent)
                         .border(stage.toolEdge, CircleShape)
                         .clickable(role = Role.RadioButton) { tool = t }
                         .semantics { selected = chosen; contentDescription = name },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Canvas(Modifier.size(26.dp)) { drawToolGlyph(t, stage.onTool) }
+                    Canvas(Modifier.size(Space.s26)) { drawToolGlyph(t, stage.onTool) }
                 }
             }
             Spacer(Modifier.weight(1f))
             // Undo takes back one line or shape; a slip of the finger should not cost the whole picture.
             PressableSurface(
                 onClick = { if (strokes.isNotEmpty()) strokes.removeAt(strokes.lastIndex) }, shape = CircleShape, color = stage.tool, border = stage.toolEdge,
-                modifier = Modifier.size(48.dp).semantics { contentDescription = content.subjectText("undo", lang) ?: "Undo" },
+                modifier = Modifier.size(Space.s48).semantics { contentDescription = content.subjectText("undo", lang) ?: "Undo" },
             ) {
                 Box(contentAlignment = Alignment.Center) { Icon(painterResource(R.drawable.ic_undo), contentDescription = null, tint = stage.onTool) }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
             InkColors.forEachIndexed { i, c ->
                 val name = stringResource(R.string.stage_ink_colour, i + 1, InkColors.size)
                 Box(
-                    Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.RadioButton) { ink = c }.semantics { selected = ink == c; contentDescription = name },
+                    Modifier.size(Space.s48).clip(CircleShape).clickable(role = Role.RadioButton) { ink = c }.semantics { selected = ink == c; contentDescription = name },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Box(Modifier.size(if (ink == c) 40.dp else 32.dp).background(c, CircleShape).border(if (ink == c) 3.dp else 0.dp, Color.White, CircleShape))
+                    Box(Modifier.size(if (ink == c) Space.s40 else Space.xxl).background(c, CircleShape).border(if (ink == c) Space.s3 else Space.none, Color.White, CircleShape))
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.md)) {
             onBack?.let { BackButton(content, lang, it) }
             PressableSurface(
-                onClick = { strokes.clear() }, shape = RoundedCornerShape(50), color = stage.tool, border = stage.toolEdge,
-                modifier = Modifier.weight(1f).height(56.dp).named(R.string.stage_clear, content.subjectText("clear", lang) == null),
+                onClick = { strokes.clear() }, shape = Radius.pill, color = stage.tool, border = stage.toolEdge,
+                modifier = Modifier.weight(1f).height(Space.s56).named(R.string.stage_clear, content.subjectText("clear", lang) == null),
             ) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.Refresh, contentDescription = null, tint = stage.onTool)
-                    content.subjectText("clear", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = stage.onTool, modifier = Modifier.padding(start = Spacing.sm)) }
+                    content.subjectText("clear", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = stage.onTool, modifier = Modifier.padding(start = Space.sm)) }
                 }
             }
             DoneButton(content, lang, enabled = strokes.isNotEmpty()) {
@@ -299,18 +303,18 @@ private fun DrawTool.nameId(): Int = when (this) {
 private fun DrawScope.drawToolGlyph(tool: DrawTool, color: Color) {
     val w = size.width
     val h = size.height
-    val ink = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+    val ink = Stroke(width = Space.xxs.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
     val a = Offset(w * 0.15f, h * 0.85f)
     val b = Offset(w * 0.85f, h * 0.15f)
     when (tool) {
-        DrawTool.PEN -> drawLine(color, a, b, strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
-        DrawTool.LINE -> drawLine(color, a, b, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+        DrawTool.PEN -> drawLine(color, a, b, strokeWidth = Space.s3.toPx(), cap = StrokeCap.Round)
+        DrawTool.LINE -> drawLine(color, a, b, strokeWidth = Space.xxs.toPx(), cap = StrokeCap.Round)
         DrawTool.RECT -> drawRect(color, Offset(w * 0.14f, h * 0.22f), Size(w * 0.72f, h * 0.56f), style = ink)
         DrawTool.OVAL -> drawOval(color, Offset(w * 0.14f, h * 0.22f), Size(w * 0.72f, h * 0.56f), style = ink)
         DrawTool.ARROW -> {
-            drawLine(color, a, b, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
-            drawLine(color, b, Offset(w * 0.55f, h * 0.17f), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
-            drawLine(color, b, Offset(w * 0.83f, h * 0.45f), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+            drawLine(color, a, b, strokeWidth = Space.xxs.toPx(), cap = StrokeCap.Round)
+            drawLine(color, b, Offset(w * 0.55f, h * 0.17f), strokeWidth = Space.xxs.toPx(), cap = StrokeCap.Round)
+            drawLine(color, b, Offset(w * 0.83f, h * 0.45f), strokeWidth = Space.xxs.toPx(), cap = StrokeCap.Round)
         }
     }
 }
@@ -348,20 +352,20 @@ private fun renderPng(strokes: List<DrawStroke>, size: IntSize, paper: Int): Byt
 @Composable
 internal fun HandBackPanel(content: ContentBundle, lang: String, onDrawMore: () -> Unit, modifier: Modifier) {
     val stage = LocalStageColors.current
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically)) {
-        Surface(shape = CircleShape, color = LocalAnswerColors.current.yes, modifier = Modifier.size(96.dp)) {
-            Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Check, contentDescription = null, tint = LocalAnswerColors.current.onYes, modifier = Modifier.size(56.dp)) }
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Space.lg, Alignment.CenterVertically)) {
+        Surface(shape = CircleShape, color = LocalAnswerColors.current.yes, modifier = Modifier.size(Space.s96)) {
+            Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Check, contentDescription = null, tint = LocalAnswerColors.current.onYes, modifier = Modifier.size(Space.s56)) }
         }
         content.subjectText("give_back", lang)?.let {
-            Text(it, fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, textAlign = TextAlign.Center, color = stage.onBubble)
+            Text(it, fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = TypeSize.s22, textAlign = TextAlign.Center, color = stage.onBubble)
         }
         PressableSurface(
-            onClick = onDrawMore, shape = RoundedCornerShape(50), color = stage.tool, border = stage.toolEdge,
-            modifier = Modifier.height(56.dp).widthIn(min = 160.dp).named(R.string.stage_draw, content.subjectText("draw_more", lang) == null),
+            onClick = onDrawMore, shape = Radius.pill, color = stage.tool, border = stage.toolEdge,
+            modifier = Modifier.height(Space.s56).widthIn(min = Space.s160).named(R.string.stage_draw, content.subjectText("draw_more", lang) == null),
         ) {
-            Row(Modifier.padding(horizontal = Spacing.lg), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.padding(horizontal = Space.lg), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Create, contentDescription = null, tint = stage.onTool)
-                content.subjectText("draw_more", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = stage.onTool, modifier = Modifier.padding(start = Spacing.sm)) }
+                content.subjectText("draw_more", lang)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = stage.onTool, modifier = Modifier.padding(start = Space.sm)) }
             }
         }
     }

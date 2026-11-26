@@ -17,6 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 /** One phone arrangement for every session, except a paired tablet held in landscape, which docks the pair. */
 internal enum class SessionShape { PHONE, TABLET, DOCK }
@@ -42,14 +44,14 @@ internal fun SessionDock(
         modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(8.dp),
+            .padding(Space.sm),
     ) {
         Surface(
             modifier = Modifier
                 .weight(0.62f)
                 .fillMaxHeight()
                 .testTag("session.dock"),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(Radius.r24),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             Box(Modifier.fillMaxSize().testTag("session.dock.stage")) { stage() }
@@ -57,7 +59,7 @@ internal fun SessionDock(
         Box(
             Modifier
                 .fillMaxHeight()
-                .width(1.dp)
+                .width(Space.hair)
                 .background(MaterialTheme.colorScheme.outlineVariant),
         )
         Box(

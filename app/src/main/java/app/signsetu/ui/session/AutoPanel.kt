@@ -48,7 +48,7 @@ import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Role as SessionRole
 import app.signsetu.data.session.SessionEvent
 import app.signsetu.ui.theme.LocalAnswerColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.delay
 
 /** Who put a shown item on the stage, for the bubble tag and the report. */
@@ -133,8 +133,8 @@ fun autoSuffix(res: Resources, e: SessionEvent, by: Map<Long, ShownBy>, idle: Se
 @Composable
 fun AutoPanel(auto: AutoPilot, ui: SessionUi, content: ContentBundle, officerLang: String, modifier: Modifier = Modifier, showSwitch: Boolean = false) {
     val conv by auto.conv.collectAsStateWithLifecycle()
-    Column(modifier.animateContentSize(motion(spring())).padding(horizontal = Spacing.lg, vertical = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        if (showSwitch) SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+    Column(modifier.animateContentSize(motion(spring())).padding(horizontal = Space.lg, vertical = Space.sm), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
+        if (showSwitch) SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().heightIn(min = Space.s48)) {
             SegmentedButton(
                 selected = conv == Conv.Off,
                 onClick = { auto.setAuto(false) },
@@ -187,7 +187,7 @@ private fun NextCard(p: Proposal, held: Boolean, confirm: Boolean, auto: AutoPil
     // Capped and scrollable, so on a small phone with large text the conversation above keeps its room.
     val maxHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } * 0.4f
     Surface(shape = MaterialTheme.shapes.large, color = colors.secondaryContainer, contentColor = colors.onSecondaryContainer, modifier = Modifier.heightIn(max = maxHeight)) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(Space.md), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     stringResource(R.string.conv_phase_step, stringResource(phaseLabel(q.phase)), step, total),
@@ -195,7 +195,7 @@ private fun NextCard(p: Proposal, held: Boolean, confirm: Boolean, auto: AutoPil
                     modifier = Modifier.weight(1f),
                 )
                 Surface(shape = MaterialTheme.shapes.small, color = colors.surfaceContainerLowest) {
-                    Text(p.plan?.let { stringResource(R.string.conv_source_model, it.by) } ?: stringResource(R.string.conv_source_rule), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                    Text(p.plan?.let { stringResource(R.string.conv_source_model, it.by) } ?: stringResource(R.string.conv_source_rule), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = Space.sm, vertical = Space.xxs))
                 }
             }
             Text(q.text[officerLang] ?: q.text["en"] ?: q.id, style = MaterialTheme.typography.titleMedium)
@@ -209,7 +209,7 @@ private fun NextCard(p: Proposal, held: Boolean, confirm: Boolean, auto: AutoPil
             if (confirm) Text(stringResource(R.string.conv_needs_approval), style = MaterialTheme.typography.bodySmall, color = colors.error)
             if (first || p.reason == Reason.CLOSING) Text(stringResource(R.string.conv_statement_reminder), style = MaterialTheme.typography.bodySmall)
             if (ui.session.role == SessionRole.ACCUSED) Text(stringResource(R.string.conv_rights_reminder), style = MaterialTheme.typography.bodySmall)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                 Button(onClick = auto::approve, enabled = ready) { Text(stringResource(R.string.conv_show)) }
                 OutlinedButton(onClick = auto::skip) { Text(stringResource(R.string.conv_skip)) }
                 if (held) TextButton(onClick = auto::resume) { Text(stringResource(R.string.conv_resume)) }
@@ -235,7 +235,7 @@ private fun reasonText(p: Proposal, content: ContentBundle, officerLang: String)
 private fun Notice(text: String, vararg actions: Pair<Int, () -> Unit>) {
     val answer = LocalAnswerColors.current
     Surface(shape = MaterialTheme.shapes.large, color = answer.pause, contentColor = answer.onPause) {
-        Column(Modifier.fillMaxWidth().padding(Spacing.md)) {
+        Column(Modifier.fillMaxWidth().padding(Space.md)) {
             Text(text, style = MaterialTheme.typography.titleSmall)
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 actions.forEach { (label, onClick) -> TextButton(onClick = onClick) { Text(stringResource(label), color = answer.onPause) } }

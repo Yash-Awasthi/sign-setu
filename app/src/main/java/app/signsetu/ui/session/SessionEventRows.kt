@@ -24,6 +24,8 @@ import app.signsetu.data.session.SessionEvent
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.pair.linkText
 import app.signsetu.ui.theme.PictureWell
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 /** Pairs each answer with its question, so the log reads "Water? Yes" rather than a bare "Yes": by the shown
  * item's id when the answer names it, otherwise the question shown before it. */
@@ -79,7 +81,7 @@ fun EventRow(e: SessionEvent, modifier: Modifier = Modifier, question: String? =
         },
         supportingContent = question?.takeIf { it != e.text }?.let { q -> { Text(q, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         leadingContent = e.cardId?.let { id ->
-            { Surface(shape = RoundedCornerShape(12.dp), color = PictureWell, modifier = Modifier.size(40.dp)) { CardImage(id, Modifier.padding(4.dp)) } }
+            { Surface(shape = RoundedCornerShape(Radius.r12), color = PictureWell, modifier = Modifier.size(Space.s40)) { CardImage(id, Modifier.padding(Space.xs)) } }
         },
         modifier = modifier,
     )

@@ -53,8 +53,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
+import app.signsetu.ui.theme.Space
 
-private val Target = 56.dp
+private val Target = Space.s56
 
 /**
  * In-app help: a searchable list of topics, each a list of short entries, and a guided tour.
@@ -117,7 +118,7 @@ private fun TopicList(onOpen: (String) -> Unit) {
             .map { res.getString(it.heading) }
         if (inTopic || hits.isNotEmpty()) t to hits else null
     }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = Space.xl)) {
         item(key = "search") {
             OutlinedTextField(
                 value = query,
@@ -130,7 +131,7 @@ private fun TopicList(onOpen: (String) -> Unit) {
                         Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.help_search_clear))
                     }
                 },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = Target),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.sm).heightIn(min = Target),
             )
         }
         if (matches.isEmpty()) item(key = "none") {
@@ -138,7 +139,7 @@ private fun TopicList(onOpen: (String) -> Unit) {
                 stringResource(R.string.help_no_results),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(Space.xl),
             )
         }
         items(matches, key = { it.first.id }) { (t, hits) ->
@@ -159,24 +160,24 @@ private fun TopicList(onOpen: (String) -> Unit) {
 
 @Composable
 private fun TopicPage(topic: HelpTopic) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = Space.s20, end = Space.s20, bottom = Space.xxl)) {
         item(key = "summary") {
             Text(
                 stringResource(topic.summary),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp),
+                modifier = Modifier.padding(bottom = Space.sm),
             )
         }
         items(topic.entries, key = { it.heading }) { entry ->
-            Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
+            Column(Modifier.fillMaxWidth().padding(top = Space.lg)) {
                 Text(
                     stringResource(entry.heading),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.semantics { heading() },
                 )
-                Text(stringResource(entry.body), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 4.dp))
+                Text(stringResource(entry.body), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = Space.xs))
             }
         }
     }
@@ -188,26 +189,26 @@ private fun Tour(topic: HelpTopic, step: Int, onStep: (Int) -> Unit, onDone: () 
     val at = step.coerceIn(0, count - 1)
     val entry = topic.entries[at]
     val position = stringResource(R.string.help_step, at + 1, count)
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = Space.s20)) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Text(position, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 stringResource(entry.heading),
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(top = 8.dp).semantics { heading() },
+                modifier = Modifier.padding(top = Space.sm).semantics { heading() },
             )
-            Text(stringResource(entry.body), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
+            Text(stringResource(entry.body), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = Space.md))
         }
         Row(
-            Modifier.fillMaxWidth().padding(vertical = 16.dp).clearAndSetSemantics { contentDescription = position },
+            Modifier.fillMaxWidth().padding(vertical = Space.lg).clearAndSetSemantics { contentDescription = position },
             horizontalArrangement = Arrangement.Center,
         ) {
             repeat(count) { i ->
                 val colour = if (i == at) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                Box(Modifier.padding(4.dp).size(if (i == at) 10.dp else 8.dp).background(colour, CircleShape))
+                Box(Modifier.padding(Space.xs).size(if (i == at) Space.s10 else Space.sm).background(colour, CircleShape))
             }
         }
-        Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(bottom = Space.lg), verticalAlignment = Alignment.CenterVertically) {
             if (at > 0) OutlinedButton(onClick = { onStep(at - 1) }, modifier = Modifier.heightIn(min = Target)) {
                 Text(stringResource(R.string.help_previous))
             }

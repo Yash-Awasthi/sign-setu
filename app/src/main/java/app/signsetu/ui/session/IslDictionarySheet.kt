@@ -50,7 +50,8 @@ import app.signsetu.data.content.dictionary
 import app.signsetu.data.content.search
 import app.signsetu.ui.avatar.Avatar
 import app.signsetu.ui.theme.LocalStageColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.Radius
 
 /** Shown to the subject like a prepared item; the id keeps it apart from the question bank. */
 fun DictionaryEntry.asQuestion(): Question =
@@ -71,11 +72,11 @@ fun IslDictionarySheet(content: ContentBundle, lang: String, signLanguage: SignL
     val label = { e: DictionaryEntry -> if (lang == "hi" && e.hi.isNotEmpty()) e.hi else e.en }
 
     OfficerSheet(onDismiss) {
-        Column(Modifier.padding(horizontal = Spacing.lg).navigationBarsPadding()) {
+        Column(Modifier.padding(horizontal = Space.lg).navigationBarsPadding()) {
             SheetTitle(stringResource(if (signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary))
-            Surface(shape = RoundedCornerShape(16.dp), color = LocalStageColors.current.skyTop, modifier = Modifier.fillMaxWidth().height(180.dp)) {
+            Surface(shape = RoundedCornerShape(Radius.r16), color = LocalStageColors.current.skyTop, modifier = Modifier.fillMaxWidth().height(Space.s180)) {
                 Box {
-                    Avatar(selected?.let { content.gestures[it.gestureId] }, selectedId to plays, Modifier.align(Alignment.Center).size(180.dp))
+                    Avatar(selected?.let { content.gestures[it.gestureId] }, selectedId to plays, Modifier.align(Alignment.Center).size(Space.s180))
                     if (selected != null) {
                         IconButton(onClick = { plays++ }, modifier = Modifier.align(Alignment.TopEnd)) {
                             Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.isl_dictionary_replay))
@@ -84,9 +85,9 @@ fun IslDictionarySheet(content: ContentBundle, lang: String, signLanguage: SignL
                 }
             }
             if (selected == null) {
-                Text(stringResource(R.string.isl_dictionary_pick), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = Spacing.sm))
+                Text(stringResource(R.string.isl_dictionary_pick), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = Space.sm))
             } else {
-                Row(Modifier.fillMaxWidth().padding(vertical = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(vertical = Space.sm), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(listOf(selected.en, selected.hi).filter { it.isNotEmpty() }.joinToString("  ·  "), style = MaterialTheme.typography.titleMedium)
                         val note = listOfNotNull(
@@ -99,7 +100,7 @@ fun IslDictionarySheet(content: ContentBundle, lang: String, signLanguage: SignL
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    Button(onClick = { onShow(selected.asQuestion()) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.isl_dictionary_show)) }
+                    Button(onClick = { onShow(selected.asQuestion()) }, modifier = Modifier.heightIn(min = Space.s48)) { Text(stringResource(R.string.isl_dictionary_show)) }
                 }
             }
             OutlinedTextField(
@@ -108,28 +109,28 @@ fun IslDictionarySheet(content: ContentBundle, lang: String, signLanguage: SignL
                 label = { Text(stringResource(R.string.isl_dictionary_search)) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(vertical = Spacing.sm)) {
-                item { FilterChip(category == null, { category = null }, { Text(stringResource(R.string.isl_dictionary_all)) }, Modifier.heightIn(min = 48.dp)) }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(Space.sm), contentPadding = PaddingValues(vertical = Space.sm)) {
+                item { FilterChip(category == null, { category = null }, { Text(stringResource(R.string.isl_dictionary_all)) }, Modifier.heightIn(min = Space.s48)) }
                 items(categories, key = { it }) { c ->
                     val name = content.isl.categories[c]?.let { it.get(lang) ?: it["en"] } ?: c
-                    FilterChip(category == c, { category = if (category == c) null else c }, { Text(name) }, Modifier.heightIn(min = 48.dp))
+                    FilterChip(category == c, { category = if (category == c) null else c }, { Text(name) }, Modifier.heightIn(min = Space.s48))
                 }
             }
-            LazyColumn(Modifier.heightIn(max = 360.dp)) {
-                if (shown.isEmpty()) item { Text(stringResource(R.string.isl_dictionary_empty), modifier = Modifier.padding(vertical = Spacing.md)) }
+            LazyColumn(Modifier.heightIn(max = Space.s360)) {
+                if (shown.isEmpty()) item { Text(stringResource(R.string.isl_dictionary_empty), modifier = Modifier.padding(vertical = Space.md)) }
                 items(shown, key = { it.gestureId }) { e ->
                     ListItem(
                         headlineContent = { Text(label(e)) },
                         supportingContent = { Text(if (lang == "hi") e.en else e.hi) },
                         trailingContent = { if (e.category == DRAFT_CATEGORY) Text(stringResource(R.string.isl_dictionary_draft_tag), style = MaterialTheme.typography.labelSmall) },
-                        modifier = Modifier.heightIn(min = 48.dp).clickable(role = Role.Button) { selectedId = e.gestureId; plays++ },
+                        modifier = Modifier.heightIn(min = Space.s48).clickable(role = Role.Button) { selectedId = e.gestureId; plays++ },
                     )
                 }
             }
             Text(
                 stringResource(if (signLanguage == SignLanguage.ASL) R.string.asl_dictionary_attribution else R.string.isl_dictionary_attribution),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = Spacing.sm),
+                modifier = Modifier.padding(vertical = Space.sm),
             )
         }
     }

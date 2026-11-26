@@ -54,7 +54,7 @@ import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.components.OfficerAuth
 import app.signsetu.ui.components.OfficerCard
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.launch
 
 private const val SAVED_SHOWN = 5
@@ -141,7 +141,7 @@ internal fun SavedSessions(
     }
 
     OfficerCard {
-        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = Space.s48), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 if (choosing) stringResource(R.string.saved_chosen, chosen.size) else stringResource(R.string.saved_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -161,7 +161,7 @@ internal fun SavedSessions(
                 val sent = s.rootHash != null && s.stationHead == s.rootHash && s.stationFile != null
                 val kept = s.rootHash != null && s.phoneHead == s.rootHash && s.phoneFolder != null
                 Row(
-                    Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                    Modifier.fillMaxWidth().heightIn(min = Space.s52)
                         .combinedClickable(
                             onClick = { if (choosing) { if (picked) chosen.remove(s.id) else chosen.add(s.id) } else onOpen(s.id) },
                             onLongClick = { if (!picked) chosen.add(s.id) },
@@ -170,14 +170,14 @@ internal fun SavedSessions(
                         .semantics { if (choosing) selected = picked },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (choosing) Checkbox(checked = picked, onCheckedChange = null, modifier = Modifier.padding(end = Spacing.sm))
+                    if (choosing) Checkbox(checked = picked, onCheckedChange = null, modifier = Modifier.padding(end = Space.sm))
                     Column(Modifier.weight(1f)) {
                         Text(s.title.orEmpty(), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Text(clockDate(s.endedAt ?: s.startedAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (!choosing) {
                         if (busy == s.id) {
-                            androidx.compose.material3.CircularProgressIndicator(progress = { progress.coerceAtLeast(0.05f) }, modifier = Modifier.padding(12.dp).size(24.dp))
+                            androidx.compose.material3.CircularProgressIndicator(progress = { progress.coerceAtLeast(0.05f) }, modifier = Modifier.padding(Space.md).size(Space.xl))
                         } else {
                             DoneButton(DownloadIcon, stringResource(R.string.saved_download), kept, enabled = busy == null) {
                                 if (kept) where = Where(s, station = false, place = s.phoneFolder) else download(s)
@@ -192,7 +192,7 @@ internal fun SavedSessions(
             }
         }
         if (!choosing && saved.size > SAVED_SHOWN) {
-            TextButton(onClick = { all = !all }, modifier = Modifier.heightIn(min = 48.dp)) {
+            TextButton(onClick = { all = !all }, modifier = Modifier.heightIn(min = Space.s48)) {
                 Text(if (all) stringResource(R.string.saved_fewer) else stringResource(R.string.saved_all, saved.size))
             }
         }
@@ -204,7 +204,7 @@ internal fun SavedSessions(
             icon = { Icon(Icons.Filled.Info, contentDescription = null) },
             title = { Text(stringResource(if (w.station) R.string.saved_where_station else R.string.saved_where_phone)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Space.sm)) {
                     Text(stringResource(R.string.saved_where_name), style = MaterialTheme.typography.labelMedium)
                     androidx.compose.foundation.text.selection.SelectionContainer { Text(name, style = MaterialTheme.typography.bodyMedium) }
                     Text(stringResource(R.string.saved_where_path), style = MaterialTheme.typography.labelMedium)
@@ -225,7 +225,7 @@ internal fun SavedSessions(
             icon = { Icon(Icons.Filled.Info, contentDescription = null) },
             title = { Text(stringResource(R.string.saved_where_phone)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Space.sm)) {
                     androidx.compose.foundation.text.selection.SelectionContainer { Text(folder, style = MaterialTheme.typography.bodyMedium) }
                     Text(stringResource(R.string.saved_where_phone_body), style = MaterialTheme.typography.bodyMedium)
                 }

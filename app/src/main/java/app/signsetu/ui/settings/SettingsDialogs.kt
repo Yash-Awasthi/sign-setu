@@ -31,7 +31,7 @@ import app.signsetu.R
 import app.signsetu.data.settings.InterpreterApp
 import app.signsetu.data.settings.OFFICER_ID_MAX
 import app.signsetu.data.settings.interpreterUrl
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import app.signsetu.ui.components.GuardedAlertDialog
 
 @Composable
@@ -52,12 +52,12 @@ internal fun <T> ChoiceDialog(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 52.dp)
+                            .heightIn(min = Space.s52)
                             .selectable(selected = option == selected, onClick = { onPick(option) }, role = Role.RadioButton),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(selected = option == selected, onClick = null)
-                        Text(label(option), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = Spacing.lg))
+                        Text(label(option), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = Space.lg))
                     }
                 }
             }
@@ -171,7 +171,7 @@ internal fun LicencesDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_licences)) },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 LICENCES.forEach { (name, licence) ->
                     Column {
                         Text(name, style = MaterialTheme.typography.titleSmall)

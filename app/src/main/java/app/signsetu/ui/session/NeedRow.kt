@@ -30,12 +30,15 @@ import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.ui.theme.LocalAnswerColors
 import app.signsetu.ui.theme.LocalCall
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
 
 /** The six needs the row always offers, in the order they are drawn; "family" has no picture card yet. */
 internal val NEED_IDS = listOf("water", "food", "toilet", "pain", "help", "family")
 
 /** The space this row takes at the bottom of the call; the stage lifts its own content by it. */
-internal val NEED_ROW_HEIGHT = 84.dp
+internal val NEED_ROW_HEIGHT = Space.s84
 
 private val NeedGlyphs = mapOf(
     "water" to "\uD83D\uDCA7",
@@ -69,11 +72,11 @@ internal fun NeedRow(
     val haptic = LocalHapticFeedback.current
     val call = LocalCall.current
     val answer = LocalAnswerColors.current
-    Column(modifier.height(NEED_ROW_HEIGHT), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(stringResource(R.string.need_row_title), fontSize = 11.sp, color = call.muted, maxLines = 1)
+    Column(modifier.height(NEED_ROW_HEIGHT), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
+        Text(stringResource(R.string.need_row_title), fontSize = TypeSize.s11, color = call.muted, maxLines = 1)
         Row(
             modifier = Modifier.fillMaxWidth().weight(1f).testTag("stage.needs"),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(Space.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             NEED_IDS.forEach { id ->
@@ -84,9 +87,9 @@ internal fun NeedRow(
                         haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                         onNeed(id)
                     },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(Radius.r14),
                     color = if (chosen) answer.selection else call.surface,
-                    border = BorderStroke(if (chosen) 2.dp else 1.dp, if (chosen) answer.selection else call.line),
+                    border = BorderStroke(if (chosen) Space.xxs else Space.hair, if (chosen) answer.selection else call.line),
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
@@ -97,14 +100,14 @@ internal fun NeedRow(
                         },
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 4.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = Space.xxs, vertical = Space.xs),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        Text(NeedGlyphs[id].orEmpty(), fontSize = 17.sp, textAlign = TextAlign.Center)
+                        Text(NeedGlyphs[id].orEmpty(), fontSize = TypeSize.s17, textAlign = TextAlign.Center)
                         Text(
                             label,
-                            fontSize = 10.sp,
+                            fontSize = TypeSize.s10,
                             color = if (chosen) answer.onYes else call.text,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,

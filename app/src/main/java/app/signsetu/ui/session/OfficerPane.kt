@@ -86,7 +86,7 @@ import app.signsetu.data.session.Profile
 import app.signsetu.ui.avatar.MiniFace
 import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.theme.LocalInk
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.launch
 import java.io.File
 import androidx.compose.material3.PrimaryTabRow
@@ -95,6 +95,8 @@ import app.signsetu.ui.pair.PairedPane
 import app.signsetu.ui.pair.PairedBar
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageLight
 
 private const val THANK_YOU = "e7"
 
@@ -285,22 +287,22 @@ fun OfficerPane(
     }
 
     Surface(color = MaterialTheme.colorScheme.background) { Column(Modifier.fillMaxSize().imePadding()) {
-        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp), shadowElevation = 4.dp) {
+        Surface(color = Color.Transparent, contentColor = ink.onBand, shape = RoundedCornerShape(bottomStart = Space.xl, bottomEnd = Space.xl), shadowElevation = Space.xs) {
             Row(
-                Modifier.background(ink.brush).statusBarsPadding().fillMaxWidth().padding(start = Spacing.lg, end = Spacing.xs, top = Spacing.sm, bottom = Spacing.md),
+                Modifier.background(ink.brush).statusBarsPadding().fillMaxWidth().padding(start = Space.lg, end = Space.xs, top = Space.sm, bottom = Space.md),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
                     Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(Radius.r16))
                         .clickable(onClickLabel = stringResource(R.string.officer_change), role = Role.Button) { sheet = Sheet.CHANGE }
-                        .padding(vertical = Spacing.xs),
+                        .padding(vertical = Space.xs),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    MiniFace(40.dp, Color(0xFFFFDDBE))
+                    MiniFace(Space.s40, StageLight.skyTop)
                     // Only the language: who the person is goes in the officer's quick notes.
-                    Column(Modifier.padding(start = Spacing.md)) {
+                    Column(Modifier.padding(start = Space.md)) {
                         Text(subjectLanguage?.let { "${it.name} · ${it.english}" } ?: subjectLang, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (signLanguage == SignLanguage.ASL) {
                             Text("ASL (${stringResource(R.string.asl_experimental_badge)})", style = MaterialTheme.typography.bodySmall, color = ink.onBandMuted, maxLines = 1)
@@ -329,9 +331,9 @@ fun OfficerPane(
                 // The one obvious way to finish: on the surface, no menu to open, at the same level as the icons.
                 Button(
                     onClick = { askEnd = true },
-                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    contentPadding = PaddingValues(horizontal = Space.md),
                     modifier = Modifier
-                        .heightIn(min = 48.dp)
+                        .heightIn(min = Space.s48)
                         .testTag("officer.end")
                         .semantics { contentDescription = endLabel },
                 ) {
@@ -376,7 +378,7 @@ fun OfficerPane(
                 lastStop != null && lastStop.id != stopSeen && paired == null,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut(),
-                modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = Spacing.lg),
+                modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = Space.lg),
             ) {
                 StopBanner(onOk = { stopSeen = lastStop?.id })
             }

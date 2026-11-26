@@ -60,9 +60,12 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.LocalStageColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.rememberUpdatedState
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
 
 @Composable
 internal fun Backdrop(modifier: Modifier) {
@@ -77,29 +80,29 @@ internal fun Backdrop(modifier: Modifier) {
 }
 
 /** Each side of the character: the replay pill on the left, a letter tile on the right. */
-internal val SideBand = 88.dp
+internal val SideBand = Space.s88
 
 /** The word being fingerspelled, its current letter large, so a reader can follow the hands. */
 @Composable
 internal fun LetterTile(letters: List<String>, current: Int, modifier: Modifier) {
-    Surface(shape = RoundedCornerShape(18.dp), color = Color.White, shadowElevation = 4.dp, modifier = modifier.rotate(-4f).size(SideBand, 108.dp)) {
-        Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+    Surface(shape = RoundedCornerShape(Radius.r18), color = Color.White, shadowElevation = Space.xs, modifier = modifier.rotate(-4f).size(SideBand, Space.s108)) {
+        Column(Modifier.padding(horizontal = Space.sm, vertical = Space.s6), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(
                 letters.getOrNull(current)?.uppercase() ?: "",
                 fontFamily = Baloo,
                 fontWeight = FontWeight.Bold,
-                fontSize = 44.sp,
-                lineHeight = 48.sp,
+                fontSize = TypeSize.s44,
+                lineHeight = TypeSize.s48,
                 color = Ink,
             )
             Text(
                 buildAnnotatedString {
                     letters.forEachIndexed { i, unit ->
-                        withStyle(SpanStyle(color = if (i == current) Ink else Color(0xFFB8A99A), fontWeight = if (i == current) FontWeight.Bold else FontWeight.Normal)) { append(unit.uppercase()) }
+                        withStyle(SpanStyle(color = if (i == current) Ink else StageTones.dimWord, fontWeight = if (i == current) FontWeight.Bold else FontWeight.Normal)) { append(unit.uppercase()) }
                     }
                 },
                 style = MaterialTheme.typography.labelMedium,
-                letterSpacing = 1.sp,
+                letterSpacing = TypeSize.s1,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -110,8 +113,8 @@ internal fun LetterTile(letters: List<String>, current: Int, modifier: Modifier)
 /** Tells the person at the stage that auto mode is about to show the next item, so it never arrives unannounced. */
 @Composable
 internal fun AutoNextChip(seconds: Int, modifier: Modifier) {
-    Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f), modifier = modifier.padding(top = 13.dp)) {
-        Text(stringResource(R.string.auto_next_in, seconds), color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
+    Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.55f), modifier = modifier.padding(top = Space.s13)) {
+        Text(stringResource(R.string.auto_next_in, seconds), color = Color.White, fontSize = TypeSize.s12, modifier = Modifier.padding(horizontal = Space.md, vertical = Space.s5))
     }
 }
 
@@ -128,15 +131,15 @@ private fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
     val label = stringResource(R.string.show_officer)
     Box(
         modifier
-            .padding(6.dp)
-            .size(48.dp)
+            .padding(Space.s6)
+            .size(Space.s48)
             .clip(CircleShape)
             .clickable(onClickLabel = label, onClick = onClick)
             .semantics { role = Role.Button; contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Surface(shape = CircleShape, color = stage.handle, modifier = Modifier.size(34.dp)) {
-            Box(contentAlignment = Alignment.Center) { Text("💬", fontSize = 16.sp) }
+        Surface(shape = CircleShape, color = stage.handle, modifier = Modifier.size(Space.s34)) {
+            Box(contentAlignment = Alignment.Center) { Text("💬", fontSize = TypeSize.s16) }
         }
     }
 }
@@ -145,24 +148,24 @@ private fun OfficerHandle(onClick: () -> Unit, modifier: Modifier) {
 internal fun ReplayControls(pace: Float, onReplay: () -> Unit, onPace: () -> Unit, modifier: Modifier) {
     val stage = LocalStageColors.current
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(Radius.r28),
         color = stage.tool.copy(alpha = 0.9f),
         contentColor = stage.onTool,
-        border = BorderStroke(1.dp, stage.onTool.copy(alpha = 0.14f)),
-        modifier = modifier.width(56.dp),
+        border = BorderStroke(Space.hair, stage.onTool.copy(alpha = 0.14f)),
+        modifier = modifier.width(Space.s56),
     ) {
-        Column(Modifier.padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onReplay), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.show_replay), modifier = Modifier.size(26.dp))
+        Column(Modifier.padding(vertical = Space.xs), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.size(Space.s48).clip(CircleShape).clickable(role = Role.Button, onClick = onReplay), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.show_replay), modifier = Modifier.size(Space.s26))
             }
             val shown = when { pace < 0.6f -> "½×"; pace < 0.9f -> "¾×"; else -> "1×" }
             val paceName = stringResource(R.string.show_pace, shown)
-            Box(Modifier.size(48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onPace).semantics { contentDescription = paceName }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(Space.s48).clip(CircleShape).clickable(role = Role.Button, onClick = onPace).semantics { contentDescription = paceName }, contentAlignment = Alignment.Center) {
                 Text(
                     shown,
                     fontFamily = Baloo,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    fontSize = TypeSize.s16,
                     modifier = Modifier.clearAndSetSemantics { },
                 )
             }
@@ -184,10 +187,10 @@ internal fun ChoiceGrid(
 ) {
     key(choices) {
         // Tiles sit right under the question; the spare room goes below them, not in a gap above.
-        Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.Top)) {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.sm, Alignment.Top)) {
             if (numbers) {
                 choices.chunked(5).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), modifier = Modifier.fillMaxWidth()) {
                         row.forEach { id ->
                             NumberButton(id.removePrefix("n"), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(40 * choices.indexOf(id))))
                         }
@@ -196,7 +199,7 @@ internal fun ChoiceGrid(
                 }
             } else {
                 choices.chunked(3).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), modifier = Modifier.fillMaxWidth()) {
                         row.forEach { id ->
                             ChoiceTile(id, content.cards[id]?.label?.get(lang), chosenCard == id || id in picked, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(70 * choices.indexOf(id))), name = content.cards[id]?.label?.get("en"))
                         }
@@ -224,5 +227,5 @@ internal fun Modifier.popIn(progress: Animatable<Float, AnimationVector1D>) = gr
     alpha = p.coerceIn(0f, 1f)
     scaleX = 0.7f + 0.3f * p
     scaleY = 0.7f + 0.3f * p
-    translationY = (1f - p) * 24.dp.toPx()
+    translationY = (1f - p) * Space.xl.toPx()
 }

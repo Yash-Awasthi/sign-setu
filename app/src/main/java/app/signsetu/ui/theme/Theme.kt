@@ -8,7 +8,6 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
@@ -26,16 +25,6 @@ import androidx.compose.ui.unit.sp
 import app.signsetu.R
 import app.signsetu.data.settings.ColorTheme
 
-@Immutable
-object Spacing {
-    val xs: Dp = 4.dp
-    val sm: Dp = 8.dp
-    val md: Dp = 12.dp
-    val lg: Dp = 16.dp
-    val xl: Dp = 24.dp
-    val xxl: Dp = 32.dp
-}
-
 val SubjectCardMin: Dp = 96.dp
 
 val LocalAnswerColors = staticCompositionLocalOf { AnswerLight }
@@ -44,11 +33,11 @@ val LocalInk = staticCompositionLocalOf { paletteOf(ColorTheme.EMERALD).inkLight
 val LocalCall = staticCompositionLocalOf { paletteOf(ColorTheme.EMERALD).call }
 
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(14.dp),
-    large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(24.dp),
+    extraSmall = RoundedCornerShape(Radius.r8),
+    small = RoundedCornerShape(Radius.r12),
+    medium = RoundedCornerShape(Radius.r14),
+    large = RoundedCornerShape(Radius.r20),
+    extraLarge = RoundedCornerShape(Radius.r24),
 )
 
 @OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)

@@ -343,7 +343,8 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 
 - [x] Baseline screenshots of all screens (the 12 in `docs/12-screens.md`) into `docs/screens/before/`. `[D]`
   - verified-here: `py -3 tools/ux/check_baselines.py` -> 50 baselines verified, exit 0; `py -3 -m unittest discover -s tools/ux` -> 27 tests, OK; `py -3 tools/docs/check_docs.py` -> exit 0; the 50 emulator-rendered 0.8.5 captures are copied unchanged from docs/screens/.
-- [ ] One token set for spacing, type, radius and colour across the ten themes; no raw values in composables. `[D]`
+- [x] One token set for spacing, type, radius and colour across the ten themes; no raw values in composables. `[D]`
+  - verified-here: py -3 tools/ux/check_tokens.py -> 0 raw values, exit 0 (1048 raw values in 63 ui files at e464429); py -3 -m unittest discover -s tools/ux -> 35 tests, OK, 8 of them check_tokens; ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.ContrastTest -> BUILD SUCCESSFUL, 0 failures; ./gradlew --console=plain :app:testStandardDebugUnitTest -> 425 tests, 0 failures, 2 skipped; ./gradlew --console=plain :app:compileStandardDebugKotlin --rerun -> BUILD SUCCESSFUL; tokens live in ui/theme/Tokens.kt (Space, TypeSize, Radius) and ui/theme/Tones.kt; the ten themes and their palettes are unchanged.
 - [x] Screen inventory: every screen with its purpose, its three primary actions and its exit; anything without a purpose is removed. `[D]`
   verified-here: python tools/ux/check_inventory.py -> 8 screens: purpose, three actions and exit present; python -m unittest discover -s tools/ux -> 14 tests, OK
 - [x] Person-facing screens use larger type, fewer words and one action; officer-facing screens may be denser — the split is explicit. `[D]`

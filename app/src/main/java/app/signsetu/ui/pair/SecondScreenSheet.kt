@@ -63,7 +63,7 @@ import app.signsetu.pair.StageLink
 import app.signsetu.pair.StageTransports
 import app.signsetu.ui.session.OfficerSheet
 import app.signsetu.ui.session.SheetTitle
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.flow.flowOf
 
 internal fun bluetoothOn(context: Context) = context.getSystemService(BluetoothManager::class.java)?.adapter?.isEnabled == true
@@ -88,22 +88,22 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
 
     OfficerSheet(onDismiss) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Spacing.lg).navigationBarsPadding().padding(bottom = Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Space.lg).navigationBarsPadding().padding(bottom = Space.xl),
+            verticalArrangement = Arrangement.spacedBy(Space.md),
         ) {
             SheetTitle(stringResource(R.string.second_screen_title))
             Text(stringResource(R.string.second_screen_intro), style = MaterialTheme.typography.bodyLarge)
             Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
-                Row(Modifier.fillMaxWidth().padding(Spacing.md), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Row(Modifier.fillMaxWidth().padding(Space.md), horizontalArrangement = Arrangement.spacedBy(Space.md)) {
+                    Icon(Icons.Filled.Info, contentDescription = null, modifier = Modifier.size(Space.s20))
+                    Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                         Text(stringResource(R.string.second_screen_dept_only), style = MaterialTheme.typography.bodySmall)
                         Text(stringResource(R.string.notice_aid), style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
             when {
-                state == LinkState.Connecting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                state == LinkState.Connecting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.md)) {
                     CircularProgressIndicator()
                     Text(stringResource(R.string.second_screen_connecting))
                 }
@@ -128,15 +128,15 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
                             app.signsetu.ui.components.PermissionButton(access)
                         }
                         !on -> Button(onClick = { enable.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)) }) { Text(stringResource(R.string.second_screen_open_bluetooth)) }
-                        peers.isEmpty() -> Column(Modifier.fillMaxWidth().padding(vertical = Spacing.sm), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(64.dp)) {
-                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Phone, contentDescription = null, modifier = Modifier.size(32.dp)) }
+                        peers.isEmpty() -> Column(Modifier.fillMaxWidth().padding(vertical = Space.sm), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(Space.s64)) {
+                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Phone, contentDescription = null, modifier = Modifier.size(Space.xxl)) }
                             }
-                            Text(stringResource(R.string.second_screen_none), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = Spacing.md))
+                            Text(stringResource(R.string.second_screen_none), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = Space.md))
                         }
-                        else -> OfficerCard(padding = 0.dp) {
+                        else -> OfficerCard(padding = Space.none) {
                             peers.forEachIndexed { i, p ->
-                                if (i > 0) HorizontalDivider(Modifier.padding(start = Spacing.lg), color = MaterialTheme.colorScheme.outlineVariant)
+                                if (i > 0) HorizontalDivider(Modifier.padding(start = Space.lg), color = MaterialTheme.colorScheme.outlineVariant)
                                 ListItem(
                                     headlineContent = { Text(p.label) },
                                     leadingContent = { Icon(Icons.Filled.Phone, contentDescription = null) },
@@ -151,7 +151,7 @@ fun SecondScreenSheet(container: AppContainer, onDismiss: () -> Unit) {
                     OutlinedButton(
                         onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
                         shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = Space.s48),
                     ) { Text(stringResource(R.string.second_screen_open_bluetooth)) }
                 }
             }
@@ -175,19 +175,19 @@ private fun FindPhone(container: AppContainer, onBonded: (app.signsetu.pair.Peer
         OutlinedButton(
             onClick = { failed = false; if (scan.granted) scanning = true else scan.request() },
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = Space.s48),
         ) { Text(stringResource(R.string.second_screen_find)) }
         if (failed) Text(stringResource(R.string.second_screen_bond_failed), color = MaterialTheme.colorScheme.error)
         return
     }
     val found by remember { bonding.discover() }.collectAsStateWithLifecycle(emptyList())
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.md)) {
+        CircularProgressIndicator(Modifier.size(Space.s20), strokeWidth = Space.xxs)
         Text(stringResource(if (busy != null) R.string.second_screen_bonding else R.string.second_screen_searching), style = MaterialTheme.typography.bodyMedium)
     }
-    if (found.isNotEmpty()) OfficerCard(padding = 0.dp) {
+    if (found.isNotEmpty()) OfficerCard(padding = Space.none) {
         found.forEachIndexed { i, p ->
-            if (i > 0) HorizontalDivider(Modifier.padding(start = Spacing.lg), color = MaterialTheme.colorScheme.outlineVariant)
+            if (i > 0) HorizontalDivider(Modifier.padding(start = Space.lg), color = MaterialTheme.colorScheme.outlineVariant)
             ListItem(
                 headlineContent = { Text(p.label) },
                 leadingContent = { Icon(Icons.Filled.Phone, contentDescription = null) },

@@ -102,11 +102,12 @@ import app.signsetu.ui.session.Stage
 import app.signsetu.ui.session.SmallAnswer
 import app.signsetu.ui.session.StripAnswer
 import app.signsetu.ui.theme.LocalAnswerColors
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 import app.signsetu.ui.theme.SubjectTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import app.signsetu.ui.theme.TypeSize
 
 /** On the lock screen: makes this device the subject's screen. Each tap shows the checklist again. */
 @Composable
@@ -210,9 +211,9 @@ internal fun CodeScreen(code: String, check: String?, onCancel: () -> Unit, onMa
     CodeBoxes(code)
     Text(stringResource(R.string.stage_code), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
     check?.let { CheckValue(it) }
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Space.md)) {
         StageOutlinedButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
-        Button(onClick = onMatch, enabled = check != null, shape = MaterialTheme.shapes.medium, modifier = Modifier.height(48.dp)) { Text(stringResource(R.string.stage_match)) }
+        Button(onClick = onMatch, enabled = check != null, shape = MaterialTheme.shapes.medium, modifier = Modifier.height(Space.s48)) { Text(stringResource(R.string.stage_match)) }
     }
 }
 
@@ -234,7 +235,7 @@ fun CheckValue(check: String) {
     Text(
         check,
         fontFamily = FontFamily.Monospace,
-        fontSize = 40.sp,
+        fontSize = TypeSize.s40,
         modifier = Modifier.semantics { contentDescription = check.toCharArray().joinToString(" ") },
     )
 }
@@ -367,7 +368,7 @@ private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkSt
                 stringResource(if (unacked.any { it.itemId == id }) R.string.stage_sending else R.string.stage_sent),
                 style = MaterialTheme.typography.labelMedium,
                 color = LocalStageColors.current.title,
-                modifier = Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(Spacing.md),
+                modifier = Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(Space.md),
             )
         }
         if (covered) Cover(state, content, view.lang, onStop = { onCard("stop") }, onUnsure = { onCard("dont_know") }, onExit = exit)
@@ -380,8 +381,8 @@ internal fun Cover(state: LinkState, content: ContentBundle, lang: String, onSto
     val stage = LocalStageColors.current
     Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize()) {
         Column(
-            Modifier.safeDrawingPadding().padding(Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
+            Modifier.safeDrawingPadding().padding(Space.xl),
+            verticalArrangement = Arrangement.spacedBy(Space.lg, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -392,9 +393,9 @@ internal fun Cover(state: LinkState, content: ContentBundle, lang: String, onSto
             if (state == LinkState.Lost) CircularProgressIndicator(color = stage.title)
             // The same pictures the subject has used on the stage, not bare words or symbols.
             val answer = LocalAnswerColors.current
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.md), modifier = Modifier.fillMaxWidth()) {
                 StripAnswer("dont_know", content.subjectText("dont_know", lang), stringResource(R.string.stage_dont_know), false, onUnsure, Modifier.weight(1f))
-                SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, false, onStop, Modifier.weight(1f), height = 76.dp)
+                SmallAnswer("stop", content.subjectText("stop", lang), stringResource(R.string.stage_stop), answer.pause, answer.onPause, false, onStop, Modifier.weight(1f), height = Space.s76)
             }
             TextButton(onClick = onExit) { Text(stringResource(R.string.stage_officer_unlock), color = stage.title.copy(alpha = 0.8f)) }
         }
@@ -428,13 +429,13 @@ private fun BatteryStatus(link: StageLink, cameraOn: Boolean) {
 private fun CodeBoxes(code: String) {
     val stage = LocalStageColors.current
     Row(
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(Space.xs),
         modifier = Modifier.clearAndSetSemantics { contentDescription = code.toCharArray().joinToString(" ") },
     ) {
         code.forEachIndexed { i, c ->
-            if (i > 0 && i % 3 == 0) Spacer(Modifier.width(Spacing.sm))
-            Surface(shape = MaterialTheme.shapes.medium, color = stage.bubble, contentColor = stage.onBubble, border = BorderStroke(1.dp, stage.onBubble.copy(alpha = 0.2f)), modifier = Modifier.size(48.dp, 56.dp)) {
-                Box(contentAlignment = Alignment.Center) { Text(c.toString(), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 28.sp) }
+            if (i > 0 && i % 3 == 0) Spacer(Modifier.width(Space.sm))
+            Surface(shape = MaterialTheme.shapes.medium, color = stage.bubble, contentColor = stage.onBubble, border = BorderStroke(Space.hair, stage.onBubble.copy(alpha = 0.2f)), modifier = Modifier.size(Space.s48, Space.s56)) {
+                Box(contentAlignment = Alignment.Center) { Text(c.toString(), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s28) }
             }
         }
     }
@@ -447,8 +448,8 @@ private fun StageOutlinedButton(onClick: () -> Unit, content: @Composable RowSco
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.outlinedButtonColors(contentColor = ink),
-        border = BorderStroke(1.dp, ink.copy(alpha = 0.5f)),
-        modifier = Modifier.height(48.dp),
+        border = BorderStroke(Space.hair, ink.copy(alpha = 0.5f)),
+        modifier = Modifier.height(Space.s48),
         content = content,
     )
 }
@@ -458,8 +459,8 @@ private fun Centered(body: @Composable () -> Unit) {
     val stage = LocalStageColors.current
     Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize()) {
         Column(
-            Modifier.safeDrawingPadding().padding(horizontal = Spacing.lg, vertical = Spacing.xl).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
+            Modifier.safeDrawingPadding().padding(horizontal = Space.lg, vertical = Space.xl).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Space.lg, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) { body() }
     }

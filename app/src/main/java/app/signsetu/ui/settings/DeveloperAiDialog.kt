@@ -37,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import app.signsetu.ui.theme.Space
 
 /** Developer settings: the OpenAI-style service the assistant talks to. The address may be a base such as .../v1 or a full
  * chat or responses address; models are listed from the service once the address and key are in, and the name can still be typed. */
@@ -88,7 +89,7 @@ internal fun DeveloperAiDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.dev_ai_title)) },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 Text(stringResource(R.string.dev_ai_note), style = MaterialTheme.typography.bodySmall)
                 OutlinedTextField(
                     value = url,
@@ -120,7 +121,7 @@ internal fun DeveloperAiDialog(
                         models.forEach { m -> DropdownMenuItem(text = { Text(m) }, onClick = { model = m; menu = false }) }
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                     OutlinedButton(onClick = ::discover, enabled = !busy && url.isNotBlank()) { Text(stringResource(R.string.dev_ai_find)) }
                     OutlinedButton(
                         onClick = {

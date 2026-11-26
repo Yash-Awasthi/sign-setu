@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.data.content.BodyLocation
+import app.signsetu.ui.theme.Space
 
 /** A front-facing figure in a 3:4 box. Zones are in fractions of the box so hit-testing matches drawing at any
  * size. */
@@ -57,7 +58,7 @@ fun BodyMap(selected: BodyLocation?, onSelect: (BodyLocation) -> Unit, selectedL
     val select by rememberUpdatedState(onSelect)
     Canvas(
         modifier
-            .widthIn(max = 260.dp)
+            .widthIn(max = Space.s260)
             .aspectRatio(3f / (4f * USED))
             .semantics {
                 contentDescription = description
@@ -74,7 +75,7 @@ fun BodyMap(selected: BodyLocation?, onSelect: (BodyLocation) -> Unit, selectedL
                     color = highlight.copy(alpha = 0.32f),
                     topLeft = Offset(r.left * size.width, r.top * size.height / USED),
                     size = Size(r.width * size.width, r.height * size.height / USED),
-                    cornerRadius = CornerRadius(8.dp.toPx()),
+                    cornerRadius = CornerRadius(Space.sm.toPx()),
                 )
             }
         }
@@ -84,7 +85,7 @@ fun BodyMap(selected: BodyLocation?, onSelect: (BodyLocation) -> Unit, selectedL
 private fun DrawScope.drawFigure(line: Color, fill: Color) {
     val w = size.width
     val h = size.height / USED
-    val stroke = Stroke(width = 2.dp.toPx())
+    val stroke = Stroke(width = Space.xxs.toPx())
     // Arms behind the torso.
     listOf(0.17f, 0.69f).forEach { x ->
         drawRoundRect(fill, Offset(x * w, 0.36f * h), Size(0.14f * w, 0.40f * h), CornerRadius(0.07f * w))
@@ -103,6 +104,6 @@ private fun DrawScope.drawFigure(line: Color, fill: Color) {
     val faint = line.copy(alpha = 0.55f)
     drawCircle(faint, radius = 0.012f * w, center = Offset(0.45f * w, 0.175f * h))
     drawCircle(faint, radius = 0.012f * w, center = Offset(0.55f * w, 0.175f * h))
-    drawLine(faint, Offset(0.50f * w, 0.195f * h), Offset(0.50f * w, 0.222f * h), strokeWidth = 2.dp.toPx())
-    drawLine(faint, Offset(0.465f * w, 0.245f * h), Offset(0.535f * w, 0.245f * h), strokeWidth = 2.dp.toPx())
+    drawLine(faint, Offset(0.50f * w, 0.195f * h), Offset(0.50f * w, 0.222f * h), strokeWidth = Space.xxs.toPx())
+    drawLine(faint, Offset(0.465f * w, 0.245f * h), Offset(0.535f * w, 0.245f * h), strokeWidth = Space.xxs.toPx())
 }

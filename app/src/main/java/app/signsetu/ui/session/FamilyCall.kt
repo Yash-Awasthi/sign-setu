@@ -33,6 +33,11 @@ import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.or
 import app.signsetu.ui.components.CardImage
 import app.signsetu.ui.theme.Baloo
+import app.signsetu.ui.theme.Space
+import app.signsetu.ui.theme.TypeSize
+import app.signsetu.ui.theme.Radius
+import app.signsetu.ui.theme.StageTones
+import app.signsetu.ui.theme.StageScheme
 
 /** The people a frightened person most often asks for; every id is a content card, so the words exist in the
  * person's language and each tile shows its picture. */
@@ -52,33 +57,33 @@ internal fun calledRole(cue: String?): String? {
  * sends it as the answer; the officer places the call. */
 @Composable
 internal fun FamilyCallCard(content: ContentBundle, lang: String, onCall: (String) -> Unit, modifier: Modifier = Modifier) {
-    val ink = Color(0xFF4F4539)
-    val fill = Color(0xFFD6E4FF)
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    val ink = StageScheme.onSurfaceVariant
+    val fill = StageTones.familyFill
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
         Text(stringResource(R.string.call_who), style = MaterialTheme.typography.labelLarge, color = ink)
         for (row in FAMILY_ROLES.chunked(3)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                 for (id in row) {
                     val label = content.cards[id]?.label?.or(lang) ?: id
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(Radius.r18),
                         color = fill,
-                        border = BorderStroke(1.dp, ink.copy(alpha = 0.25f)),
+                        border = BorderStroke(Space.hair, ink.copy(alpha = 0.25f)),
                         modifier = Modifier.weight(1f).clickable(role = Role.Button) { onCall(id) }.semantics { contentDescription = label },
                     ) {
-                        Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            CardImage(id, Modifier.size(48.dp))
+                        Column(Modifier.padding(Space.s6), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+                            CardImage(id, Modifier.size(Space.s48))
                             Text(
                                 label,
                                 fontFamily = Baloo,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
+                                fontSize = TypeSize.s13,
                                 color = ink,
                                 textAlign = TextAlign.Center,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            Icon(Icons.Filled.Call, contentDescription = null, tint = ink, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.Call, contentDescription = null, tint = ink, modifier = Modifier.size(Space.s18))
                         }
                     }
                 }

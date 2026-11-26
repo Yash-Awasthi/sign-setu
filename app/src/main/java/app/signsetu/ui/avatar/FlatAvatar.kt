@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import app.signsetu.ui.theme.AvatarTones
 
 enum class Character { CHILD, ADULT }
 
@@ -56,18 +57,18 @@ internal class Look(
 )
 
 private val ChildLook = Look(
-    skin = Color(0xFFC98D5E), skinShade = Color(0xFFAE7345), line = Color(0xFF7C4A27), outline = Color(0xFF4A2A14),
-    hair = Color(0xFF2A1F1B), hairShine = Color(0xFF4A3A33),
-    top = Color(0xFF2E9C93), topShade = Color(0xFF227E77), trim = Color(0xFFF6BE4B), trousers = Color(0xFF3D4A6B),
-    iris = Color(0xFF3A2416), lip = Color(0xFF8C3A32), blush = Color(0x44F07C64),
+    skin = AvatarTones.childSkin, skinShade = AvatarTones.childSkinShade, line = AvatarTones.childLine, outline = AvatarTones.childOutline,
+    hair = AvatarTones.childHair, hairShine = AvatarTones.childHairShine,
+    top = AvatarTones.childTop, topShade = AvatarTones.childTopShade, trim = AvatarTones.childTrim, trousers = AvatarTones.childTrousers,
+    iris = AvatarTones.childIris, lip = AvatarTones.childLip, blush = AvatarTones.childBlush,
     longSleeves = false,
 )
 
 private val AdultLook = Look(
-    skin = Color(0xFFBC7E52), skinShade = Color(0xFF9F6842), line = Color(0xFF6E4123), outline = Color(0xFF3E2412),
-    hair = Color(0xFF1E1816), hairShine = Color(0xFF3A302C),
-    top = Color(0xFF3B4A6E), topShade = Color(0xFF2A3654), trim = Color(0xFF8394C2), trousers = Color(0xFF2B3448),
-    iris = Color(0xFF2E1D12), lip = Color(0xFF7E3A33), blush = Color(0x22F07C64),
+    skin = AvatarTones.adultSkin, skinShade = AvatarTones.adultSkinShade, line = AvatarTones.adultLine, outline = AvatarTones.adultOutline,
+    hair = AvatarTones.adultHair, hairShine = AvatarTones.adultHairShine,
+    top = AvatarTones.adultTop, topShade = AvatarTones.adultTopShade, trim = AvatarTones.adultTrim, trousers = AvatarTones.adultTrousers,
+    iris = AvatarTones.adultIris, lip = AvatarTones.adultLip, blush = AvatarTones.adultBlush,
     longSleeves = true,
 )
 
@@ -206,14 +207,14 @@ internal class Kit(val build: Build, val look: Look, val child: Boolean) {
         Brush.verticalGradient(listOf(look.hairShine, look.hair, look.hair), startY = top, endY = build.headY)
     }
     /** Child iris, drawn translated to the eye centre. */
-    val irisBrush = Brush.radialGradient(listOf(lerp(look.iris, Color(0xFF9A6A45), 0.55f), look.iris), center = Offset(0f, 2.6f), radius = 6.2f * 1.3f)
+    val irisBrush = Brush.radialGradient(listOf(lerp(look.iris, AvatarTones.irisRing, 0.55f), look.iris), center = Offset(0f, 2.6f), radius = 6.2f * 1.3f)
     /** Back of the hand, darker towards the wrist; in hand units. */
     val backBrush = Brush.verticalGradient(listOf(look.skin, look.skin, lerp(look.skin, look.skinShade, 0.45f)), startY = -12f, endY = 0f)
-    val palmTone = lerp(look.skin, Color(0xFFF3CFAE), 0.45f)
+    val palmTone = lerp(look.skin, AvatarTones.palm, 0.45f)
     val sleeve = lerp(look.top, Color.White, 0.1f)
     val chest = lerp(look.skin, look.skinShade, 0.45f)
     val knuckle = lerp(look.skin, Color.White, 0.18f)
-    val nail = lerp(look.skin, Color(0xFFFFE9DA), 0.55f)
+    val nail = lerp(look.skin, AvatarTones.nail, 0.55f)
     val pad = lerp(palmTone, Color.White, 0.15f)
     val halo = Color.White.copy(alpha = 0.35f)
     val rim = look.outline.copy(alpha = 0.9f)

@@ -33,7 +33,7 @@ import app.signsetu.data.session.Role as SessionRole
 import app.signsetu.gloss.Gender
 import app.signsetu.ui.components.ChoiceTile
 import app.signsetu.ui.start.LanguagePicker
-import app.signsetu.ui.theme.Spacing
+import app.signsetu.ui.theme.Space
 
 private val Plain = listOf(
     R.string.qn_speak to listOf(R.string.qn_yes, R.string.qn_little, R.string.qn_no),
@@ -70,8 +70,8 @@ internal fun QuickNotesSheet(
 
     OfficerSheet(onDismiss) {
         Column(
-            Modifier.fillMaxHeight(0.92f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.lg).imePadding().navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            Modifier.fillMaxHeight(0.92f).verticalScroll(rememberScrollState()).padding(horizontal = Space.lg).imePadding().navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
             SheetTitle(stringResource(R.string.qn_title))
             Choices(R.string.qn_under18, listOf(R.string.qn_yes, R.string.qn_no), when {
@@ -99,7 +99,7 @@ internal fun QuickNotesSheet(
             }
             SectionLabel(stringResource(R.string.start_language))
             if (!locked) LanguagePicker(vm.content, ui.session.subjectLang, onPick = vm::setSubjectLang)
-            Row(Modifier.fillMaxWidth().padding(vertical = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(vertical = Space.md), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     value = note,
                     onValueChange = onNote,
@@ -109,7 +109,7 @@ internal fun QuickNotesSheet(
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.weight(1f),
                 )
-                Button(onClick = { vm.addNote(note); onNote("") }, enabled = note.isNotBlank(), modifier = Modifier.padding(start = Spacing.sm)) {
+                Button(onClick = { vm.addNote(note); onNote("") }, enabled = note.isNotBlank(), modifier = Modifier.padding(start = Space.sm)) {
                     Text(stringResource(R.string.log_add))
                 }
             }
@@ -120,7 +120,7 @@ internal fun QuickNotesSheet(
 @Composable
 private fun Choices(@StringRes question: Int, options: List<Int>, selected: Int?, onPick: (Int) -> Unit) {
     SectionLabel(stringResource(question))
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
         options.forEach { a ->
             ChoiceTile(a == selected, onClick = { if (a != selected) onPick(a) }, modifier = Modifier.weight(1f).fillMaxHeight()) {
                 Text(stringResource(a), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
