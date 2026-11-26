@@ -9,12 +9,26 @@ legal advice. The policy behind the tag and the version is in [RELEASE.md](../RE
 | Artefact | Where it is produced or lives | How to check it | What a checker can prove |
 | --- | --- | --- | --- |
 | Signed APK | The `release` job in `.github/workflows/ci.yml`, attached to the GitHub release for tag `v<versionName>`; two files, `sign-setu-<version>-arm64.apk` and `sign-setu-<version>-universal.apk` | `apksigner verify --print-certs sign-setu-<version>-arm64.apk` | The file is intact and signed by the release certificate. Its SHA-256 certificate digest is the one an installed build already carries, so the update installs over the old app instead of being a different app. It does not prove who built it |
-| SBOM | `tools/security/sbom.py`, run by the same job; `sign-setu-release.cdx.json`, published beside the APKs | `python -c "import json; d=json.load(open('sign-setu-release.cdx.json')); print(d['bomFormat'], d['specVersion'], len(d['components']))"` | It is a CycloneDX document, and it lists every dependency on the release runtime classpath with a version, so an advisory can be matched to the release. It does not cover the Android platform, the model file, or build-only tools |
+| SBOM | `tools/security/sbom.py` with Syft in the release job; `tools/security/sbom_lockfile.py` writes the same document from the lockfile where Syft is absent; `sign-setu-release.cdx.json`, published beside the APKs | `python -c "import json; d=json.load(open('sign-setu-release.cdx.json')); print(d['bomFormat'], d['specVersion'], len(d['components']))"` | It is a CycloneDX document, and it lists every dependency on the release runtime classpath with a version, so an advisory can be matched to the release. It does not cover the Android platform, the model file, or build-only tools |
 | SHA256SUMS | The release job, after both APKs are signed and before publishing | `sha256sum -c SHA256SUMS` | Each APK is byte for byte the file that was published, and the hashes also printed in the release notes are the same ones |
 | DPIA | `docs/13-dpia.md`, with its owner and review date in the header | Read the header table; `python tools/security/check_permissions.py` | The assessment names an owner and a review date, and its permission rows match the manifests. It is an assessment, not a signature, and it is not legal advice |
 | Walkthrough | `docs/19-walkthrough.md` with the images in `docs/screens/`, mirrored in the app's Help | `python tools/docs/check_docs.py` | Every screen image is described and every link resolves, so the printed guide and the in-app Help describe screens that still exist |
 | Model allow-list procedure | `app/src/main/java/app/signsetu/assistant/LocalModel.kt`, the `ModelStore.KNOWN_MODELS` set | `grep -n 'KNOWN_MODELS' app/src/main/java/app/signsetu/assistant/LocalModel.kt` | The shipped app accepts only the SHA-256 values in that set, and any other imported file is deleted before it is parsed. Adding a model is a reviewed change to that constant (section 6) |
 | Verification instructions | This page, with `tools/security/verify_seal.py` and `tools/security/seal_agreement.py` | `python tools/security/verify_seal.py --pdf report.pdf --key-fingerprint <sha256>` | The report's seal signature holds under the key the seal carries, and that key is the one whose fingerprint is printed on the certificate (section 7) |
+
+### The unsigned build measured on this machine
+
+There is no release keystore here, so the artefact measured below is the unsigned `standard` release APK; nothing in
+this table is a signing or installer claim. The numbers describe commit `6115f5d` only, built from a clean
+`git archive` export of that commit.
+
+| Fact | Measured value |
+| --- | --- |
+| Build | `:app:assembleStandardRelease` in the export, `BUILD SUCCESSFUL` |
+| APK | app-standard-release-unsigned.apk, unsigned, 189402815 bytes |
+| SHA256SUMS | `d857211e08434ef8dfebac3f638a743a2677822893b3caca5339afd5e5141a24  app-standard-release-unsigned.apk`; `sha256sum -c SHA256SUMS` prints `OK` |
+| SBOM | CycloneDX 1.5 JSON with 234 components, equal to the 234 release-runtime lines of the lockfile; written by `tools/security/sbom_lockfile.py` because Syft is not installed here; sha256 24c8779ed8a2af48754c178771f66aad519716b6bab4b046972d1d8079ed1d7f, 68411 bytes, kept as sign-setu-release.cdx.json beside the APK under `app/build/sbom/` and regenerated from the lockfile, so it is not committed |
+| Dependency verification | `gradle/verification-metadata.xml` sha256 fe3c0eca068688b27d0f15ad1551c5d09ae13c86df04964d57566ab7654bcf78 |
 
 ## 2. What the release job builds and signs
 
@@ -30,7 +44,8 @@ never typed from memory.
   `apksigner` signs the zipaligned APK with the alias `signsetu` and the password from `RELEASE_KEYSTORE_PASSWORD`.
   v4 signing is off. The temporary keystore is deleted in the same step.
 - **Sums and SBOM.** `sha256sum` over both APKs writes `SHA256SUMS`; Syft writes the CycloneDX SBOM through
-  `tools/security/sbom.py`.
+  `tools/security/sbom.py`. Where Syft is not installed, `tools/security/sbom_lockfile.py` writes the same document
+  from the lockfile, so the evidence exists either way; the Syft run stays the preferred one.
 - **Publish.** The job moves the tag, writes the release notes from the commit subjects since the previous tag, and
   uploads or replaces every asset. The same version therefore has its assets replaced, not duplicated.
 
@@ -48,7 +63,8 @@ Work in one directory holding the downloaded assets.
    ([RELEASE.md](../RELEASE.md) section 4). A different digest is a different signer: stop and ask.
 3. Check the SBOM. The one-line Python above must print `CycloneDX` and a spec version, and a component count greater
    than zero. `tools/security/sbom.py` builds it from the lines of `app/gradle.lockfile` whose configuration names the
-   release runtime classpath, so it describes what the shipped app links and leaves build-only tools out.
+   release runtime classpath, so it describes what the shipped app links and leaves build-only tools out. The same
+   filter is in `tools/security/sbom_lockfile.py`, which needs no Syft binary and is the one to run without it.
 
 None of these three checks needs this repository, the signing key or network access.
 
