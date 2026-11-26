@@ -1,5 +1,6 @@
 {
   "status": "draft: every entry needs child-welfare and community review before release, and every label other than English and Hindi needs review by a native speaker",
+  "fallback": ["bn", "ne", "as", "or", "ta", "te", "kn", "ml", "mr", "gu", "pa", "ur"],
   "entries": [
     { "id": "me.chest", "concept": "me", "card": "person", "locations": ["CHEST"], "actions": ["FLAT_HAND", "POINT"],
       "label": { "en": "Me", "hi": "मैं", "hne": "मँय", "gon": "नन्ना", "hlb": "मय" },

@@ -46,6 +46,18 @@ class ContentCheckTest(unittest.TestCase):
             "slots": [{"card": "yes", "sign": "yes.ok", "text": {"en": "Do you want water?", "hi": "क्या पानी चाहिए?"}}],
         }]})
         self.write("subject_ui.json", {"is_this_it": {"en": "Is this it?", "hi": "क्या यही है?"}})
+        self.write("lexicon.json", {"entries": [{
+            "id": "me", "concept": "me", "card": "yes", "label": {"en": "Me", "hi": "मैं"},
+            "how": {"en": "Flat hand on the chest.", "hi": "छाती पर हथेली।"},
+        }]})
+        self.write("places.json", {"states": [{
+            "id": "CG", "name": {"en": "Chhattisgarh", "hi": "छत्तीसगढ़"}, "districts": [],
+        }]})
+        for code in ("en", "hi"):
+            (self.assets / "audio" / "greet").mkdir(parents=True, exist_ok=True)
+            (self.assets / "audio" / "greet" / f"{code}.ogg").write_bytes(b"ogg")
+            (self.assets / "audio" / code).mkdir(parents=True, exist_ok=True)
+            (self.assets / "audio" / code / "q1.ogg").write_bytes(b"ogg")
         self.write_allow_list(ASSISTANT_HASH, SENTENCE_HASH)
         self.write_docs(ASSISTANT_HASH, SENTENCE_HASH)
         self.write_manifest()
@@ -106,6 +118,34 @@ class ContentCheckTest(unittest.TestCase):
         cards["cards"][0]["label"].pop("hi")
         self.write("cards.json", cards)
         self.assertIn("card yes: missing languages ['hi']", self.check())
+
+    def test_a_missing_lexicon_label_is_reported(self):
+        lexicon = self.read("lexicon.json")
+        lexicon["entries"][0]["label"].pop("hi")
+        self.write("lexicon.json", lexicon)
+        self.assertIn("lexicon me: missing languages ['hi']", self.check())
+
+    def test_a_missing_lexicon_instruction_is_reported(self):
+        lexicon = self.read("lexicon.json")
+        lexicon["entries"][0]["how"].pop("en")
+        self.write("lexicon.json", lexicon)
+        self.assertIn("lexicon me how: missing languages ['en']", self.check())
+
+    def test_a_place_without_a_name_in_every_language_is_reported(self):
+        places = self.read("places.json")
+        places["states"][0]["name"].pop("hi")
+        self.write("places.json", places)
+        self.assertIn("place state CG: missing languages ['hi']", self.check())
+
+    def test_a_language_without_a_greeting_recording_is_reported(self):
+        (self.assets / "audio" / "greet" / "hi.ogg").unlink()
+        self.write_manifest()
+        self.assertIn("audio/greet/hi.ogg: missing greeting recording", self.check())
+
+    def test_a_question_without_a_recording_is_reported(self):
+        (self.assets / "audio" / "hi" / "q1.ogg").unlink()
+        self.write_manifest()
+        self.assertIn("audio/hi: 1 question recording(s) missing, e.g. ['q1']", self.check())
 
     def test_follow_up_questions_must_name_a_real_parent(self):
         triage = self.read("triage.json")

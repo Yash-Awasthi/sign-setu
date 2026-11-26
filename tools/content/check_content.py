@@ -13,6 +13,8 @@ LOCAL_MODEL = ROOT / "app" / "src" / "main" / "java" / "app" / "signsetu" / "ass
 ASSISTANT_DOC = ROOT / "docs" / "10-on-device-assistant.md"
 SENTENCE_DOC = ROOT / "docs" / "15-gloss-to-text.md"
 HASH = re.compile(r"^[0-9a-f]{64}$")
+# Languages with no recording yet (build_audio.py's UNVOICED): the finder lights their tile silently.
+SILENT = {"gon", "hlb"}
 
 
 def load(assets: pathlib.Path, name: str) -> dict:
@@ -193,6 +195,58 @@ def check(assets: pathlib.Path = ASSETS, symbols: pathlib.Path = SYMBOLS,
             errors.append(f"subject_ui {key}: no known language, keys {sorted(values)}")
         else:
             label(f"subject_ui {key}", values, allowed)
+
+    def coverage(where: str, values, required: set[str]) -> None:
+        """Every required language is written, every key is one the bundle knows, none is blank."""
+        missing = sorted(required - set(values))
+        extra = sorted(set(values) - allowed)
+        blank = sorted(k for k, v in values.items() if not str(v).strip())
+        if missing:
+            errors.append(f"{where}: missing languages {missing}")
+        if extra:
+            errors.append(f"{where}: unknown languages {extra}")
+        if blank:
+            errors.append(f"{where}: blank labels {blank}")
+
+    def exact(where: str, values, fallback: set[str]) -> None:
+        """A map is either complete or exactly the declared fallback set, so a half-written language in
+        the middle of a file cannot hide behind a fallback that was meant for a whole set."""
+        present = set(values)
+        if present not in (allowed, allowed - fallback):
+            errors.append(f"{where}: covers {len(present & allowed)} of {len(allowed)} languages; "
+                          f"write all of them or exactly the declared fallback set")
+        unknown = sorted(fallback - allowed)
+        if unknown:
+            errors.append(f"{where}: fallback names unknown languages {unknown}")
+
+    # The lexicon and the place list are opened by the officer today, so a language the file declares
+    # as a fallback may be absent; every other language must be written or the sheet shows English or an id.
+    lexicon = load(assets, "lexicon.json")
+    fallback = set(lexicon.get("fallback", []))
+    for entry in lexicon["entries"]:
+        coverage(f"lexicon {entry['id']}", entry.get("label", {}), allowed - fallback)
+        exact(f"lexicon {entry['id']}", entry.get("label", {}), fallback)
+        coverage(f"lexicon {entry['id']} how", entry.get("how", {}), allowed & {"en", "hi"})
+        exact(f"lexicon {entry['id']} how", entry.get("how", {}), allowed - {"en", "hi"})
+    places = load(assets, "places.json")
+    place_fallback = set(places.get("fallback", []))
+    for state in places["states"]:
+        coverage(f"place state {state['id']}", state.get("name", {}), allowed - place_fallback)
+        exact(f"place state {state['id']}", state.get("name", {}), place_fallback)
+        for district in state.get("districts", []):
+            coverage(f"place district {district['id']}", district.get("name", {}), allowed - place_fallback)
+            exact(f"place district {district['id']}", district.get("name", {}), place_fallback)
+
+    # A language with a voice has a greeting and a recording for every question; a silent one is declared
+    # in build_audio.py's UNVOICED and carries no recording on purpose.
+    for code in languages:
+        if code in SILENT:
+            continue
+        if not (assets / "audio" / "greet" / f"{code}.ogg").is_file():
+            errors.append(f"audio/greet/{code}.ogg: missing greeting recording")
+        missing = [q["id"] for q in triage["questions"] if not (assets / "audio" / code / f"{q['id']}.ogg").is_file()]
+        if missing:
+            errors.append(f"audio/{code}: {len(missing)} question recording(s) missing, e.g. {missing[:3]}")
     # Every word an intent waits for must be one the sign reader can actually give (docs/15-gloss-to-text.md).
     if (assets / "intents.json").exists():
         intents = load(assets, "intents.json")

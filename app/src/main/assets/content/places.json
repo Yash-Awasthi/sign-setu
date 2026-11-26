@@ -1,6 +1,7 @@
 {
   "status": "draft: Hindi names need language review; districts as of 2024, Chhattisgarh only",
   "note": "States and union territories in picker order, Chhattisgarh first. A state without districts here asks the person to write the district.",
+  "fallback": ["hne", "gon", "hlb", "bn", "ne", "as", "or", "ta", "te", "kn", "ml", "mr", "gu", "pa", "ur"],
   "states": [
     {"id": "CG", "name": {"en": "Chhattisgarh", "hi": "छत्तीसगढ़"}, "districts": [
       {"id": "balod", "name": {"en": "Balod", "hi": "बालोद"}},
