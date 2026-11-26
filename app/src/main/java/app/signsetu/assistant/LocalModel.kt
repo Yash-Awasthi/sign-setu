@@ -73,10 +73,13 @@ class ModelStore(private val context: Context, private val name: String = "assis
     private fun acceptLocked(input: InputStream, target: File, known: Set<String>): Boolean {
         val partial = File(target.parentFile, "${target.name}.part").apply { parentFile?.mkdirs() }
         val digest = MessageDigest.getInstance("SHA-256")
-        val ok = runCatching {
+        // A copy that dies partway leaves no partial file: the digest was never compared, so nothing is installed.
+        val ok = try {
             DigestInputStream(input, digest).use { s -> partial.outputStream().use { s.copyTo(it, 1 shl 20) } }
             digest.digest().toHexString() in known
-        }.getOrDefault(false)
+        } catch (_: Exception) {
+            false
+        }
         return (ok && partial.renameTo(target)).also { if (!it) partial.delete() }
     }
 
