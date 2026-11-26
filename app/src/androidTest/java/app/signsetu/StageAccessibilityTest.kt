@@ -11,7 +11,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.isRoot
@@ -31,6 +33,7 @@ import app.signsetu.ui.session.Pending
 import app.signsetu.ui.session.RuleSteps
 import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.Stage
+import app.signsetu.ui.session.captionChunks
 import app.signsetu.ui.theme.SignSetuTheme
 import app.signsetu.ui.theme.SubjectTheme
 import kotlinx.coroutines.runBlocking
@@ -140,11 +143,23 @@ class StageAccessibilityTest(private val dark: Boolean) {
     @Test
     fun aLongRightInHindiIsReadToItsEndOnASmallPhone() {
         val q = content.questions.first { it.id == "r6" }
+        val hindi = q.text.getValue("hi")
+        // The call draws one large line at a time (CallCaption), so the sentence is read in pieces rather than as
+        // one node. What must hold is that no piece drops a character and the piece on screen is not cut.
+        val pieces = captionChunks(hindi).map { hindi.substring(it) }
+        assertEquals(
+            "every character of the sentence reaches a line",
+            hindi.filterNot { it.isWhitespace() },
+            pieces.joinToString("").filterNot { it.isWhitespace() },
+        )
+        assertTrue("the sentence is longer than one line", pieces.size > 1)
         // The checks run on their own above; here only the caption's layout is read.
         stage(Pending.Ask(q), Profile.NOT_SURE, size = DpSize(360.dp, 640.dp), atf = false)
         val layouts = mutableListOf<TextLayoutResult>()
-        rule.onNodeWithText(q.text.getValue("hi"), useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
-        assertFalse(layouts.first().hasVisualOverflow)
+        // Nothing is lit before the character signs, so the caption draws its first piece.
+        rule.onNodeWithText(pieces.first(), useUnmergedTree = true).fetchSemanticsNode()
+            .config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+        assertFalse("the line on screen is not cut", layouts.first().hasVisualOverflow)
     }
 
     @Test
