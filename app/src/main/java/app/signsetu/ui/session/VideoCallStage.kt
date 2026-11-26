@@ -16,6 +16,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -152,6 +153,10 @@ internal fun VideoCallStage(
     var moreAnswers by remember(pending) { mutableStateOf(false) }
     // One sheet holds the whole toolset; a tool tag names the group to show first.
     var sheetFor by remember { mutableStateOf<StageTool?>(null) }
+    // The tool last picked from the bar, so a slide up opens the sheet on it; none means the default group.
+    var lastTool by remember { mutableStateOf<StageTool?>(null) }
+    // 0 to 1 while the handle is pulled up; past a quarter, letting go opens the sheet.
+    var slideUp by remember { mutableFloatStateOf(0f) }
 
     // A string resource and its optional argument, resolved where it is drawn so a language change is followed.
     var recentReaction by remember { mutableStateOf<Reaction?>(null) }
@@ -482,11 +487,37 @@ internal fun VideoCallStage(
         )
         if (panel != null) return@Box
 
+        // A pull up on the handle opens the whole toolset without leaving the call. It sits between the need row and
+        // the answer group and never fades with the chrome: it is the affordance that makes the call read as a call.
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = NEED_ROW_HEIGHT + 8.dp)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragEnd = {
+                            if (slideUp > 0.25f) sheetFor = lastTool ?: StageTool.TYPING
+                            slideUp = 0f
+                        },
+                        onVerticalDrag = { change, dy ->
+                            change.consume()
+                            slideUp = (slideUp - dy / 240.dp.toPx()).coerceIn(0f, 1f)
+                        },
+                    )
+                },
+        ) {
+            SlidePanelHandle(
+                onOpen = { sheetFor = lastTool ?: StageTool.TYPING },
+                dragFraction = slideUp,
+            )
+        }
+
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 16.dp + NEED_ROW_HEIGHT, start = 16.dp, end = 16.dp)
+                .padding(bottom = 56.dp + NEED_ROW_HEIGHT, start = 16.dp, end = 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -592,6 +623,7 @@ internal fun VideoCallStage(
                             selected = sheetFor,
                             available = available,
                             onSelect = { tool ->
+                                lastTool = tool
                                 when (tool) {
                                     // The sheet shows the whole toolset; its group opens first for language, pictures and emoji.
                                     StageTool.LANGUAGE, StageTool.PICTURES, StageTool.EMOJI -> sheetFor = tool
