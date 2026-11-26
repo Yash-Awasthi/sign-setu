@@ -145,6 +145,8 @@ fun FullChildMuteCommunicationBoard(
     onDismiss: () -> Unit,
     /** A touch on the body map; without it the body tab shows only its cards. */
     onBodyTouch: ((BodyTouch) -> Unit)? = null,
+    /** A face and pain number from the stage's scale; without it the feelings tab shows only its cards. */
+    onFeeling: ((Feeling) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     var tab by rememberSaveable { mutableStateOf(Tabs.first()) }
@@ -209,12 +211,15 @@ fun FullChildMuteCommunicationBoard(
             val map = tab == "body" && onBodyTouch != null
             // The map takes most of the height; the body cards stay below it for a named answer.
             if (map) HurtMap({ t -> haptic.performHapticFeedback(HapticFeedbackType.LongPress); onBodyTouch(t) }, Modifier.fillMaxWidth().weight(0.62f)) { content.subjectText(it, lang) }
+            // The scale sits above its tab's cards, so a face is picked before a card names it.
+            if (tab == "feelings") onFeeling?.let { pick -> FeelingPanel(content, lang, pick, Modifier.fillMaxWidth().weight(0.55f)) }
+            val extra = map || (tab == "feelings" && onFeeling != null)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.weight(if (map) 0.38f else 1f),
+                modifier = Modifier.weight(if (extra) 0.38f else 1f),
             ) {
                 items(ExpressCards.filter { it.tab == tab }, key = { it.id }) { card ->
                     val chosen = chosenCard == card.id

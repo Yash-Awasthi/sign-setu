@@ -283,7 +283,8 @@ ticked-here: one primary action, a five-tool bar and exactly three tagged paths 
   verified-here: ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.DrawingBoardDeviceTest -> 3 tests passed on ci34 (API 34), including a rectangle whose four sides reach the kept PNG with paper inside, and undo removing it; :app:testStandardDebugUnitTest --tests app.signsetu.DrawShapesTest -> 8 passed
 - [x] Body-map precision: zoom regions (hand, foot, chest, abdomen) with the touched point recorded exactly. `[W]`
   verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.BodyZoomTest -> 7 passed; ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.BodyMapZoomDeviceTest -> 1 passed on ci34 (API 34): a tap on the hand opens its close-up and the second tap keeps the point the finger chose
-- [ ] Emotion and pain scale on the stage (faces + 0–10), logged with the session. `[W]`
+- [x] Emotion and pain scale on the stage (faces + 0–10), logged with the session. `[W]`
+  verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.FeelingsTest -> 4 passed; ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.FeelingsDeviceTest -> 1 passed on ci34 (API 34): a face sends at once and the numbers then add the pain, kept in the answer's cue
 - [ ] Family/contact card the person can point at to identify who to call. `[W]`
 
 ---

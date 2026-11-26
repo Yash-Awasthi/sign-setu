@@ -456,6 +456,8 @@ fun Stage(
             rightsNotice = rightsNotice,
             onDraw = { drawing = true }.takeIf { item.canDraw && panel == null },
             onWrite = { writing = true }.takeIf { canWrite && panel == null },
+            onLanguage = onLanguage,
+            pictureCards = item.choices,
             panel = panel,
             // Picture tiles need little height; the character keeps the rest instead of an empty gap.
             panelCollapsed = moving && !signing && (lesson != null || item.choices.isNotEmpty()) && panel != null &&
@@ -477,6 +479,7 @@ fun Stage(
                 onCard = { id -> onCard(id); reacting = true },
                 onDismiss = { showExpressBoard = false },
                 onBodyTouch = { t -> onCue(t.cue); onCard(HURT_CARD); reacting = true },
+                onFeeling = { f -> onCue(f.cue); onCard(f.mood.card); reacting = true },
                 // Faces the subject like the rest of the stage.
                 modifier = Modifier.graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f },
             )
