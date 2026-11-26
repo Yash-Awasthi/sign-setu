@@ -2445,3 +2445,18 @@ V7D top confused pairs (true -> predicted): busy -> kill (2); area -> island (2)
 
 V7D as the app shows it (logits masked to its 314 words, scored on those words): new-signer 0.508 [0.390, 1.000] (n=59), per source {'islrtc': 0.5, 'kaggle': 0.9866, 'rkmvu': 1.0}, against the app -
 
+
+# Frozen evaluation set and the accuracy gate (2026-11-26)
+
+`tools/ml/data/` freezes 1,116 held-out landmark sequences (313 of the reader's 314 words): INCLUDE's official test
+split (816 clips) and the Kaggle ISL held-out signer (300 clips). `tools/ml/eval.py` scores the shipped `sign_reader`
+on it through `runtime.py` and `features.py`:
+
+    frozen set   n=1,116   top-1 0.9695   top-5 0.9964   unclear 0.0134
+      INCLUDE           n=816   top-1 0.9792   top-5 0.9951   unclear 0.0074
+      Kaggle held-out   n=300   top-1 0.9433   top-5 1.0000   unclear 0.0300
+
+The INCLUDE row equals the 0.9792 / 0.9951 (n=816) recorded above, so the loader and features are the recorded
+pipeline. An unclear read is the app's rule (`AMBIGUOUS_RATIO` 0.8, runner-up at 0.8 of the top). CI runs
+`python tools/ml/eval.py --check` and fails when top-1 drops more than 1 point or the unclear rate rises more than 2
+points against `tools/ml/eval_baseline.json`, recorded from this run on set sha256 86f677319c8f4686.

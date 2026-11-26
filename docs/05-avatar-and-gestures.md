@@ -225,6 +225,39 @@ Reviewers use the reviewer portal (`portal/`): every motion plays on the charact
 | Performer withdraws consent | Keyframes are re-performed by another performer and re-reviewed |
 | Volunteer performers and reviewers are not available | Recruit through the department; picture cards and gesture lookup do not depend on new motions |
 
+## 7. Sign reader accuracy on the frozen evaluation set
+
+`tools/ml/eval.py` scores the shipped ISL word reader on the frozen landmark set in `tools/ml/data/`: 1,116 sequences,
+313 of the reader's 314 words (`still` has no held-out clip), landmarks only with no video. The set was frozen on
+2026-11-26 and does not change, so these numbers are comparable from run to run.
+
+Measured 2026-11-26:
+
+| Set | n | Top-1 | Top-5 | Unclear |
+| --- | --- | --- | --- | --- |
+| Frozen set, all | 1,116 | 0.9695 | 0.9964 | 0.0134 |
+| INCLUDE test split | 816 | 0.9792 | 0.9951 | 0.0074 |
+| Kaggle ISL held-out signer | 300 | 0.9433 | 1.0000 | 0.0300 |
+
+"Unclear" is the app's own rule (`Kinetics.kt`, `AMBIGUOUS_RATIO` 0.8): the runner-up's probability is at least 0.8 of
+the top's. It counts reads the reader is unsure of, not reads that are wrong, and it is reported apart from accuracy.
+
+The weakest words, with the pair each was read as (true -> predicted, wrong reads of that word's clips): elephant ->
+colour (5 of 5), busy -> horse (3 of 5), clothing -> dress (2 of 4), red -> pink (2 of 4), friend -> child (2 of 4),
+fever -> yellow (2 of 5), lemon -> dress (2 of 5), turtle -> slow (2 of 5). The other 291 words are read right on
+every clip.
+
+**What these numbers are, and are not.** They are offline landmark sequences, scored with the shipped `sign_reader`
+weights through the NumPy mirror of the app's forward pass and feature code in `tools/ml/runtime.py` and
+`tools/ml/features.py`, which the Kotlin reader mirrors. They are not a device run and not an emulator run: no phone
+and no emulator was used, so they say nothing about the camera, the light or the frame rate on a phone. The INCLUDE row
+reproduces the 0.9792 / 0.9951 (n=816) already recorded in `tools/ml/EVAL.md` exactly, which is what ties this
+pipeline to the recorded one.
+
+The build fails when this same command drops top-1 by more than 1 point or raises the unclear rate by more than 2
+points against `tools/ml/eval_baseline.json`, the artefact recorded from this run; its frozen-set sha256 and date are
+inside it, so a changed set refuses the comparison instead of scoring against stale numbers.
+
 ## Sources
 
 - ISL and ASL differences, ISL varieties: https://home.csulb.edu/~lemaster/Asia/ASIA%20India.pdf, https://cse.iitk.ac.in/users/amit/books/zeshan-2000-sign-language-in.html, https://caravanmagazine.in/lede/on-the-other-hand-american-sign-language-bengaluru, https://atypicaladvantage.in/atypical-blog/post/difference-between-american-and-indian-sign-language
