@@ -126,6 +126,8 @@ jobs:
         run: python tools/ci/check_workflows.py
       - name: The portal has no write path to session data
         run: python tools/ci/check_portal.py
+      - name: The release evidence matches its hashes
+        run: python tools/security/release_manifest.py release/0.8.52 --check
       - name: Content manifest is current
         run: python tools/content/build_content.py --check
       - name: Content references, ids and language coverage
@@ -355,11 +357,15 @@ jobs:
             "$bt/apksigner" sign --ks "$ks" --ks-key-alias signsetu --ks-pass env:KSPW --v4-signing-enabled false --out "out/sign-setu-$VERSION-$abi.apk" "$RUNNER_TEMP/aligned.apk"
           done
           rm "$ks"
-          (cd out && sha256sum *.apk > SHA256SUMS)
       - id: syft
         uses: anchore/sbom-action/download-syft@v0
       - name: SBOM
-        run: python3 tools/security/sbom.py "${{ steps.syft.outputs.cmd }}" && cp app/build/sbom/sign-setu-release.cdx.json out/
+        run: python3 tools/security/sbom.py "${{ steps.syft.outputs.cmd }}"
+      # SHA256SUMS, the SBOM and PROVENANCE.json beside the APKs, then the same check a downloader runs.
+      - name: Release evidence
+        run: |
+          python3 tools/security/release_manifest.py out --version "$VERSION"
+          python3 tools/security/release_manifest.py out --check
       - name: Publish
         run: |
           tag="v$VERSION"

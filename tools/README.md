@@ -59,6 +59,7 @@ See [ml/README.md](ml/README.md) for data, environments and the training order. 
 | Script | What it does | Run |
 | --- | --- | --- |
 | `sbom.py` | CycloneDX SBOM of the release runtime classpath, with Syft (Apache-2.0); written to `app/build/sbom/sign-setu-release.cdx.json` | `sbom.py path/to/syft` |
+| `release_manifest.py` | Writes `SHA256SUMS`, `PROVENANCE.json` and the SBOM beside a directory of `sign-setu-<version>-<abi>.apk` files, reading each APK's signing status from its bytes; `--check` recomputes every hash and exits 1 on a mismatch, a file present but not summed, or a signing status the bytes contradict | `release_manifest.py out --version 0.8.52`, then `release_manifest.py out --check` |
 | `verify_seal.py` | Checks an exported report's verification seal away from the phone: the device signature over session, entry count, chain head and Merkle root, with the key the seal carries (optionally the certificate's key fingerprint). Exit 0 valid, 1 invalid, 2 no seal | `verify_seal.py --pdf report.pdf` or `--qr "<QR text>"`; a report from an older build still needs `--passphrase`. Needs `cryptography` and `pypdf` |
 | `test_paths.py` | Fails when a tracked text file carries a developer's absolute home path | `python -m unittest discover -s tools/security -p 'test_*.py'` |
 

@@ -76,5 +76,19 @@ Reports survive either way. An exported report is one PDF with no password since
 
 1. Bump `versionName` and `versionCode` in `app/build.gradle.kts`; add the `CHANGELOG.md` section with the "does a stored session survive" answer.
 2. Run `python tools/docs/check_version.py`, `python tools/docs/check_docs.py` and `python tools/docs/check_release.py`; run the `tools/docs` unit tests. Run the Gradle unit tests, lint and the instrumented suite when the schema, the export or the camera path changed.
-3. Tag `v<versionName>` through the release path; the `release` job signs both APKs, writes `SHA256SUMS` and the SBOM, and publishes the notes. Check the assets and that `sha256sum -c SHA256SUMS` passes on a fresh download.
+3. Tag `v<versionName>` through the release path; the `release` job signs both APKs, writes `SHA256SUMS`, the SBOM and `PROVENANCE.json`, and publishes the notes. Check the assets and that `sha256sum -c SHA256SUMS` passes on a fresh download.
 4. Tell officers whether an update keeps their sessions (it does), that a downgrade does not, and the build's 180-day deadline.
+
+## 5. Release evidence
+
+Every release has three files beside its APKs, written by `tools/security/release_manifest.py` and published with them:
+
+| File | What it holds |
+| --- | --- |
+| `SHA256SUMS` | one `<sha256>  <name>` line per APK and for the SBOM, so `sha256sum -c SHA256SUMS` runs beside the download |
+| `sign-setu-release.cdx.json` | a CycloneDX 1.5 SBOM of the release runtime classpath, from the resolved graph in `app/gradle.lockfile` (Syft reads the resolved files where it is installed) |
+| `PROVENANCE.json` | the commit, version and build task; the Gradle distribution and its pinned SHA-256; each artefact's path, size, SHA-256 and signing status; the SHA-256 of `gradle/verification-metadata.xml`; the SHA-256, line count and shipped-component count of both lockfiles; the SBOM producer and component count |
+
+The signing status is read from the APK's bytes, never taken from a label: an APK with no APK Signing Block and no `META-INF` certificate is `unsigned` and `shippable: false`. A release APK built without the release keystore, as on a machine that holds no key, is exactly that: unsigned, not installable as a release, and not to be described as shippable. It becomes shippable only after `zipalign` and `apksigner sign` with the release key, and the evidence then has to be cut again from the signed file.
+
+The evidence committed under `release/<version>/` is the record of a build at a commit; `python tools/security/release_manifest.py release/<version> --check` recomputes every hash and exits 1 on one changed byte, on an APK or SBOM present but missing from `SHA256SUMS`, on a recorded signing status that the bytes contradict, and on a `verification-metadata.xml` digest that no longer matches the file. The `tools` job runs it, the `release` job runs the same check on `out/` before publishing, and a locally built pair of APKs is recorded with the same command.

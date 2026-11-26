@@ -1,0 +1,62 @@
+{
+  "artefacts": [
+    {
+      "bytes": 136662709,
+      "name": "sign-setu-0.8.52-arm64.apk",
+      "path": "release/0.8.52/sign-setu-0.8.52-arm64.apk",
+      "sha256": "8c9ba7ab0d1cc133320a8b6e870e30ddb55827dc60f8150c0b7b5aceb3dcbe81",
+      "shippable": false,
+      "signing": "unsigned"
+    },
+    {
+      "bytes": 189431933,
+      "name": "sign-setu-0.8.52-universal.apk",
+      "path": "release/0.8.52/sign-setu-0.8.52-universal.apk",
+      "sha256": "320dd6cc5209808440077d91c57bde752cb1abf4ef3ab02fef06b95602d3e2e6",
+      "shippable": false,
+      "signing": "unsigned"
+    }
+  ],
+  "build": {
+    "gradle": {
+      "distribution": "https://services.gradle.org/distributions/gradle-9.8.2-bin.zip",
+      "sha256": "21bd5da2de49b642904077f38c0efdc7778e92b3ed0889392dca61b97e389607"
+    },
+    "keystore": "absent",
+    "note": "built without the release keystore, so the APKs carry no signature; shippable is false until apksigner signs the aligned APK with the release key",
+    "task": ":app:assembleStandardRelease"
+  },
+  "commit": "9dbacf15dcffbdd0d520d4dab1a2122e79e09190",
+  "dependencyLocks": [
+    {
+      "lines": 477,
+      "path": "app/gradle.lockfile",
+      "sha256": "0d7afe9ab93a4474b50621378a6382641fb45fdc4f405f2c28dcf2da5d0264d4",
+      "shipped": 276
+    },
+    {
+      "lines": 4,
+      "path": "settings-gradle.lockfile",
+      "sha256": "e58bb2ed80db9f829601a658d7c33b9802eb7d2191c31e79c28e01f14c225926"
+    }
+  ],
+  "dependencyVerification": {
+    "path": "gradle/verification-metadata.xml",
+    "sha256": "ae2e167d282e972243509c127e0a777675725b88654e8a207292550551044fc8",
+    "status": "present"
+  },
+  "format": "sign-setu-release-evidence/1",
+  "generated": "2026-11-26T19:14:56Z",
+  "sbom": {
+    "bytes": 78582,
+    "components": 276,
+    "format": "CycloneDX 1.5",
+    "from": "the resolved release runtime classpath in app/gradle.lockfile",
+    "path": "release/0.8.52/sign-setu-release.cdx.json",
+    "producer": "sbom_lockfile.py",
+    "sha256": "cba8ed65dc0e71e850d8d1dd6d239efa1fcdba5a8ca3ff9ecd6494ecb15656e5"
+  },
+  "verify": "sha256sum -c SHA256SUMS && python tools/security/release_manifest.py --check release/0.8.52",
+  "version": "0.8.52",
+  "versionCode": "24"
+}
