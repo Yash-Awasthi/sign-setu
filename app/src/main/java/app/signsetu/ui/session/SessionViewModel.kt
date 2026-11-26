@@ -47,8 +47,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import app.signsetu.data.content.Given
-import app.signsetu.data.content.Method
-import app.signsetu.data.content.TEXT_MAX
 import app.signsetu.data.content.answerText
 import app.signsetu.data.content.reason
 import app.signsetu.export.EvidenceIntegrity
@@ -58,7 +56,6 @@ import app.signsetu.export.ReportSection
 import app.signsetu.export.ReportText
 import app.signsetu.export.SessionReport
 import java.io.File
-import java.util.Base64
 import app.signsetu.camera.renderSignsPng
 import app.signsetu.camera.renderSkeletonPng
 import kotlinx.coroutines.withContext
@@ -67,7 +64,7 @@ private const val RUN_STEP_MS = 3_000L
 private const val LANGUAGE_SETTLE_MS = 5_000L
 private const val OPENING_ID = "s1"
 
-private data class Local(
+internal data class Local(
     val selectedGroup: String = "safety",
     val sensitiveUnlocked: Boolean = false,
     val pending: Pending? = null,
@@ -88,10 +85,10 @@ private data class Local(
 )
 
 class SessionViewModel(
-    private val sessionId: String,
-    private val repo: SessionRepository,
+    internal val sessionId: String,
+    internal val repo: SessionRepository,
     val content: ContentBundle,
-    private val officerLang: String,
+    internal val officerLang: String,
     private val report: SessionReport,
     reader: SignReader? = null,
     /** Re-walk the hash chain when an earlier session is taken up again, and log what was found. */
@@ -100,7 +97,7 @@ class SessionViewModel(
     quiet: Boolean = false,
 ) : ViewModel() {
 
-    private val local = MutableStateFlow(Local())
+    internal val local = MutableStateFlow(Local())
 
     private val signs = SignReading(
         viewModelScope, content, reader,
@@ -138,10 +135,24 @@ class SessionViewModel(
 
     /** A second screen shows the stage; this phone stays with the officer. */
     @Volatile var paired = false
-    private val shown = mutableMapOf<Long, Pending>()
-    private val remoteLogged = mutableSetOf<Pair<Long, Int>>()
-    private var remoteFrom: Any? = null
+    internal val shown = mutableMapOf<Long, Pending>()
+    internal val remoteLogged = mutableSetOf<Pair<Long, Int>>()
+    internal var remoteFrom: Any? = null
     internal var reencodePng: (ByteArray) -> ByteArray? = ::reencodeRemotePng
+
+    private val link = SessionLink(this)
+
+    /** The single entry for answers from a second screen (SessionLink.kt). */
+    suspend fun logRemote(itemId: Long, n: Int, body: AnswerBody, late: Boolean = false, from: Any? = null): Boolean =
+        link.logRemote(itemId, n, body, late, from)
+
+    /** False once the app has locked: rows are no longer written, so nothing may be acknowledged as kept. */
+    val storing: Boolean get() = link.storing
+
+    fun logLink(key: String, detail: String? = null) = link.logLink(key, detail)
+    fun breakGiven() = link.breakGiven()
+    fun fallbackToLocal() = link.fallbackToLocal()
+    fun leavePaired() = link.leavePaired()
 
     init {
         if (checkOnResume) viewModelScope.launch {
@@ -372,7 +383,7 @@ class SessionViewModel(
     private suspend fun keepSigns(frames: List<List<LandmarkFrame>>, words: List<String>, shownId: Long?) =
         keepPng(withContext(Dispatchers.Default) { runCatching { renderSignsPng(frames, words) }.getOrNull() }, EventSource.MACHINE, shownId)
 
-    private suspend fun keepPng(png: ByteArray?, source: EventSource, shownId: Long?, via: String? = null) {
+    internal suspend fun keepPng(png: ByteArray?, source: EventSource, shownId: Long?, via: String? = null) {
         if (png == null) return
         repo.log(sessionId, EventType.ANSWER_DRAWING, source, drawingPng = png, shownId = shownId, via = via, reason = "evidence:skeleton")
     }
@@ -472,99 +483,6 @@ class SessionViewModel(
                 pending = if (paired && it.pending == prepared) null else it.pending,
             )
         }
-    }
-
-    /** The single entry for answers from a second screen; returns after the row is committed so the link can ack.
-     * Nothing is dropped: an answer to an earlier item is logged against that item and marked late. */
-    suspend fun logRemote(itemId: Long, n: Int, body: AnswerBody, late: Boolean = false, from: Any? = null): Boolean {
-        // A new link numbers its answers from 0 again, so only a repeat from the same link is a resend.
-        if (from !== remoteFrom) { remoteLogged.clear(); remoteFrom = from }
-        if (itemId to n in remoteLogged) return false
-        val current = itemId == local.value.itemId
-        val via = if (late || !current) VIA_STAGE_LATE else VIA_STAGE
-        val q = itemId.takeIf { it in shown }
-        val lang = officerLang
-        when (body) {
-            // The stage's water and food buttons are requests unless the item itself offered that picture.
-            is AnswerBody.Card if body.id in NeedCards && !shown[itemId].offers(body.id) ->
-                repo.log(sessionId, EventType.REQUEST, EventSource.SUBJECT, lang, text = content.cards[body.id]?.label?.get(lang), cardId = body.id, via = via)
-            is AnswerBody.Card -> {
-                if (!repo.logChecked(sessionId, content, officerLang, shown[itemId], body.id, null, q, via)) {
-                    repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, lang, text = content.cards[body.id]?.label?.get(lang), cardId = body.id, shownId = q, via = via, reason = body.cue?.let { "cue:$it" })
-                }
-                if (current) local.update { it.copy(answeredCard = body.id, answeredYes = null) }
-            }
-            is AnswerBody.YesNo -> {
-                if (!repo.logChecked(sessionId, content, officerLang, shown[itemId], null, body.yes, q, via)) {
-                    val id = if (body.yes) "yes" else "no"
-                    repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, lang, text = content.cards[id]?.label?.get(lang), cardId = id, shownId = q, via = via, reason = body.cue?.let { "cue:$it" })
-                }
-                if (current) local.update { it.copy(answeredYes = body.yes, answeredCard = null) }
-            }
-            is AnswerBody.Language -> {
-                repo.log(sessionId, EventType.LANGUAGE_CHOSEN, EventSource.SUBJECT, body.code, text = content.language(body.code)?.english, shownId = q, via = via)
-                if (current) local.update { it.copy(chosenLanguage = body.code) }
-            }
-            AnswerBody.Next -> if (current) nextRule()
-            is AnswerBody.Given -> {
-                val method = Method.entries.firstOrNull { it.name == body.method }
-                if (method != null) {
-                    val g = Given(body.question, method, body.confirmed, body.value.take(TEXT_MAX), body.picks)
-                    if (!current || !hold(g, via)) logGiven(g, q, via)
-                    if (current && g.confirmed) advanceRun()
-                }
-            }
-            AnswerBody.Change -> if (current) hold(null, via)
-            is AnswerBody.CameraRead -> cameraRead(body.card, body.cue, q)
-            is AnswerBody.Text -> repo.log(sessionId, EventType.ANSWER_TEXT, EventSource.SUBJECT, ui.value?.session?.subjectLang, text = body.text.trim().take(TEXT_CAP), shownId = q, via = via)
-            is AnswerBody.Drawing -> {
-                val png = remotePng(body.png)
-                if (png != null) {
-                    repo.log(sessionId, EventType.ANSWER_DRAWING, EventSource.SUBJECT, drawingPng = png, shownId = q, via = via)
-                } else {
-                    repo.log(sessionId, EventType.ANSWER_UNCLEAR, EventSource.SUBJECT, shownId = q, via = via)
-                }
-                if (current) local.update { it.copy(onStage = null, itemId = null) }
-            }
-            // The stage's reader made these words, as this phone's reader makes its own: a reading, not the subject's answer.
-            is AnswerBody.Signed -> {
-                val text = body.words.joinToString(" ").take(TEXT_CAP)
-                if (text.isNotBlank()) {
-                    repo.log(sessionId, EventType.ANSWER_SIGNED, EventSource.MACHINE, lang, text = text, shownId = q, via = via)
-                }
-                body.skeletonPng?.let { keepPng(remotePng(it), EventSource.MACHINE, q, via) }
-            }
-        }
-        // A write dropped because the app locked is not remembered, so the stage's resend is logged later.
-        if (repo.closed) return false
-        remoteLogged += itemId to n
-        return true
-    }
-
-    /** False once the app has locked: rows are no longer written, so nothing may be acknowledged as kept. */
-    val storing: Boolean get() = !repo.closed
-
-    /** Only a bitmap this phone re-encoded itself reaches the database and the report. */
-    private fun remotePng(base64: String): ByteArray? = runCatching { Base64.getDecoder().decode(base64) }.getOrNull()?.let(reencodePng)
-
-    /** Lifecycle of the second screen, in the encrypted log; [key] is a machine key shown in the officer's language. */
-    fun logLink(key: String, detail: String? = null) = viewModelScope.launch {
-        repo.log(sessionId, EventType.LINK, EventSource.OFFICER, text = listOfNotNull(key, detail).joinToString(" "))
-    }
-
-    fun breakGiven() = viewModelScope.launch { repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = SYSTEM_BREAK_GIVEN) }
-
-    /** The link failed: what was on the second screen goes to this phone's stage; the draft is dropped. */
-    fun fallbackToLocal() {
-        paired = false
-        local.update { it.copy(pending = it.onStage) }
-        viewModelScope.launch { repo.log(sessionId, EventType.LINK, EventSource.OFFICER, text = LINK_FALLBACK) }
-    }
-
-    /** The second screen went away without a fallback: this phone stays the officer's, never a stage with their draft. */
-    fun leavePaired() {
-        paired = false
-        local.update { it.copy(mode = Mode.OFFICER, onStage = null, itemId = null) }
     }
 
     // A proposal the subject's next tap matched, for the record; used once.
@@ -675,7 +593,7 @@ class SessionViewModel(
     }
 
     /** Keeps [g] for the item's close unless it is confirmed; true when there is nothing to log now. */
-    private fun hold(g: Given?, via: String?): Boolean {
+    internal fun hold(g: Given?, via: String?): Boolean {
         val held = g == null || !g.confirmed
         unconfirmed = g.takeIf { held }
         unconfirmedVia = via
@@ -687,7 +605,7 @@ class SessionViewModel(
         unconfirmed = null
     }
 
-    private suspend fun logGiven(g: Given, shownId: Long? = local.value.itemId, via: String? = null) {
+    internal suspend fun logGiven(g: Given, shownId: Long? = local.value.itemId, via: String? = null) {
         val text = content.answerText(content.question(g.question)?.answer, g, officerLang)
         repo.log(sessionId, EventType.ANSWER_TEXT, EventSource.SUBJECT, officerLang, text = text, itemId = g.question, reason = g.reason(), shownId = shownId, via = via)
     }
@@ -740,7 +658,7 @@ class SessionViewModel(
     }
 
     // The pause lets the stage acknowledge the answer and lets the subject change it before the next question.
-    private fun advanceRun() {
+    internal fun advanceRun() {
         if (local.value.queue.isEmpty()) return
         step?.cancel()
         step = viewModelScope.launch {
