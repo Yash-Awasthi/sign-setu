@@ -130,6 +130,10 @@ jobs:
         run: python tools/content/build_content.py --check
       - name: Content references, ids and language coverage
         run: python tools/content/check_content.py
+      - name: The frozen evaluation set is intact
+        run: |
+          python tools/ml/freeze_eval.py --check
+          python tools/ml/test_freeze_eval.py
 
   gateway:
     runs-on: ubuntu-24.04

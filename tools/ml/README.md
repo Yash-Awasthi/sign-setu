@@ -79,6 +79,19 @@ separates the reader's accuracy from the app's cutting.
 
     signsetu-mp/python -s tools/ml/eval_video.py --dir <folder of .mp4> [--whole]
 
+## Frozen evaluation set
+
+`data/` holds the accuracy gate's ground truth as landmark arrays plus
+`manifest.tsv`, one row per sequence with corpus, source file, sample index,
+session, signer, word, frames, aspect and SHA-256: INCLUDE's official test split
+(816 clips, 262 words) and the Kaggle set's held-out signer (300 clips, 60 words),
+1116 sequences and 313 words, frozen 2026-11-26. No video or image is stored. The
+set is immutable; see [data/README.md](data/README.md) for the layout, the digest
+and the exclusions.
+
+    python freeze_eval.py --data C:/ml-data     # write data/; refuses an existing set without --force
+    python freeze_eval.py --check               # verify every row and digest, write nothing
+
 `train.py` reads `SIGN_HIDDEN` (width, default 160; `sign_reader` and `asl_reader` use 320), `SIGN_DROPOUT` and
 `SIGN_AUG=strong` (moves and resizes each hand against the body). `export.py` needs the same `SIGN_HIDDEN` as training.
 `train_asl.py` reads `SIGN_KD` (distillation weight) and `SIGN_SEED`.
