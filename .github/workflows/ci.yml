@@ -290,7 +290,7 @@ jobs:
           path: out/verify
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v6
-        if: failure()
+        if: always()
         with:
           name: instrumented-report-${{ matrix.shard }}
           path: app/build/reports/androidTests
