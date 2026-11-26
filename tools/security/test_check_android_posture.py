@@ -153,6 +153,20 @@ class PostureTest(unittest.TestCase):
         errors, _ = posture.check_all()
         self.assertEqual([], errors)
 
+    def test_the_release_build_forces_secure_screen(self):
+        self.assertEqual([], posture.secure_screen_errors())
+
+    def test_a_release_block_without_the_secure_screen_override_fails(self):
+        text = pathlib.Path(posture.GRADLE).read_text(encoding="utf-8")
+        copy = self.root / "build.gradle.kts"
+        copy.write_text(text, encoding="utf-8")
+        self.assertEqual([], posture.secure_screen_errors(copy))
+        stripped = text.replace('buildConfigField("boolean", "SECURE_SCREEN", "true")', "", 1)
+        self.assertNotEqual(text, stripped)
+        copy.write_text(stripped, encoding="utf-8")
+        errors = posture.secure_screen_errors(copy)
+        self.assertTrue(any("SECURE_SCREEN" in error for error in errors), errors)
+
 
 if __name__ == "__main__":
     unittest.main()

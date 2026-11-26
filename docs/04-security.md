@@ -59,7 +59,7 @@ Target: OWASP MASVS v2 with the MAS-L2 testing profile, and the CERT-In requirem
 
 | Control | Source |
 | --- | --- |
-| `FLAG_SECURE` on the activity when the build switch `secureScreen` is true, as it must be for the final release APK; dialogs and sheets inherit it. Settings > Security has three switches, each needing the officer to turn it off: Pin the app, Block screenshots (default from `secureScreen`) and Ask for fingerprint. Testing builds allow screenshots; debug builds made with `-PtestUnlocked=true` also skip pinning and the fingerprint so the app can be driven over adb. | MASVS-PLATFORM-3 |
+| `FLAG_SECURE` on the activity window whenever the officer's Block screenshots setting is on. A release APK starts with that setting on, because the `release` build type forces `SECURE_SCREEN=true` and ignores the `secureScreen` property; only debug builds follow the property (off by default) so testers can capture. Dialog and sheet windows are separate windows and do not inherit the activity's flag: they are not protected, a known low-severity gap (F-11) that needs a device check. Settings > Security has three switches, each needing the officer to turn it off: Pin the app, Block screenshots (default from `SECURE_SCREEN`) and Ask for fingerprint. Debug builds made with `-PtestUnlocked=true` also skip pinning and the fingerprint so the app can be driven over adb. | MASVS-PLATFORM-3 |
 | Exported components in the merged release manifest: the launcher activity. `RetentionJob` is not exported and is bound only by the platform scheduler (`BIND_JOB_SERVICE`). FileProvider not exported, one temporary read grant per share. Unused library receivers removed. No deep links, no PendingIntents. | MASVS-PLATFORM-1 |
 | One WebView, the character's (`Avatar.kt`): it loads only the bundled avatar page, answers every other request with 404 and blocks navigation; file and content access are off; its JavaScript bridge exposes only `ready()` and `finished(token)`. | MASVS-PLATFORM-2 |
 | `filterTouchesWhenObscured` on the activity and every dialog window (`GuardedAlertDialog`). | MASVS-PLATFORM-3 |
@@ -214,10 +214,11 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | F-4 | Root check is a heuristic | Low | Warn-only by design, so an emergency is never blocked |
 | F-5 | An assistant key compiled into an APK | Closed | The build no longer has a key field; keys live on the gateway or in the officer's Keystore |
 | F-6 | The record digest joins fields without a separator | Low | The hash chain (length-prefixed fields) is the integrity control; the digest only matches re-exports. Left unchanged so digests on reports already handed out stay valid |
-| F-7 | Testing builds allow screenshots | Medium until the final build | `secureScreen=true` for the final release APK |
+| F-7 | Testing builds allow screenshots | Closed for release builds | The `release` build type in `app/build.gradle.kts` forces `SECURE_SCREEN=true`, so every release APK sets `FLAG_SECURE` and the `secureScreen` property only decides debug builds, which stay open for testers |
 | F-8 | Bundled BouncyCastle ships a trust-all `X509TrustManager` class (lint) | Info | Unused by the app; R8 keeps it only if referenced |
 | F-9 | The event-log tree carries an odd leaf up to the next level; it is not RFC 6962's tree shape, though it uses its 0x00 and 0x01 prefixes | Info | Left unchanged: changing it would break existing reports; the verifier and the station use the same rule |
 | F-10 | The printed-rows digest is in the seal but outside the signed line, so away from the phone the seal binds the chain head to the key and not the printed pages to the head | Low | Accepted for now: the digest is printed on every page so a re-export reproduces it, and the phone re-walks the chain; signing the digest as well would change the seal line and every report already issued (2.10) |
+| F-11 | Dialog and sheet windows are not covered by the activity's `FLAG_SECURE`, so a screenshot taken while one is open can capture its content | Low | Open; needs a check on a device, then `FLAG_SECURE` set on the dialog windows where content warrants it |
 
 ## 7. Testing plan
 

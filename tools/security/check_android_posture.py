@@ -11,7 +11,9 @@ Five failures stop the check:
 
 It also reads the merged manifests under `app/build/` when they exist, and reports what they add,
 but does not gate on build output that a clean checkout does not have. A debuggable application
-element in a source manifest is a sixth failure: only the debug build type may set it.
+element in a source manifest is a sixth failure: only the debug build type may set it. A seventh:
+the `release` build type in `app/build.gradle.kts` must force `SECURE_SCREEN` true, because a
+release that leaves the property as false ships without `FLAG_SECURE`.
 
 Warnings (logged, exit stays 0) cover risky WebView settings, PendingIntents without
 FLAG_IMMUTABLE, exported dynamic receivers and clipboard writes, so the review in
@@ -30,6 +32,7 @@ MAIN = ROOT / "app" / "src" / "main" / "AndroidManifest.xml"
 NEARBY = ROOT / "app" / "src" / "nearby" / "AndroidManifest.xml"
 SOURCE = ROOT / "app" / "src" / "main"
 SECRET_ROOTS = (ROOT / "app" / "src", ROOT / "brain")
+GRADLE = ROOT / "app" / "build.gradle.kts"
 DOCS = ROOT / "docs" / "29-android-posture.md"
 ANDROID = "{http://schemas.android.com/apk/res/android}"
 TOOLS = "{http://schemas.android.com/tools}"
@@ -213,6 +216,39 @@ def debug_errors(application, manifest: pathlib.Path) -> list[str]:
     return []
 
 
+def braces_block(text: str, opener: str) -> str | None:
+    """The text between an opener like `release {` and its matching `}`, or None when it is absent."""
+    found = re.search(opener, text)
+    if found is None:
+        return None
+    depth = 0
+    for index in range(found.end() - 1, len(text)):
+        character = text[index]
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return text[found.end():index]
+    return None
+
+
+def secure_screen_errors(gradle: pathlib.Path = GRADLE) -> list[str]:
+    """The release build type must force SECURE_SCREEN true; the property only decides debug builds."""
+    if not gradle.is_file():
+        return [f"{gradle}: no build file to read for the release build type"]
+    text = gradle.read_text(encoding="utf-8", errors="ignore")
+    types = braces_block(text, r"\bbuildTypes\s*\{")
+    if types is None:
+        return [f"{gradle}: no buildTypes block"]
+    release = braces_block(types, r"\brelease\s*\{")
+    if release is None:
+        return [f"{gradle}: no release build type"]
+    if not re.search(r'buildConfigField\(\s*"boolean"\s*,\s*"SECURE_SCREEN"\s*,\s*"true"\s*\)', release):
+        return [f"{gradle}: the release build type does not force SECURE_SCREEN to \"true\""]
+    return []
+
+
 def source_text(source: pathlib.Path) -> str:
     """Every Kotlin and Java code line under the source root, with its path and line number.
     Comments are blanked, so a permission named in prose is not evidence of a call site."""
@@ -370,6 +406,7 @@ def check_all(manifests: list[pathlib.Path] | None = None) -> tuple[list[str], l
         manifest_errors, manifest_review = check(manifest, base_application=base)
         errors += manifest_errors
         review += manifest_review
+    errors += secure_screen_errors()
     return list(dict.fromkeys(errors)), list(dict.fromkeys(review))
 
 

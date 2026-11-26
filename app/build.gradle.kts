@@ -14,7 +14,7 @@ val local = Properties().apply { rootProject.file("local.properties").takeIf { i
 val gatewayUrl: String = providers.gradleProperty("gatewayUrl").orNull ?: local.getProperty("gatewayUrl", "")
 // The client name sent to the assistant service; local.properties may set the one a service requires.
 val assistUserAgent: String = local.getProperty("assistUserAgent", "SignSetu")
-// The one switch for screenshots and screen recording: false while testing, true for the final release APK.
+// Screenshots and screen recording for debug builds only: the release build type forces it true below.
 val secureScreen: Boolean = (providers.gradleProperty("secureScreen").orNull ?: local.getProperty("secureScreen", "false")).toBoolean()
 // Debug builds only, for driving the app over adb: no app pinning and no officer fingerprint. Release ignores it.
 val testUnlocked: Boolean = (providers.gradleProperty("testUnlocked").orNull ?: local.getProperty("testUnlocked", "false")).toBoolean()
@@ -75,6 +75,8 @@ android {
             enableUnitTestCoverage = true
         }
         release {
+            // A shipped release always blocks screenshots and screen recording; the property only affects debug.
+            buildConfigField("boolean", "SECURE_SCREEN", "true")
             // Universal 64-bit build by default (ARM phones, x86_64 emulators and tablets); -Pabi=arm64-v8a for phones only.
             ndk { abiFilters += (providers.gradleProperty("abi").orNull?.split(",") ?: listOf("arm64-v8a", "x86_64")) }
             isMinifyEnabled = true
