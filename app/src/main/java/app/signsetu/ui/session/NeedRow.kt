@@ -34,8 +34,7 @@ import app.signsetu.ui.theme.Space
 import app.signsetu.ui.theme.TypeSize
 import app.signsetu.ui.theme.Radius
 
-/** The six needs the row always offers, in the order they are drawn; "family" has no picture card yet. */
-internal val NEED_IDS = listOf("water", "food", "toilet", "pain", "help", "family")
+/** The six needs the row always offers, in the order they are drawn; the list lives in AnswerKeys with the walk order. */
 
 /** The space this row takes at the bottom of the call; the stage lifts its own content by it. */
 internal val NEED_ROW_HEIGHT = Space.s84
@@ -68,6 +67,7 @@ internal fun NeedRow(
     selected: String?,
     onNeed: (String) -> Unit,
     modifier: Modifier = Modifier,
+    flow: AnswerFlow? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     val call = LocalCall.current
@@ -82,17 +82,20 @@ internal fun NeedRow(
             NEED_IDS.forEach { id ->
                 val label = needLabel(id, content, lang)
                 val chosen = selected == id
+                val tap = {
+                    haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                    onNeed(id)
+                }
                 Surface(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-                        onNeed(id)
-                    },
+                    onClick = tap,
                     shape = RoundedCornerShape(Radius.r14),
                     color = if (chosen) answer.selection else call.surface,
                     border = BorderStroke(if (chosen) Space.xxs else Space.hair, if (chosen) answer.selection else call.line),
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .then(if (flow == null) Modifier else Modifier.answerTarget(flow, id, tap))
+                        .focusRing(flow?.focused == id, RoundedCornerShape(Radius.r14))
                         .testTag("stage.need." + id)
                         .semantics {
                             contentDescription = label

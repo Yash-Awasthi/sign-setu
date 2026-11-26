@@ -22,6 +22,8 @@ The same images are kept byte for byte in docs/screens/before/ as the baseline a
 
 The stage first shows only the character, the caption and the Stop octagon in the corner; a tap shows the rest for 5 s ([UX](03-ux.md) §2). These captures were taken with the buttons shown.
 
+The captures predate one change to the answer row: Water and Food are no longer drawn there as well as in the pinned needs row, which now holds all six needs, each still one tap and reachable by a key or a switch. The row is now the primary answer, No and More, then the needs; the express board opens from the tool bar's emoji button.
+
 | Screen | File | Notes |
 | --- | --- | --- |
 | Introduction | [08-stage-introduction.png](screens/08-stage-introduction.png) | The video call: character, camera window, caption, Stop and Next, Water, Food and Help |
@@ -55,8 +57,8 @@ The stage first shows only the character, the caption and the Stop octagon in th
 | ISL dictionary | [30-officer-isl-dictionary.png](screens/30-officer-isl-dictionary.png) | Recorded and drawn signs, searchable in English and Hindi |
 | ASL dictionary | [31-officer-asl-dictionary.png](screens/31-officer-asl-dictionary.png) | Shown when the session signs in ASL |
 | ASL notice | [32-officer-asl-advisory.png](screens/32-officer-asl-advisory.png) | The officer is told how well ASL is read |
-| Session menu | [34-officer-menu.png](screens/34-officer-menu.png) | Sign language, sitting opposite, skeleton on camera, Help, Finish |
-| In-call Help | [47-officer-help.png](screens/47-officer-help.png) | Menu, Help (or More, Session, Help): the call topic of the in-app guide, full screen |
+| Session menu | [34-officer-menu.png](screens/34-officer-menu.png) | Sign language, sitting opposite, skeleton on camera, Help. Finishing is the header's End button |
+| In-call Help | [47-officer-help.png](screens/47-officer-help.png) | Menu, Help: the call topic of the in-app guide, full screen |
 | Quick notes | [35-officer-change-profile.png](screens/35-officer-change-profile.png) | Age, victim or accused, sign language seen, speech, hearing, home, injuries, gender: one tap each |
 | Second screen | [36-officer-second-screen.png](screens/36-officer-second-screen.png) | Pairing a department device; Find a nearby phone pairs one from inside the app on Android 12 and later |
 | Record their voice | [48-officer-record-voice.png](screens/48-officer-record-voice.png) | The microphone in the dock: consent first, then tap to start, the person speaks, tap to stop; the recording joins the record |

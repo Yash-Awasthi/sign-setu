@@ -117,30 +117,37 @@ class SwitchScan(val order: AnswerOrder, val mode: SwitchAccess) {
     }
 }
 
-/** The answer bar's controls in the order VideoCallStage draws them, so the walk and the picture agree. */
+/** The six needs the pinned row always offers, in the order they are drawn; "family" has no picture card yet. */
+internal val NEED_IDS = listOf("water", "food", "toilet", "pain", "help", "family")
+
+/**
+ * The controls a key or a switch walks, in the order VideoCallStage draws them: the answer row
+ * first, then the pinned needs row, so the walk and the picture agree. Water, food and the express
+ * board are drawn once, in the needs row and the tool sheet, not again in the answer row.
+ */
 fun answerBarIds(signing: Boolean, statement: Boolean, next: Boolean, rights: Boolean, controls: Boolean, moreOpen: Boolean): List<String> = buildList {
     if (signing) {
         add("done")
-        return@buildList
-    }
-    if (next) add("next")
-    if (!statement && !next) add("yes")
-    if (!statement && !next) add("no")
-    if (rights) add(DONT_UNDERSTAND)
-    if (controls) {
-        add("water")
-        add("food")
-        add("express")
-        // The trio exists only behind More, and a statement has no More.
-        if (!statement) {
-            add(MORE)
-            if (moreOpen) {
-                add("dont_know")
-                add(DONT_UNDERSTAND)
-                add("wrong")
+    } else {
+        if (next) add("next")
+        if (!statement && !next) {
+            add("yes")
+            add("no")
+        }
+        if (rights) add(DONT_UNDERSTAND)
+        if (controls) {
+            // The trio exists only behind More, and a statement has no More.
+            if (!statement) {
+                add(MORE)
+                if (moreOpen) {
+                    add("dont_know")
+                    add(DONT_UNDERSTAND)
+                    add("wrong")
+                }
             }
         }
     }
+    addAll(NEED_IDS)
 }
 
 /** The More control's id; it opens the unsure trio, so it is a way on, not an answer. */

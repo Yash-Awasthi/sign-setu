@@ -554,6 +554,7 @@ internal fun VideoCallStage(
             content = content,
             lang = lang,
             selected = ui.answeredCard,
+            flow = if (barIds.isEmpty()) null else bar,
             onNeed = { id ->
                 onNeed(id)
                 react(
@@ -687,12 +688,6 @@ internal fun VideoCallStage(
                             if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, unsure, Modifier.weight(1.6f).answerTarget(bar, DONT_UNDERSTAND, unsure), height = Space.s52, focused = bar.focused == DONT_UNDERSTAND)
                         }
                         if (controls) {
-                            val water = { answer("water") }
-                            val food = { answer("food") }
-                            val express = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenExpressBoard() }
-                            SmallAnswer("water", null, cardLabel(content, "water", lang), StageTones.answerWater, Color.White, false, water, Modifier.weight(1f).answerTarget(bar, "water", water), height = Space.s52, focused = bar.focused == "water")
-                            SmallAnswer("food", null, cardLabel(content, "food", lang), StageTones.answerFood, Color.White, false, food, Modifier.weight(1f).answerTarget(bar, "food", food), height = Space.s52, focused = bar.focused == "food")
-                            SmallAnswer("express", null, cardLabel(content, "help", lang), StageTones.answerExpress, Color.White, false, express, Modifier.weight(1f).answerTarget(bar, "express", express), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Favorite), focused = bar.focused == "express")
                             if (!signing && pending != null && !statement) {
                                 val more = { moreAnswers = !moreAnswers }
                                 StageMoreAnswers(moreAnswers, more, Modifier.weight(1f).answerTarget(bar, MORE, more), focused = bar.focused == MORE)

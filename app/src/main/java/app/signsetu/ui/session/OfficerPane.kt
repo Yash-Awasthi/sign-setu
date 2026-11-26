@@ -329,7 +329,6 @@ fun OfficerPane(
                     ui = ui,
                     vm = vm,
                     canChangeSignLanguage = paired == null || ui.onStage == null,
-                    onEnd = { askEnd = true },
                 )
                 // The one obvious way to finish: on the surface, no menu to open, at the same level as the icons.
                 Button(

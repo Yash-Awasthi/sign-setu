@@ -4,7 +4,9 @@ import app.signsetu.data.settings.SwitchAccess
 import app.signsetu.ui.session.AnswerAction
 import app.signsetu.ui.session.AnswerKey
 import app.signsetu.ui.session.AnswerOrder
+import app.signsetu.ui.session.DONT_UNDERSTAND
 import app.signsetu.ui.session.MORE
+import app.signsetu.ui.session.NEED_IDS
 import app.signsetu.ui.session.SWITCH_DWELL_MS
 import app.signsetu.ui.session.SWITCH_HOLD_MS
 import app.signsetu.ui.session.SwitchAction
@@ -34,26 +36,26 @@ class AnswerKeysTest {
 
     @Test
     fun theAnswerBarIsWalkedInTheOrderItIsDrawn() {
-        // Every control VideoCallStage can draw: Yes, No, the needs, More, then the unsure trio.
+        // Every control VideoCallStage can draw: Yes, No, More and the trio, then the pinned needs row.
         val ids = answerBarIds(signing = false, statement = false, next = false, rights = false, controls = true, moreOpen = true)
-        assertEquals(listOf("yes", "no", "water", "food", "express", MORE, "dont_know", "dont_understand", "wrong"), ids)
+        assertEquals(listOf("yes", "no", MORE, "dont_know", DONT_UNDERSTAND, "wrong") + NEED_IDS, ids)
         assertEquals("an id must not appear twice, or two controls share one stop", ids.size, ids.distinct().size)
     }
 
     @Test
     fun aStatementOffersNoYesAndNoAndNoTrio() {
-        assertEquals(listOf("next"), answerBarIds(signing = false, statement = true, next = true, rights = false, controls = false, moreOpen = false))
+        assertEquals(listOf("next") + NEED_IDS, answerBarIds(signing = false, statement = true, next = true, rights = false, controls = false, moreOpen = false))
         assertEquals(
             "the needs stay reachable while a ground rule is read",
-            listOf("next", "water", "food", "express"),
+            listOf("next") + NEED_IDS,
             answerBarIds(signing = false, statement = true, next = true, rights = false, controls = true, moreOpen = false),
         )
         assertEquals(
             "a statement never offers yes, no or More",
-            listOf("water", "food", "express"),
+            NEED_IDS,
             answerBarIds(signing = false, statement = true, next = false, rights = false, controls = true, moreOpen = true),
         )
-        assertEquals(listOf("done"), answerBarIds(signing = true, statement = false, next = false, rights = false, controls = true, moreOpen = false))
+        assertEquals(listOf("done") + NEED_IDS, answerBarIds(signing = true, statement = false, next = false, rights = false, controls = true, moreOpen = false))
     }
 
     @Test
@@ -125,11 +127,11 @@ class AnswerKeysTest {
     fun theWholeBarIsWalkedByKeysToAnAnswer() {
         val ids = answerBarIds(signing = false, statement = false, next = false, rights = false, controls = true, moreOpen = true)
         val order = AnswerOrder(ids, 7)
-        // Tab to the third need, read on to the unsure trio, then Space on "wrong".
-        val keys = List(8) { AnswerKey.NEXT } + listOf(AnswerKey.SELECT)
+        // Tab past the trio to "wrong", then Space chooses it.
+        val keys = List(5) { AnswerKey.NEXT } + listOf(AnswerKey.SELECT)
         val actions = walk(order, "yes", keys)
         assertEquals(AnswerAction.Choose("wrong"), actions.last())
-        assertEquals(8, actions.count { it is AnswerAction.Move })
+        assertEquals(5, actions.count { it is AnswerAction.Move })
     }
 
     @Test

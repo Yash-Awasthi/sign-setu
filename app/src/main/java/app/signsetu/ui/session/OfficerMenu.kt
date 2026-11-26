@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Info
@@ -23,7 +22,6 @@ import app.signsetu.ui.help.HelpScreen
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,13 +59,12 @@ private fun Modifier.toggleState(on: Boolean, kind: Role) = semantics {
     toggleableState = ToggleableState(on)
 }
 
-/** The overflow menu: how the stage shows, the cloud report and finishing the session. Who the person is: tap the header. */
+/** The overflow menu: how the stage shows, the cloud report and the help screen. Finishing sits on the header. Who the person is: tap the header. */
 @Composable
 internal fun OfficerMenu(
     ui: SessionUi,
     vm: SessionViewModel,
     canChangeSignLanguage: Boolean,
-    onEnd: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     var askSwitch by rememberSaveable { mutableStateOf(false) }
@@ -134,12 +131,6 @@ internal fun OfficerMenu(
                 text = { Text(stringResource(R.string.stage_help)) },
                 leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },
                 onClick = { menu = false; help = true },
-            )
-            HorizontalDivider()
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.officer_end)) },
-                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null) },
-                onClick = { menu = false; onEnd() },
             )
         }
     }

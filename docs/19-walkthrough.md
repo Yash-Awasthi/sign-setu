@@ -44,7 +44,7 @@ phone unless an online service is switched on.
    the person's own Yes confirms a meaning.
 7. **If they need a break.** If the person taps Stop, a calm breathing screen covers the stage and the officer sees
    a banner to pause and check they are comfortable. Only their "I'm ready" ends the pause.
-8. **Finish and save.** Finish session is at the foot of More options and in the menu. Name the session, then tap
+8. **Finish and save.** Finish session is the End button on the officer header, not repeated in the menu or on More. Name the session, then tap
    Save and finish or Export report. The report is one PDF with no password. Help is always in Settings and in
    the session menu.
 
@@ -63,7 +63,7 @@ shows notes, the log, or anything typed but not sent.
 - Right: the person's camera window. Drag it, or tap to enlarge. During a video call, tapping the small
   picture-in-picture swaps camera and signer; the choice survives rotation.
 - Below: Next, Yes, No, the honest answers (I don't know, I don't understand, That's wrong), Draw and Write when
-  offered, and Water, Food and Help.
+  offered, then the pinned needs row (Water, Food and the rest); Help opens from the tools.
 - The skeleton badge works as an on/off switch.
 - The officer handle (hold it for a third of a second) returns the phone to the officer page. A screen reader user
   can use its long-press action.

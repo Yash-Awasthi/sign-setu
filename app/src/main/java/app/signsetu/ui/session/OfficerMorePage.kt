@@ -78,12 +78,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.ui.window.Dialog
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.window.DialogProperties
-import app.signsetu.ui.help.HelpScreen
 import app.signsetu.data.content.Localized
 import app.signsetu.ui.theme.TypeSize
 import app.signsetu.ui.theme.Radius
@@ -111,12 +106,6 @@ internal fun MorePage(
     val pending = ui.pending
     val subjectLang = ui.session.subjectLang
     val wide = LocalDensity.current.fontScale > 1.3f
-    var help by rememberSaveable { mutableStateOf(false) }
-    if (help) {
-        Dialog(onDismissRequest = { help = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            Surface(Modifier.fillMaxSize()) { HelpScreen(onBack = { help = false }, startTopic = "call") }
-        }
-    }
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(vertical = Space.lg), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
         auto?.let { AutoPanel(it, ui, content, officerLang, showSwitch = true) }
         SectionLabel(stringResource(R.string.more_questions), Modifier.padding(horizontal = Space.lg))
@@ -213,7 +202,6 @@ internal fun MorePage(
             MoreRow(rememberVectorPainter(Icons.Filled.Search), stringResource(if (ui.signLanguage == SignLanguage.ASL) R.string.asl_dictionary else R.string.isl_dictionary), null, first = onCounsel == null) { onTool(Tool.DICTIONARY) }
             onSecondScreen?.let { MoreRow(rememberVectorPainter(Icons.Filled.Phone), stringResource(R.string.second_screen), null, onClick = it) }
             MoreRow(rememberVectorPainter(Icons.Filled.Refresh), stringResource(R.string.officer_rules), null) { onTool(Tool.RULES) }
-            MoreRow(rememberVectorPainter(Icons.Filled.Info), stringResource(R.string.stage_help), null) { help = true }
         }
     }
 }
