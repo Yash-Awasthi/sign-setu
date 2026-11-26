@@ -61,7 +61,7 @@ These are the values the runs hold. Any change to them is a different experiment
 - JDK: Temurin 21.0.12.1+1 (build 21.0.12.1+1-LTS), Java 21. The build requires Java 21.
 - Gradle wrapper: 9.8.2, with `distributionSha256Sum` set in
   `gradle/wrapper/gradle-wrapper.properties`.
-- AGP 9.4.1, Kotlin 2.4.21, KSP 2.3.12, read from `gradle/libs.versions.toml`.
+- AGP 9.5.3, Kotlin 2.4.21, KSP 2.3.12, read from `gradle/libs.versions.toml`.
 - SDK: `compileSdk` 37, `targetSdk` 37, `minSdk` 29.
 - NDK 30.0.16248370 and CMake 4.1.2, as pinned in `app/build.gradle.kts`.
 - `local.properties` (untracked, copied into the build tree): `sdk.dir` set from `ANDROID_SDK_ROOT`,
