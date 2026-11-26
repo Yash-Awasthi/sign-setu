@@ -272,7 +272,8 @@ ticked-here: CallHeader puts an avatar and a person tile on the call while the c
 ticked-here: a bottom pill on the call slides or taps up to the same five-section tool sheet while the call stays composed; SlidePanelDeviceTest 5 tests exit 0 in 74.5 s; remainder: the handle is an affordance on the call, and the sheet remains the same ModalBottomSheet.
 - [x] Hold/wait control and a messages shortcut at the same level, not one hidden behind the other. `[W]`
 ticked-here: the call's top strip now holds one row with Hold (the stop card) and Messages (onOfficer) as equal 56dp controls, both always drawn; CallLevelsDeviceTest 4 tests exit 0 in 34.8 s; remainder: the corner chat handle is still a spare route.
-- [ ] Caption rendering: one line at a time, large type, the current word emphasised correctly (fixes the highlighting bug at the source, not per-screen). `[W]`
+- [x] Caption rendering: one line at a time, large type, the current word emphasised correctly (fixes the highlighting bug at the source, not per-screen). `[W]`
+ticked-here: the caption splits at word boundaries and draws one 26sp line, the piece holding the light, with the light moved into that piece's offsets through litWord; CaptionChunksTest 6 JVM tests and CaptionLineDeviceTest 4 tests exit 0 in 19.7 s, CallCaptionLightTest still green; remainder: chunking is character-based at 32 chars, not measured against the device font, and there is no per-language line breaking.
 - [ ] Responsive layout for phone, tablet and a landscape dock with the second screen. `[W]`
 
 ### M4.3 Signing quality (owner: "better hand signs and fingerspellings", "joint restrictions")

@@ -55,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.signsetu.R
@@ -140,23 +141,35 @@ private val Octagon = GenericShape { size, _ ->
     close()
 }
 
-/** The call's caption: the word being signed is lit, and a tap replays the line or that word. */
+/** The call's caption: one large line at a time, the word being signed lit, and a tap replays the line or that word. */
 @Composable
-internal fun CallCaption(text: String, highlight: IntRange?, onWordTap: ((Int) -> Unit)?) {
-    val styled = litWord(text, highlight)
+internal fun CallCaption(
+    text: String,
+    highlight: IntRange?,
+    onWordTap: ((Int) -> Unit)?,
+    onTextLayout: ((TextLayoutResult) -> Unit)? = null,
+) {
+    // One line is the piece holding the lit word; the light is moved into that piece's own offsets, so it always lands
+    // on the word of the string actually drawn rather than on a neighbouring line.
+    val chunks = remember(text) { captionChunks(text) }
+    val chunk = chunks.getOrNull(chunkFor(chunks, highlight, text))
+    val shown = chunk?.let { text.substring(it) } ?: text
+    val offset = chunk?.first ?: 0
+    val styled = litWord(shown, chunk?.let { localHighlight(it, highlight) })
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val replayName = stringResource(R.string.word_replay)
     // The caller's lambda changes every frame of typed-text playback; the tap detector must not restart with it.
     val onTap by rememberUpdatedState(onWordTap)
-    // The action's target is at least 48 dp tall; taps are read inside the text itself, so offsets map to its words.
+    // The action's target is at least 48 dp tall; taps are read inside the text itself, then moved to the whole line.
     val tap = if (onWordTap == null) Modifier else Modifier
         .heightIn(min = 48.dp)
-        .semantics { onClick(replayName) { onTap?.invoke(0); true } }
+        .semantics { onClick(replayName) { onTap?.invoke(offset); true } }
         .wrapContentHeight()
-        .pointerInput(Unit) { detectTapGestures { p -> layout?.let { onTap?.invoke(it.getOffsetForPosition(p)) } } }
+        .pointerInput(offset) { detectTapGestures { p -> layout?.let { onTap?.invoke(offset + it.getOffsetForPosition(p)) } } }
     Text(
-        styled, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White, textAlign = TextAlign.Center,
-        onTextLayout = { layout = it }, modifier = tap,
+        styled, fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = CAPTION_SP.sp, color = Color.White,
+        textAlign = TextAlign.Center, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible,
+        onTextLayout = { layout = it; onTextLayout?.invoke(it) }, modifier = tap,
     )
 }
 
