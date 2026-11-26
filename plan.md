@@ -172,7 +172,8 @@ harm.
   - verified-here: ./gradlew :app:testStandardDebugUnitTest --tests app.signsetu.ModelAllowListTest -> BUILD SUCCESSFUL, 5 tests, 0 failures (listed hash accepted, one flipped byte and unlisted hash refused, shipped lists 64-hex).
 - [x] A test that a session's database file is unreadable without the Keystore key (extract the file, attempt to open). `[P]`
     - verified-here: ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.DatabaseAtRestDeviceTest -> 1 test, 0 failures on CI34 API 34; extracted copy has no SQLite header and no plaintext, plain SQLite throws SQLiteException, SQLCipher with zero or random key throws SQLiteNotADatabaseException, and the real key still reads 1 session
-- [ ] A test that logs contain no transcript text, no names and no paths (grep the log buffer after a scripted session). `[P]`
+- [x] A test that logs contain no transcript text, no names and no paths (grep the log buffer after a scripted session). `[P]`
+  - verified-here: ./gradlew :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.LogPrivacyDeviceTest -> BUILD SUCCESSFUL, 1 test 0 failures; own-pid logcat after the marker has 0 hits for Zubair/mango tree/wants the and 0 path matches.
 - [x] `docs/13-dpia.md` gains a change-log table: every new data field or permission adds a row with its purpose and retention. `[P]`
   - verified-here: python tools/security/check_permissions.py -> exit 0; python -m unittest discover -s tools/security -p "test_*.py" -> Ran 41 tests, OK; python tools/docs/check_docs.py -> exit 0.
 
