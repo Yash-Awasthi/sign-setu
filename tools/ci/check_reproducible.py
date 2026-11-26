@@ -468,7 +468,8 @@ def extract_head(destination: pathlib.Path) -> None:
     say("extract: " + " ".join(command))
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
-        with tarfile.open(fileobj=process.stdout, mode="r|") as archive:
+        # filter="data" rejects absolute paths, "..", escaping links and device files.
+        with tarfile.open(fileobj=process.stdout, mode="r|") as archive:  # nosemgrep: trailofbits.python.tarfile-extractall-traversal.tarfile-extractall-traversal
             archive.extractall(destination, filter="data")
     except tarfile.TarError as exc:
         process.kill()
@@ -493,11 +494,10 @@ def run_build_command(tree: pathlib.Path, label: str) -> float:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        encoding="utf-8",
-        errors="replace",
         bufsize=1,
     )
     assert process.stdout is not None
+    process.stdout.reconfigure(encoding="utf-8", errors="replace")
     for line in process.stdout:
         say(line.rstrip("\n"))
     code = process.wait()

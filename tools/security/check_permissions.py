@@ -7,12 +7,14 @@ library adds; this check does the other half, for both flavours, from the source
 manifests: what the app declares, with its API limit and its scan flag, is exactly
 what `docs/README.md` says, and `docs/13-dpia.md` records what each one is for and how
 long it is kept. `--write` regenerates the table.
+
+Needs `defusedxml`; the tools job in CI installs it.
 """
 import argparse
 import pathlib
 import re
 import sys
-import xml.etree.ElementTree as ElementTree
+from defusedxml import ElementTree
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MAIN = ROOT / "app" / "src" / "main" / "AndroidManifest.xml"
