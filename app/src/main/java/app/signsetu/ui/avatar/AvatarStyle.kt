@@ -10,6 +10,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import app.signsetu.R
 import app.signsetu.data.content.Clip
 import app.signsetu.data.content.Gesture
 import app.signsetu.data.content.QuestionKind
@@ -59,15 +63,18 @@ fun Avatar(
     val rive = remember(style) { style == AvatarStyle.RIVE && AvatarRenderer.riveAvailable(context) }
     val flat = !rive && (style == AvatarStyle.FLAT || failed || !AvatarRenderer.webViewAvailable())
     val motion = LocalMotion.current && remember { systemAnimationsOn(context) }
+    // One spoken node for the whole figure, in the person's language: the caption already carries the words.
+    val characterName = stringResource(R.string.stage_character)
+    val character = modifier.clearAndSetSemantics { contentDescription = characterName }
     when {
-        rive -> RiveCharacter(gesture, playKey, modifier, speed, idle, atSeconds, view, clip, onFinished, onReady)
+        rive -> RiveCharacter(gesture, playKey, character, speed, idle, atSeconds, view, clip, onFinished, onReady)
         flat -> {
             val ready by rememberUpdatedState(onReady)
             LaunchedEffect(Unit) { ready() }
-            FlatAvatar(gesture, playKey, modifier, speed, idle, atSeconds, glance, view, question, clip, onFinished = onFinished)
+            FlatAvatar(gesture, playKey, character, speed, idle, atSeconds, glance, view, question, clip, onFinished = onFinished)
         }
         // Animations off stops the breathing, as the drawn and Rive characters do; a still 3D pose then draws once.
-        else -> VrmAvatar(gesture, playKey, modifier, speed, idle && motion, atSeconds, glance, view, question, negated, clip, onFinished, onReady)
+        else -> VrmAvatar(gesture, playKey, character, speed, idle && motion, atSeconds, glance, view, question, negated, clip, onFinished, onReady)
     }
 }
 

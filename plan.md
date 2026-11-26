@@ -300,7 +300,8 @@ ticked-here: six preset groups (water, food, family, home, toilet, medicine) mat
 
 ### M5.1 Accessibility depth (the primary user cannot speak and may not read)
 
-- [ ] TalkBack pass over every screen: labels, order, and a description for the 3D stage and each drawn control. `[D]`
+- [x] TalkBack pass over every screen: labels, order, and a description for the 3D stage and each drawn control. `[D]`
+  verified-here: ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.TalkBackPassTest -> 3 tests, 0 failures on ci34 (API 34): 8 stage states in en, hi and bn each give every pressable control words, the figure announces itself as Signing character, the question is read before its answers, and every picture-board tile carries its word
 - [x] Contrast ≥ 4.5:1 in all ten colour themes and both dark modes; measure per theme and publish a table. `[D]`
   verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.ContrastTest -> 3 tests, 0 failures; docs/26-theme-contrast.md holds the table for 10 themes x light, dark and OLED, floors 4.5:1 for text and 3:1 for outlines
 - [ ] Touch targets ≥ 48 dp, and one-handed reach for every in-session action. `[D]`

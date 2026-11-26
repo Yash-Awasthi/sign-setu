@@ -391,6 +391,7 @@
     <string name="stage_handback">सत्र समाप्त। यह डिवाइस अधिकारी को लौटा दें।</string>
     <string name="stage_officer_unlock">अधिकारी: यह स्क्रीन खोलें</string>
     <string name="stage_break">आराम कर लीजिए। अधिकारी को पता है।</string>
+    <string name="stage_character">इशारों से बोलता पात्र</string>
     <string name="write_count">%1$d / %2$d</string>
     <string name="log_link">दूसरी स्क्रीन</string>
     <string name="log_request">माँगा</string>

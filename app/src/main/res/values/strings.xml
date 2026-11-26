@@ -400,6 +400,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="stage_handback">Session ended. Hand this device back to the officer.</string>
     <string name="stage_officer_unlock">Officer: unlock this screen</string>
     <string name="stage_break">Take a break. The officer knows.</string>
+    <string name="stage_character">Signing character</string>
     <string name="write_count">%1$d / %2$d</string>
     <string name="log_link">Second screen</string>
     <string name="log_request">Asked for</string>
