@@ -47,6 +47,10 @@ def instrumented_classes(text: str) -> list[str]:
     found = re.search(r"for c in ([^;]+); do", text)
     if found:
         names += found.group(1).split()
+    # The emulator job now keeps its class list in a step env block and calls a script file.
+    env = re.search(r"^\s*DEVICE_CLASSES: (.+)$", text, re.MULTILINE)
+    if env:
+        names += env.group(1).split()
     names += re.findall(r"class[= ]app\.signsetu\.(\w+)", text)
     return list(dict.fromkeys(names))
 

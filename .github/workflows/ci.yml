@@ -271,29 +271,18 @@ jobs:
       - name: Build the app and test APKs
         run: ./gradlew --console=plain :app:assembleStandardDebug :app:assembleStandardDebugAndroidTest
       - uses: reactivecircus/android-emulator-runner@v2
+        # The runner's `script` input is a list of single lines, not a shell script, so the
+        # loop and its fallbacks live in tools/ci/run_instrumented.sh. These names stay here
+        # because tools/ci/check_workflows.py reads the job to keep the emulator suite wide.
+        env:
+          DEVICE_CLASSES: StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest RetentionClockDeviceTest LockedKeystoreDeviceTest VoicePermissionDeviceTest StageHandleTapDeviceTest CallCaptionLightTest OfficerMuteButtonDeviceTest WrapUpPathsDeviceTest SealAgreementDeviceTest ExportFailureDeviceTest VerifierFixtureDeviceTest BodyMapZoomDeviceTest CallLevelsDeviceTest CallSurfaceDeviceTest CaptionLineDeviceTest DatabaseAtRestDeviceTest DrawingBoardDeviceTest EndSessionDeviceTest FamilyCallDeviceTest FeelingsDeviceTest LogPrivacyDeviceTest NeedRowDeviceTest NoNetworkOfflineDeviceTest PrewarmDeviceTest RelatedChipsDeviceTest SessionDockDeviceTest SessionSurvivesRestartDeviceTest SlidePanelDeviceTest StageToolSheetDeviceTest StageToolsDeviceTest SuggestionStripDeviceTest TalkBackPassTest TapToSignDeviceTest TouchTargetsDeviceTest
         with:
           api-level: 34
           arch: x86_64
           target: default
           profile: pixel_6
           # One class per run: given a comma list, the connected task ran only the first class.
-          script: |
-            for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest RetentionClockDeviceTest LockedKeystoreDeviceTest VoicePermissionDeviceTest StageHandleTapDeviceTest CallCaptionLightTest OfficerMuteButtonDeviceTest WrapUpPathsDeviceTest SealAgreementDeviceTest ExportFailureDeviceTest VerifierFixtureDeviceTest BodyMapZoomDeviceTest CallLevelsDeviceTest CallSurfaceDeviceTest CaptionLineDeviceTest DatabaseAtRestDeviceTest DrawingBoardDeviceTest EndSessionDeviceTest FamilyCallDeviceTest FeelingsDeviceTest LogPrivacyDeviceTest NeedRowDeviceTest NoNetworkOfflineDeviceTest PrewarmDeviceTest RelatedChipsDeviceTest SessionDockDeviceTest SessionSurvivesRestartDeviceTest SlidePanelDeviceTest StageToolSheetDeviceTest StageToolsDeviceTest SuggestionStripDeviceTest TalkBackPassTest TapToSignDeviceTest TouchTargetsDeviceTest; do
-              ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.$c -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} || { mkdir -p app/build/reports/androidTests; adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }
-            done
-            # The same exported report, checked off the phone: the app's seal must satisfy tools/security/verify_seal.py.
-            # The test is run through the instrumentation runner directly, not the connected task, because the
-            # connected task uninstalls the app and the report with it.
-            if [ "${{ matrix.shard }}" = "0" ]; then
-              adb install -r -t app/build/outputs/apk/standard/debug/app-standard-debug.apk
-              adb install -r -t app/build/outputs/apk/androidTest/standard/debug/app-standard-debug-androidTest.apk
-              adb shell am instrument -w -e class app.signsetu.VerifierFixtureDeviceTest in.signsetu.test/androidx.test.runner.AndroidJUnitRunner || { adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }
-              mkdir -p out/verify
-              adb exec-out run-as in.signsetu cat files/verify/report.pdf > out/verify/report.pdf
-              adb exec-out run-as in.signsetu cat files/verify/passphrase.txt > out/verify/passphrase.txt
-              pip install cryptography==50.0.2 pypdf==6.21.4
-              python tools/security/verify_seal.py --pdf out/verify/report.pdf --passphrase "$(cat out/verify/passphrase.txt)"
-            fi
+          script: bash tools/ci/run_instrumented.sh ${{ matrix.shard }}
       - uses: actions/upload-artifact@v6
         if: always()
         with:
