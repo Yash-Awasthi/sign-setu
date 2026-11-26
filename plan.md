@@ -160,9 +160,13 @@ harm.
 **Done when:** a regression in accuracy fails before a release.
 
 - [ ] Freeze an evaluation set (landmark sequences only, no video) with per-word labels; store it under `tools/ml/data/` with a manifest. `[P]`
+  blocked: needs the landmark corpora under C:/work/ml-data, which is absent; no evaluation set, label or manifest is invented here.
 - [ ] `tools/ml/eval.py --check` reports top-1/top-5 per word, the "unclear" rate, and the confusion pairs; CI runs it on the frozen set. `[P]`
+  blocked: evaluates the frozen set the row above cannot build; with no corpora there is nothing to run and no rates are published.
 - [ ] Fail the build when top-1 drops more than 1 point or the unclear rate rises more than 2 points against the recorded baseline. `[P]`
+  blocked: needs a recorded baseline from that frozen set; no threshold is invented against numbers that do not exist.
 - [ ] Publish the current numbers in `docs/05-avatar-and-gestures.md` with n and the date. `[P]`
+  blocked: needs those top-1/top-5 numbers; no n and no date can be published without them.
 
 ### M2.3 Data and privacy guarantees as tests
 
@@ -180,6 +184,7 @@ harm.
 ### M2.4 Build integrity
 
 - [ ] Release APKs: `SHA256SUMS`, an SBOM, and the dependency-verification metadata hash recorded next to the artefact. `[P]`
+  blocked: the sums and SBOM sit next to a release APK, which needs the owner release keystore; nothing is claimed for an artefact not built here.
 - [x] Reproducible build check: same commit, same SDK/NDK, two builds, compare with `apksigcopier`-style diff and document non-deterministic inputs. `[P]`
   - verified-here: /c/GITHUB/.fleet/lock.sh sign-setu 1800 /c/GITHUB/.fleet/lock.sh gradle 1800 /c/GITHUB/.fleet/slot.sh cpu 12 3600 py -3 tools/ci/check_reproducible.py --build -> exit 0 on ffa079a: two builds of git archive HEAD (404.7 s and 278.4 s, app/build and app/.cxx deleted between) each wrote app-standard-release-unsigned.apk sha256 8278f5c8b9b33f12eaa2c1fbdad63f090920ef013fb59ca4d4d0cfd68a91aef0 (189364903 bytes); apksigcopier-style diff: 1922 entries, order same, no differing entries, unsigned so all bytes compared, no signing block, nothing undetermined; the builds shared the Gradle configuration cache; tools/ci/reproducible.md lists the inputs that can drift.
 - [x] NDK and CMake versions asserted in the build script; a mismatch fails with the expected value. `[P]`
@@ -208,6 +213,7 @@ SQLCipher 4.19.1) moves faster than the test evidence around it.
 
 - **m3.1.1 Upgrade**
   - [ ] AGP, Kotlin, Compose BOM, Room and SQLCipher to the current stable line; re-run the instrumented suite and record any behaviour change. `[F]`
+    blocked: the upgrade rewrites app/build.gradle.kts, app/gradle.lockfile and gradle/verification-metadata.xml, which are the owner dirty files; no version is moved over them.
 - **m3.1.2 Build speed**
   - [ ] Gradle: configuration cache, build cache, and a measured CI time reduction. `[F]`
 
@@ -228,6 +234,7 @@ SQLCipher 4.19.1) moves faster than the test evidence around it.
 
 - **m3.3.1 Benchmarks**
   - [ ] Baseline Profile + Macrobenchmark: cold start, first stage frame, sign-window open latency; publish before/after. `[F]`
+    blocked: a Baseline Profile needs the owner app/build.gradle.kts and a device that reports real frame timings; neither is available here.
 - **m3.3.2 Startup cost**
   - [ ] Cache avatar assets and the stage scene so a restart does not reload them (owner: "cached data for avatar so it doesn't relod on app startups"). `[F]`
 
@@ -284,8 +291,10 @@ verified-here: sessionShape docks a paired landscape (stage 0.62, officer 0.38) 
 - [x] Add joint limits to the avatar rig so wrists and elbows stop bending beyond human range (owner: "wrist and elbow move non humanly"). `[W]`
     - verified-here: cd avatar && npx vp test run src/retarget.test.ts -> 20/20 tests pass; cd avatar && npx vp build -> exit 0
 - [ ] Re-record or re-time the fingerspelling transitions; measure the per-letter transition time and the readability check with two signers. `[W]`
+  blocked: needs two signers to re-time and judge the transitions; no transition time or readability verdict is invented.
 - [ ] Improve the sign blend at phrase boundaries (co-articulation) and record the before/after clips for review. `[W]`
 - [ ] A signer review sheet: every ISL word with a still frame and a "reads correctly?" column, filled by a Deaf reviewer. `[W]`
+  blocked: needs a Deaf reviewer to fill the sheet; still frames can be drawn, but the reads-correctly column cannot be answered here.
 
 ### M4.4 Speed (owner: "smoother faster flow")
 
@@ -319,6 +328,7 @@ verified-here: TapToSignDeviceTest measured four kept runs per screen on ci34 (A
   verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.ContrastTest -> 3 tests, 0 failures; docs/26-theme-contrast.md holds the table for 10 themes x light, dark and OLED, floors 4.5:1 for text and 3:1 for outlines; its row is in the docs index
 - [ ] Touch targets ≥ 48 dp, and one-handed reach for every in-session action. `[D]`
 - [ ] Switch-access and keyboard-only path through the person's answer flow (tap, picture, nod, finger count). `[D]`
+  blocked: needs switch hardware and a keyboard-only walk-through with a person; no simulated path stands in for it.
 - [ ] Reading level: captions tested with two people who read the target language as a second language; record the words that caused confusion and change them. `[D]`
   blocked: needs two second-language readers. No wording change is invented here and no reading level is claimed from a machine estimate.
 - [x] Reduced motion honoured: the avatar and stage animations have a low-motion mode that still signs legibly. `[D]`
@@ -348,6 +358,7 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 - [ ] The "unclear" path: when two readers disagree, ask the person once with pictures; measure how often that resolves the meaning. `[D]`
   blocked: needs two readers who can disagree. The picture question is not measured here and no resolution rate is claimed.
 - [ ] Fingerspelling: hold-to-commit timing studied with two signers and tuned; publish the chosen value and the reason. `[D]`
+  blocked: needs two signers to study and tune the hold-to-commit timing; no value is chosen without them.
 - [ ] Regional variation: record which signs differ by region and let a department pick a variant. `[D]`
   blocked: which signs differ by region is signer knowledge, and the lexicon carries no variant data. A picker with no data proves nothing, so neither half is claimed.
 - [x] Deaf-reviewer loop: a documented review sheet and a stated cadence for adding words. `[D]`
@@ -391,6 +402,7 @@ review date.
     - verified-here: python tools/docs/check_docs.py -> exit 0 on HEAD plus this unit (repo tree red only from docs/25-screen-inventory.md, a sibling commit with no index row); check_version.py -> exit 0; check_release.py -> exit 0; docs/24-deployment-package.md names all seven artefacts and every path in it exists
 - **m6.2.2 Training**
   - [ ] The officer walkthrough with screenshots, an accessibility note, and the three mistakes officers actually make (measured from the drill). `[E]`
+    blocked: the three measured mistakes come from the officer drill, which needs a real officer; the walkthrough text and accessibility note can be written before it, the measured half cannot.
 
 ### M6.3 Support, release and incident
 
