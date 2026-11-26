@@ -299,7 +299,8 @@ ticked-here: the bar opens one sheet holding all five tools; language returns th
 ### M5.1 Accessibility depth (the primary user cannot speak and may not read)
 
 - [ ] TalkBack pass over every screen: labels, order, and a description for the 3D stage and each drawn control. `[D]`
-- [ ] Contrast ≥ 4.5:1 in all ten colour themes and both dark modes; measure per theme and publish a table. `[D]`
+- [x] Contrast ≥ 4.5:1 in all ten colour themes and both dark modes; measure per theme and publish a table. `[D]`
+  verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.ContrastTest -> 3 tests, 0 failures; docs/26-theme-contrast.md holds the table for 10 themes x light, dark and OLED, floors 4.5:1 for text and 3:1 for outlines
 - [ ] Touch targets ≥ 48 dp, and one-handed reach for every in-session action. `[D]`
 - [ ] Switch-access and keyboard-only path through the person's answer flow (tap, picture, nod, finger count). `[D]`
 - [ ] Reading level: captions tested with two people who read the target language as a second language; record the words that caused confusion and change them. `[D]`

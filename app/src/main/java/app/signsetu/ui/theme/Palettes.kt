@@ -25,11 +25,12 @@ class Palette(val light: ColorScheme, val dark: ColorScheme, val inkLight: InkCo
     val call = CallColors(
         bg = dark.background, surface = dark.surfaceContainer, line = dark.outlineVariant, muted = dark.onSurfaceVariant,
         text = dark.onBackground, accent = dark.primary, accentDeep = dark.primaryContainer,
-        accentSoft = dark.onPrimaryContainer, ink = (inkDark.brush as SolidColor).value,
+        // Drawn as information text on the dark stage, so it must read on bg, not on primaryContainer.
+        accentSoft = dark.onBackground, ink = (inkDark.brush as SolidColor).value,
     )
 }
 
-private fun ink(c: Color) = InkColors(onBand = Color.White, onBandMuted = Color(0xBFFFFFFF), brush = SolidColor(c))
+private fun ink(c: Color) = InkColors(onBand = Color.White, onBandMuted = Color(0xE6FFFFFF), brush = SolidColor(c))
 
 /** A borrowed scheme; white band text needs a darker band, so the ink is its primary taken toward black. */
 internal fun mihon(light: ColorScheme, dark: ColorScheme) =
