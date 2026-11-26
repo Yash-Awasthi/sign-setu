@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -84,6 +87,14 @@ private val SIDES = listOf(
 )
 private val BACK_CENTRE = mapOf(BodyPart.FACE to BodyPart.HEAD, BodyPart.CHEST to BodyPart.UPPER_BACK, BodyPart.BELLY to BodyPart.LOWER_BACK, BodyPart.PRIVATE to BodyPart.BOTTOM)
 
+/** The part's box on the figure, for the close-up. A paired part is the side actually touched: [near] is the
+ *  touch's x, so the viewer-right copy is the mirror of the one in the list. */
+internal fun bodyBox(part: BodyPart, near: Float = 0f): Rect? {
+    val r = (CENTRE + SIDES).firstOrNull { it.first == part }?.second ?: return null
+    val paired = SIDES.any { it.first == part }
+    return if (paired && near > 0.5f) Rect(1f - r.right, r.top, 1f - r.left, r.bottom) else r
+}
+
 /** The part under ([x], [y]) on [side], or null off the figure. */
 internal fun bodyHit(side: BodySide, x: Float, y: Float): BodyTouch? {
     val p = Offset(x, y)
@@ -106,12 +117,14 @@ internal fun bodyHit(side: BodySide, x: Float, y: Float): BodyTouch? {
 }
 
 /** The body for a frightened person to show where it hurts: front and back, any point on the figure. Every touch
- * is kept with its exact place, so the record shows where the finger went, not only a named part. [subjectText]
- * gives the sides in the person's language ("hurt_front", "hurt_back"); each chip also draws its side, for a person
- * who cannot read. */
+ * is kept with its exact place, so the record shows where the finger went, not only a named part. A part too small to
+ * hit exactly (hand, foot, chest, belly) opens a close-up under the figure, where the same finger lands on the exact
+ * point that is then recorded. [subjectText] gives the sides in the person's language ("hurt_front", "hurt_back");
+ * each chip also draws its side, for a person who cannot read. */
 @Composable
 fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subjectText: (String) -> String? = { null }) {
     var side by rememberSaveable { mutableStateOf(BodySide.FRONT) }
+    var zoom by remember { mutableStateOf<Pair<BodyPart, Rect>?>(null) }
     val marks = remember { mutableStateListOf<BodyTouch>() }
     val ink = Color(0xFF4F4539)
     val skin = Color(0xFFFFE8D2)
@@ -130,7 +143,11 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subject
                 .semantics { contentDescription = description }
                 .pointerInput(side) {
                     detectTapGestures { p ->
-                        bodyHit(side, p.x / size.width, p.y / size.height)?.let { t -> marks += t; touch(t) }
+                        bodyHit(side, p.x / size.width, p.y / size.height)?.let { t ->
+                            marks += t
+                            touch(t)
+                            zoom = if (t.part in ZOOM_PARTS) bodyBox(t.part, t.x)?.let { t.part to it } else null
+                        }
                     }
                 },
         ) {
@@ -139,6 +156,43 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subject
                 val c = Offset(t.x * size.width, t.y * size.height)
                 drawCircle(mark.copy(alpha = 0.25f), 14.dp.toPx(), c)
                 drawCircle(mark, 6.dp.toPx(), c)
+            }
+        }
+        zoom?.let { (part, box) ->
+            ZoomPad(part, box, marks.lastOrNull { it.part == part && it.side == side }?.let { Offset(it.x, it.y) }, onPick = { zx, zy ->
+                val p = zoomPoint(box, zx, zy)
+                bodyHit(side, p.x, p.y)?.let { refined ->
+                    // The close-up corrects the coarse touch: one place per part, so the record keeps the exact point.
+                    if (marks.isNotEmpty()) marks.removeAt(marks.lastIndex)
+                    marks += refined
+                    touch(refined)
+                }
+            })
+        }
+    }
+}
+
+/** The part enlarged to fill a wide, low pad: a tap here lands on the exact point of the figure, which is what the
+ * record keeps. [mark] is the touch already placed, shown so a correction is visible. */
+@Composable
+private fun ZoomPad(part: BodyPart, box: Rect, mark: Offset?, onPick: (Float, Float) -> Unit) {
+    val ink = Color(0xFF4F4539)
+    val skin = Color(0xFFFFE8D2)
+    val markColor = Color(0xFFD32F2F)
+    val name = stringResource(R.string.hurt_zoom, stringResource(part.label))
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(stringResource(part.label), style = MaterialTheme.typography.labelLarge)
+        Canvas(
+            Modifier.fillMaxWidth().height(104.dp).padding(4.dp)
+                .semantics { contentDescription = name }
+                .pointerInput(part) { detectTapGestures { p -> onPick(p.x / size.width, p.y / size.height) } },
+        ) {
+            drawRoundRect(Color.White, Offset.Zero, Size(size.width, size.height), CornerRadius(16.dp.toPx()))
+            drawZoomPart(part, ink, skin)
+            mark?.let { m ->
+                val f = zoomFraction(box, m)
+                drawCircle(markColor.copy(alpha = 0.25f), 14.dp.toPx(), Offset(f.x * size.width, f.y * size.height))
+                drawCircle(markColor, 6.dp.toPx(), Offset(f.x * size.width, f.y * size.height))
             }
         }
     }
