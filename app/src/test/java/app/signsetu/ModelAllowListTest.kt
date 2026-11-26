@@ -12,6 +12,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import java.security.MessageDigest
 
 /** A GGUF file is imported only when its SHA-256 is on the department's allow-list; anything else leaves nothing behind. */
@@ -50,6 +52,28 @@ class ModelAllowListTest {
         assertFalse(store.accept(ByteArrayInputStream(bytes), file, setOf(hash(other))))
         assertFalse("no target file", file.exists())
         assertFalse("no part file", File(folder.root, "model.gguf.part").exists())
+    }
+
+    @Test
+    fun aStreamThatDiesMidCopyLeavesNoPartial() = runBlocking {
+        val full = ByteArray(4096) { (it * 13 + 3).toByte() }
+        val dying = object : InputStream() {
+            private var at = 0
+
+            override fun read(): Int = throw IOException("unbuffered reads are not used")
+
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                if (at >= 1024) throw IOException("card removed")
+                val n = minOf(len, 1024 - at)
+                System.arraycopy(full, at, b, off, n)
+                at += n
+                return n
+            }
+        }
+        val file = target()
+        assertFalse("the hash was on the list, but the copy never finished", store.accept(dying, file, setOf(hash(full))))
+        assertFalse("no target file", file.exists())
+        assertEquals("no part file is left behind", emptyList<String>(), folder.root.list()!!.toList())
     }
 
     @Test
