@@ -286,7 +286,8 @@ ticked-here: the caption splits at word boundaries and draws one 26sp line, the 
 
 ### M4.4 Speed (owner: "smoother faster flow")
 
-- [ ] Measure the current time from tap to first signed frame, per screen; publish the numbers and target the three worst. `[W]`
+- [x] Measure the current time from tap to first signed frame, per screen; publish the numbers and target the three worst. `[W]`
+ticked-here: TapToSignDeviceTest measured four kept runs per screen on ci34 (API 34): pictures median 120ms (117-121), question 114ms (98-223), typed 72ms (68-77); worst three named in docs/03-ux.md, no threshold.
 - [x] Pre-warm the stage and the sign readers so the first question does not wait on model load. `[W]`
     - verified-here: ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.PrewarmDeviceTest -> 1 test, 0 failures on CI34 API 34; the second content load after warm-up stayed under 250 ms
 - [ ] Remove blocking work from the main thread in the stage and sign-window paths; verify with a jank count before/after. `[W]`
