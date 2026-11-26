@@ -450,6 +450,7 @@ fun Stage(
             onCue = onCue,
             onCameraRead = onCameraRead,
             onNeed = onNeed,
+            onMessages = onOfficer,
             cameraOn = cameraOn,
             onNext = onNextRule.takeIf { rule != null },
             statement = statement,

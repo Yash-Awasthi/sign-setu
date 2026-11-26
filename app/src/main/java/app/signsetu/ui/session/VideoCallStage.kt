@@ -114,6 +114,8 @@ internal fun VideoCallStage(
     onCue: (String) -> Unit,
     /** Water or food asked for by the subject: a request, not an answer to what is on screen. */
     onNeed: (String) -> Unit,
+    /** The messages shortcut, offered beside Hold at the same level. */
+    onMessages: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     cameraOn: Boolean = true,
     /** Set on the opening and ground rules, which move on only when the subject is ready. */
@@ -448,20 +450,35 @@ internal fun VideoCallStage(
             }
         }
 
-        // The call's own chrome, like a call app: who is on the line, shown on a tap and gone when idle.
-        if (controls) CallHeader(
-            avatarName = stringResource(R.string.call_avatar_name),
-            personName = stringResource(R.string.call_person_name),
-            signing = signing,
+        // The call's own chrome, like a call app: who is on the line and the two ways forward, up on a tap and gone
+        // when idle. Hold and messages share one row, so neither sits behind the other.
+        if (controls) Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .padding(top = 6.dp, start = 12.dp, end = if (cameraOn) 148.dp else 12.dp),
-        )
+                .padding(top = 6.dp, start = 12.dp, end = if (cameraOn) 148.dp else 12.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            CallHeader(
+                avatarName = stringResource(R.string.call_avatar_name),
+                personName = stringResource(R.string.call_person_name),
+                signing = signing,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            CallLevelRow(
+                onHold = { answer("stop") },
+                onMessages = onMessages,
+                holdSelected = ui.answeredCard == "stop",
+                holdLabel = stringResource(R.string.call_hold),
+                messagesLabel = stringResource(R.string.call_messages),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
-        // The open panel has its own Stop row; folded or absent, Stop waits in the corner, under the header.
+        // The open panel has its own Stop row; folded or absent, Stop waits in the corner, below the chrome.
         if (panel == null || panelCollapsed) StopOctagon(content.subjectText("stop", lang) ?: stringResource(R.string.stage_stop), ui.answeredCard == "stop", { answer("stop") },
-            Modifier.align(Alignment.TopStart).padding(top = 96.dp, start = 12.dp).testTag(StagePaths.EXIT))
+            Modifier.align(Alignment.TopStart).padding(top = 156.dp, start = 12.dp).testTag(StagePaths.EXIT))
 
         // Pinned for every state: content, not a control, so it never fades and an open panel never buries it.
         NeedRow(

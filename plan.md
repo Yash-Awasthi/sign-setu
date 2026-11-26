@@ -270,7 +270,8 @@ ticked-here: SuggestionStrip offers three one-tap questions for the selected rol
 ticked-here: CallHeader puts an avatar and a person tile on the call while the controls are up, the caption keeps its overlay and its own tag, and the action bar fades after 5 s; CallSurfaceDeviceTest 4 tests exit 0 in 31.3 s, StageTools, NeedRow and StageToolSheet green; remainder: no ringing or connecting state, and the tiles are name labels over the existing avatar and camera views.
 - [x] A slide-to-open panel that reveals the full toolset without leaving the call (owner: "slide to open button that make it fully feel like a video call"). `[W]`
 ticked-here: a bottom pill on the call slides or taps up to the same five-section tool sheet while the call stays composed; SlidePanelDeviceTest 5 tests exit 0 in 74.5 s; remainder: the handle is an affordance on the call, and the sheet remains the same ModalBottomSheet.
-- [ ] Hold/wait control and a messages shortcut at the same level, not one hidden behind the other. `[W]`
+- [x] Hold/wait control and a messages shortcut at the same level, not one hidden behind the other. `[W]`
+ticked-here: the call's top strip now holds one row with Hold (the stop card) and Messages (onOfficer) as equal 56dp controls, both always drawn; CallLevelsDeviceTest 4 tests exit 0 in 34.8 s; remainder: the corner chat handle is still a spare route.
 - [ ] Caption rendering: one line at a time, large type, the current word emphasised correctly (fixes the highlighting bug at the source, not per-screen). `[W]`
 - [ ] Responsive layout for phone, tablet and a landscape dock with the second screen. `[W]`
 

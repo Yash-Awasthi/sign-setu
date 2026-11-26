@@ -24,8 +24,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -138,6 +141,64 @@ internal fun SlidePanelHandle(
                 drawLine(call.muted, Offset(size.width * 0.5f, size.height * 0.25f), Offset(size.width * 0.85f, size.height * 0.75f), stroke, StrokeCap.Round)
             }
             Text(stringResource(R.string.stage_sheet_title), color = call.text, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+/** Hold and messages, side by side at one level: two equal controls, neither hidden behind the other. */
+@Composable
+internal fun CallLevelRow(
+    onHold: (() -> Unit)?,
+    onMessages: (() -> Unit)?,
+    holdSelected: Boolean,
+    holdLabel: String,
+    messagesLabel: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier.fillMaxWidth().testTag("call.levels"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        LevelButton(holdLabel, "call.hold", onHold, holdSelected, Modifier.weight(1f))
+        LevelButton(messagesLabel, "call.messages", onMessages, false, Modifier.weight(1f))
+    }
+}
+
+/** One of the two call levels: same height, same padding, and a fill while it is the one in force. */
+@Composable
+private fun LevelButton(
+    label: String,
+    tag: String,
+    onClick: (() -> Unit)?,
+    selectedNow: Boolean,
+    modifier: Modifier,
+) {
+    val call = LocalCall.current
+    Surface(
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
+        shape = RoundedCornerShape(16.dp),
+        color = if (selectedNow) call.accent else call.surface.copy(alpha = 0.9f),
+        contentColor = if (selectedNow) call.bg else call.text,
+        border = BorderStroke(1.dp, if (selectedNow) call.accent else call.line),
+        modifier = modifier
+            .height(56.dp)
+            .testTag(tag)
+            .semantics {
+                role = Role.Button
+                contentDescription = label
+                selected = selectedNow
+            },
+    ) {
+        Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+            Text(
+                label,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
