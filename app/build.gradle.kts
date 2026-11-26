@@ -35,6 +35,8 @@ android {
     // Code namespace differs from the application ID because `in` is a Kotlin keyword.
     namespace = "app.signsetu"
     compileSdk = 37
+    // Compose 1.13 refuses aar metadata below API 37.1; android-37.2 is the installed platform.
+    compileSdkMinor = 2
 
     defaultConfig {
         applicationId = "in.signsetu"
