@@ -266,7 +266,8 @@ ticked-here: SuggestionStrip offers three one-tap questions for the selected rol
 
 ### M4.2 The video-call surface (owner: "better ui on video call")
 
-- [ ] A call surface that looks like a call: avatar and person tiles, caption overlay, and controls that appear on tap and fade when idle. `[W]`
+- [x] A call surface that looks like a call: avatar and person tiles, caption overlay, and controls that appear on tap and fade when idle. `[W]`
+ticked-here: CallHeader puts an avatar and a person tile on the call while the controls are up, the caption keeps its overlay and its own tag, and the action bar fades after 5 s; CallSurfaceDeviceTest 4 tests exit 0 in 31.3 s, StageTools, NeedRow and StageToolSheet green; remainder: no ringing or connecting state, and the tiles are name labels over the existing avatar and camera views.
 - [ ] A slide-to-open panel that reveals the full toolset without leaving the call (owner: "slide to open button that make it fully feel like a video call"). `[W]`
 - [ ] Hold/wait control and a messages shortcut at the same level, not one hidden behind the other. `[W]`
 - [ ] Caption rendering: one line at a time, large type, the current word emphasised correctly (fixes the highlighting bug at the source, not per-screen). `[W]`

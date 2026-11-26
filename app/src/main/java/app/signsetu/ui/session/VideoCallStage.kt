@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -442,9 +443,20 @@ internal fun VideoCallStage(
             }
         }
 
-        // The open panel has its own Stop row; folded or absent, Stop waits in the corner.
+        // The call's own chrome, like a call app: who is on the line, shown on a tap and gone when idle.
+        if (controls) CallHeader(
+            avatarName = stringResource(R.string.call_avatar_name),
+            personName = stringResource(R.string.call_person_name),
+            signing = signing,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 6.dp, start = 12.dp, end = if (cameraOn) 148.dp else 12.dp),
+        )
+
+        // The open panel has its own Stop row; folded or absent, Stop waits in the corner, under the header.
         if (panel == null || panelCollapsed) StopOctagon(content.subjectText("stop", lang) ?: stringResource(R.string.stage_stop), ui.answeredCard == "stop", { answer("stop") },
-            Modifier.align(Alignment.TopStart).padding(top = 72.dp, start = 12.dp).testTag(StagePaths.EXIT))
+            Modifier.align(Alignment.TopStart).padding(top = 96.dp, start = 12.dp).testTag(StagePaths.EXIT))
 
         // Pinned for every state: content, not a control, so it never fades and an open panel never buries it.
         NeedRow(
@@ -509,7 +521,7 @@ internal fun VideoCallStage(
                 color = LocalCall.current.bg.copy(alpha = 0.87f),
                 border = BorderStroke(1.5.dp, Color(0x44FFFFFF)),
                 shadowElevation = 10.dp,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("call.caption"),
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
@@ -560,33 +572,36 @@ internal fun VideoCallStage(
 
             // Path two, tools: language and emoji always; drawing, typing and pictures only when this item offers them.
             if (controls && !signing) {
-                val available = buildSet {
-                    if (onLanguage != null) add(StageTool.LANGUAGE)
-                    if (pictureCards.isNotEmpty()) add(StageTool.PICTURES)
-                    if (onDraw != null) add(StageTool.DRAWING)
-                    add(StageTool.EMOJI)
-                    if (onWrite != null) add(StageTool.TYPING)
-                }
-                Surface(
-                    shape = RoundedCornerShape(32.dp),
-                    color = LocalCall.current.surface.copy(alpha = 0.93f),
-                    border = BorderStroke(1.dp, LocalCall.current.line),
-                    shadowElevation = 12.dp,
-                    modifier = Modifier.fillMaxWidth().testTag(StagePaths.TOOLS),
-                ) {
-                    StageToolBar(
-                        selected = sheetFor,
-                        available = available,
-                        onSelect = { tool ->
-                            when (tool) {
-                                // The sheet shows the whole toolset; its group opens first for language, pictures and emoji.
-                                StageTool.LANGUAGE, StageTool.PICTURES, StageTool.EMOJI -> sheetFor = tool
-                                StageTool.DRAWING -> onDraw?.invoke()
-                                StageTool.TYPING -> onWrite?.invoke()
-                            }
-                        },
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                    )
+                // The fading action bar: its own node, so a test can watch it leave while the caption stays.
+                Box(Modifier.fillMaxWidth().testTag("call.controls")) {
+                    val available = buildSet {
+                        if (onLanguage != null) add(StageTool.LANGUAGE)
+                        if (pictureCards.isNotEmpty()) add(StageTool.PICTURES)
+                        if (onDraw != null) add(StageTool.DRAWING)
+                        add(StageTool.EMOJI)
+                        if (onWrite != null) add(StageTool.TYPING)
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(32.dp),
+                        color = LocalCall.current.surface.copy(alpha = 0.93f),
+                        border = BorderStroke(1.dp, LocalCall.current.line),
+                        shadowElevation = 12.dp,
+                        modifier = Modifier.fillMaxWidth().testTag(StagePaths.TOOLS),
+                    ) {
+                        StageToolBar(
+                            selected = sheetFor,
+                            available = available,
+                            onSelect = { tool ->
+                                when (tool) {
+                                    // The sheet shows the whole toolset; its group opens first for language, pictures and emoji.
+                                    StageTool.LANGUAGE, StageTool.PICTURES, StageTool.EMOJI -> sheetFor = tool
+                                    StageTool.DRAWING -> onDraw?.invoke()
+                                    StageTool.TYPING -> onWrite?.invoke()
+                                }
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        )
+                    }
                 }
             }
         }
