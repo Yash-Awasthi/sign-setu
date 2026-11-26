@@ -118,7 +118,7 @@
     <string name="export_body">The report is one PDF and needs no password. Anyone who has it can read the conversation, so share it only with the case file or the CWC. Its seal still shows whether it was altered.</string>
     <string name="export_share">Share report</string>
     <string name="export_finish">Done</string>
-    <string name="export_failed">Could not create the report: the phone may be full. The session is unchanged.</string>
+    <string name="export_failed">Could not create the report: the phone may be full. Free some space and try again; the session is unchanged.</string>
     <string name="ok">OK</string>
     <string name="report_title">Sign Setu: communication notes</string>
     <string name="report_disclaimer">Produced by a communication aid. These notes are not a statement and not a record of the person\'s own words. Answers may be wrong; confirm anything important through an interpreter or other reliable means.</string>
@@ -743,6 +743,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="check_report_differs">The session on this phone has changed since this report was made. Export again for the current record.</string>
     <string name="check_report_no_seal">This report has no seal to check.</string>
     <string name="hurt_map">Body. Touch where it hurts.</string>
+    <string name="hurt_zoom">Close-up of %1$s</string>
     <string name="hurt_front">Front</string>
     <string name="hurt_back">Back</string>
     <string name="part_head">head</string>
@@ -762,6 +763,11 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="part_left">left</string>
     <string name="part_right">right</string>
     <string name="cue_body">body map, %1$s: %2$s, at %3$d%% across, %4$d%% down</string>
+    <string name="cue_feel">pain %1$d of 10</string>
+    <string name="cue_call">asked to call %1$s</string>
+    <string name="feel_title">How do you feel?</string>
+    <string name="feel_pain">Pain %1$d of 10</string>
+    <string name="call_who">Who should we call?</string>
     <string name="voice_title">Record their voice</string>
     <string name="voice_hold">Tap the button, then the person speaks. It stops by itself when they finish, or tap again. Their voice is kept in this session\'s record, encrypted, and goes in the export.</string>
     <string name="voice_no_permission">Allow the microphone to use speech.</string>
@@ -797,7 +803,7 @@ A report leaves the phone only when you export and share it, protected by a pass
     <string name="sign_to_type">Sign to Type</string>
     <string name="sign_to_type_summary">Sign to the camera and see the words build into a sentence</string>
     <string name="sign_to_type_note">Practice only. The reader\'s words are guesses: tap a word to see its other guesses. Nothing is recorded or kept.</string>
-    <string name="sign_to_type_no_camera">The camera is not available.</string>
+    <string name="sign_to_type_no_camera">The camera is not available. Allow the camera for Sign Setu in the phone\'s settings, then open this screen again.</string>
     <string name="sign_to_type_start">Start reading</string>
     <string name="sign_to_type_stop">Stop</string>
     <string name="sign_to_type_clear">Clear</string>

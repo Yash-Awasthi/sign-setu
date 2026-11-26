@@ -112,7 +112,7 @@
     <string name="export_body">रिपोर्ट एक ही PDF है और उसके लिए कोई पासवर्ड नहीं चाहिए। जिसके पास यह होगा वह बातचीत पढ़ सकेगा, इसलिए इसे केवल केस फ़ाइल या CWC को दें। मुहर फिर भी बताती है कि इसमें बदलाव हुआ या नहीं।</string>
     <string name="export_share">रिपोर्ट भेजें</string>
     <string name="export_finish">हो गया</string>
-    <string name="export_failed">रिपोर्ट नहीं बन सकी: हो सकता है फ़ोन भरा हुआ हो। सत्र में कोई बदलाव नहीं हुआ।</string>
+    <string name="export_failed">रिपोर्ट नहीं बन सकी: हो सकता है फ़ोन भरा हुआ हो। कुछ जगह खाली करके फिर कोशिश करें; सत्र में कोई बदलाव नहीं हुआ।</string>
     <string name="ok">ठीक है</string>
     <string name="report_title">साइन सेतु: बातचीत के नोट्स</string>
     <string name="report_disclaimer">यह एक संचार सहायक से बना है। ये नोट्स बयान नहीं हैं और व्यक्ति के अपने शब्दों का रिकॉर्ड नहीं हैं। जवाब गलत हो सकते हैं; ज़रूरी बातें दुभाषिया या दूसरे भरोसेमंद तरीके से पक्की करें।</string>
@@ -734,6 +734,7 @@
     <string name="check_report_differs">यह रिपोर्ट बनने के बाद इस फ़ोन का सत्र बदला है। ताज़ा रिकॉर्ड के लिए फिर से निर्यात करें।</string>
     <string name="check_report_no_seal">इस रिपोर्ट में जाँचने को कोई मुहर नहीं है।</string>
     <string name="hurt_map">शरीर। जहाँ दर्द है वहाँ छुएँ।</string>
+    <string name="hurt_zoom">%1$s का नज़दीकी चित्र</string>
     <string name="hurt_front">आगे</string>
     <string name="hurt_back">पीछे</string>
     <string name="part_head">सिर</string>
@@ -753,6 +754,11 @@
     <string name="part_left">बायाँ</string>
     <string name="part_right">दायाँ</string>
     <string name="cue_body">शरीर का नक्शा, %1$s: %2$s, %3$d%% आड़ा, %4$d%% नीचे</string>
+    <string name="cue_feel">दर्द %1$d / 10</string>
+    <string name="cue_call">%1$s को बुलाना चाहते हैं</string>
+    <string name="feel_title">आपको कैसा लग रहा है?</string>
+    <string name="feel_pain">दर्द %1$d / 10</string>
+    <string name="call_who">हमें किसे बुलाना चाहिए?</string>
     <string name="voice_title">उनकी आवाज़ रिकॉर्ड करें</string>
     <string name="voice_hold">बटन दबाएँ, फिर व्यक्ति बोले। उनके बोल चुकने पर यह अपने आप रुक जाता है, या फिर से दबाएँ। उनकी आवाज़ इस सत्र के रिकॉर्ड में, एन्क्रिप्टेड, रखी जाती है और निर्यात में जाती है।</string>
     <string name="voice_no_permission">बोली के लिए माइक्रोफ़ोन की अनुमति दें।</string>
@@ -788,7 +794,7 @@
     <string name="sign_to_type">संकेत से लिखें</string>
     <string name="sign_to_type_summary">कैमरे के सामने संकेत करें और शब्दों से वाक्य बनते देखें</string>
     <string name="sign_to_type_note">केवल अभ्यास। पढ़े गए शब्द अनुमान हैं: दूसरे अनुमान देखने के लिए शब्द पर टैप करें। कुछ भी रिकॉर्ड या रखा नहीं जाता।</string>
-    <string name="sign_to_type_no_camera">कैमरा उपलब्ध नहीं है।</string>
+    <string name="sign_to_type_no_camera">कैमरा उपलब्ध नहीं है। फ़ोन की सेटिंग में Sign Setu को कैमरा की अनुमति दें, फिर यह स्क्रीन फिर खोलें।</string>
     <string name="sign_to_type_start">पढ़ना शुरू करें</string>
     <string name="sign_to_type_stop">रोकें</string>
     <string name="sign_to_type_clear">साफ़ करें</string>

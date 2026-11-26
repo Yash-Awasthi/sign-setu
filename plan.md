@@ -309,7 +309,8 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
   verified-here: python tools/ux/check_inventory.py -> 8 screens: purpose, three actions and exit present; python -m unittest discover -s tools/ux -> 14 tests, OK
 - [x] Person-facing screens use larger type, fewer words and one action; officer-facing screens may be denser — the split is explicit. `[D]`
   verified-here: python tools/ux/check_split.py -> 10 surfaces split; type, touch and card floors hold (and :app:compileStandardDebugKotlin passes)
-- [ ] Error and empty states: no model, no camera, no microphone, no second screen, storage full — each with the fix, not an error code. `[D]`
+- [x] Error and empty states: no model, no camera, no microphone, no second screen, storage full — each with the fix, not an error code. `[D]`
+  verified-here: python tools/ux/check_error_copies.py -> 5 broken states, each with a fix and no error code
 - [ ] Onboarding: the three first-run steps and the tour, measured for completion time with one officer who has not seen the app. `[D]`
 
 ### M5.3 Sign-language depth
