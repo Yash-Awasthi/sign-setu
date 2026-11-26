@@ -118,9 +118,9 @@ internal fun VideoCallStage(
     onCue: (String) -> Unit,
     /** Water or food asked for by the subject: a request, not an answer to what is on screen. */
     onNeed: (String) -> Unit,
+    modifier: Modifier = Modifier,
     /** The messages shortcut, offered beside Hold at the same level. */
     onMessages: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
     cameraOn: Boolean = true,
     /** Set on the opening and ground rules, which move on only when the subject is ready. */
     onNext: (() -> Unit)? = null,

@@ -88,7 +88,7 @@ class TapToSignDeviceTest {
                                 LocalContentRepository provides app.container.content,
                                 LocalOnlineAssistant provides app.container.onlineAssistant,
                             ) {
-                                key(run.value) {
+                                key(run.intValue) {
                                     Box(Modifier.fillMaxSize().drawWithContent {
                                         draws.incrementAndGet()
                                         drawContent()

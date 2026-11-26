@@ -1,13 +1,10 @@
 package app.signsetu
 
-import android.content.res.Configuration
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -30,17 +27,16 @@ class SessionDockDeviceTest {
     @get:Rule
     val rule = createAndroidComposeRule<ComponentActivity>()
 
-    private fun config(widthDp: Int, heightDp: Int, landscape: Boolean) = Configuration().apply {
-        screenWidthDp = widthDp
-        screenHeightDp = heightDp
-        orientation = if (landscape) Configuration.ORIENTATION_LANDSCAPE else Configuration.ORIENTATION_PORTRAIT
-    }
-
     /** The same one-line decision SessionRoute makes: dock only when the shape says so. */
     @Composable
-    private fun Arrangement(paired: Boolean, stage: @Composable () -> Unit, officer: @Composable () -> Unit) {
-        val current = LocalConfiguration.current
-        when (sessionShape(current.screenWidthDp, current.screenHeightDp, paired)) {
+    private fun Arrangement(
+        paired: Boolean,
+        widthDp: Int,
+        heightDp: Int,
+        stage: @Composable () -> Unit,
+        officer: @Composable () -> Unit,
+    ) {
+        when (sessionShape(widthDp, heightDp, paired)) {
             SessionShape.DOCK -> SessionDock(stage = stage, officer = officer)
             SessionShape.PHONE, SessionShape.TABLET -> Box(Modifier.fillMaxSize().testTag("session.single")) { officer() }
         }
@@ -49,12 +45,10 @@ class SessionDockDeviceTest {
     @Test
     fun landscapeDockPutsTheStageLeftOfTheOfficer() {
         rule.setContent {
-            CompositionLocalProvider(LocalConfiguration provides config(1280, 800, landscape = true)) {
-                SessionDock(
-                    stage = { Box(Modifier.fillMaxSize().testTag("session.dock.stage.content")) },
-                    officer = { Box(Modifier.fillMaxSize().testTag("session.dock.officer.content")) },
-                )
-            }
+            SessionDock(
+                stage = { Box(Modifier.fillMaxSize().testTag("session.dock.stage.content")) },
+                officer = { Box(Modifier.fillMaxSize().testTag("session.dock.officer.content")) },
+            )
         }
         rule.onNodeWithTag("session.dock").assertExists()
         rule.onNodeWithTag("session.dock.stage").assertExists()
@@ -78,13 +72,13 @@ class SessionDockDeviceTest {
     @Test
     fun phonePortraitDoesNotDock() {
         rule.setContent {
-            CompositionLocalProvider(LocalConfiguration provides config(360, 800, landscape = false)) {
-                Arrangement(
-                    paired = false,
-                    stage = { Box(Modifier.fillMaxSize().testTag("session.single.stage")) },
-                    officer = { Box(Modifier.fillMaxSize().testTag("session.single.officer")) },
-                )
-            }
+            Arrangement(
+                paired = false,
+                widthDp = 360,
+                heightDp = 800,
+                stage = { Box(Modifier.fillMaxSize().testTag("session.single.stage")) },
+                officer = { Box(Modifier.fillMaxSize().testTag("session.single.officer")) },
+            )
         }
         rule.onNodeWithTag("session.single").assertExists()
         rule.onNodeWithTag("session.single.officer").assertExists()
@@ -94,13 +88,13 @@ class SessionDockDeviceTest {
     @Test
     fun pairedTabletPortraitDoesNotDock() {
         rule.setContent {
-            CompositionLocalProvider(LocalConfiguration provides config(800, 1280, landscape = false)) {
-                Arrangement(
-                    paired = true,
-                    stage = { Box(Modifier.fillMaxSize().testTag("session.single.stage")) },
-                    officer = { Box(Modifier.fillMaxSize().testTag("session.single.officer")) },
-                )
-            }
+            Arrangement(
+                paired = true,
+                widthDp = 800,
+                heightDp = 1280,
+                stage = { Box(Modifier.fillMaxSize().testTag("session.single.stage")) },
+                officer = { Box(Modifier.fillMaxSize().testTag("session.single.officer")) },
+            )
         }
         rule.onNodeWithTag("session.single").assertExists()
         rule.onAllNodesWithTag("session.dock").assertCountEquals(0)

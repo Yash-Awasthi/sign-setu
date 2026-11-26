@@ -29,7 +29,7 @@ class WrapUpPathsDeviceTest {
     private val tapped = AtomicInteger()
 
     @Composable
-    private fun dialog(historyOff: Boolean, reopened: Boolean = false, thank: Boolean = true, onDelete: () -> Unit = {}) {
+    private fun Dialog(historyOff: Boolean, reopened: Boolean = false, thank: Boolean = true, onDelete: () -> Unit = {}) {
         SignSetuTheme {
             WrapUpDialog(
                 historyOff = historyOff,
@@ -56,7 +56,7 @@ class WrapUpPathsDeviceTest {
 
     @Test
     fun aSessionWithHistoryEndsInThreeWays() {
-        rule.setContent { dialog(historyOff = false) }
+        rule.setContent { Dialog(historyOff = false) }
         rule.waitForIdle()
         assertEquals(
             listOf(str(R.string.wrap_thank), str(R.string.wrap_save), str(R.string.wrap_delete)),
@@ -70,7 +70,7 @@ class WrapUpPathsDeviceTest {
 
     @Test
     fun aRootedPhoneEndsInThreeWaysToo() {
-        rule.setContent { dialog(historyOff = true) }
+        rule.setContent { Dialog(historyOff = true) }
         rule.waitForIdle()
         assertEquals(
             listOf(str(R.string.wrap_thank), str(R.string.end_export), str(R.string.wrap_delete)),
@@ -80,7 +80,7 @@ class WrapUpPathsDeviceTest {
 
     @Test
     fun aReopenedSessionEndsInThreeWaysAtMost() {
-        rule.setContent { dialog(historyOff = false, reopened = true) }
+        rule.setContent { Dialog(historyOff = false, reopened = true) }
         rule.waitForIdle()
         assertEquals(
             listOf(str(R.string.wrap_thank), str(R.string.wrap_save), str(R.string.wrap_discard)),
@@ -92,7 +92,7 @@ class WrapUpPathsDeviceTest {
     @Test
     fun theDeleteStillTakesTwoTaps() {
         val deletes = AtomicInteger()
-        rule.setContent { dialog(historyOff = false, thank = false, onDelete = { deletes.incrementAndGet() }) }
+        rule.setContent { Dialog(historyOff = false, thank = false, onDelete = { deletes.incrementAndGet() }) }
         rule.waitForIdle()
         rule.onNode(hasText(str(R.string.wrap_delete))).performClick()
         rule.waitForIdle()

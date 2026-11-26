@@ -33,6 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import kotlin.math.roundToInt
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -221,7 +224,9 @@ internal fun SessionRoute(
             },
         )
     }
-    val shape = sessionShape(configuration.screenWidthDp, configuration.screenHeightDp, paired)
+    val windowSize = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current.density
+    val shape = sessionShape((windowSize.width / density).roundToInt(), (windowSize.height / density).roundToInt(), paired)
 
     Crossfade(targetState = if (paired) Mode.OFFICER else state.mode, animationSpec = motion(tween(220)), label = "mode") { shown ->
     when (shown) {

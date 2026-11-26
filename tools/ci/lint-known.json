@@ -22,11 +22,6 @@
       "count": 1
     },
     {
-      "rule": "ComposableNaming",
-      "file": "app/src/androidTest/java/app/signsetu/WrapUpPathsDeviceTest.kt",
-      "count": 1
-    },
-    {
       "rule": "CustomX509TrustManager",
       "file": "app/src/main/java/app/signsetu/net/BrainClient.kt",
       "count": 1
