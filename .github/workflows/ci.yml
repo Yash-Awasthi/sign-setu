@@ -134,6 +134,8 @@ jobs:
         run: |
           python tools/ml/freeze_eval.py --check
           python tools/ml/test_freeze_eval.py
+      - name: The shipped reader on the frozen evaluation set
+        run: python tools/ml/eval.py
 
   gateway:
     runs-on: ubuntu-24.04
