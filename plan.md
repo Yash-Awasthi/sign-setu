@@ -242,6 +242,7 @@ SQLCipher 4.19.1) moves faster than the test evidence around it.
     blocked: a Baseline Profile needs the owner app/build.gradle.kts and a device that reports real frame timings; neither is available here.
 - **m3.3.2 Startup cost**
   - [ ] Cache avatar assets and the stage scene so a restart does not reload them (owner: "cached data for avatar so it doesn't relod on app startups"). `[F]`
+  blocked: needs a device run, which this run forbids. The APK deflates assets/avatar (unzip -v app-standard-debug.apk: index.html 239 of 384 B, avatar.js 209846 of 690297, model.vrm 4280749 of 10815356), so an app-cache copy can drop the inflate of 11,506,037 B but not the WebView transfer or the three.js parse of model.vrm that runs on every process start; whether that cuts the reload needs the first stage frame timed before and after on one device. ui/avatar is at HEAD; no code, no tick.
 
 ### M3.4 Docs and portal hygiene
 
