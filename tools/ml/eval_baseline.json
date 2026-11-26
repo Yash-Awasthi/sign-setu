@@ -1,0 +1,1961 @@
+{
+  "date": "2026-11-26",
+  "set": "tools/ml/data",
+  "manifest": "manifest.tsv",
+  "set_sha256": "86f677319c8f4686432522c629909a766de6d30b6147360244515eeec5030856",
+  "clips": 1116,
+  "words": 313,
+  "outside": 0,
+  "skipped": 0,
+  "reader": "sign_reader",
+  "reader_sha256": "bd731a6b2a530a6a10c0cc296bb99f39429964893c3fdb442140eb5d9839cae3",
+  "top1": 0.9695340501792115,
+  "top5": 0.996415770609319,
+  "unclear": 0.013440860215053764,
+  "per_word": {
+    "actor": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "adult": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "afternoon": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "alive": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "alright": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "animal": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "artist": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "attack": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "author": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "baby": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bad": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bag": {
+      "n": 3,
+      "top1": 0.6666666666666666,
+      "top5": 0.6666666666666666,
+      "unclear": 0.0
+    },
+    "ball": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bank": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bathroom": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bear": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "beautiful": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bed": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bedroom": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bicycle": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "big large": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bill": {
+      "n": 3,
+      "top1": 0.6666666666666666,
+      "top5": 1.0,
+      "unclear": 0.3333333333333333
+    },
+    "bird": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "black": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "blind": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "blue": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "boat": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "book": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "box": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "boy": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "break": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "brinjal": {
+      "n": 5,
+      "top1": 0.8,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "brother": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.25
+    },
+    "brown": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "budget": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "bus": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "busy": {
+      "n": 5,
+      "top1": 0.4,
+      "top5": 1.0,
+      "unclear": 0.2
+    },
+    "cabbage": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "camera": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "car": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "card": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "carrot": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cat": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cauliflower": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cell phone": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "chair": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cheap": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "child": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "chilli": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "city": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "clean": {
+      "n": 6,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "clock": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "close": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "clothing": {
+      "n": 4,
+      "top1": 0.5,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cold": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "colour": {
+      "n": 4,
+      "top1": 0.75,
+      "top5": 1.0,
+      "unclear": 0.25
+    },
+    "come": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "computer": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cook": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cool": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "court": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cow": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "crocodile": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "crowd": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cry": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "cucumber": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "curved": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "daughter": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "dead": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "deaf": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "death": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "deep": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "deer": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "dirty": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "doctor": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "dog": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "door": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "dream": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "dress": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "drink": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "dry": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "election": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "elephant": {
+      "n": 5,
+      "top1": 0.0,
+      "top5": 1.0,
+      "unclear": 0.2
+    },
+    "energy": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "evening": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "exam": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "exercise": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "expensive": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "fall": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "family": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "famous": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "fan": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "fast": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "father": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "fedup": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "female": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "fever": {
+      "n": 5,
+      "top1": 0.6,
+      "top5": 1.0,
+      "unclear": 0.2
+    },
+    "fish": {
+      "n": 4,
+      "top1": 0.75,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "flat": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "friday": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "friend": {
+      "n": 4,
+      "top1": 0.5,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "gift": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "giraffe": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "girl": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "give": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "god": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "good": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "good afternoon": {
+      "n": 11,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "good evening": {
+      "n": 7,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "good morning": {
+      "n": 9,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "good night": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "grandfather": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "grandmother": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "green": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "grey": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "ground": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "gun": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "happy": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "hard": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "hat": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "he": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "healthy": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "heavy": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "hello": {
+      "n": 9,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "high": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "horse": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "hospital": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "hot": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "hour": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "house": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "how are you": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "hug": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "husband": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "i": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "india": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "injury": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "interview": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "it": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "job": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "jump": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "karnataka": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "key": {
+      "n": 8,
+      "top1": 0.875,
+      "top5": 0.875,
+      "unclear": 0.0
+    },
+    "king": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "kitchen": {
+      "n": 3,
+      "top1": 0.6666666666666666,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "knife": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "lamp": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "laptop": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "lawyer": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "lemon": {
+      "n": 5,
+      "top1": 0.6,
+      "top5": 1.0,
+      "unclear": 0.4
+    },
+    "letter": {
+      "n": 3,
+      "top1": 0.6666666666666666,
+      "top5": 0.6666666666666666,
+      "unclear": 0.0
+    },
+    "library": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "light": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "lion": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "location": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "lock": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "long": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "loose": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "loud": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "low": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "male": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "man": {
+      "n": 9,
+      "top1": 0.8888888888888888,
+      "top5": 1.0,
+      "unclear": 0.1111111111111111
+    },
+    "manager": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "market": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "marriage": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "maths": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.2
+    },
+    "maybe": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.2
+    },
+    "mean": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "medicine": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "minute": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "monday": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "money": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "monkey": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "monsoon": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "month": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "morning": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "mother": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "mouse": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "narrow": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "neighbour": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "new": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "newspaper": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "nice": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "night": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "office": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "old": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "onion": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "orange": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "page": {
+      "n": 3,
+      "top1": 0.6666666666666666,
+      "top5": 0.6666666666666666,
+      "unclear": 0.0
+    },
+    "paint": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "pant": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "paper": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "parent": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "park": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "patient": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "peace": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "peacock": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "pen": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "pencil": {
+      "n": 3,
+      "top1": 0.6666666666666666,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "photograph": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "pigeon": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "pink": {
+      "n": 4,
+      "top1": 0.75,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "plane": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "player": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "pleased": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "pocket": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "police": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "poor": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "pour": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "president": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "price": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "priest": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "queen": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "quiet": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "race (ethnicity)": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "radio": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "radish": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "red": {
+      "n": 4,
+      "top1": 0.5,
+      "top5": 1.0,
+      "unclear": 0.25
+    },
+    "religion": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "reporter": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "restaurant": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "rich": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "ring": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "sad": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "saturday": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "school": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "science": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "screen": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "season": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "second": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "secretary": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "shallow": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "she": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "shirt": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "shoes": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "short": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "sick": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "sign": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "sister": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.25
+    },
+    "skirt": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "slow": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "small little": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "soap": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "soft": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "soldier": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "son": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "sparrow": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "sport": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "spring": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "store or shop": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "street or road": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "strong": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "student": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "suit": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "summer": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "sunday": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "switch": {
+      "n": 5,
+      "top1": 0.8,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "t-shirt": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "table": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "tall": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "tea": {
+      "n": 5,
+      "top1": 0.8,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "teacher": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "team": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "technology": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "telephone": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "television": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "temple": {
+      "n": 9,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "thank you": {
+      "n": 9,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "they": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "thick": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "thin": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "thursday": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "tiger": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "tight": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "time": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "today": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "tomorrow": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "tool": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "train": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "train station": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "train ticket": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "transportation": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "truck": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "tuesday": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "turtle": {
+      "n": 5,
+      "top1": 0.6,
+      "top5": 1.0,
+      "unclear": 0.4
+    },
+    "ugly": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "umbrella": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "uncle": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "university": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "vegetables": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "volcano": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "waiter": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "war": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "warm": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "we": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "weak": {
+      "n": 2,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "wednesday": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "week": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "wet": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "what is your name": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "white": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "wide": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "wife": {
+      "n": 9,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "window": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "winter": {
+      "n": 3,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "woman": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "writer": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "wrong": {
+      "n": 5,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "year": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "yellow": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "yesterday": {
+      "n": 1,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "you": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "you (plural)": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    },
+    "young": {
+      "n": 4,
+      "top1": 1.0,
+      "top5": 1.0,
+      "unclear": 0.0
+    }
+  },
+  "corpora": {
+    "INCLUDE": {
+      "n": 816,
+      "top1": 0.9791666666666666,
+      "top5": 0.9950980392156863,
+      "unclear": 0.007352941176470588
+    },
+    "Kaggle ISL": {
+      "n": 300,
+      "top1": 0.9433333333333334,
+      "top5": 1.0,
+      "unclear": 0.03
+    }
+  },
+  "confusions": [
+    [
+      "elephant",
+      "colour",
+      5
+    ],
+    [
+      "busy",
+      "horse",
+      3
+    ],
+    [
+      "clothing",
+      "dress",
+      2
+    ],
+    [
+      "red",
+      "pink",
+      2
+    ],
+    [
+      "friend",
+      "child",
+      2
+    ],
+    [
+      "fever",
+      "yellow",
+      2
+    ],
+    [
+      "lemon",
+      "dress",
+      2
+    ],
+    [
+      "turtle",
+      "slow",
+      2
+    ],
+    [
+      "fish",
+      "slow",
+      1
+    ],
+    [
+      "pink",
+      "red",
+      1
+    ]
+  ]
+}

@@ -45,9 +45,9 @@ TSV_COLUMNS = ("corpus", "word", "frames", "aspect", "sha256")
 def rel(path):
     # Relative to the repo when inside it; absolute otherwise (fixtures live in a temp dir).
     try:
-        return str(path.relative_to(ROOT))
+        return str(path.relative_to(ROOT)).replace("\\", "/")
     except ValueError:
-        return str(path)
+        return str(path).replace("\\", "/")
 
 
 def sha256(path):
