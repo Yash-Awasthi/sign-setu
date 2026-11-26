@@ -48,6 +48,7 @@ One row per document: who it is for, and what it holds.
 | [23-storage-budget.md](23-storage-budget.md) | department | What a session costs on disk, the measured per-session sizes, and the retention windows' totals against the 1 GB budget |
 | [24-deployment-package.md](24-deployment-package.md) | department | Signed APK, SBOM, SHA256SUMS, DPIA, walkthrough, model allow-list procedure and report verification in one release-to-install page |
 | [25-screen-inventory.md](25-screen-inventory.md) | developer | Every screen the app can open, its purpose, its three primary actions and its exit, checked against the navigation in AppRoot.kt |
+| [26-theme-contrast.md](26-theme-contrast.md) | developer | Every colour pair the app draws, measured across the ten themes in light, dark and OLED, with the floors that ContrastTest enforces |
 | [models/sign_reader_v4.md](models/sign_reader_v4.md) | developer | Model card of the ISL word reader |
 | [models/sign_reader_v3.md](models/sign_reader_v3.md) | developer | Model card of the previous ISL word reader |
 | [../portal/README.md](../portal/README.md) | reviewer | Reviewer portal for content sign-off |
