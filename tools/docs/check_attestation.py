@@ -40,6 +40,7 @@ def check(root: pathlib.Path) -> list[str]:
     if lines is None:
         return [f"{DOC}: missing the heading '{HEADING}'"]
     errors = []
+    implemented = 0
     for line in lines[2:]:
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cells) != 3:
@@ -54,6 +55,7 @@ def check(root: pathlib.Path) -> list[str]:
             continue
         if status == "Aspirational":
             continue
+        implemented += 1
         for item in BACKTICKED.findall(evidence):
             if "#" not in item:
                 errors.append(f"{DOC}: evidence is not path#symbol: {item}")
@@ -62,8 +64,18 @@ def check(root: pathlib.Path) -> list[str]:
             target = root / rel
             if not target.exists():
                 errors.append(f"{DOC}: evidence names a missing file: {rel}")
-            elif symbol not in target.read_text(encoding="utf-8"):
-                errors.append(f"{DOC}: {rel} has no '{symbol}'")
+            elif not target.is_file():
+                errors.append(f"{DOC}: evidence names a directory: {rel}")
+            else:
+                try:
+                    text = target.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError) as error:
+                    errors.append(f"{DOC}: evidence is not readable UTF-8 text: {rel} ({error})")
+                else:
+                    if symbol not in text:
+                        errors.append(f"{DOC}: {rel} has no '{symbol}'")
+    if not implemented:
+        errors.append(f"{DOC}: names no implemented control")
     return errors
 
 

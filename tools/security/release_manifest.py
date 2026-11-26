@@ -339,8 +339,12 @@ def write(directory: pathlib.Path, version=None, commit=None, sbom=None, generat
 
 def read_sums(path: pathlib.Path) -> list[tuple[str, str]]:
     """(sha256, name) pairs from a SHA256SUMS file, refusing a malformed line."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as error:
+        raise EvidenceError(f"{path} is not UTF-8: {error}") from error
     rows = []
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+    for number, line in enumerate(text.splitlines(), 1):
         if not line.strip():
             continue
         parts = line.split(None, 1)
@@ -383,7 +387,16 @@ def check(directory: pathlib.Path, sbom_current=False) -> list[str]:
     for name in sorted(known & {p.name for p in directory.iterdir() if p.is_file()} - listed):
         errors.append(f"{name}: present in {directory} but missing from {SUMS_NAME}")
 
-    artefact_rows = {row["name"]: row for row in provenance.get("artefacts") or []}
+    artefact_rows = {}
+    recorded = provenance.get("artefacts")
+    if not isinstance(recorded, list):
+        errors.append(f"{PROVENANCE_NAME}: artefacts is {type(recorded).__name__}, not a list of objects")
+        recorded = []
+    for number, row in enumerate(recorded, 1):
+        if not isinstance(row, dict) or not isinstance(row.get("name"), str) or not row["name"]:
+            errors.append(f"{PROVENANCE_NAME}: artefact {number} is not an object with a name")
+            continue
+        artefact_rows[row["name"]] = row
     for name, row in artefact_rows.items():
         if name not in listed:
             errors.append(f"{PROVENANCE_NAME}: {name} is not in {SUMS_NAME}")

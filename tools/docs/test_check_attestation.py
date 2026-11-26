@@ -51,6 +51,29 @@ class CheckAttestationTest(unittest.TestCase):
         errors = check_attestation.check(self.root)
         self.assertTrue(any("pinSet" in e for e in errors), errors)
 
+    def test_an_evidence_path_that_is_a_directory_fails(self):
+        self.doc().write_text(DOC.replace("app/Http.kt#httpsOnly", "app#httpsOnly"), encoding="utf-8")
+        errors = check_attestation.check(self.root)
+        self.assertTrue(any("directory" in e and "app" in e for e in errors), errors)
+
+    def test_evidence_that_is_not_utf8_fails(self):
+        (self.root / "app" / "Bin.kt").write_bytes(b"\xff\xfe\x00not utf-8")
+        self.doc().write_text(DOC.replace("app/Http.kt#httpsOnly", "app/Bin.kt#httpsOnly"), encoding="utf-8")
+        errors = check_attestation.check(self.root)
+        self.assertTrue(any("Bin.kt" in e for e in errors), errors)
+
+    def test_a_table_with_no_row_fails(self):
+        header_only = DOC.split("| HTTPS only")[0]
+        self.doc().write_text(header_only, encoding="utf-8")
+        errors = check_attestation.check(self.root)
+        self.assertTrue(any("implemented control" in e for e in errors), errors)
+
+    def test_a_table_with_no_implemented_row_fails(self):
+        self.doc().write_text(DOC.replace("| HTTPS only | Implemented |", "| HTTPS only | Aspirational |"),
+                              encoding="utf-8")
+        errors = check_attestation.check(self.root)
+        self.assertTrue(any("implemented control" in e for e in errors), errors)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,7 @@
 """The release evidence beside the APKs: sums that catch one changed byte, and a signing status read from the file."""
+import contextlib
 import hashlib
+import io
 import json
 import pathlib
 import struct
@@ -291,6 +293,26 @@ class Evidence(unittest.TestCase):
         self.cut()
         self.apk.unlink()
         self.assertEqual(release_manifest.check(self.dir), [])
+
+    def test_a_sums_file_that_is_not_utf8_is_bad_input(self):
+        self.cut()
+        (self.dir / "SHA256SUMS").write_bytes(b"\xff\xfe not UTF-8 \x00\n")
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            code = release_manifest.main([str(self.dir), "--check"])
+        self.assertEqual(code, 2)
+        self.assertIn("UTF-8", stderr.getvalue())
+
+    def test_artefacts_that_are_not_objects_fail_without_raising(self):
+        self.cut()
+        path = self.dir / "PROVENANCE.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        for bad in ("sign-setu-9.9.9-arm64.apk", ["sign-setu-9.9.9-arm64.apk"], [42]):
+            with self.subTest(artefacts=bad):
+                doc["artefacts"] = bad
+                path.write_text(json.dumps(doc), encoding="utf-8")
+                errors = release_manifest.check(self.dir)
+                self.assertTrue(any("artefacts" in error or "artefact 1" in error for error in errors), errors)
 
     def test_main_exit_codes(self):
         self.assertEqual(release_manifest.main([str(self.dir), "--version", "9.9.9",
