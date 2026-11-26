@@ -294,6 +294,7 @@ verified-here: TapToSignDeviceTest measured four kept runs per screen on ci34 (A
 - [x] Pre-warm the stage and the sign readers so the first question does not wait on model load. `[W]`
     - verified-here: ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.PrewarmDeviceTest -> 1 test, 0 failures on CI34 API 34; the second content load after warm-up stayed under 250 ms
 - [ ] Remove blocking work from the main thread in the stage and sign-window paths; verify with a jank count before/after. `[W]`
+  blocked: the count does not exist. Three runs of the same instrument read 9, then 3, then 2 fps on ci34 with 4.7-5.5 s of main-thread lateness at 9-11% main CPU, so the emulator host was starved of vCPUs; a sampling profile found no per-frame block, and no before/after pair here is attributable to app code.
 
 ### M4.5 Richer communication (owner: "more feature richness")
 
