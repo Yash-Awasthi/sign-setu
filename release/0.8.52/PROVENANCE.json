@@ -26,13 +26,13 @@
     "note": "built without the release keystore, so the APKs carry no signature; shippable is false until apksigner signs the aligned APK with the release key",
     "task": ":app:assembleStandardRelease"
   },
-  "commit": "9dbacf15dcffbdd0d520d4dab1a2122e79e09190",
+  "commit": "eadfd522c26b38f3c4438b37ce8e7bde817191e9",
   "dependencyLocks": [
     {
-      "lines": 477,
+      "lines": 476,
       "path": "app/gradle.lockfile",
-      "sha256": "0d7afe9ab93a4474b50621378a6382641fb45fdc4f405f2c28dcf2da5d0264d4",
-      "shipped": 276
+      "sha256": "dd2f9793a514d846ce648df4e991d5cb95766aad03552b72e88cec7aecdc6520",
+      "shipped": 274
     },
     {
       "lines": 4,
@@ -48,13 +48,13 @@
   "format": "sign-setu-release-evidence/1",
   "generated": "2026-11-26T19:14:56Z",
   "sbom": {
-    "bytes": 110846,
-    "components": 276,
+    "bytes": 110067,
+    "components": 274,
     "format": "CycloneDX 1.5",
     "from": "the resolved release runtime classpath in app/gradle.lockfile",
     "path": "release/0.8.52/sign-setu-release.cdx.json",
     "producer": "sbom_lockfile.py",
-    "sha256": "2efcaa99ec4c621361b25ebaaeb08b2ee5e31f608fbdc4ef27a00dfcb6c348c9"
+    "sha256": "436fb140b64fe2a334a0ae5655661f805454436774f1d863d1548d93641d822f"
   },
   "verify": "sha256sum -c SHA256SUMS && python tools/security/release_manifest.py --check release/0.8.52",
   "version": "0.8.52",

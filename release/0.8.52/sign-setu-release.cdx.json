@@ -3412,21 +3412,6 @@
       "version": "1.0.3"
     },
     {
-      "bom-ref": "pkg:maven/com.google.guava/guava@33.3.1-android",
-      "group": "com.google.guava",
-      "licenses": [
-        {
-          "license": {
-            "id": "Apache-2.0"
-          }
-        }
-      ],
-      "name": "guava",
-      "purl": "pkg:maven/com.google.guava/guava@33.3.1-android",
-      "type": "library",
-      "version": "33.3.1-android"
-    },
-    {
       "bom-ref": "pkg:maven/com.google.guava/guava@33.7.2-android",
       "group": "com.google.guava",
       "licenses": [
@@ -3545,21 +3530,6 @@
       "purl": "pkg:maven/com.google.mediapipe/tasks-vision@1.1.1",
       "type": "library",
       "version": "1.1.1"
-    },
-    {
-      "bom-ref": "pkg:maven/com.google.protobuf/protobuf-javalite@4.26.1",
-      "group": "com.google.protobuf",
-      "licenses": [
-        {
-          "license": {
-            "id": "BSD-3-Clause"
-          }
-        }
-      ],
-      "name": "protobuf-javalite",
-      "purl": "pkg:maven/com.google.protobuf/protobuf-javalite@4.26.1",
-      "type": "library",
-      "version": "4.26.1"
     },
     {
       "bom-ref": "pkg:maven/com.google.protobuf/protobuf-javalite@4.36.2",
@@ -4174,7 +4144,7 @@
       "properties": [
         {
           "name": "sign-setu:commit",
-          "value": "9dbacf15dcffbdd0d520d4dab1a2122e79e09190"
+          "value": "eadfd522c26b38f3c4438b37ce8e7bde817191e9"
         }
       ],
       "type": "application",
@@ -4188,7 +4158,7 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:4d077da0-bd81-50db-9b22-d5a92f49827f",
+  "serialNumber": "urn:uuid:e86c71ab-dc19-518e-9a92-b52c2f1cde47",
   "specVersion": "1.5",
   "version": 1
 }
