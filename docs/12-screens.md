@@ -89,7 +89,7 @@ shows, on the emulator):
 | Finish, a session kept in history | 3 | Thank them on the stage, Save and finish, Delete without saving |
 | Finish, a rooted phone that keeps no history | 3 | Thank them on the stage, Export report, Delete without saving |
 | Finish, a saved session opened again | 3 | Thank them on the stage, Save and finish, Discard unsaved conversation |
-| The session menu | 1 | Finish |
+| The session menu | 0 | none; finishing is the header's End button |
 
 Export left the finish screen for a kept session: the same sealed PDF is written to `Documents/SignSetu` from the saved
 session's download on the home screen, so offering it twice was one route too many. A rooted phone has no history to

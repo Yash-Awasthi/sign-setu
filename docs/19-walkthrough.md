@@ -2,11 +2,11 @@
 
 This guide mirrors the Help in the app. Help opens from Settings, Help, "Help and walkthrough" (the topic list);
 from the "Take the tour" card on the home screen; from the "Take the tour" button on the last first-run step (it
-works before the first unlock); and in a session from the officer's three-dot menu, Help, or More options, Session,
-Help, both of which open "During a session". The topics are: First walkthrough, During a session, The conversation,
-Every setting, Records and reports, Practice, Station computer, and Privacy and safety. The topic list has a "Search
-help" field that matches titles, summaries and entry text. First walkthrough is shown one step at a time ("Step 1 of
-8") with Back, Next and Done. Help is available in English and Hindi.
+works before the first unlock); and in a session from the officer's three-dot menu, Help, which opens "During a
+session". The topics are: First walkthrough, During a session, The conversation, Every setting, Records and
+reports, Practice, Station computer, and Privacy and safety. The topic list has a "Search help" field that matches
+titles, summaries and entry text. First walkthrough is shown one step at a time ("Step 1 of 8") with Back, Next
+and Done. Help is available in English and Hindi.
 
 ## Contents
 
@@ -88,14 +88,13 @@ The More page holds every question group and phrase (Personal, Family, Address, 
 the picture board, Draw, the language finder, Tell me, the ISL dictionary, the session log with notes, Second
 screen, and the profile, role and language. Picking something returns to the conversation. Its "Other ways to ask"
 row has They gestured, Pictures, Draw and Language. Its "Session" list: "Let the AI counsellor talk for you" (when
-the counsellor is available), ISL dictionary (ASL dictionary when signing ASL), Second screen, Replay intro and
-Help, which opens "During a session"; Finish session sits below them.
+the counsellor is available), ISL dictionary (ASL dictionary when signing ASL), Second screen and Replay intro.
 
 ### The menu
 
 The three-dot menu has Sign language (switch between ISL and ASL for the rest of the session, after a check), They
-sit opposite me (turns the stage 180 degrees), Show skeleton on camera (a switch), Help (opens "During a session")
-and Finish session. ASL is marked Experimental.
+sit opposite me (turns the stage 180 degrees), Show skeleton on camera (a switch), Help (opens "During a session").
+Finishing is the header's End button. ASL is marked Experimental.
 
 ### Sign windows
 
@@ -108,13 +107,13 @@ phone's own reading stands.
 
 ### The express board
 
-Help on the stage opens the full picture board grouped as Feelings, Needs, Urgent, Safety, People, Places, Answers
-and Body. Every card is at least 56 dp. Water and Food are requests the person can make at any time.
+The tool bar's emoji button opens the full picture board, as Feelings, Needs, Urgent, Safety, People, Places,
+Answers and Body. Every card is at least 56 dp. Water and Food are requests the person can make at any time.
 
 ### The body map
 
-Help, Body shows a front and back figure. A touch answers as pain and records the side, the body part, the person's
-own left or right and the exact point, for example: body map, front: left chest.
+Body on the board shows a front and back figure. A touch answers as pain and records the side, the body part,
+the person's own left or right and the exact point, for example: body map, front: left chest.
 
 ### Stop and the pause
 
