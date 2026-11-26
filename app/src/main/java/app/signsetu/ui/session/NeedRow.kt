@@ -24,8 +24,6 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.ui.theme.LocalAnswerColors

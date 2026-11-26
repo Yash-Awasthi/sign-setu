@@ -12,7 +12,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -68,7 +67,6 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import app.signsetu.R
 import androidx.compose.runtime.mutableIntStateOf
@@ -82,7 +80,6 @@ import app.signsetu.data.content.toHindi
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.delay
 import app.signsetu.data.session.EventType
-import app.signsetu.data.session.Profile
 import app.signsetu.ui.avatar.MiniFace
 import app.signsetu.ui.components.GuardedAlertDialog
 import app.signsetu.ui.theme.LocalInk

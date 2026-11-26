@@ -2,7 +2,6 @@ package app.signsetu.ui.session
 
 import androidx.compose.material3.TextButton
 import app.signsetu.ui.components.GuardedAlertDialog
-import androidx.compose.material.icons.filled.Star
 import app.signsetu.camera.SkeletonOverlay
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,11 +42,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import app.signsetu.data.content.SignLanguage
 import app.signsetu.ui.components.FilterObscuredTouches
 import app.signsetu.ui.theme.Space
