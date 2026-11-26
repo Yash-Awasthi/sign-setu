@@ -107,3 +107,38 @@ Everything else in the table is a real difference. When the verdict is `differen
   that is `apksigner verify`'s job.
 - Reproof is only as strong as the manifest: two runs on different machines, JDKs or SDK
   builds can agree on the table above and still differ. Record the manifest with the result.
+
+## Cache reuse and build time
+
+Both caches are on for every build in `gradle.properties`: `org.gradle.caching=true` and
+`org.gradle.configuration-cache=true`. Measured on commit 3a7c3f9 in a scratch tree made by
+`git archive HEAD` with the untracked `local.properties` copied in, running
+`:app:assembleStandardDebug` on JDK 21.0.12.1, Gradle 9.8.2, 20 logical CPUs and 23.8 GiB of
+RAM. Each time is Gradle's own `BUILD SUCCESSFUL in ...` line; the wall clock around a run
+included a build lock shared with other work on the same machine, so the two do not agree.
+
+| Run | Configuration cache | Tasks | Time |
+| --- | --- | --- | --- |
+| `:app:help`, first | entry stored | 1 executed | 18 s |
+| `:app:help`, second | entry reused | 1 executed | 7 s |
+| `:app:assembleStandardDebug`, first | entry stored | 30 executed, 14 from cache | 2 m 30 s |
+| `:app:assembleStandardDebug`, second | entry reused | 5 executed, 39 up-to-date | 13 s |
+| `app/build` and `app/.cxx` deleted, then assemble | entry reused | 20 executed, 24 from cache | 2 m 45 s |
+| the same again | entry reused | 20 executed, 24 from cache | 2 m 8 s |
+
+Deleting the outputs does not empty the build cache: 24 of the 44 tasks of a debug assemble
+come back from it, `compileStandardDebugKotlin`, `kspStandardDebugKotlin`,
+`mergeStandardDebugResources`, `dexBuilderStandardDebug` and
+`packageStandardDebugResources` among them. The 20 that run are the CMake release builds and
+the packaging, signing and validation steps.
+
+Timed pair, one task, `app/build` and `app/.cxx` deleted before each run:
+
+| Caches | Run 1 | Run 2 | Median |
+| --- | --- | --- | --- |
+| as configured | 165 s | 128 s | 147 s |
+| `--no-build-cache -Dorg.gradle.configuration-cache=false` | 317 s | 275 s | 296 s |
+
+That is 149 s, 50 percent, off the uncached median. **local, not CI**: `gh run list` cannot
+read this repository's runs with the token on this host, so there is no pair of workflow runs
+to compare, and the figures come from one developer machine.
