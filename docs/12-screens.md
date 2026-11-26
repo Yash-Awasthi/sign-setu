@@ -2,6 +2,8 @@
 
 Every screen of the application, captured from the 0.8.5 `standard` debug build on an Android 14 emulator (Pixel 9 profile, 1080 by 2424 pixels, scaled to 720 wide), with Hindi as the subject language unless stated; the number pad, writing, sign window and ASL screens use English. Only "A signed answer" is still the 0.8.1 capture: the emulator camera cannot sign. The emulator camera shows its test scene. The final release build blocks screenshots (`secureScreen`, [security](04-security.md) §2.5).
 
+The same images are kept byte for byte in docs/screens/before/ as the baseline a later capture is compared with, and new captures go to docs/screens/after/.
+
 ## 1. Before a session
 
 | Screen | File | Notes |

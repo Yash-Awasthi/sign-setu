@@ -329,7 +329,8 @@ verified-here: TapToSignDeviceTest measured four kept runs per screen on ci34 (A
 Method: `design-ux` §1/§5 — screenshot every screen at 360/412/768 dp, measure
 geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 
-- [ ] Baseline screenshots of all screens (the 12 in `docs/12-screens.md`) into `docs/screens/before/`. `[D]`
+- [x] Baseline screenshots of all screens (the 12 in `docs/12-screens.md`) into `docs/screens/before/`. `[D]`
+  - verified-here: `py -3 tools/ux/check_baselines.py` -> 50 baselines verified, exit 0; `py -3 -m unittest discover -s tools/ux` -> 27 tests, OK; `py -3 tools/docs/check_docs.py` -> exit 0; the 50 emulator-rendered 0.8.5 captures are copied unchanged from docs/screens/.
 - [ ] One token set for spacing, type, radius and colour across the ten themes; no raw values in composables. `[D]`
 - [x] Screen inventory: every screen with its purpose, its three primary actions and its exit; anything without a purpose is removed. `[D]`
   verified-here: python tools/ux/check_inventory.py -> 8 screens: purpose, three actions and exit present; python -m unittest discover -s tools/ux -> 14 tests, OK
