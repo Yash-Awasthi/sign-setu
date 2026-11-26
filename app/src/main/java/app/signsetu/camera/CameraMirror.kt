@@ -171,6 +171,10 @@ fun CameraMirror(
     }
 
     val analysing = onFrame != null
+    // One ring per screen, not per effect restart: a rebind or a tracker change would otherwise allocate three new
+    // bitmaps (about 5 MB) that only the collector frees.
+    val converter = remember { FrameConverter(ring = 3) }
+    DisposableEffect(converter) { onDispose { converter.close() } }
     DisposableEffect(analysis, tracker, analysing) {
         val a = analysis
         if (a == null || tracker == null) return@DisposableEffect onDispose { shown = null; picture = null }
@@ -178,8 +182,6 @@ fun CameraMirror(
         val pipeline = FramePipeline()
         val blur = BlurMeter()
         val gate = LumaGate()
-        // Three buffers: the screen draws one while the next is written.
-        val converter = FrameConverter(ring = 3)
         // Hands are read on this thread, so it runs ahead of ordinary work.
         val executor = Executors.newSingleThreadExecutor { r -> Thread { Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY); r.run() } }
         var lastMs: Long? = null
@@ -225,7 +227,6 @@ fun CameraMirror(
         onDispose {
             power?.removeThermalStatusListener(thermal)
             a.clearAnalyzer()
-            executor.execute { converter.close() }
             executor.shutdown()
             shown = null
             picture = null

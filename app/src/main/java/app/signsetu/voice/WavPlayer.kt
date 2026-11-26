@@ -55,6 +55,16 @@ object WavPlayer {
                 .build()
         }.onFailure { Log.w("WavPlayer", "no audio track", it) }.getOrNull()
         if (t == null) { pcm.fill(0); return }
+        // Frees the track when the take ends: otherwise it is only released by the next play, and a session that
+        // plays one answer holds a static AudioTrack for the rest of the process.
+        val frames = pcm.size / frame
+        if (frames > 0) runCatching {
+            t.setNotificationMarkerPosition(frames)
+            t.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
+                override fun onMarkerReached(track: AudioTrack?) = stop()
+                override fun onPeriodicNotification(track: AudioTrack?) = Unit
+            })
+        }
         val ok = runCatching { (t.write(pcm, 0, pcm.size) >= 0).also { if (it) t.play() } }.getOrDefault(false)
         pcm.fill(0)
         if (!ok) { t.release(); return }
@@ -63,7 +73,7 @@ object WavPlayer {
 
     @Synchronized
     fun stop() {
-        track?.let { runCatching { it.stop() }; it.release() }
+        track?.let { runCatching { it.stop() }; runCatching { it.release() } }
         track = null
     }
 }

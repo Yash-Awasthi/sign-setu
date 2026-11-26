@@ -38,16 +38,16 @@ class SpeechPlayer(private val context: Context, private val intact: (String) ->
         player.play()
     }
 
-    private val voice by lazy { OfflineVoice(context) }
+    private val voice = LazyResource { OfflineVoice(context) }
 
     /** Typed text with no recording and no online voice: the phone's own Hindi or English voice, if it has one. */
-    fun speakOffline(text: String, lang: String?, speed: Float = 1f) = !SubjectSpeech.muted.value && voice.speak(text, lang, speed)
+    fun speakOffline(text: String, lang: String?, speed: Float = 1f) = !SubjectSpeech.muted.value && voice.get().speak(text, lang, speed)
 
-    fun stop() { player.stop(); voice.stop() }
+    fun stop() { player.stop(); voice.peek()?.stop() }
 
     fun release() {
         player.release()
-        voice.shutdown()
+        voice.take()?.shutdown()
         java.io.File(context.cacheDir, SPOKEN).delete()
     }
 }
@@ -58,6 +58,8 @@ fun rememberSpeechPlayer(): SpeechPlayer {
     val repo = LocalContentRepository.current
     val player = remember { SpeechPlayer(context, repo::intact) }
     DisposableEffect(player) { onDispose { player.release() } }
+    // Backgrounding does not dispose the stage; speech would otherwise keep playing behind another app.
+    StopOnBackground { player.stop() }
     return player
 }
 

@@ -95,7 +95,14 @@ class SessionReport(private val context: Context) {
     ): File =
         withContext(Dispatchers.IO) {
             purgeStaleExports()
-            val pdf = render(rows, text, drawing, section, aiSummary, certificateText, chainDigest, seal, attachments)
+            // Closed here, not inside render(): a throw while laying out a page would otherwise leave the native
+            // document open until the collector ran.
+            val doc = PdfDocument()
+            val pdf = try {
+                render(doc, rows, text, drawing, section, aiSummary, certificateText, chainDigest, seal, attachments)
+            } finally {
+                doc.close()
+            }
             val dir = exportsDir(context).apply { mkdirs() }
             try {
                 writeReport(dir, "sign-setu-report-${System.currentTimeMillis()}.pdf", pdf)
@@ -105,6 +112,7 @@ class SessionReport(private val context: Context) {
         }
 
     private suspend fun render(
+        pdf: PdfDocument,
         rows: List<ReportRow>,
         text: ReportText,
         drawing: suspend (Long) -> ByteArray?,
@@ -115,7 +123,6 @@ class SessionReport(private val context: Context) {
         seal: ReportSeal?,
         attachments: List<Pair<String, ByteArray>>,
     ): ByteArray {
-        val pdf = PdfDocument()
         val pages = mutableListOf<PdfDocument.Page>()
         val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 17f; typeface = Typeface.DEFAULT_BOLD }
         val bodyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 10f }
@@ -320,7 +327,7 @@ class SessionReport(private val context: Context) {
         page?.let { pdf.finishPage(it) }
 
         // Page numbers need the final count, so they are written after the PDF is laid out, by PdfBox.
-        val bytes = ByteArrayOutputStream().use { out -> pdf.writeTo(out); pdf.close(); out.toByteArray() }
+        val bytes = ByteArrayOutputStream().use { out -> pdf.writeTo(out); out.toByteArray() }
         return numberPages(bytes, text, recordDigest(rows), chainDigest, seal?.qr, attachments)
     }
 

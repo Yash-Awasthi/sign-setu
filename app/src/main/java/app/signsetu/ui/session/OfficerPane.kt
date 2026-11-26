@@ -217,6 +217,9 @@ fun OfficerPane(
         onDispose { before?.let { controller.isAppearanceLightStatusBars = it } }
     }
 
+    // Leaving the pane silences a recorded answer; without this the static AudioTrack plays on after the screen.
+    DisposableEffect(Unit) { onDispose { app.signsetu.voice.WavPlayer.stop() } }
+
     var run by rememberSaveable { mutableStateOf(listOf<String>()) }
     var sayingBackId by rememberSaveable { mutableStateOf<Long?>(null) }
     val sayingBack = ui.events.firstOrNull { it.id == sayingBackId }

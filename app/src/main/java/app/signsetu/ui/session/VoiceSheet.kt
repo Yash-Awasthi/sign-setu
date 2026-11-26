@@ -37,6 +37,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.signsetu.R
 import app.signsetu.net.BrainClient
+import app.signsetu.ui.components.StopOnBackground
 import app.signsetu.ui.theme.Space
 import app.signsetu.voice.VoiceCapture
 import kotlinx.coroutines.NonCancellable
@@ -69,6 +70,11 @@ internal fun VoiceSheet(
     val granted = mic.granted
     LaunchedEffect(Unit) { while (true) withFrameMillis { level = capture.level } }
     DisposableEffect(capture) { onDispose { capture.clear() } }
+    // The sheet stays composed while the app is backgrounded; a take there is silence (or refused) with the
+    // microphone indicator still on, so it is dropped instead.
+    StopOnBackground {
+        if (recording) { recording = false; capture.clear() }
+    }
 
     fun finish() {
         if (!recording) return
