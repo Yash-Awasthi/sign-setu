@@ -480,6 +480,7 @@ fun Stage(
                 onDismiss = { showExpressBoard = false },
                 onBodyTouch = { t -> onCue(t.cue); onCard(HURT_CARD); reacting = true },
                 onFeeling = { f -> onCue(f.cue); onCard(f.mood.card); reacting = true },
+                onCall = { id -> onCue(callCue(id)); onCard(id); reacting = true },
                 // Faces the subject like the rest of the stage.
                 modifier = Modifier.graphicsLayer { rotationZ = if (ui.rotated) 180f else 0f },
             )

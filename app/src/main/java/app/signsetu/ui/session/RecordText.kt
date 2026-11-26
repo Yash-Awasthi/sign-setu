@@ -99,6 +99,7 @@ fun recordDetail(res: Resources, content: ContentBundle, lang: String, events: L
 fun cueText(res: Resources, e: SessionEvent): String? {
     val reason = e.reason?.takeIf { e.type == EventType.ANSWER_CARD }
     Feeling.parse(reason)?.let { return "(" + res.getString(R.string.cue_feel, it.pain) + ")" }
+    calledRole(reason)?.let { return "(" + res.getString(R.string.cue_call, e.text ?: it) + ")" }
     return BodyTouch.parse(reason)?.let { t ->
         val side = res.getString(if (t.side == BodySide.FRONT) R.string.hurt_front else R.string.hurt_back)
         val whose = when (t.personsLeft) { true -> res.getString(R.string.part_left) + " "; false -> res.getString(R.string.part_right) + " "; null -> "" }
