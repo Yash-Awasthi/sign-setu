@@ -25,7 +25,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | Avatar authoring ([05](05-avatar-and-gestures.md)) | MediaPipe (Holistic) | Apache-2.0 | Tool | Landmarks from recorded signers, retargeted onto the character |
 | Avatar runtime | three.js 0.160 | MIT | Ship | WebGL renderer in the avatar module |
 | | three-vrm 3.0 (pixiv) | MIT | Ship | VRM 1.0 loading, expressions and spring bones |
-| | `ISL Sample 1` VRM model by Leo | VRM Public License 1.0, credit required, redistribution and avatar use reserved | Ship only with the author's written licence | The character; clip kinematics in `avatar/src/clip.ts` from the SignSetu avatar module (Lilesh Lahre) |
+| | `ISL Sample 1` VRM model by Leo | VRM Public License 1.0, credit required; redistribution permitted (`allowRedistribution: true`), avatar permission `onlySeparatelyLicensedPerson`, modification prohibited | Ship unmodified with the generated credit; department-wide use needs the author's written permission | The character; clip kinematics in `avatar/src/clip.ts` from the SignSetu avatar module (Lilesh Lahre) |
 | | ISL-CSLTR sentence videos | CC BY 4.0 | Data | Recorded sentence clips (`clips.json`) through `tools/text2isl` |
 | | Media3 ExoPlayer | Apache-2.0 | Ship | Recorded speech |
 | | Rive Android runtime 10.4 | MIT | Ship | Drives a department-supplied `.riv` character from the rig; loads only when chosen |
@@ -75,13 +75,13 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 | | zip4j | Apache-2.0 | Alternative | AES-256 zip; recipients need 7-Zip, so PDF is preferred |
 | Drawing canvas | Compose Canvas | Platform | Ship | No library needed |
 | Camera mirror | CameraX (camera-camera2, camera-lifecycle, camera-compose) | Apache-2.0 | Ship | Preview and ImageAnalysis only; no capture or recording |
-| Type | Baloo 2 (Ek Type) | SIL OFL 1.1 | Ship (font) | Latin and Devanagari; licence text kept with the font |
+| Type | Baloo 2 (Ek Type) | SIL OFL 1.1 | Ship (font) | Latin and Devanagari; only `res/font/baloo2.ttf` is in the tree, so the OFL text must be added next to it |
 | Icons | Material Icons (selected vectors) | Apache-2.0 | Ship (assets) | Hand, grid, translate, keyboard, camera, volume, pin |
 | Interpreter call | Sandes (NIC) or WhatsApp, opened by intent or link | Government service; third-party app | Ship (hand-off only) | Video call happens in the messenger, not in this app; no library needed |
 | | Jitsi Meet | Apache-2.0 | Not chosen | Would need a self-hosted server, which has a running cost |
 | Screen pinning | `Activity.startLockTask` | Platform | Ship | No library needed |
 | Second screen | Android Bluetooth RFCOMM | Platform | Ship | Bonded devices only; no library needed |
-| | Google Play services Nearby Connections 19.5.1 | Google APIs Terms of Service (not open source) | Ship in the `nearby` flavor only | Never in the standard build |
+| | Google Play services Nearby Connections 19.5.1 | Google APIs Terms of Service (not open source) | Ship in the `nearby` flavor only | Never in the standard build. Three further artifacts arrive transitively: play-services-base 18.5.0, play-services-basement 18.9.0, play-services-tasks 18.2.0. |
 | | Ping (CryptoUtils, NearbyTransport) | MIT | Reference | Design reused: P-256 ECDH, HKDF-SHA256, AES-256-GCM, 6-digit short authentication string, transport interface with an in-process fake for JVM tests; written afresh in Kotlin |
 | Reviewer portal | vite-plus 1.3.0 (the `vp` command line) | MIT | Tool | Build, check and test of the static portal; not shipped in the app |
 | | React 19.3.1, React DOM | MIT | Tool | Portal user interface |
@@ -94,7 +94,7 @@ GPL and AGPL code is never shipped in the app (policy §2); it may be used as a 
 
 ## 2. Attribution
 
-The INCLUDE, OpenHands, PopSign ASL, ISL-CSLTR, ASLNow!, ISLRTC dictionary, Kaggle ISL video, ISL-Fingerspelling, Google ASL and MediaPipe notices appear in the app's **Settings > Open-source licences**, the ISL dictionary carries the INCLUDE notice for recorded signs, and all travel with any redistribution of the models or motions.
+The INCLUDE, OpenHands, PopSign ASL, ISL-CSLTR, ASLNow!, ISLRTC dictionary, Kaggle ISL video, ISL-Fingerspelling, Google ASL and MediaPipe notices are listed in `THIRD-PARTY-NOTICES.md`; the ISL dictionary carries the INCLUDE notice for recorded signs, and all travel with any redistribution of the models or motions. The app's Settings > Open-source licences dialog holds the hand-written list and the generated avatar credit, not the full 202-component notices file.
 
 - **INCLUDE**: "INCLUDE: A Large Scale Dataset for Indian Sign Language Recognition" by Advaith Sridhar, Rohith Gandhi Ganesan, Pratyush Kumar and Mitesh Khapra (IIT Madras, AI4Bharat), ACM Multimedia 2020, Zenodo doi:10.5281/zenodo.4010759, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: a sign classifier was trained on its landmarks, and the signers' landmarks for each word were retargeted onto the app's characters as keyframes.
 - **OpenHands**: "OpenHands v1: Labelled ISLR datasets, Poses" (AI4Bharat), Zenodo record 6674324, licensed under CC BY 4.0. Changes: poses resampled and normalised as reader input.
