@@ -166,7 +166,8 @@ harm.
 
 ### M2.3 Data and privacy guarantees as tests
 
-- [ ] A test that the app performs no network request with the online assistant off and no station paired (instrumented, checking the socket layer). `[P]`
+- [x] A test that the app performs no network request with the online assistant off and no station paired (instrumented, checking the socket layer). `[P]`
+  - verified-here: ./gradlew :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.NoNetworkOfflineDeviceTest -> BUILD SUCCESSFUL, OK (1 test), counted ProxySelector selections 0 offline and 1 for the dead-port control.
 - [x] A test that the GGUF model is refused unless its SHA-256 is on the allow-list. `[P]`
   - verified-here: ./gradlew :app:testStandardDebugUnitTest --tests app.signsetu.ModelAllowListTest -> BUILD SUCCESSFUL, 5 tests, 0 failures (listed hash accepted, one flipped byte and unlisted hash refused, shipped lists 64-hex).
 - [ ] A test that a session's database file is unreadable without the Keystore key (extract the file, attempt to open). `[P]`
