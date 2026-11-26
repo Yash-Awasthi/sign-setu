@@ -17,6 +17,7 @@ import java.security.spec.ECFieldFp
 import java.security.spec.ECGenParameterSpec
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
+import java.util.Locale
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
 import javax.crypto.Mac
@@ -121,8 +122,10 @@ internal fun derive(ss: ByteArray, transcript: ByteArray, resumeKey: ByteArray?,
     val checkBytes = Hkdf.expand(prk, "signsetu stage v1 confirm", 4)
     prk.fill(0)
     fun digits(bytes: ByteArray, mod: Long) = bytes.fold(0L) { acc, b -> (acc shl 8) or (b.toLong() and 0xFF) } % mod
-    val code = "%06d".format(digits(codeBytes, 1_000_000L))
-    val check = "%04d".format(digits(checkBytes, 10_000L))
+    // Locale.ROOT: on a phone whose locale has its own digits (Arabic, Persian, Bengali) the default formatter would
+    // print characters the officer's keypad cannot type, and the stage's code would differ from the officer's.
+    val code = "%06d".format(Locale.ROOT, digits(codeBytes, 1_000_000L))
+    val check = "%04d".format(Locale.ROOT, digits(checkBytes, 10_000L))
     return if (officer) LinkKeys(o2s, s2o, code, newResume, peerModel, check) else LinkKeys(s2o, o2s, code, newResume, peerModel, check)
 }
 

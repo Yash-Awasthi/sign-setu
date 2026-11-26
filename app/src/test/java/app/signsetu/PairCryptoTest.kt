@@ -4,6 +4,8 @@ import app.signsetu.pair.Identity
 import app.signsetu.pair.LinkSession
 import app.signsetu.pair.PairAbort
 import app.signsetu.pair.Abort
+import app.signsetu.pair.codeMatches
+import app.signsetu.pair.derive
 import app.signsetu.pair.officerHandshake
 import app.signsetu.pair.stageHandshake
 import kotlinx.coroutines.Dispatchers
@@ -12,11 +14,13 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import java.util.Locale
 
 class PairCryptoTest {
 
@@ -76,6 +80,33 @@ class PairCryptoTest {
         stageSendTask.await()
         val receivedOnOfficer = officerRecvTask.await()
         assertArrayEquals(stagePayload, receivedOnOfficer)
+    }
+
+    /**
+     * The officer reads the code off the stage and types it into a numeric keypad, then [codeMatches] compares ASCII
+     * bytes: a code written in a locale's own digits (Arabic, Persian, Bengali) can never be typed or matched.
+     */
+    @Test
+    fun pairingCodeIsAsciiDigitsWhateverTheDeviceLocale() {
+        val transcript = "transcript".toByteArray()
+        val secret = ByteArray(32) { it.toByte() }
+        val before = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.US)
+            val english = derive(secret.copyOf(), transcript, null, officer = true, peerModel = "Pixel 6")
+            Locale.setDefault(Locale.forLanguageTag("ar-EG"))
+            val arabic = derive(secret.copyOf(), transcript, null, officer = true, peerModel = "Pixel 6")
+            assertEquals(6, arabic.code.length)
+            assertEquals(4, arabic.check.length)
+            assertTrue("code is not ASCII digits: ${arabic.code}", arabic.code.all { it in '0'..'9' })
+            assertTrue("check is not ASCII digits: ${arabic.check}", arabic.check.all { it in '0'..'9' })
+            // The stage shows the code and the officer's phone computes it too: both must be the same string.
+            assertEquals(english.code, arabic.code)
+            assertEquals(english.check, arabic.check)
+            assertTrue(codeMatches(arabic.code, arabic.code))
+        } finally {
+            Locale.setDefault(before)
+        }
     }
 
     @Test
