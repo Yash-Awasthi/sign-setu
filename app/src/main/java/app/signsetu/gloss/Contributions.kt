@@ -38,6 +38,9 @@ class Contributions(
     private var flusher: Job? = null
     private val uploadLock = Any()
 
+    /** False in release builds: they record nothing and send nothing, even if a debug install left files behind. */
+    @Volatile private var enabled = true
+
     /** Random and local: the only link between a signer and their uploads, and the key to deleting them. */
     val signer: String by lazy {
         val f = File(root, "signer.txt")
@@ -47,19 +50,22 @@ class Contributions(
         }.also { root.mkdirs(); f.writeText(it) }
     }
 
-    val consented: Boolean get() = consentFile.exists() && consentFile.readText().trim() == CONSENT_VERSION
+    val consented: Boolean get() = enabled && consentFile.exists() && consentFile.readText().trim() == CONSENT_VERSION
 
     // Same monitor as save's write, so a queued record cannot land after withdrawal clears the queue.
-    fun setConsent(on: Boolean) = synchronized(this) {
-        root.mkdirs()
-        if (on) {
-            consentFile.writeText(CONSENT_VERSION)
-            kick()
-        } else {
-            // Withdrawal stops the queue at once: nothing not yet sent will be.
-            consentFile.delete()
-            flusher?.cancel()
-            queue.listFiles()?.forEach { it.delete() }
+    fun setConsent(on: Boolean) {
+        if (!enabled) return
+        synchronized(this) {
+            root.mkdirs()
+            if (on) {
+                consentFile.writeText(CONSENT_VERSION)
+                kick()
+            } else {
+                // Withdrawal stops the queue at once: nothing not yet sent will be.
+                consentFile.delete()
+                flusher?.cancel()
+                queue.listFiles()?.forEach { it.delete() }
+            }
         }
     }
 
@@ -75,6 +81,7 @@ class Contributions(
         val text = record.toString()
         // Off the caller's (often the main) thread; one writer at a time keeps names unique.
         return scope.launch(Dispatchers.IO) {
+            if (!enabled) return@launch
             synchronized(this@Contributions) {
                 val name = uniqueName(kind)
                 runCatching { writeAtomic(File(sessions, name), text) }
@@ -110,7 +117,7 @@ class Contributions(
     /** Starts sending in the background unless already sending; waits longer after each failure, up to an hour. */
     @Synchronized
     fun kick() {
-        if (flusher?.isActive == true || base.isEmpty()) return
+        if (!enabled || flusher?.isActive == true || base.isEmpty()) return
         flusher = scope.launch(Dispatchers.IO) {
             var wait = FIRST_RETRY_MS
             while (consented && !deletionPendingFile.exists() && pending() > 0) {
@@ -144,6 +151,38 @@ class Contributions(
             reply.ok || reply.code == 422 || reply.code == 413 -> { files.forEach { it.delete() }; true }
             else -> false
         }
+    }
+
+    /** Deletes local records and queued uploads older than [maxAgeMs]; the consent and the signer id are settings. */
+    fun purgeExpired(nowMs: Long = System.currentTimeMillis(), maxAgeMs: Long = app.signsetu.data.session.LocalRetention.CONTRIB_MAX_AGE_MS): Int =
+        synchronized(this) {
+            var deleted = 0
+            val files = sessions.listFiles().orEmpty().toList() + queue.listFiles().orEmpty().toList()
+            for (file in files) {
+                val stale = maxAgeMs <= 0 || nowMs - file.lastModified() >= maxAgeMs
+                if ((stale || file.name.endsWith(".part")) && file.delete()) deleted++
+            }
+            deleted
+        }
+
+    /** Release builds send nothing: the consent and the queue a debug install left are discarded; local records stay
+     * on the phone, where retention expires them, and are never uploaded. */
+    fun restrictToDebug(debug: Boolean) {
+        enabled = debug
+        if (debug) return
+        synchronized(this) {
+            flusher?.cancel()
+            flusher = null
+            consentFile.delete()
+            queue.listFiles()?.forEach { it.delete() }
+        }
+    }
+
+    /** Removes every local record, queued upload, consent and signer id (Clear all data). */
+    fun discardAll(): Int = synchronized(this) {
+        flusher?.cancel()
+        flusher = null
+        app.signsetu.data.session.LocalRetention.purgeAll(root)
     }
 
     /** Asks the gateway to delete everything this signer sent; true once it has. */

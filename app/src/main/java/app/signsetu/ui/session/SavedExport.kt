@@ -87,5 +87,8 @@ private fun write(context: Context, folder: String, name: String, mime: String, 
         put(MediaStore.MediaColumns.RELATIVE_PATH, "$folder/")
     }
     val uri = resolver.insert(files, values) ?: return false
-    return runCatching { resolver.openOutputStream(uri)?.use { it.write(bytes) } != null }.getOrDefault(false)
+    val ok = runCatching { resolver.openOutputStream(uri)?.use { it.write(bytes) } != null }.getOrDefault(false)
+    // A failed write leaves no empty file behind claiming to be the report; the row is this app's own.
+    if (!ok) runCatching { resolver.delete(uri, null, null) }
+    return ok
 }

@@ -169,6 +169,8 @@ class SettingsStore(private val context: Context) {
     suspend fun setStationLink(on: Boolean) = context.store.edit { it[Keys.stationLink] = on }
     suspend fun setStationOff(keys: Set<String>) = context.store.edit { it[Keys.stationOff] = keys }
     suspend fun setOfficerId(id: String) = context.store.edit { it[Keys.officerId] = storedOfficerId(id) }
+    /** Clear all data: every setting returns to its default, as on a fresh install. */
+    suspend fun clear() = context.store.edit { it.clear() }
     suspend fun toggleFavourite(cardId: String) = context.store.edit {
         val now = it[Keys.favourites].orEmpty()
         it[Keys.favourites] = if (cardId in now) now - cardId else now + cardId

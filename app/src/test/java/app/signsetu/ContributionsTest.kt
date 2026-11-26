@@ -91,6 +91,74 @@ class ContributionsTest {
         }
     }
 
+    @Test
+    fun releaseBuildDropsConsentAndQueueLeftByADebugInstall() {
+        val root = Files.createTempDirectory("contributions-release").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            seedQueuedRecord(root)
+            File(root, "consent.txt").writeText(app.signsetu.gloss.CONSENT_VERSION)
+            File(root, "sessions").mkdirs()
+            File(File(root, "sessions"), "kept.json").writeText("{}")
+            val contributions = Contributions(root, "https://gateway.test", Http { _, _, _, _, _ -> null }, TestVault, { true }, scope)
+
+            contributions.restrictToDebug(false)
+
+            assertFalse(contributions.consented)
+            assertEquals(0, contributions.pending())
+            assertFalse("the consent file is gone", File(root, "consent.txt").exists())
+            assertTrue("local records are not an upload queue", File(root, "sessions/kept.json").exists())
+        } finally {
+            scope.cancel()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun debugBuildKeepsConsentAndQueue() {
+        val root = Files.createTempDirectory("contributions-debug").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            seedQueuedRecord(root)
+            File(root, "consent.txt").writeText(app.signsetu.gloss.CONSENT_VERSION)
+            val contributions = Contributions(root, "https://gateway.test", Http { _, _, _, _, _ -> null }, TestVault, { false }, scope)
+
+            contributions.restrictToDebug(true)
+
+            assertTrue(contributions.consented)
+            assertEquals(1, contributions.pending())
+        } finally {
+            scope.cancel()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun purgeExpiredDropsOldRecordsButKeepsTheConsent() {
+        val root = Files.createTempDirectory("contributions-purge").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val now = 1_000_000_000_000L
+        try {
+            File(root, "sessions").mkdirs()
+            File(root, "queue").mkdirs()
+            val old = File(root, "sessions/old.json").apply { writeText("{}"); setLastModified(now - 31L * 24 * 60 * 60 * 1000) }
+            val fresh = File(root, "sessions/fresh.json").apply { writeText("{}"); setLastModified(now - 1000) }
+            val queued = File(root, "queue/old.json").apply { writeText("{}"); setLastModified(now - 31L * 24 * 60 * 60 * 1000) }
+            File(root, "consent.txt").writeText(app.signsetu.gloss.CONSENT_VERSION)
+            val contributions = Contributions(root, "https://gateway.test", Http { _, _, _, _, _ -> null }, TestVault, { false }, scope)
+
+            assertEquals(2, contributions.purgeExpired(now))
+
+            assertFalse(old.exists())
+            assertTrue(fresh.exists())
+            assertFalse(queued.exists())
+            assertTrue("consent is a setting, not a record", contributions.consented)
+        } finally {
+            scope.cancel()
+            root.deleteRecursively()
+        }
+    }
+
     private fun seedQueuedRecord(root: File) {
         val queue = File(root, "queue")
         assertTrue(queue.mkdirs() || queue.isDirectory)

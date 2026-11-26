@@ -21,6 +21,10 @@ object DebugRecorder {
     /** Set at start in debug builds; null switches recording off. */
     @Volatile var dir: File? = null
 
+    /** Where the captures live on this phone, whether or not recording is on: a release build then clears what a
+     * debug one left behind. */
+    fun folder(app: android.content.Context): File? = app.getExternalFilesDir("recordings")
+
     fun window(eventId: Long, question: String?, segments: List<SignSegment>, appVersion: String) {
         val d = dir ?: return
         val record = record(eventId, question, segments, appVersion)

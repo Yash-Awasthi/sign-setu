@@ -25,6 +25,8 @@ import app.signsetu.net.BrainClient
 import app.signsetu.data.session.RetentionJob
 import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
+import app.signsetu.data.session.LocalRetention
+import app.signsetu.data.session.Provenance
 import app.signsetu.data.settings.SettingsStore
 import app.signsetu.camera.LandmarkTracker
 import app.signsetu.camera.LandmarkTrackers
@@ -32,6 +34,10 @@ import app.signsetu.data.content.SignLanguage
 import app.signsetu.sign.SignReader
 import app.signsetu.sign.SignReaders
 import app.signsetu.export.SessionReport
+import app.signsetu.export.ExportSweeper
+import app.signsetu.export.FileExportStore
+import app.signsetu.export.MediaStoreExportStore
+import app.signsetu.gloss.DebugRecorder
 import app.signsetu.pair.ByeReason
 import app.signsetu.pair.Identity
 import app.signsetu.pair.LinkRole
@@ -66,7 +72,7 @@ class SignSetuApp : Application() {
         // iroh reads network state through the app's context; nothing connects until a brain is paired by ticket.
         app.signsetu.net.IrohBrain.init(this)
         // Debug builds record sign windows for the evaluation set (docs/15-gloss-to-text.md); release builds never do.
-        if (BuildConfig.DEBUG) app.signsetu.gloss.DebugRecorder.dir = getExternalFilesDir("recordings")
+        if (BuildConfig.DEBUG) app.signsetu.gloss.DebugRecorder.dir = app.signsetu.gloss.DebugRecorder.folder(this)
         container = AppContainer(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(container)
         RetentionJob.schedule(this)
@@ -81,7 +87,16 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     val models = ModelStore(app)
     /** The optional sentence helper, imported separately from the assistant's model. */
     val sentenceModel = ModelStore(app, "sentence", ModelStore.KNOWN_SENTENCE_MODELS)
-    val onlineAssistant = OnlineAssistant({ settings.current().onlineAssistant }, BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, ""), KeystoreVault(app, "assist.bin", "signsetu.assist.key")) { isOnline(app) }
+    val onlineAssistant = OnlineAssistant(
+        { settings.current().onlineAssistant },
+        BuildConfig.GATEWAY_URL,
+        UrlHttp(),
+        KeystoreVault(app),
+        Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, ""),
+        KeystoreVault(app, "assist.bin", "signsetu.assist.key"),
+        online = { isOnline(app) },
+        identifiers = { listOfNotNull(officerId.takeIf { it.isNotBlank() }, deviceKeyId) },
+    )
     val assistant = Assistant(models, onlineAssistant)
     /** The station's local brain, when paired (Settings, Local AI brain). */
     val brain = BrainClient(KeystoreVault(app, "brain.bin", "signsetu.brain.key"))
@@ -126,6 +141,10 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     /** Signs recorded for training, uploaded only on the signer's opt-in. */
     val contributions = Contributions(File(app.filesDir, "contrib"), BuildConfig.GATEWAY_URL, UrlHttp(), KeystoreVault(app), { isOnline(app) }, scope)
 
+    /** The officer's service number as last read from Settings; short enough to escape a digit rule, so masked by value. */
+    @Volatile private var officerId = ""
+    private val deviceKeyId: String? by lazy { DeviceSeal.fingerprint()?.take(16) }
+
     private val warmStarted = AtomicBoolean(false)
     private val _warmDone = MutableStateFlow(false)
     /** True once the content bundle, the landmark model and every sign reader finished loading, or failed to. */
@@ -150,7 +169,10 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         scope.launch(Dispatchers.IO) { settings.current().let { onlineAssistant.restoreCustom(it.devAiUrl, it.devAiModel); brain.setOn(it.stationLink) } }
         // The officer's choice of what goes to the station applies as soon as it changes in Settings.
         scope.launch {
-            settings.settings.collect { s -> brain.setAllowed(BrainClient.Feature.entries.filter { it == BrainClient.Feature.GLOSS || (if (it == BrainClient.Feature.PLAN) "llm" else it.key) !in s.stationOff }.toSet()) }
+            settings.settings.collect { s ->
+                officerId = s.officerId
+                brain.setAllowed(BrainClient.Feature.entries.filter { it == BrainClient.Feature.GLOSS || (if (it == BrainClient.Feature.PLAN) "llm" else it.key) !in s.stationOff }.toSet())
+            }
         }
         onlineAssistant.station = { system, user, maxTokens, timeoutMs, names, details -> brain.chat(system, user, maxTokens, timeoutMs, names, details) }
         onlineAssistant.stationUp = { brain.can(BrainClient.Feature.LLM) }
@@ -164,7 +186,14 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
                 }
             })
         }
+        // A release build records nothing; a queue left by a debug install is discarded rather than sent.
+        contributions.restrictToDebug(BuildConfig.DEBUG)
         contributions.kick()
+        // Plaintext copies and local captures are swept at launch, not only when the next export runs.
+        scope.launch(Dispatchers.IO) {
+            sweepExports(settings.current().retentionHours)
+            sweepLocalCaptures()
+        }
         warm()
     }
     private var database: SessionDatabase? = null
@@ -209,11 +238,13 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
             if (epoch != started) { db.close(); return@withContext }
             val repo = SessionRepository(
                 db.dao(), onSessionStarted = { settings.setNewestSessionAt(it) },
-                provenance = { provenanceLine(app, settings.current().officerId) }, signer = { line -> DeviceSeal.sign(line) },
+                provenance = { provenance().line() }, signer = { line -> DeviceSeal.sign(line) },
+                // Saved once, the training record and debug capture folders do not wait for the next start.
+                onSessionEnded = { withContext(Dispatchers.IO) { sweepLocalCaptures() } },
             )
             repo.purgeExpired(settings.current().retentionHours)
-            // Exported reports are only needed while the share sheet hands them over.
-            SessionReport.exportsDir(app).deleteRecursively()
+            // A cached share copy is no longer needed once the app is locked; saved copies follow retention.
+            sweepExports(settings.current().retentionHours, cacheMaxAgeMs = 0)
             withContext(Dispatchers.Main) {
                 if (epoch != started) { db.close(); return@withContext }
                 database = db
@@ -299,7 +330,45 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         runCatching { open?.close() }
         databaseKey.destroy()
         SessionReport.exportsDir(app).deleteRecursively()
+        // The stores outside the database are swept off the main thread; the saved Documents copies need MediaStore.
+        val now = System.currentTimeMillis()
+        scope.launch(Dispatchers.IO) {
+            settings.clear()
+            ExportSweeper.sweep(MediaStoreExportStore(app), now, 0)
+            contributions.discardAll()
+            DebugRecorder.folder(app)?.let { LocalRetention.purgeAll(it) }
+        }
     }
+
+    /** Cached share PDFs live briefly; the saved Documents copies follow the session retention, and 0 keeps them. */
+    private suspend fun sweepExports(retentionHours: Int, cacheMaxAgeMs: Long = ExportSweeper.CACHE_MAX_AGE_MS) =
+        withContext(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            ExportSweeper.sweep(FileExportStore(SessionReport.exportsDir(app)), now, cacheMaxAgeMs)
+            if (retentionHours > 0) {
+                ExportSweeper.sweep(MediaStoreExportStore(app), now, retentionHours.toLong() * 3_600_000L)
+            }
+        }
+
+    /** Training landmarks and debug captures sit outside the encrypted database, so retention has to reach them here. */
+    private fun sweepLocalCaptures(nowMs: Long = System.currentTimeMillis()) {
+        contributions.purgeExpired(nowMs)
+        DebugRecorder.folder(app)?.let { LocalRetention.purge(it, nowMs, LocalRetention.DEBUG_RECORDING_MAX_AGE_MS) }
+    }
+
+    /** What every record says about the phone and the officer, as named fields; the same line is stored and exported. */
+    private suspend fun provenance() = Provenance(
+        app = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+        content = contentHash(),
+        deviceKey = deviceKeyId,
+        officer = settings.current().officerId.takeIf { it.isNotBlank() },
+    )
+
+    private fun contentHash(): String = runCatching {
+        app.assets.open("content/manifest.json").use {
+            java.security.MessageDigest.getInstance("SHA-256").digest(it.readBytes()).toHexString().take(16)
+        }
+    }.getOrDefault("none")
 
     init {
         app.registerComponentCallbacks(this)
@@ -339,6 +408,10 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
      * Runs at every return to the foreground and hourly from [RetentionJob]. */
     fun sweepRetention() = scope.launch {
         val current = settings.current()
+        withContext(Dispatchers.IO) {
+            sweepExports(current.retentionHours)
+            sweepLocalCaptures()
+        }
         sessions.value?.let { repo ->
             repo.purgeExpired(current.retentionHours)
             return@launch
@@ -363,14 +436,4 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         const val RELOCK_IN_SESSION_MS = 30 * 60 * 1000L
         const val TAG = "SignSetu"
     }
-}
-
-/** App build, content bundle and device key, so a record names what produced it, and the officer when they chose to be named. */
-private fun provenanceLine(context: android.content.Context, officerId: String): String {
-    val content = runCatching {
-        context.assets.open("content/manifest.json").use { java.security.MessageDigest.getInstance("SHA-256").digest(it.readBytes()).toHexString().take(16) }
-    }.getOrDefault("none")
-    val key = DeviceSeal.fingerprint()?.take(16) ?: "none"
-    return "app ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}), content $content, device key $key" +
-        (officerId.takeIf { it.isNotBlank() }?.let { ", officer $it" } ?: "")
 }
