@@ -215,8 +215,9 @@ SQLCipher 4.19.1) moves faster than the test evidence around it.
   - [ ] AGP, Kotlin, Compose BOM, Room and SQLCipher to the current stable line; re-run the instrumented suite and record any behaviour change. `[F]`
     blocked: the upgrade rewrites app/build.gradle.kts, app/gradle.lockfile and gradle/verification-metadata.xml, which are the owner dirty files; no version is moved over them.
 - **m3.1.2 Build speed**
-  - [x] Gradle: configuration cache, build cache, and a measured CI time reduction. `[F]`
-  - verified-here: `:app:assembleStandardDebug` twice in a `git archive HEAD` tree at 3a7c3f9 (JDK 21.0.12.1, Gradle 9.8.2, 20 CPUs): `Configuration cache entry stored` at 2 m 30 s, then `Reusing configuration cache` at 13 s (39 of 44 tasks up-to-date); after `rm -rf app/build app/.cxx` a rebuild prints `44 actionable tasks: 20 executed, 24 from cache`, 24 `FROM-CACHE` lines incl. `compileStandardDebugKotlin`; caches on 165 s and 128 s (median 147 s) against `--no-build-cache -Dorg.gradle.configuration-cache=false` 317 s and 275 s (median 296 s), 149 s less, local, not CI (`gh run list` refused: token invalid).
+  - [ ] Gradle: configuration cache, build cache, and a measured CI time reduction. `[F]`
+  - local-measurements, no CI pair: `:app:assembleStandardDebug` twice in a `git archive HEAD` tree at 3a7c3f9 (JDK 21.0.12.1, Gradle 9.8.2, 20 CPUs): `Configuration cache entry stored` at 2 m 30 s, then `Reusing configuration cache` at 13 s (39 of 44 tasks up-to-date); after `rm -rf app/build app/.cxx` a rebuild prints `44 actionable tasks: 20 executed, 24 from cache`, 24 `FROM-CACHE` lines incl. `compileStandardDebugKotlin`; caches on 165 s and 128 s (median 147 s) against `--no-build-cache -Dorg.gradle.configuration-cache=false` 317 s and 275 s (median 296 s), 149 s less, local, not CI (`gh run list` refused: token invalid).
+  blocked: the CI reduction is not measured. gh has no valid token on this machine, so the cache pair is local only; the row asks for a CI figure and does not get one, so it stays open with the local numbers recorded.
 
 ### M3.2 Code shape
 
