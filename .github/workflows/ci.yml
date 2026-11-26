@@ -108,7 +108,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install numpy resvg-py pillow soundfile cryptography==50.0.2 pypdf==6.21.4
+      - run: pip install numpy resvg-py pillow soundfile cryptography==50.0.2 pypdf==6.21.4 defusedxml==0.7.1
       - name: Python tool tests
         run: |
           for d in tools/isl tools/security tools/content tools/text2isl tools/docs tools/ci tools/ux; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
@@ -291,7 +291,7 @@ jobs:
               mkdir -p out/verify
               adb exec-out run-as in.signsetu cat files/verify/report.pdf > out/verify/report.pdf
               adb exec-out run-as in.signsetu cat files/verify/passphrase.txt > out/verify/passphrase.txt
-              pip install cryptography pypdf
+              pip install cryptography==50.0.2 pypdf==6.21.4
               python tools/security/verify_seal.py --pdf out/verify/report.pdf --passphrase "$(cat out/verify/passphrase.txt)"
             fi
       - uses: actions/upload-artifact@v6
