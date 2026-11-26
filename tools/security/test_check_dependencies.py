@@ -157,13 +157,12 @@ class ParsingTest(unittest.TestCase):
     def test_the_committed_snapshot_queries_every_shipped_triple(self):
         data = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
         pairs = check_dependencies.components(LOCK.read_text(encoding="utf-8").splitlines())
-        self.assertEqual(len(pairs), 276)
+        self.assertEqual(len(pairs), 274)
         self.assertEqual([(row["package"], row["version"]) for row in data["results"]], pairs)
         self.assertEqual([(row["package"], row["version"]) for row in data["components"]], pairs)
         queried = {(row["package"], row["version"]): row["vuln_ids"] for row in data["results"]}
-        self.assertEqual(queried[("com.google.guava:guava", "33.3.1-android")], ["GHSA-xxph-c9ww-hj94"])
-        self.assertEqual(queried[("com.google.protobuf:protobuf-javalite", "4.26.1")], ["GHSA-735f-pc8j-v9w8"])
         self.assertEqual(queried[("com.google.guava:guava", "33.7.2-android")], [])
+        self.assertEqual(queried[("com.google.protobuf:protobuf-javalite", "4.36.2")], [])
 
 
 if __name__ == "__main__":
