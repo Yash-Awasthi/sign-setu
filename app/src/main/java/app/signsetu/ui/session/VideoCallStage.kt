@@ -141,6 +141,8 @@ internal fun VideoCallStage(
     val pending = ui.pending
     val signing = ui.reading != null
     val haptic = LocalHapticFeedback.current
+    // The pinned need row's labels, resolved once so its tap can name what was asked for.
+    val needNames = NEED_IDS.associateWith { needLabel(it, content, lang) }
 
     var pipOffsetX by remember { mutableFloatStateOf(0f) }
     var pipOffsetY by remember { mutableFloatStateOf(0f) }
@@ -158,8 +160,9 @@ internal fun VideoCallStage(
             recentReaction = null
         }
     }
-    fun react(@StringRes reaction: Int, arg: Any? = null, feel: HapticFeedbackType = HapticFeedbackType.LongPress) {
-        haptic.performHapticFeedback(feel)
+    /** [feel] null is for a caller that has already ticked, so one tap buzzes once. */
+    fun react(@StringRes reaction: Int, arg: Any? = null, feel: HapticFeedbackType? = HapticFeedbackType.LongPress) {
+        feel?.let { haptic.performHapticFeedback(it) }
         recentReaction = Reaction.Text(reaction, arg)
     }
     fun reactCount(@PluralsRes reaction: Int, n: Int) {
@@ -392,7 +395,8 @@ internal fun VideoCallStage(
         }
 
         if (panel != null) {
-            Column(Modifier.fillMaxSize().imePadding()) {
+            // Lifted clear of the pinned need row below it, so no panel button is covered.
+            Column(Modifier.fillMaxSize().imePadding().padding(bottom = NEED_ROW_HEIGHT)) {
                 Box(Modifier.weight(if (panelCollapsed) 1f else 1f - panelShare).fillMaxWidth()) { avatarView() }
                 Text(
                     litWord(promptText, captionLight?.inText(promptText)), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White,
@@ -441,13 +445,36 @@ internal fun VideoCallStage(
         // The open panel has its own Stop row; folded or absent, Stop waits in the corner.
         if (panel == null || panelCollapsed) StopOctagon(content.subjectText("stop", lang) ?: stringResource(R.string.stage_stop), ui.answeredCard == "stop", { answer("stop") },
             Modifier.align(Alignment.TopStart).padding(top = 72.dp, start = 12.dp).testTag(StagePaths.EXIT))
+
+        // Pinned for every state: content, not a control, so it never fades and an open panel never buries it.
+        NeedRow(
+            content = content,
+            lang = lang,
+            selected = ui.answeredCard,
+            onNeed = { id ->
+                onNeed(id)
+                react(
+                    when (id) {
+                        "water" -> R.string.call_r_water
+                        "food" -> R.string.call_r_food
+                        else -> R.string.call_r_point
+                    },
+                    if (id == "water" || id == "food") null else needNames[id],
+                    feel = null, // The row already ticked for this tap.
+                )
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
+        )
         if (panel != null) return@Box
 
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
+                .padding(bottom = 16.dp + NEED_ROW_HEIGHT, start = 16.dp, end = 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),

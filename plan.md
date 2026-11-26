@@ -257,7 +257,8 @@ ticked-here: one primary action, a five-tool bar and exactly three tagged paths 
 ticked-here: the bar opens one sheet holding all five tools; language returns the picked code, pictures answer their card, drawing and typing run their tools, emoji opens the express board; StageToolSheetDeviceTest 5 tests exit 0, 72.9 s; the slide-to-open gesture on the call surface is row 258.
 - [x] Preset emoji/picture chips that appear automatically when a related word is typed or spoken — water, food, family, home, house, toilet, medicine (owner: "EMOJI SHOULD BE PRESET WHEN related word appears"). `[W]`
 ticked-here: six preset groups (water, food, family, home, toilet, medicine) match whole words in English, Devanagari and romanised spelling from the prompt and the camera's read words; chips sit under the caption and tap through answer(); RelatedChipsTest 9 tests and RelatedChipsDeviceTest 4 tests exit 0, 27.9 s; a dedicated emoji picker beyond these presets is not added.
-- [ ] One-tap "I need…" express row (water, food, toilet, pain, help, family) that is always reachable and never buried. `[W]`
+- [x] One-tap "I need…" express row (water, food, toilet, pain, help, family) that is always reachable and never buried. `[W]`
+ticked-here: NeedRow.kt pins six one-tap tiles (water, food, toilet, pain, help, family) above every state, including an open panel and the faded controls; each calls onNeed(id) and the officer still confirms the need. NeedRowDeviceTest 4 tests exit 0 in 27.9 s; family has no picture asset, so its tile is emoji plus label.
 - [ ] A single, obvious way to end a session (owner: "easy the closing of session"), with the other exits demoted to one menu. `[W]`
 - [ ] Question-suggestion strip: the next three likely questions for the selected role, one tap each. `[W]`
 

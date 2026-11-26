@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="need_row_title">I need…</string>
+    <string name="need_family">Family</string>
+    <string name="need_toilet">Toilet</string>
+    <string name="need_help">Help</string>
+    <string name="need_pain">Pain</string>
+</resources>

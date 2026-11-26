@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="need_row_title">मुझे चाहिए…</string>
+    <string name="need_family">परिवार</string>
+    <string name="need_toilet">शौचालय</string>
+    <string name="need_help">मदद</string>
+    <string name="need_pain">दर्द</string>
+</resources>
