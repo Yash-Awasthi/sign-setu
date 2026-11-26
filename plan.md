@@ -180,7 +180,8 @@ harm.
 ### M2.4 Build integrity
 
 - [ ] Release APKs: `SHA256SUMS`, an SBOM, and the dependency-verification metadata hash recorded next to the artefact. `[P]`
-- [ ] Reproducible build check: same commit, same SDK/NDK, two builds, compare with `apksigcopier`-style diff and document non-deterministic inputs. `[P]`
+- [x] Reproducible build check: same commit, same SDK/NDK, two builds, compare with `apksigcopier`-style diff and document non-deterministic inputs. `[P]`
+  - verified-here: /c/GITHUB/.fleet/lock.sh sign-setu 1800 /c/GITHUB/.fleet/lock.sh gradle 1800 /c/GITHUB/.fleet/slot.sh cpu 12 3600 py -3 tools/ci/check_reproducible.py --build -> exit 0 on ffa079a: two builds of git archive HEAD (404.7 s and 278.4 s, app/build and app/.cxx deleted between) each wrote app-standard-release-unsigned.apk sha256 8278f5c8b9b33f12eaa2c1fbdad63f090920ef013fb59ca4d4d0cfd68a91aef0 (189364903 bytes); apksigcopier-style diff: 1922 entries, order same, no differing entries, unsigned so all bytes compared, no signing block, nothing undetermined; the builds shared the Gradle configuration cache; tools/ci/reproducible.md lists the inputs that can drift.
 - [x] NDK and CMake versions asserted in the build script; a mismatch fails with the expected value. `[P]`
   - verified-here: python tools/ci/check_toolchain.py -> exit 0, "NDK 30.0.16248370 and CMake 4.1.2: build script, CMake minimum, installed SDK and docs agree"; the same check over a copy with ndkVersion "29.0.1" -> exit 1, "ndkVersion is \"29.0.1\" but expected \"30.0.16248370\""; python -m unittest discover -s tools/ci -p "test_*.py" -> Ran 33 tests, OK; python tools/docs/check_docs.py -> exit 0.
 - [x] `avatar/` bundle and `app/src/main/assets/avatar/avatar.js` identity check already exists in CI; extend it to `content/` and the GGUF allow-list. `[P]`
