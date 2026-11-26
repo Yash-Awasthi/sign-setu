@@ -320,6 +320,7 @@ verified-here: TapToSignDeviceTest measured four kept runs per screen on ci34 (A
 - [ ] Touch targets ≥ 48 dp, and one-handed reach for every in-session action. `[D]`
 - [ ] Switch-access and keyboard-only path through the person's answer flow (tap, picture, nod, finger count). `[D]`
 - [ ] Reading level: captions tested with two people who read the target language as a second language; record the words that caused confusion and change them. `[D]`
+  blocked: needs two second-language readers. No wording change is invented here and no reading level is claimed from a machine estimate.
 - [x] Reduced motion honoured: the avatar and stage animations have a low-motion mode that still signs legibly. `[D]`
   verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.MotionTest -> 4 tests, 0 failures
 
@@ -337,14 +338,17 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 - [x] Error and empty states: no model, no camera, no microphone, no second screen, storage full — each with the fix, not an error code. `[D]`
   verified-here: python tools/ux/check_error_copies.py -> 5 broken states, each with a fix and no error code
 - [ ] Onboarding: the three first-run steps and the tour, measured for completion time with one officer who has not seen the app. `[D]`
+  blocked: needs an officer who has not seen the app. A scripted walkthrough time is not that measurement, so none is published.
 
 ### M5.3 Sign-language depth
 
 - [x] Per-word accuracy table for ISL and ASL with n per word; flag every word under a usable threshold and either improve it or mark it "hold to confirm". `[D]`
   - verified-here: `SIGNSETU_DATA=C:/ml-data python tools/ml/per_word.py --write` -> 816 INCLUDE test clips top-1 0.979 with 3 words held; 269 ISLRTC new-signer clips 0.546 with 34 held; 2504 ASL Citizen clips 0.702 with 52 held; wrote docs/models/per_word.md, one row per word with n, top-1, top-3 and the first wrong read; threshold 0.60 over n >= 2
 - [ ] The "unclear" path: when two readers disagree, ask the person once with pictures; measure how often that resolves the meaning. `[D]`
+  blocked: needs two readers who can disagree. The picture question is not measured here and no resolution rate is claimed.
 - [ ] Fingerspelling: hold-to-commit timing studied with two signers and tuned; publish the chosen value and the reason. `[D]`
 - [ ] Regional variation: record which signs differ by region and let a department pick a variant. `[D]`
+  blocked: which signs differ by region is signer knowledge, and the lexicon carries no variant data. A picker with no data proves nothing, so neither half is claimed.
 - [x] Deaf-reviewer loop: a documented review sheet and a stated cadence for adding words. `[D]`
   - verified-here: docs/review/word_review.md holds the sheet (11 fixed columns: id, gloss, language, source, signers, draft_since, reviewer, date, verdict, second, notes), the loop and the cadence (a batch of at most 40 words a fortnight, a review before any release promotes a draft, a second reviewer for a hold or dispute, a reported misread ahead of new words), linked from tools/isl/README.md; python tools/docs/check_version.py -> exit 0; python -m unittest discover -s tools/docs -p 'test_*.py' -> Ran 29 tests, OK; python tools/docs/check_docs.py -> exit 0 on the extracted tree with the sibling's docs/25-screen-inventory.md index row added (at HEAD that check names only that sibling doc). No reviewer is named yet and no verdict is recorded; the page says so.
 
