@@ -320,7 +320,7 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 - [ ] Fingerspelling: hold-to-commit timing studied with two signers and tuned; publish the chosen value and the reason. `[D]`
 - [ ] Regional variation: record which signs differ by region and let a department pick a variant. `[D]`
 - [x] Deaf-reviewer loop: a documented review sheet and a stated cadence for adding words. `[D]`
-  - verified-here: docs/review/word_review.md holds the sheet (11 fixed columns: id, gloss, language, source, signers, draft_since, reviewer, date, verdict, second, notes), the loop and the cadence (a batch of at most 40 words a fortnight, a review before any release promotes a draft, a second reviewer for a hold or dispute, a reported misread ahead of new words), linked from tools/isl/README.md; python tools/docs/check_version.py -> exit 0; python -m unittest discover -s tools/docs -p 'test_*.py' -> Ran 29 tests, OK; python tools/docs/check_docs.py -> exit 0 on the extracted tree with the sibling's docs/22-screen-inventory.md index row added (at HEAD that check names only that sibling doc). No reviewer is named yet and no verdict is recorded; the page says so.
+  - verified-here: docs/review/word_review.md holds the sheet (11 fixed columns: id, gloss, language, source, signers, draft_since, reviewer, date, verdict, second, notes), the loop and the cadence (a batch of at most 40 words a fortnight, a review before any release promotes a draft, a second reviewer for a hold or dispute, a reported misread ahead of new words), linked from tools/isl/README.md; python tools/docs/check_version.py -> exit 0; python -m unittest discover -s tools/docs -p 'test_*.py' -> Ran 29 tests, OK; python tools/docs/check_docs.py -> exit 0 on the extracted tree with the sibling's docs/25-screen-inventory.md index row added (at HEAD that check names only that sibling doc). No reviewer is named yet and no verdict is recorded; the page says so.
 
 ### M5.4 Evidence and operations depth
 
@@ -355,7 +355,7 @@ review date.
 
 - **m6.2.1 Package**
   - [x] Signed APK, SBOM, `SHA256SUMS`, the DPIA, the walkthrough, the model allow-list procedure and the verification instructions in one place. `[E]`
-    - verified-here: python tools/docs/check_docs.py -> exit 0 on HEAD plus this unit (repo tree red only from docs/22-screen-inventory.md, a sibling commit with no index row); check_version.py -> exit 0; check_release.py -> exit 0; docs/24-deployment-package.md names all seven artefacts and every path in it exists
+    - verified-here: python tools/docs/check_docs.py -> exit 0 on HEAD plus this unit (repo tree red only from docs/25-screen-inventory.md, a sibling commit with no index row); check_version.py -> exit 0; check_release.py -> exit 0; docs/24-deployment-package.md names all seven artefacts and every path in it exists
 - **m6.2.2 Training**
   - [ ] The officer walkthrough with screenshots, an accessibility note, and the three mistakes officers actually make (measured from the drill). `[E]`
 

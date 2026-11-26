@@ -1,4 +1,4 @@
-"""Checks docs/22-screen-inventory.md against the app's navigation.
+"""Checks docs/25-screen-inventory.md against the app's navigation.
 
 Every screen the app can open must have a purpose, three primary actions and an exit. The
 navigation itself is the source of truth: each `entry<...Key>` in AppRoot.kt needs a row, and a
@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 NAV = ROOT / "app/src/main/java/app/signsetu/ui/AppRoot.kt"
-DOC = ROOT / "docs/22-screen-inventory.md"
+DOC = ROOT / "docs/25-screen-inventory.md"
 
 ENTRY = re.compile(r"\bentry<([A-Za-z0-9_]+)>")
 ROW = re.compile(r"^\|\s*`([A-Za-z0-9_]+)`\s*\|(.*)\|\s*$")
