@@ -48,7 +48,7 @@ Priority: **MUST** (the app cannot ship without it) or **SHOULD** (wanted, not b
 | Finishing a session saves it under a name the officer chooses, offers export, and allows deleting it instead. | MUST |
 | The officer sets the subject language per session (Hindi and English at minimum). | MUST |
 | The officer sets a subject profile per session and can change it at any time. | MUST |
-| While a session is open on this phone, the app stays pinned (screen pinning) when the device allows it; pinning is lifted only to open the interpreter's app or the share sheet, and set again on return. Returning from the stage to the officer page needs the officer handle held for 1/3 s; Back does nothing on the stage. | MUST |
+| While a session is open on this phone, the app stays pinned (screen pinning) when the device allows it; pinning is lifted only to open the interpreter's app or the share sheet, and set again on return. Returning from the stage to the officer page is one tap on the officer handle; Back does nothing on the stage. | MUST |
 
 ### 4.2 Asking
 

@@ -90,7 +90,7 @@ The officer page has two tabs, built from one card and tile style. **Transcribe*
 | Vibration codes | Felt by whoever holds the phone: Yes one long buzz; No two buzzes; Stop, Break, "I don't know", "I don't understand" or "That's wrong" three short pulses; a picture a tick. Never for the young-child profile |
 | Accessibility | Every touch target on the stage is at least 56 dp (the officer's chips and close buttons 48 dp); the skeleton badge is an on/off switch; tapping the small camera picture in a video call swaps camera and signer, kept through rotation; stop banners and second-screen alerts are announced by screen readers; with a screen reader on, the stage buttons stay visible |
 | Rotate | The stage turns 180 degrees for a subject sitting opposite; the picture board turns with it |
-| Staying on the stage | The app is pinned for the session (lifted only for the interpreter call or a share, and set again on return); Back does nothing except close the picture board; the small handle held for 1/3 s returns to the officer |
+| Staying on the stage | The app is pinned for the session (lifted only for the interpreter call or a share, and set again on return); Back does nothing except close the picture board; the small handle returns to the officer on one tap |
 
 Subject-screen words, questions, phrases and card labels exist in English, Hindi, Chhattisgarhi, Gondi, Halbi and the other twelve languages of the language finder; everything beyond English and Hindi is marked draft.
 
