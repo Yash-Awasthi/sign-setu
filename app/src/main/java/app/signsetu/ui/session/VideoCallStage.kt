@@ -5,8 +5,6 @@ import androidx.compose.runtime.setValue
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -76,14 +74,12 @@ import app.signsetu.data.content.or
 import app.signsetu.data.content.AnswerType
 import app.signsetu.data.content.ContentBundle
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.imePadding
-import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Baloo
-import app.signsetu.ui.components.CardImage
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -127,6 +123,8 @@ internal fun VideoCallStage(
     onDoneSigning: () -> Unit = {},
     onDraw: (() -> Unit)? = null,
     onWrite: (() -> Unit)? = null,
+    /** Opens the language grid from the tool bar; LANGUAGE is shown only when this is set (row 249 wires it). */
+    onLanguageTool: (() -> Unit)? = null,
     /** Drawing, writing, pictures and the other answer panels take the lower part of the call. */
     panel: (@Composable (Modifier) -> Unit)? = null,
     /** The share of the height the panel takes; the character gets the rest. */
@@ -145,6 +143,8 @@ internal fun VideoCallStage(
     var pipOffsetX by remember { mutableFloatStateOf(0f) }
     var pipOffsetY by remember { mutableFloatStateOf(0f) }
     var swapped by rememberSaveable { mutableStateOf(false) }
+    // The unsure trio stays folded behind one button, so the call shows at most three paths at once.
+    var moreAnswers by remember(pending) { mutableStateOf(false) }
 
     // A string resource and its optional argument, resolved where it is drawn so a language change is followed.
     var recentReaction by remember { mutableStateOf<Reaction?>(null) }
@@ -433,14 +433,14 @@ internal fun VideoCallStage(
 
         // The open panel has its own Stop row; folded or absent, Stop waits in the corner.
         if (panel == null || panelCollapsed) StopOctagon(content.subjectText("stop", lang) ?: stringResource(R.string.stage_stop), ui.answeredCard == "stop", { answer("stop") },
-            Modifier.align(Alignment.TopStart).padding(top = 72.dp, start = 12.dp))
+            Modifier.align(Alignment.TopStart).padding(top = 72.dp, start = 12.dp).testTag(StagePaths.EXIT))
         if (panel != null) return@Box
 
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = if (controls) 124.dp else 16.dp, start = 16.dp, end = 16.dp)
+                .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -494,68 +494,71 @@ internal fun VideoCallStage(
                 }
             }
 
-            // Stop has its own corner; Done stays while they sign, and the rest show on a tap.
+            // Path one, answers: one primary action and the needs; the unsure trio waits behind More.
             val answers = LocalAnswerColors.current
-            if (signing || (controls && (rightsNotice != null || onNext != null))) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (signing) {
-                    SmallAnswer("done", content.subjectText("done", lang), stringResource(R.string.stage_done), answers.yes, answers.onYes, false, onDoneSigning, Modifier.weight(1.6f), height = 48.dp, icon = rememberVectorPainter(Icons.Filled.Check))
+            if (signing || controls) Column(Modifier.fillMaxWidth().testTag(StagePaths.ANSWERS), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    when {
+                        signing -> StagePrimaryAction(stringResource(R.string.stage_primary_done), onDoneSigning, Modifier.weight(1.6f))
+                        onNext != null -> StagePrimaryAction(stringResource(R.string.stage_next), onNext, Modifier.weight(1.6f))
+                        !statement -> StagePrimaryAction(content.subjectText("yes", lang) ?: stringResource(R.string.stage_primary_yes), { answer("yes") }, Modifier.weight(1.6f))
+                    }
+                    if (!signing) {
+                        if (!statement && onNext == null) SmallAnswer("no", null, cardLabel(content, "no", lang), Color(0xFFB91C1C), Color.White, false, { answer("no") }, Modifier.weight(1f), height = 52.dp, icon = rememberVectorPainter(Icons.Filled.Close))
+                        if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1.6f), height = 52.dp)
+                    }
+                    if (controls) {
+                        SmallAnswer("water", null, cardLabel(content, "water", lang), Color(0xFF0369A1), Color.White, false, { answer("water") }, Modifier.weight(1f), height = 52.dp)
+                        SmallAnswer("food", null, cardLabel(content, "food", lang), Color(0xFFD97706), Color.White, false, { answer("food") }, Modifier.weight(1f), height = 52.dp)
+                        SmallAnswer("express", null, cardLabel(content, "help", lang), Color(0xFF7C3AED), Color.White, false, { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenExpressBoard() }, Modifier.weight(1f), height = 52.dp, icon = rememberVectorPainter(Icons.Filled.Favorite))
+                        if (!signing && pending != null && !statement) StageMoreAnswers(moreAnswers, { moreAnswers = !moreAnswers }, Modifier.weight(1f))
+                    }
                 }
-                if (controls && rightsNotice != null) {
-                    SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1.6f), height = 48.dp)
-                }
-                if (controls && onNext != null) {
-                    SmallAnswer("next", content.subjectText("next", lang), stringResource(R.string.stage_next), answers.yes, answers.onYes, false, onNext, Modifier.weight(1.6f), height = 48.dp, icon = rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowForward))
+                // The trio keeps its old calls, haptics and selected states; only its visibility now waits on More.
+                if (!signing && pending != null && !statement && moreAnswers) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know))
+                    SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand))
+                    SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong))
                 }
             }
-            // Their own row, so Next never changes size or place between items.
-            if (controls && pending != null && !signing && !statement) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know))
-                SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand))
-                SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = 64.dp, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong))
-            }
-            if (controls && !signing && (onDraw != null || onWrite != null)) {
-                val stage = LocalStageColors.current
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    onDraw?.let { SmallAnswer("draw", content.subjectText("draw", lang), stringResource(R.string.stage_draw), stage.tool, stage.onTool, false, it, Modifier.weight(1f), height = 48.dp, icon = rememberVectorPainter(Icons.Filled.Create)) }
-                    onWrite?.let { SmallAnswer("write", content.subjectText("write", lang), stringResource(R.string.stage_write), stage.tool, stage.onTool, false, it, Modifier.weight(1f), height = 48.dp, icon = painterResource(R.drawable.ic_keyboard)) }
+
+            // Path two, tools: language and emoji always; drawing, typing and pictures only when this item offers them.
+            if (controls && !signing) {
+                val available = buildSet {
+                    if (onLanguageTool != null) add(StageTool.LANGUAGE)
+                    if (describeItem(pending, content, lang).choices.isNotEmpty()) add(StageTool.PICTURES)
+                    if (onDraw != null) add(StageTool.DRAWING)
+                    add(StageTool.EMOJI)
+                    if (onWrite != null) add(StageTool.TYPING)
+                }
+                Surface(
+                    shape = RoundedCornerShape(32.dp),
+                    color = LocalCall.current.surface.copy(alpha = 0.93f),
+                    border = BorderStroke(1.dp, LocalCall.current.line),
+                    shadowElevation = 12.dp,
+                    modifier = Modifier.fillMaxWidth().testTag(StagePaths.TOOLS),
+                ) {
+                    StageToolBar(
+                        selected = null,
+                        available = available,
+                        onSelect = { tool ->
+                            when (tool) {
+                                StageTool.LANGUAGE -> onLanguageTool?.invoke()
+                                // A picture item takes the stage as tiles, so this tool only appears on a bar rendered alone.
+                                StageTool.PICTURES -> Unit
+                                StageTool.DRAWING -> onDraw?.invoke()
+                                StageTool.EMOJI -> {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onOpenExpressBoard()
+                                }
+                                StageTool.TYPING -> onWrite?.invoke()
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                    )
                 }
             }
         }
-
-        AnimatedVisibility(controls, Modifier.align(Alignment.BottomCenter), enter = fadeIn(), exit = fadeOut()) { Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = LocalCall.current.surface.copy(alpha = 0.93f),
-            border = BorderStroke(1.dp, LocalCall.current.line),
-            shadowElevation = 12.dp,
-            modifier = Modifier
-                .navigationBarsPadding()
-                .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CallActionButton("water", cardLabel(content, "water", lang), Color(0xFF0369A1), highlight = false) {
-                    answer("water")
-                }
-                CallActionButton("food", cardLabel(content, "food", lang), Color(0xFFD97706), highlight = false) {
-                    answer("food")
-                }
-                if (!statement) {
-                    CallActionButton("yes", cardLabel(content, "yes", lang), Color(0xFF15803D), highlight = false) {
-                        answer("yes")
-                    }
-                    CallActionButton("no", cardLabel(content, "no", lang), Color(0xFFB91C1C), highlight = false) {
-                        answer("no")
-                    }
-                }
-                CallActionButton("express", cardLabel(content, "help", lang), Color(0xFF7C3AED), highlight = false) {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onOpenExpressBoard()
-                }
-            }
-        } }
     }
 }
 

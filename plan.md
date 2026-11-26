@@ -246,7 +246,8 @@ optional polish; they are the reason the app is hard to use today.
 
 ### M4.1 The consolidated stage (owner: "too crowded and feature heavy")
 
-- [ ] One stage layout with a single primary action, a bottom bar of tools (language, pictures, drawing, emoji, typing) and at most three visible paths. `[W]`
+- [x] One stage layout with a single primary action, a bottom bar of tools (language, pictures, drawing, emoji, typing) and at most three visible paths. `[W]`
+ticked-here: one primary action, a five-tool bar and exactly three tagged paths (answers/tools/exit); StageToolsDeviceTest 3 tests, exit 0, 36.5 s; emoji picker row 250, slide-to-open sheet row 258, LANGUAGE wiring row 249.
 - [ ] Replace scattered per-feature buttons with a bottom bar and side sheets that show the full toolset on one screen. `[W]`
 - [ ] Preset emoji/picture chips that appear automatically when a related word is typed or spoken — water, food, family, home, house, toilet, medicine (owner: "EMOJI SHOULD BE PRESET WHEN related word appears"). `[W]`
 - [ ] One-tap "I need…" express row (water, food, toilet, pain, help, family) that is always reachable and never buried. `[W]`

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stage_tool_language">Language</string>
+    <string name="stage_tool_pictures">Pictures</string>
+    <string name="stage_tool_drawing">Drawing</string>
+    <string name="stage_tool_emoji">Emoji</string>
+    <string name="stage_tool_typing">Typing</string>
+    <string name="stage_more_answers">More answers</string>
+    <string name="stage_primary_yes">Yes</string>
+    <string name="stage_primary_done">Done</string>
+</resources>

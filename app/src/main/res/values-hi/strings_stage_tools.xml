@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stage_tool_language">भाषा</string>
+    <string name="stage_tool_pictures">तस्वीरें</string>
+    <string name="stage_tool_drawing">चित्र बनाएँ</string>
+    <string name="stage_tool_emoji">इमोजी</string>
+    <string name="stage_tool_typing">लिखें</string>
+    <string name="stage_more_answers">और जवाब</string>
+    <string name="stage_primary_yes">हाँ</string>
+    <string name="stage_primary_done">हो गया</string>
+</resources>
