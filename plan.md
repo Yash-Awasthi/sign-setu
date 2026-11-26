@@ -190,9 +190,11 @@ harm.
 ### M2.5 Second screen and station paths
 
 - [ ] Bluetooth second screen: a test for reconnect after a dropped bonded link, and for a rejected frame (wrong MAC, bad signature) being dropped silently with a log line. `[P]`
+  blocked: owner-confirmed permanent. There is no second device and none is coming; no two-phone capture will be claimed and no simulated link stands in for one.
 - [x] Station brain: a contract test between the app and `brain/` covering the request shapes, timeouts and the offline fallback. `[P]`
   - verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.BrainContractTest -> BUILD SUCCESSFUL, tests=4 failures=0, exit 0; BrainContractTest pins all 12 /v1 routes, request body keys, per-call timeout values, caps/Feature keys and the offline fallback against both app/src/main/java/app/signsetu/net/BrainClient.kt and brain/brain/app.py; iroh relay half unproven (no live relay: IrohBrain QUIC transport not exercised).
 - [ ] Relay: prove the relay sees only ciphertext, with a recorded capture and the fields it can read. `[P]`
+  blocked: owner-confirmed permanent. There is no relay binary and none is coming; a ciphertext capture is not simulated and no field is claimed as observed.
 
 ---
 
@@ -348,7 +350,9 @@ geometry, draft three candidate fixes per problem, score, implement, re-shoot.
 ### M5.4 Evidence and operations depth
 
 - [ ] A full session drill: start → consent → record → sign → answer → finish → export → verify on a second device; timed end to end with a real officer. `[D]`
+  blocked: needs a real officer and a second device; not run here and not timed on an emulator instead.
 - [ ] Battery and thermal: a 30-minute session on a mid-range phone, recording and signing, with battery drop and thermal throttling measured. `[D]`
+  blocked: needs a physical mid-range phone for a 30-minute thermal run; no figure is invented here.
 - [x] Storage: measure per-session size (audio, frames, records) and assert the retention job keeps the device inside a documented budget. `[D]`
   - verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.StorageBudgetTest -> BUILD SUCCESSFUL; a documented worst-case session (3 min narrative, 60 s recording, one drawing, 400 rows) measures 3118948 B, a typical session 514043 B, and every retention window offered at 2 sessions an hour stays inside the 1 GB budget (72 h keeps 144 worst-case sessions = 449128512 B); python tools/docs/check_docs.py -> exit 0. docs/23-storage-budget.md records the measurements and what the bound does not cover.
 - [x] Failure rehearsal: phone dies mid-session; second screen drops; model file corrupt; report what survives and what the officer should do. `[D]`
