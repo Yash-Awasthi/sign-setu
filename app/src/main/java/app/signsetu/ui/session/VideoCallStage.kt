@@ -236,6 +236,9 @@ internal fun VideoCallStage(
     val hint = content.subjectText("hint_answer", lang)
     // Their language is not known yet, so the prompt is in several scripts at once.
     val promptText = if (pending == Pending.LanguageFinder) LANGUAGE_PROMPT else caption ?: hint ?: stringResource(R.string.call_with_you)
+    // The preset chips follow the words on the call: what was asked, and what the camera has read so far.
+    val heard = (listOf(promptText) + ui.reading.orEmpty().mapNotNull { it.word }).joinToString(" ")
+    val related = remember(heard, content) { relatedCards(heard, content.cards.keys) }
 
     // Held-up fingers answer an age or count question without opening a keypad.
     val isNumberOrAgeQuestion = remember(pending) {
@@ -486,6 +489,8 @@ internal fun VideoCallStage(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     CallCaption(promptText, captionLight?.inText(promptText), onWordTap)
+                    // Preset chips for the related words on this call; content, so they stay after the controls fade.
+                    if (related.isNotEmpty()) RelatedChipRow(related, content, lang, { answer(it) }, Modifier.padding(top = 8.dp))
                     rightsNotice?.let {
                         Text(it, fontSize = 13.sp, color = LocalCall.current.accentSoft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
                     }
