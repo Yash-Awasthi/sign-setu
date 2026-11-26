@@ -1,0 +1,64 @@
+RELAY CAPTURE SUMMARY
+file capture.txt, 104021 bytes, sha256 44d7e55b63b1bef2f74895c68beab23b72b6d17b6bae8fdb56e820a50c9de14f
+
+TCP connections the relay accepted (from the tee at its socket):
+  conn     C->R    R->C  request line
+  c1         57     323  GET /ping HTTP/1.1
+  c2         57     323  GET /ping HTTP/1.1
+  c3         57     323  GET /ping HTTP/1.1
+  c4         57     323  GET /ping HTTP/1.1
+  c5         57     323  GET /ping HTTP/1.1
+  c6         57     323  GET /ping HTTP/1.1
+  c7      10362   13854  GET /relay HTTP/1.1
+  c8      13748   10385  GET /relay HTTP/1.1
+
+c7 plaintext TCP request, as the relay reads it:
+  GET /relay HTTP/1.1
+  Host: 127.0.0.1:3341
+  Upgrade: websocket
+  Connection: Upgrade
+  Sec-WebSocket-Key: r0gRivGIXcy8J2ard84pXA==
+  Sec-WebSocket-Version: 13
+  sec-websocket-protocol: iroh-relay-v2, iroh-relay-v1
+  frames client->relay: 26, relay->client: 15
+  first hello endpoint id: 79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664
+  destination ids in send frames: da29e95b02e00ffa15645775fb1d2ba222a1943395eea06b94e2c057b7be69d0
+  time on the relay: 2026-11-27T00:45:29.154204 .. 2026-11-27T00:45:30.205956
+    frame 0x00 x1: server hello (17 B)
+    frame 0x01 x1: client hello: 32 B endpoint id + 64 B signature
+    frame 0x02 x1: auth result (1 B)
+    frame 0x03 x1: close (2 B code)
+    frame 0x04 x23: datagram: 32 B destination id + QUIC packet
+    frame 0x06 x11: datagram: 32 B source id + QUIC packet
+    frame 0x08 x1: peer-gone notice: 32 B endpoint id
+    frame 0x09 x1: ping (8 B nonce)
+    frame 0x0a x1: pong (8 B nonce)
+  QUIC datagrams forwarded: 23, 31..1421 bytes, 9112 bytes total
+
+c8 plaintext TCP request, as the relay reads it:
+  GET /relay HTTP/1.1
+  Host: 127.0.0.1:3341
+  Upgrade: websocket
+  Connection: Upgrade
+  Sec-WebSocket-Key: VrLj0qA0fLXGd/zC9r5C8Q==
+  Sec-WebSocket-Version: 13
+  sec-websocket-protocol: iroh-relay-v2, iroh-relay-v1
+  frames client->relay: 14, relay->client: 26
+  first hello endpoint id: da29e95b02e00ffa15645775fb1d2ba222a1943395eea06b94e2c057b7be69d0
+  destination ids in send frames: 79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664
+  time on the relay: 2026-11-27T00:45:29.173063 .. 2026-11-27T00:45:30.203909
+    frame 0x00 x1: server hello (17 B)
+    frame 0x01 x1: client hello: 32 B endpoint id + 64 B signature
+    frame 0x02 x1: auth result (1 B)
+    frame 0x03 x1: close (2 B code)
+    frame 0x04 x11: datagram: 32 B destination id + QUIC packet
+    frame 0x06 x23: datagram: 32 B source id + QUIC packet
+    frame 0x09 x1: ping (8 B nonce)
+    frame 0x0a x1: pong (8 B nonce)
+  QUIC datagrams forwarded: 11, 74..1453 bytes, 12960 bytes total
+
+Plaintext identifier check over every captured byte:
+  brain endpoint id in the clear: 23 times
+  phone endpoint id in the clear: 12 times
+  application sentence in the clear: False
+  reply in the clear: False

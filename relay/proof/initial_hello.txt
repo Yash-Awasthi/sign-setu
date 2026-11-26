@@ -1,0 +1,4 @@
+c8:C->R frame 1: QUIC v1 Initial, dcid fb5ad02c3723e9fcface13e7e5af844c30f78130
+  TLS ClientHello ALPN: signsetu/brain/1
+  application canary in this Initial: False
+decrypted Initials carrying a ClientHello: 1

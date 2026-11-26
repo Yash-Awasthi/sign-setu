@@ -1,0 +1,17 @@
+proxy: 127.0.0.1:3341 -> ::1:3340
+brain endpoint id 79b5562e8fe654f94078b112e8a98ba7901f853ae695bed7e0e3910bad049664
+phone endpoint id da29e95b02e00ffa15645775fb1d2ba222a1943395eea06b94e2c057b7be69d0
+proxy: connection 1 forwarded
+proxy: connection 2 forwarded
+proxy: connection 3 forwarded
+proxy: connection 4 forwarded
+proxy: connection 5 forwarded
+proxy: connection 6 forwarded
+proxy: connection 7 forwarded
+proxy: connection 8 forwarded
+brain received 3400 bytes; marker present: True
+phone received 31 bytes; marker present: False
+path: PathSnapshot(id=0, is_selected=False, remote_addr=http://127.0.0.1:3341/, is_ip=False, is_relay=True, rtt_ms=14, stats=PathStatsRecord(rtt_ms=14, udp_tx_datagrams=20, udp_tx_bytes=22546, udp_rx_datagrams=33, udp_rx_bytes=19602, cwnd=13326, congestion_events=0, lost_packets=0, lost_bytes=0, current_mtu=1420))
+path: PathSnapshot(id=1, is_selected=True, remote_addr=172.16.0.2:55274, is_ip=True, is_relay=False, rtt_ms=1, stats=PathStatsRecord(rtt_ms=1, udp_tx_datagrams=22, udp_tx_bytes=9368, udp_rx_datagrams=21, udp_rx_bytes=6776, cwnd=12000, congestion_events=0, lost_packets=0, lost_bytes=0, current_mtu=1420))
+bytes sent on the relay path: 22546
+capture: capture.txt 104021 bytes

@@ -1,0 +1,45 @@
+2026-11-26T19:15:24.347016Z DEBUG iroh_relay: ServerConfig {
+    relay: Some(
+        RelayConfig {
+            http_bind_addr: [::]:3340,
+            tls: None,
+            limits: Limits {
+                client_rx: None,
+                accept_conn_limit: None,
+                accept_conn_burst: None,
+            },
+            key_cache_capacity: None,
+            access: AllowAll,
+        },
+    ),
+    quic: None,
+    metrics_addr: Some(
+        [::]:9090,
+    ),
+}
+2026-11-26T19:15:24.350761Z DEBUG iroh_relay::server: Starting metrics server
+2026-11-26T19:15:24.355539Z  INFO iroh_metrics::service: Starting metrics server on [::]:9090
+2026-11-26T19:15:24.357030Z DEBUG iroh_relay::server: Starting Relay server
+2026-11-26T19:15:24.363634Z  INFO iroh_relay::server::http_server: [HTTP/WS] relay: serving on [::]:3340
+2026-11-26T19:15:26.375469Z DEBUG relay-http-serve: iroh_relay::server::http_server: connection opened from [::1]:51227
+2026-11-26T19:15:26.389344Z DEBUG relay-http-serve:conn{peer=[::1]:51227}: iroh_relay::server::http_server: HTTP: serve connection
+2026-11-26T19:15:26.407653Z DEBUG relay-http-serve: iroh_relay::server::http_server: connection opened from [::1]:51231
+2026-11-26T19:15:26.410658Z DEBUG relay-http-serve:conn{peer=[::1]:51231}: iroh_relay::server::http_server: HTTP: serve connection
+2026-11-26T19:15:26.455694Z DEBUG relay-http-serve: iroh_relay::server::http_server: connection opened from [::1]:51233
+2026-11-26T19:15:26.492301Z DEBUG relay-http-serve:conn{peer=[::1]:51233}: iroh_relay::server::http_server: HTTP: serve connection
+2026-11-26T19:15:26.513571Z DEBUG relay-http-serve: iroh_relay::server::http_server: connection opened from [::1]:51235
+2026-11-26T19:15:26.526428Z DEBUG relay-http-serve:conn{peer=[::1]:51235}: iroh_relay::server::http_server: HTTP: serve connection
+2026-11-26T19:15:26.549528Z DEBUG relay-http-serve: iroh_relay::server::http_server: connection opened from [::1]:51237
+2026-11-26T19:15:26.550101Z DEBUG relay-http-serve:conn{peer=[::1]:51237}: iroh_relay::server::http_server: HTTP: serve connection
+2026-11-26T19:15:26.596756Z DEBUG relay-http-serve: iroh_relay::server::http_server: connection opened from [::1]:51239
+2026-11-26T19:15:26.597371Z DEBUG relay-http-serve:conn{peer=[::1]:51239}: iroh_relay::server::http_server: HTTP: serve connection
+2026-11-26T19:15:29.151975Z DEBUG relay-http-serve: iroh_relay::server::http_server: connection opened from [::1]:62407
+2026-11-26T19:15:29.152319Z DEBUG relay-http-serve:conn{peer=[::1]:62407}: iroh_relay::server::http_server: HTTP: serve connection
+2026-11-26T19:15:29.159024Z DEBUG relay-http-serve:conn{peer=[::1]:62407}:handler: iroh_relay::server::http_server: relay_connection upgraded
+2026-11-26T19:15:29.164144Z DEBUG relay-http-serve:conn{peer=[::1]:62407}:handler: iroh_relay::server::http_server: upgraded connection completed
+2026-11-26T19:15:29.172765Z DEBUG relay-http-serve: iroh_relay::server::http_server: connection opened from [::1]:62409
+2026-11-26T19:15:29.173169Z DEBUG relay-http-serve:conn{peer=[::1]:62409}: iroh_relay::server::http_server: HTTP: serve connection
+2026-11-26T19:15:29.173627Z DEBUG relay-http-serve:conn{peer=[::1]:62409}:handler: iroh_relay::server::http_server: relay_connection upgraded
+2026-11-26T19:15:29.174637Z DEBUG relay-http-serve:conn{peer=[::1]:62409}:handler: iroh_relay::server::http_server: upgraded connection completed
+2026-11-26T19:15:30.204124Z  WARN relay-http-serve:conn{peer=[::1]:62409}:handler:client-connection-actor{remote_endpoint=da29e95b02 connection_id=1}: iroh_relay::server::client: actor errored Stream terminated, exiting
+2026-11-26T19:15:30.260110Z  WARN relay-http-serve:conn{peer=[::1]:62407}:handler:client-connection-actor{remote_endpoint=79b5562e8f connection_id=0}: iroh_relay::server::client: actor errored Stream terminated, exiting
