@@ -189,7 +189,8 @@ harm.
 ### M2.5 Second screen and station paths
 
 - [ ] Bluetooth second screen: a test for reconnect after a dropped bonded link, and for a rejected frame (wrong MAC, bad signature) being dropped silently with a log line. `[P]`
-- [ ] Station brain: a contract test between the app and `brain/` covering the request shapes, timeouts and the offline fallback. `[P]`
+- [x] Station brain: a contract test between the app and `brain/` covering the request shapes, timeouts and the offline fallback. `[P]`
+  - verified-here: ./gradlew --console=plain :app:testStandardDebugUnitTest --tests app.signsetu.BrainContractTest -> BUILD SUCCESSFUL, tests=4 failures=0, exit 0; BrainContractTest pins all 12 /v1 routes, request body keys, per-call timeout values, caps/Feature keys and the offline fallback against both app/src/main/java/app/signsetu/net/BrainClient.kt and brain/brain/app.py; iroh relay half unproven (no live relay: IrohBrain QUIC transport not exercised).
 - [ ] Relay: prove the relay sees only ciphertext, with a recorded capture and the fields it can read. `[P]`
 
 ---
