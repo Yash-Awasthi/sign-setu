@@ -18,6 +18,7 @@ import threading
 import time
 import unicodedata
 import zipfile
+import zlib
 from pathlib import Path
 
 MAX_PIECE = 4 * 1024 * 1024
@@ -103,7 +104,7 @@ class Inbox:
                     if rows == held:
                         t.part.unlink(missing_ok=True)
                         return old.name  # the same record again: kept once
-                    if rows[: len(held)] == held:
+                    if held and rows[: len(held)] == held and _continues(t.part, session, held[-1], len(held)):
                         try:
                             old.unlink()  # the new zip holds every row of this one, and more
                         except OSError:
@@ -141,8 +142,68 @@ def _record(path: Path) -> tuple[str | None, list]:
                 return None, []
             rows = [e.get("hash") if isinstance(e, dict) else None for e in json.loads(z.read("events.json"))]
         return session, rows
-    except (OSError, KeyError, ValueError, AttributeError, TypeError, zipfile.BadZipFile, RuntimeError, NotImplementedError):
+    except (OSError, KeyError, ValueError, AttributeError, TypeError, zipfile.BadZipFile, RuntimeError,
+            NotImplementedError, zlib.error):
         return None, []
+
+
+def _field(value) -> str:
+    """One row field as the app writes it into a hash: length-prefixed, and "-" for null."""
+    if value is None:
+        return "|-"
+    if isinstance(value, str):
+        text = value
+    elif isinstance(value, int) and not isinstance(value, bool):
+        text = str(value)
+    else:
+        raise ValueError("unexpected field type")
+    # The app counts a field's length in UTF-16 code units.
+    return f"|{len(text.encode('utf-16-le')) // 2}:{text}"
+
+
+def _member_hash(z: zipfile.ZipFile, name) -> str | None:
+    if name is None:
+        return None
+    if not isinstance(name, str):
+        raise ValueError("member name is not text")
+    if z.getinfo(name).file_size > MAX_RECORD:
+        raise ValueError("member too large")
+    return hashlib.sha256(z.read(name)).hexdigest()
+
+
+def _row_hash(z: zipfile.ZipFile, previous: str, session: str, row: dict) -> str:
+    """A row's link, recomputed as EventSeal.seal does (StationExport's README.txt, Checking the chain)."""
+    text = previous + _field(session) + _field(row.get("ts")) + _field(row.get("type")) + _field(row.get("source"))
+    text += _field(row.get("lang")) + _field(row.get("text")) + _field(row.get("cardId")) + _field(row.get("lexiconId"))
+    text += _field(_member_hash(z, row.get("drawing"))) + _field(row.get("itemId")) + _field(row.get("reason"))
+    text += _field(row.get("shownId")) + _field(row.get("via"))
+    if row.get("audio") is not None:
+        text += "|audio" + _field(_member_hash(z, row.get("audio")))
+    if row.get("signs") is not None:
+        text += "|signs" + _field(_member_hash(z, row.get("signs")))
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def _continues(path: Path, session: str, previous, skip: int) -> bool:
+    """Whether every row of [path] after the first [skip] links on from [previous], each hash recomputed: a record
+    only grows, so a row whose hash the app did not write means this is not that record's next version."""
+    if not isinstance(previous, str):
+        return False
+    try:
+        with zipfile.ZipFile(path) as z:
+            rows = json.loads(z.read("events.json"))
+            if not isinstance(rows, list):
+                return False
+            for row in rows[skip:]:
+                if not isinstance(row, dict):
+                    return False
+                if _row_hash(z, previous, session, row) != row.get("hash"):
+                    return False
+                previous = row["hash"]
+        return True
+    except (OSError, KeyError, ValueError, AttributeError, TypeError, zipfile.BadZipFile, RuntimeError,
+            NotImplementedError, zlib.error):
+        return False
 
 
 def _safe(name: str) -> str:
