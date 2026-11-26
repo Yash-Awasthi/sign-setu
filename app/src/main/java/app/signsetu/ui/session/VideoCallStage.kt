@@ -32,9 +32,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import android.os.SystemClock
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
@@ -226,6 +228,8 @@ internal fun VideoCallStage(
         columns = 7,
         switch = switchAccess,
         onKeyboard = { keyboard = true },
+        // A tool sheet covers the answers: the dwell scan must not move or choose behind it.
+        paused = sheetFor != null,
         onLeave = {
             when {
                 moreAnswers -> moreAnswers = false
@@ -318,7 +322,7 @@ internal fun VideoCallStage(
         wasSigning = signing
     }
 
-    val onFrameAnalyzed: (LandmarkFrame) -> Unit = { frame ->
+    val analyzeFrame: (LandmarkFrame) -> Unit = { frame ->
         onSignFrame(frame)
         val now = frame.timestampMs
         val handsVisible = frame.leftHand != null || frame.rightHand != null
@@ -358,6 +362,13 @@ internal fun VideoCallStage(
                 heldFingerSince = 0L
             }
         }
+    }
+    // The camera calls this on its analysis thread; the body reads Compose state and may open a sign window, so it runs
+    // on the main thread, where a wipe cannot slip in between the check and the write.
+    val main = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
+    val onFrameAnalyzed: (LandmarkFrame) -> Unit = { frame ->
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) analyzeFrame(frame)
+        else main.post { analyzeFrame(frame) }
     }
 
     Box(
@@ -466,6 +477,7 @@ internal fun VideoCallStage(
                 Text(
                     litWord(promptText, captionLight?.inText(promptText)), fontFamily = Baloo, fontWeight = FontWeight.Bold, fontSize = TypeSize.s17, color = Color.White,
                     textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.s6),
+                    style = LocalTextStyle.current.copy(textDirection = captionDirection(lang)),
                 )
                 if (panelCollapsed) PanelStrip(onExpandPanel, Modifier.fillMaxWidth().navigationBarsPadding().padding(start = Space.lg, end = Space.lg, bottom = Space.lg))
                 else panel(Modifier.weight(panelShare).fillMaxWidth().navigationBarsPadding().padding(start = Space.lg, end = Space.lg, bottom = Space.lg).popIn(rememberPopIn(0)))
@@ -632,7 +644,7 @@ internal fun VideoCallStage(
                     modifier = Modifier.padding(horizontal = Space.s18, vertical = Space.md),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    CallCaption(promptText, captionLight?.inText(promptText), onWordTap)
+                    CallCaption(promptText, captionLight?.inText(promptText), onWordTap, direction = captionDirection(lang))
                     // Preset chips for the related words on this call; content, so they stay after the controls fade.
                     if (related.isNotEmpty()) RelatedChipRow(related, content, lang, { answer(it) }, Modifier.padding(top = Space.sm))
                     rightsNotice?.let {
@@ -650,50 +662,52 @@ internal fun VideoCallStage(
             // Path one, answers: one primary action and the needs; the unsure trio waits behind More.
             // [bar] walks this row in the order it is drawn, so Tab and the arrows follow the eye.
             val answers = LocalAnswerColors.current
-            if (signing || controls) Column(Modifier.fillMaxWidth().testTag(StagePaths.ANSWERS), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6), verticalAlignment = Alignment.CenterVertically) {
-                    val yes = { answer("yes") }
-                    when {
-                        signing -> StagePrimaryAction(
-                            stringResource(R.string.stage_primary_done), onDoneSigning,
-                            Modifier.weight(1.6f).answerTarget(bar, "done", onDoneSigning), focused = bar.focused == "done",
-                        )
-                        onNext != null -> StagePrimaryAction(
-                            stringResource(R.string.stage_next), onNext,
-                            Modifier.weight(1.6f).answerTarget(bar, "next", onNext), focused = bar.focused == "next",
-                        )
-                        !statement -> StagePrimaryAction(
-                            content.subjectText("yes", lang) ?: stringResource(R.string.stage_primary_yes), yes,
-                            Modifier.weight(1.6f).answerTarget(bar, "yes", yes), focused = bar.focused == "yes",
-                        )
-                    }
-                    if (!signing) {
-                        val no = { answer("no") }
-                        if (!statement && onNext == null) SmallAnswer("no", null, cardLabel(content, "no", lang), StageTones.answerNo, Color.White, false, no, Modifier.weight(1f).answerTarget(bar, "no", no), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Close), focused = bar.focused == "no")
-                        val unsure = { answer(DONT_UNDERSTAND) }
-                        if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, unsure, Modifier.weight(1.6f).answerTarget(bar, DONT_UNDERSTAND, unsure), height = Space.s52, focused = bar.focused == DONT_UNDERSTAND)
-                    }
-                    if (controls) {
-                        val water = { answer("water") }
-                        val food = { answer("food") }
-                        val express = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenExpressBoard() }
-                        SmallAnswer("water", null, cardLabel(content, "water", lang), StageTones.answerWater, Color.White, false, water, Modifier.weight(1f).answerTarget(bar, "water", water), height = Space.s52, focused = bar.focused == "water")
-                        SmallAnswer("food", null, cardLabel(content, "food", lang), StageTones.answerFood, Color.White, false, food, Modifier.weight(1f).answerTarget(bar, "food", food), height = Space.s52, focused = bar.focused == "food")
-                        SmallAnswer("express", null, cardLabel(content, "help", lang), StageTones.answerExpress, Color.White, false, express, Modifier.weight(1f).answerTarget(bar, "express", express), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Favorite), focused = bar.focused == "express")
-                        if (!signing && pending != null && !statement) {
-                            val more = { moreAnswers = !moreAnswers }
-                            StageMoreAnswers(moreAnswers, more, Modifier.weight(1f).answerTarget(bar, MORE, more), focused = bar.focused == MORE)
+            if (signing || controls) CompositionLocalProvider(LocalSubjectTextDirection provides captionDirection(lang)) {
+                Column(Modifier.fillMaxWidth().testTag(StagePaths.ANSWERS), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6), verticalAlignment = Alignment.CenterVertically) {
+                        val yes = { answer("yes") }
+                        when {
+                            signing -> StagePrimaryAction(
+                                stringResource(R.string.stage_primary_done), onDoneSigning,
+                                Modifier.weight(1.6f).answerTarget(bar, "done", onDoneSigning), focused = bar.focused == "done",
+                            )
+                            onNext != null -> StagePrimaryAction(
+                                stringResource(R.string.stage_next), onNext,
+                                Modifier.weight(1.6f).answerTarget(bar, "next", onNext), focused = bar.focused == "next",
+                            )
+                            !statement -> StagePrimaryAction(
+                                content.subjectText("yes", lang) ?: stringResource(R.string.stage_primary_yes), yes,
+                                Modifier.weight(1.6f).answerTarget(bar, "yes", yes), focused = bar.focused == "yes",
+                            )
+                        }
+                        if (!signing) {
+                            val no = { answer("no") }
+                            if (!statement && onNext == null) SmallAnswer("no", null, cardLabel(content, "no", lang), StageTones.answerNo, Color.White, false, no, Modifier.weight(1f).answerTarget(bar, "no", no), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Close), focused = bar.focused == "no")
+                            val unsure = { answer(DONT_UNDERSTAND) }
+                            if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, unsure, Modifier.weight(1.6f).answerTarget(bar, DONT_UNDERSTAND, unsure), height = Space.s52, focused = bar.focused == DONT_UNDERSTAND)
+                        }
+                        if (controls) {
+                            val water = { answer("water") }
+                            val food = { answer("food") }
+                            val express = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenExpressBoard() }
+                            SmallAnswer("water", null, cardLabel(content, "water", lang), StageTones.answerWater, Color.White, false, water, Modifier.weight(1f).answerTarget(bar, "water", water), height = Space.s52, focused = bar.focused == "water")
+                            SmallAnswer("food", null, cardLabel(content, "food", lang), StageTones.answerFood, Color.White, false, food, Modifier.weight(1f).answerTarget(bar, "food", food), height = Space.s52, focused = bar.focused == "food")
+                            SmallAnswer("express", null, cardLabel(content, "help", lang), StageTones.answerExpress, Color.White, false, express, Modifier.weight(1f).answerTarget(bar, "express", express), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Favorite), focused = bar.focused == "express")
+                            if (!signing && pending != null && !statement) {
+                                val more = { moreAnswers = !moreAnswers }
+                                StageMoreAnswers(moreAnswers, more, Modifier.weight(1f).answerTarget(bar, MORE, more), focused = bar.focused == MORE)
+                            }
                         }
                     }
-                }
-                // The trio keeps its old calls, haptics and selected states; only its visibility now waits on More.
-                if (!signing && pending != null && !statement && moreAnswers) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6)) {
-                    val dontKnow = { answer("dont_know") }
-                    val unsure = { answer(DONT_UNDERSTAND) }
-                    val wrong = { answer("wrong") }
-                    SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", dontKnow, Modifier.weight(1f).answerTarget(bar, "dont_know", dontKnow), height = Space.s64, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), focused = bar.focused == "dont_know")
-                    SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, unsure, Modifier.weight(1f).answerTarget(bar, DONT_UNDERSTAND, unsure), height = Space.s64, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), focused = bar.focused == DONT_UNDERSTAND)
-                    SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", wrong, Modifier.weight(1f).answerTarget(bar, "wrong", wrong), height = Space.s64, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), focused = bar.focused == "wrong")
+                    // The trio keeps its old calls, haptics and selected states; only its visibility now waits on More.
+                    if (!signing && pending != null && !statement && moreAnswers) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6)) {
+                        val dontKnow = { answer("dont_know") }
+                        val unsure = { answer(DONT_UNDERSTAND) }
+                        val wrong = { answer("wrong") }
+                        SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", dontKnow, Modifier.weight(1f).answerTarget(bar, "dont_know", dontKnow), height = Space.s64, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), focused = bar.focused == "dont_know")
+                        SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, unsure, Modifier.weight(1f).answerTarget(bar, DONT_UNDERSTAND, unsure), height = Space.s64, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), focused = bar.focused == DONT_UNDERSTAND)
+                        SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", wrong, Modifier.weight(1f).answerTarget(bar, "wrong", wrong), height = Space.s64, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), focused = bar.focused == "wrong")
+                    }
                 }
             }
 

@@ -70,9 +70,8 @@ fun planLadder(content: ContentBundle, brain: BrainClient, models: ModelStore, c
     },
     PHONE_MS to PlanRung { ask, ms ->
         if (models.state() != ModelStore.State.READY) return@PlanRung null
-        // The native call cannot be interrupted; it finishes on its own while the ladder moves on.
-        val reply = scope.async { models.use { it.chat(PLAN_PROMPT, planUser(ask), PLAN_TOKENS) } }
-        withTimeoutOrNull(ms) { reply.await() }?.let { byWord(ask, wordOf(it), "phone") }
+        scope.async { models.use { it.chat(PLAN_PROMPT, planUser(ask), PLAN_TOKENS) } }.within(ms)
+            ?.let { byWord(ask, wordOf(it), "phone") }
     },
     GATEWAY_MS to PlanRung { ask, ms ->
         if (!cloudAllowed() || !cloud.sendsSessionData()) return@PlanRung null
@@ -80,6 +79,10 @@ fun planLadder(content: ContentBundle, brain: BrainClient, models: ModelStore, c
             ?.let { written(ask, it, "gateway") }
     },
 ), refuse = content::refusal)
+
+/** A rung's work on [scope] must not outlive its share of the budget. */
+internal suspend fun <T> kotlinx.coroutines.Deferred<T>.within(ms: Long): T? =
+    withTimeoutOrNull(ms) { await() }.also { if (it == null) cancel() }
 
 /** The gateway refuses a system prompt that is not in app_prompts.json; the station's copy is brain/brain/plan.py. */
 const val PLAN_PROMPT = "A frightened child at a police station gave an answer. Which one word from the list is closest to what the " +

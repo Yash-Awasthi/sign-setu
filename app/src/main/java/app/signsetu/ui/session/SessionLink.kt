@@ -20,6 +20,8 @@ internal class SessionLink(private val vm: SessionViewModel) {
         // A new link numbers its answers from 0 again, so only a repeat from the same link is a resend.
         if (from !== vm.remoteFrom) { vm.remoteLogged.clear(); vm.remoteFrom = from }
         if (itemId to n in vm.remoteLogged) return false
+        // A session that has ended takes no answer: the row would sit outside the root the certificate covers.
+        if (vm.repo.isEnded(vm.sessionId)) return false
         val current = itemId == vm.local.value.itemId
         val via = if (late || !current) VIA_STAGE_LATE else VIA_STAGE
         val q = itemId.takeIf { it in vm.shown }

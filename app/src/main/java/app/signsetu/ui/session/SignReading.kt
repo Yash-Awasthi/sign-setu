@@ -66,6 +66,9 @@ internal class SignReading(
     private val gate = MotionGate()
     private val letters = LetterCommitter()
     @Volatile private var prevFrame: LandmarkFrame? = null
+    // Landmarks are biometric: once wiped, the reader takes no frame and opens no window, so a start or a frame the
+    // camera had already queued cannot bring a sign window back after the wipe.
+    @Volatile private var wiped = false
     @Volatile private var peeking = false
     private var lastPeekMs = 0L
     private var lastLetterMs = 0L
@@ -99,9 +102,10 @@ internal class SignReading(
         heads.filter { (ms, _) -> ms in (from - HEAD_MARGIN_MS)..(to + HEAD_MARGIN_MS) }.map { it.second }.toSet()
     }
 
-    /** Opens a window; false when one is already open. */
+    /** Opens a window; false when one is already open, or when the reader was wiped: a start already in flight from
+     * the camera must not reopen what the wipe cleared. */
     fun start(window: SignWindow, cards: Set<String>): Boolean {
-        if (capture != null) return false
+        if (wiped || capture != null) return false
         context = cards
         synchronized(ring) { ring.clear(); letters.clear(); gate.reset() }
         liveFlow.value = LiveRead()
@@ -112,6 +116,7 @@ internal class SignReading(
 
     /** Every tracked camera frame, on the analysis thread; true when the open window should close. */
     fun onFrame(frame: LandmarkFrame): Boolean {
+        if (wiped) return false
         lastFrameMs = frame.timestampMs
         if (frame.pose != null || frame.leftHand != null || frame.rightHand != null) lastBody = frame
         frame.head?.let { h ->
@@ -170,6 +175,7 @@ internal class SignReading(
 
     /** Landmarks are biometric: every frame held is dropped and every read in flight is cancelled. */
     fun wipe() {
+        wiped = true
         capture = null
         lastBody = null
         prevFrame = null

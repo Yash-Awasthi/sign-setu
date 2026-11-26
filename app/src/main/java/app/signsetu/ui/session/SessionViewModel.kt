@@ -278,10 +278,10 @@ class SessionViewModel(
     }
 
     fun startReading(window: SignWindow = SignWindow.ANSWER) {
-        if (signs.capturing) return
+        if (signs.capturing || repo.isEnded(sessionId)) return
         // The list exists before the window opens, so the first segment cut is never dropped.
+        if (!signs.start(window, local.value.pending.answerCards())) return
         local.update { it.copy(reading = emptyList(), signWindow = window, confirm = null) }
-        signs.start(window, local.value.pending.answerCards())
     }
 
     /** Every tracked camera frame, on the analysis thread. */
@@ -490,15 +490,16 @@ class SessionViewModel(
 
     fun noteCue(c: String) { cue = c }
 
+
     fun answerCard(cardId: String) {
+        val shown = local.value
         val cue = cue.also { cue = null }
         local.update { it.copy(answeredCard = cardId, answeredYes = null) }
-        val item = local.value.pending
         viewModelScope.launch {
-            if (!repo.logChecked(sessionId, content, officerLang, item, cardId, null, local.value.itemId)) {
+            if (!repo.logChecked(sessionId, content, officerLang, shown.pending, cardId, null, shown.itemId)) {
                 repo.log(
                     sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, officerLang,
-                    text = content.cards[cardId]?.label?.get(officerLang), cardId = cardId, shownId = local.value.itemId,
+                    text = content.cards[cardId]?.label?.get(officerLang), cardId = cardId, shownId = shown.itemId,
                     reason = cue?.let { "cue:$it" },
                 )
             }
@@ -523,15 +524,15 @@ class SessionViewModel(
     }
 
     fun answerYesNo(yes: Boolean) {
-        val pending = local.value.pending
+        val shown = local.value
         val cue = cue.also { cue = null }
         local.update { it.copy(answeredYes = yes, answeredCard = null) }
         viewModelScope.launch {
-            if (!repo.logChecked(sessionId, content, officerLang, pending, null, yes, local.value.itemId)) {
+            if (!repo.logChecked(sessionId, content, officerLang, shown.pending, null, yes, shown.itemId)) {
                 val id = if (yes) "yes" else "no"
-                repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, officerLang, text = content.cards[id]?.label?.get(officerLang), cardId = id, shownId = local.value.itemId, reason = cue?.let { "cue:$it" })
+                repo.log(sessionId, EventType.ANSWER_CARD, EventSource.SUBJECT, officerLang, text = content.cards[id]?.label?.get(officerLang), cardId = id, shownId = shown.itemId, reason = cue?.let { "cue:$it" })
             }
-            if (advancesRun(pending, yes)) advanceRun()
+            if (advancesRun(shown.pending, yes)) advanceRun()
         }
     }
 

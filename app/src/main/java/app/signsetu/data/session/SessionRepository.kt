@@ -80,6 +80,8 @@ class SessionRepository(
     private val dao: SessionDao,
     /** A session started, ended or reopened at this time; retention counts from the latest. */
     private val onSessionStarted: suspend (Long) -> Unit = {},
+    /** A session was saved: the only time its local copies need not wait for the next start. */
+    private val onSessionEnded: suspend () -> Unit = {},
     private val clock: () -> Long = System::currentTimeMillis,
     /** App, content and device key, written as the session's first row so the record says what made it. */
     private val provenance: (suspend () -> String)? = null,
@@ -125,6 +127,11 @@ class SessionRepository(
     // Reading the last seal and writing the next must not interleave, or two rows would seal the same predecessor.
     private val sealing = Mutex()
 
+    // Sessions ended here: an answer that arrives now is refused, never written outside the sealed root.
+    private val ended = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    internal fun isEnded(id: String): Boolean = id in ended
+
     /** Persisted before the interface reflects it, sealed onto the session's hash chain; returns the event id. */
     suspend fun log(
         sessionId: String,
@@ -142,6 +149,7 @@ class SessionRepository(
         audioWav: ByteArray? = null,
         landmarksJson: ByteArray? = null,
     ): Long = unlessClosed(-1L) {
+        if (sessionId in ended) return@unlessClosed -1L
         sealing.withLock {
             // Retention may delete an open session under its screen; its later rows are dropped, not a crash.
             val startedAt = dao.startedAt(sessionId) ?: return@withLock -1L
@@ -175,8 +183,11 @@ class SessionRepository(
         val now = clock()
         dao.endSession(id, now, title.trim().take(TITLE_MAX))
         dao.clearSavedThrough(id)
+        // From here the root is fixed: a row added later would not be covered by the certificate.
+        sealing.withLock { ended += id }
         seal(id)
         onSessionStarted(now)
+        onSessionEnded()
     }
 
     /** A saved session opened again goes back to how it was saved: the rows written since are deleted, with what they
@@ -215,6 +226,7 @@ class SessionRepository(
     suspend fun logResume(id: String, status: String) = log(id, EventType.SYSTEM, EventSource.MACHINE, text = SYSTEM_RESUMED + status)
 
     suspend fun reopen(id: String) = unlessClosed(Unit) {
+        ended -= id
         dao.reopen(id)
         // The stored root no longer covers what will be added.
         dao.setRoot(id, null, null)
