@@ -49,6 +49,7 @@ One row per document: who it is for, and what it holds.
 | [24-deployment-package.md](24-deployment-package.md) | department | Signed APK, SBOM, SHA256SUMS, DPIA, walkthrough, model allow-list procedure and report verification in one release-to-install page |
 | [25-screen-inventory.md](25-screen-inventory.md) | developer | Every screen the app can open, its purpose, its three primary actions and its exit, checked against the navigation in AppRoot.kt |
 | [26-theme-contrast.md](26-theme-contrast.md) | developer | Every colour pair the app draws, measured across the ten themes in light, dark and OLED, with the floors that ContrastTest enforces |
+| [32-ci-audit.md](32-ci-audit.md) | developer | Every CI job, step and command against the tree: which gate each checker feeds, which gaps were closed, which stay open and why |
 | [models/sign_reader_v4.md](models/sign_reader_v4.md) | developer | Model card of the ISL word reader |
 | [models/sign_reader_v3.md](models/sign_reader_v3.md) | developer | Model card of the previous ISL word reader |
 | [../portal/README.md](../portal/README.md) | reviewer | Reviewer portal for content sign-off |

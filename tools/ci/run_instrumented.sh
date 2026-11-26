@@ -70,4 +70,12 @@ if [ "$shard" = "0" ]; then
   adb exec-out run-as in.signsetu cat files/verify/passphrase.txt > "$verify_dir/passphrase.txt"
   pip install cryptography==50.0.2 pypdf==6.21.4
   python tools/security/verify_seal.py --pdf "$verify_dir/report.pdf" --passphrase "$(cat "$verify_dir/passphrase.txt")"
+
+  # The app's own verdict and the off-phone checker must agree, field by field, on one export.
+  adb shell am instrument -w -e class app.signsetu.SealAgreementDeviceTest \
+    in.signsetu.test/androidx.test.runner.AndroidJUnitRunner \
+    || { mkdir -p "$report_dir"; adb logcat -d > "$report_dir/logcat.txt"; exit 1; }
+  adb exec-out run-as in.signsetu cat cache/seal-agreement/report.pdf > "$verify_dir/seal-report.pdf"
+  adb exec-out run-as in.signsetu cat cache/seal-agreement/app.json > "$verify_dir/seal-app.json"
+  python tools/security/seal_agreement.py --pdf "$verify_dir/seal-report.pdf" --app "$verify_dir/seal-app.json"
 fi

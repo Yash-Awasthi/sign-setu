@@ -16,6 +16,7 @@ concurrency:
 jobs:
   version:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       name: ${{ steps.v.outputs.name }}
       new: ${{ steps.v.outputs.new }}
@@ -30,6 +31,7 @@ jobs:
 
   android:
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -64,6 +66,7 @@ jobs:
 
   avatar:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: avatar
@@ -82,6 +85,7 @@ jobs:
 
   portal:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: portal
@@ -103,6 +107,7 @@ jobs:
 
   tools:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -127,7 +132,20 @@ jobs:
       - name: The portal has no write path to session data
         run: python tools/ci/check_portal.py
       - name: The release evidence matches its hashes
-        run: python tools/security/release_manifest.py release/0.8.52 --check
+        run: |
+          latest=$(ls -d release/*/ | sort -V | tail -1)
+          python tools/security/release_manifest.py "$latest" --check
+      - name: The changelog and the device matrix follow the build
+        run: python tools/docs/check_release.py
+      - name: Every implemented control names evidence in the tree
+        run: python tools/docs/check_attestation.py
+      - name: The design tokens, screens, split surfaces, baselines and error copies hold
+        run: |
+          python tools/ux/check_tokens.py
+          python tools/ux/check_inventory.py
+          python tools/ux/check_split.py
+          python tools/ux/check_baselines.py
+          python tools/ux/check_error_copies.py
       - name: Content manifest is current
         run: python tools/content/build_content.py --check
       - name: Content references, ids and language coverage
@@ -141,6 +159,7 @@ jobs:
 
   gateway:
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: gateway
@@ -172,6 +191,7 @@ jobs:
   # The station brain and relay ship as Python and scripts: they must parse on both shells, and the relay config must load.
   station:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -200,7 +220,9 @@ jobs:
 
   semgrep:
     runs-on: ubuntu-24.04
-    container: semgrep/semgrep
+    timeout-minutes: 20
+    # The image tag is the version, not `latest`, so a rule change upstream cannot turn this gate red on its own.
+    container: semgrep/semgrep:1.187.0
     steps:
       - uses: actions/checkout@v5
       # The avatar bundle is built from avatar/src, scanned here as source; minified, it only times the rules out.
@@ -208,6 +230,7 @@ jobs:
 
   osv:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - name: Scan app dependencies
@@ -217,8 +240,11 @@ jobs:
           # Lint and test tooling never ships, so scan only the release runtime lines.
           mkdir shipped
           grep -E '(standard|nearby)ReleaseRuntimeClasspath' app/gradle.lockfile > shipped/gradle.lockfile
+          # An empty staging file scans as zero packages and passes: refuse it here instead.
+          test -s shipped/gradle.lockfile
           ./osv-scanner scan source --lockfile shipped/gradle.lockfile --format json --output osv.json || true
           # max_severity is a CVSS base score; 7.0 and above is high or critical.
+          jq -e '(.results? | type) == "array"' osv.json > /dev/null
           worst=$(jq '[.results[]?.packages[]?.groups[]?.max_severity | select(. != null and . != "") | tonumber] | max // 0' osv.json)
           echo "worst CVSS: $worst"
           jq -e ". < 7" <<< "$worst" > /dev/null
@@ -278,6 +304,9 @@ jobs:
       # StageEndToEndTest drives the emulator's camera; the classes that measure frame time need a phone's GPU.
       - name: Build the app and test APKs
         run: ./gradlew --console=plain :app:assembleStandardDebug :app:assembleStandardDebugAndroidTest
+      # The build above installed the pinned NDK and CMake into ANDROID_HOME, so this is the job whose SDK can be checked.
+      - name: NDK and CMake match the build, the docs and the installed SDK
+        run: python3 tools/ci/check_toolchain.py
       - uses: reactivecircus/android-emulator-runner@v2
         # The runner's `script` input is a list of single lines, not a shell script, so the
         # loop and its fallbacks live in tools/ci/run_instrumented.sh. These names stay here
@@ -305,6 +334,7 @@ jobs:
 
   gitleaks:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
@@ -322,6 +352,7 @@ jobs:
     needs: [version, android, avatar, portal, tools, gateway, station, semgrep, osv, instrumented, gitleaks]
     if: ${{ !failure() && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'Yash-Awasthi/sign-setu-pvt' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     concurrency: release
     permissions:
       contents: write
@@ -365,7 +396,7 @@ jobs:
       - name: Release evidence
         run: |
           python3 tools/security/release_manifest.py out --version "$VERSION"
-          python3 tools/security/release_manifest.py out --check
+          python3 tools/security/release_manifest.py out --check --sbom-current
       - name: Publish
         run: |
           tag="v$VERSION"
