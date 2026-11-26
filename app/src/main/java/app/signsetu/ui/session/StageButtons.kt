@@ -64,13 +64,14 @@ import app.signsetu.ui.theme.Radius
 import app.signsetu.ui.theme.StageTones
 
 @Composable
-internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, name: String? = label) {
+internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, name: String? = label, focused: Boolean = false) {
     val answer = LocalAnswerColors.current
     PressableSurface(
         onClick = onClick,
         shape = RoundedCornerShape(Radius.r20),
         color = Color.White,
         border = if (chosen) BorderStroke(Space.xs, answer.selection) else TileEdge,
+        focused = focused,
         modifier = modifier.heightIn(min = Space.s96).semantics {
             role = Role.Button
             (label ?: name)?.let { contentDescription = it }
@@ -92,13 +93,14 @@ internal fun ChoiceTile(cardId: String, label: String?, chosen: Boolean, onClick
 }
 
 @Composable
-internal fun NumberButton(digit: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
+internal fun NumberButton(digit: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, focused: Boolean = false) {
     val answer = LocalAnswerColors.current
     PressableSurface(
         onClick = onClick,
         shape = CircleShape,
         color = if (chosen) answer.selection else Color.White,
         border = if (chosen) null else TileEdge,
+        focused = focused,
         modifier = modifier.aspectRatio(1f).semantics {
             role = Role.Button
             contentDescription = digit
@@ -120,13 +122,14 @@ internal fun PauseRow(content: ContentBundle, lang: String, chosenCard: String?,
 
 /** A picture over its word, for the three answers that keep a conversation honest. */
 @Composable
-internal fun StripAnswer(cardId: String, label: String?, name: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier) {
+internal fun StripAnswer(cardId: String, label: String?, name: String, chosen: Boolean, onClick: () -> Unit, modifier: Modifier, focused: Boolean = false) {
     val answer = LocalAnswerColors.current
     PressableSurface(
         onClick = onClick,
         shape = RoundedCornerShape(Radius.r20),
         color = answer.unsure,
         border = if (chosen) BorderStroke(Space.s3, answer.onUnsure) else null,
+        focused = focused,
         modifier = modifier.height(Space.s76).semantics {
             role = Role.Button
             contentDescription = label ?: name
@@ -149,12 +152,14 @@ internal fun SmallAnswer(
     icon: Painter? = null,
     /** A short word under the picture, for buttons too narrow for a label beside it. */
     caption: String? = null,
+    focused: Boolean = false,
 ) {
     PressableSurface(
         onClick = onClick,
         shape = Radius.pill,
         color = color,
         border = if (chosen) BorderStroke(Space.s3, onColor) else null,
+        focused = focused,
         modifier = modifier.height(height).semantics {
             role = Role.Button
             contentDescription = label ?: name
@@ -181,6 +186,8 @@ internal fun PressableSurface(
     modifier: Modifier = Modifier,
     border: BorderStroke? = null,
     shadowElevation: Dp = Space.none,
+    /** A keyboard or switch is on this control: it wears the focus ring round its own shape. */
+    focused: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -195,7 +202,7 @@ internal fun PressableSurface(
         border = border,
         shadowElevation = shadowElevation,
         interactionSource = interaction,
-        modifier = modifier.graphicsLayer {
+        modifier = modifier.focusRing(focused, shape).graphicsLayer {
             scaleX = scale
             scaleY = scale
         },

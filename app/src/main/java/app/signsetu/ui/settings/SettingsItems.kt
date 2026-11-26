@@ -16,7 +16,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import kotlin.math.roundToInt
 import androidx.compose.material3.Switch
+import androidx.compose.material3.RadioButton
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -27,6 +29,7 @@ import app.signsetu.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import app.signsetu.data.settings.InterpreterApp
+import app.signsetu.data.settings.SwitchAccess
 import app.signsetu.ui.theme.Space
 import app.signsetu.ui.theme.Radius
 
@@ -76,6 +79,32 @@ internal fun SwitchItem(@StringRes title: Int, @StringRes summary: Int, checked:
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },
         modifier = Modifier.toggleable(checked, role = Role.Switch, onValueChange = onChange),
     )
+}
+
+/** One choice of several, with its reason under it; the same shape as the theme screen's choices. */
+@Composable
+internal fun ChoiceItem(@StringRes title: Int, @StringRes summary: Int, selected: Boolean, onPick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(stringResource(title)) },
+        supportingContent = { Text(stringResource(summary)) },
+        colors = ItemColors,
+        trailingContent = { RadioButton(selected = selected, onClick = null) },
+        modifier = Modifier.selectable(selected, role = Role.RadioButton, onClick = onPick),
+    )
+}
+
+@StringRes
+internal fun switchName(mode: SwitchAccess) = when (mode) {
+    SwitchAccess.OFF -> R.string.settings_switch_off
+    SwitchAccess.DWELL -> R.string.settings_switch_dwell
+    SwitchAccess.STEP -> R.string.settings_switch_step
+}
+
+@StringRes
+internal fun switchSummary(mode: SwitchAccess) = when (mode) {
+    SwitchAccess.OFF -> R.string.settings_switch_off_summary
+    SwitchAccess.DWELL -> R.string.settings_switch_dwell_summary
+    SwitchAccess.STEP -> R.string.settings_switch_step_summary
 }
 
 @Composable

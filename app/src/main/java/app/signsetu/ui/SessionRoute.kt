@@ -189,6 +189,7 @@ internal fun SessionRoute(
                 onPauseEnd = vm::endPause,
                 onGiven = vm::give,
                 onNeed = vm::askNeed,
+                switchAccess = settings.switchAccess,
             )
         }
     }

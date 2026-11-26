@@ -63,6 +63,7 @@ import app.signsetu.ui.theme.LocalStageColors
 import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.rememberUpdatedState
+import app.signsetu.data.settings.SwitchAccess
 import app.signsetu.ui.theme.TypeSize
 import app.signsetu.ui.theme.Radius
 import app.signsetu.ui.theme.StageTones
@@ -184,7 +185,17 @@ internal fun ChoiceGrid(
     onCard: (String) -> Unit,
     modifier: Modifier,
     picked: Set<String> = emptySet(),
+    /** Off, dwell or step: the same tiles are one Tab or one switch away. */
+    switchAccess: SwitchAccess = SwitchAccess.OFF,
+    onEscape: () -> Unit = {},
 ) {
+    val flow = rememberAnswerFlow(
+        ids = choices,
+        columns = if (numbers) 5 else 3,
+        switch = switchAccess,
+        onKeyboard = {},
+        onLeave = onEscape,
+    )
     key(choices) {
         // Tiles sit right under the question; the spare room goes below them, not in a gap above.
         Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.sm, Alignment.Top)) {
@@ -192,7 +203,8 @@ internal fun ChoiceGrid(
                 choices.chunked(5).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), modifier = Modifier.fillMaxWidth()) {
                         row.forEach { id ->
-                            NumberButton(id.removePrefix("n"), chosenCard == id, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(40 * choices.indexOf(id))))
+                            val pick = { onCard(id) }
+                            NumberButton(id.removePrefix("n"), chosenCard == id, pick, Modifier.weight(1f).popIn(rememberPopIn(40 * choices.indexOf(id))).answerTarget(flow, id, pick), focused = flow.focused == id)
                         }
                         repeat(5 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
@@ -201,7 +213,8 @@ internal fun ChoiceGrid(
                 choices.chunked(3).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), modifier = Modifier.fillMaxWidth()) {
                         row.forEach { id ->
-                            ChoiceTile(id, content.cards[id]?.label?.get(lang), chosenCard == id || id in picked, { onCard(id) }, Modifier.weight(1f).popIn(rememberPopIn(70 * choices.indexOf(id))), name = content.cards[id]?.label?.get("en"))
+                            val pick = { onCard(id) }
+                            ChoiceTile(id, content.cards[id]?.label?.get(lang), chosenCard == id || id in picked, pick, Modifier.weight(1f).popIn(rememberPopIn(70 * choices.indexOf(id))).answerTarget(flow, id, pick), name = content.cards[id]?.label?.get("en"), focused = flow.focused == id)
                         }
                         repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                     }

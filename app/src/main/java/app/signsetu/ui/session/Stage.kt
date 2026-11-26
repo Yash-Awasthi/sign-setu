@@ -45,6 +45,7 @@ import app.signsetu.data.content.planText
 import app.signsetu.data.content.negatedText
 import app.signsetu.data.content.questionKind
 import app.signsetu.data.session.Profile
+import app.signsetu.data.settings.SwitchAccess
 import app.signsetu.sign.SignChoice
 import app.signsetu.sign.SignWindow
 import app.signsetu.ui.avatar.AVATAR_ASPECT
@@ -90,6 +91,8 @@ fun Stage(
     onNeed: (String) -> Unit = onCard,
     /** What the camera read, for the officer to accept (VideoCallStage). */
     onCameraRead: (card: String, cue: String?) -> Unit = { _, _ -> },
+    /** How the subject steps through the answers with one switch, from the accessibility settings. */
+    switchAccess: SwitchAccess = SwitchAccess.OFF,
 ) {
     val lang = ui.session.subjectLang
     val profile = ui.session.profile
@@ -131,6 +134,15 @@ fun Stage(
     val paused = ui.answeredCard in PauseCards
     val context = LocalContext.current
     var showExpressBoard by rememberSaveable { mutableStateOf(false) }
+
+    // Escape backs out of whatever the person opened over the answers, the same way the Back gesture does.
+    val escape: () -> Unit = {
+        when {
+            showExpressBoard -> showExpressBoard = false
+            drawing || drawingSent -> { drawing = false; drawingSent = false }
+            writing -> writing = false
+        }
+    }
 
     // A young child is not startled by a buzz in the hand.
     LaunchedEffect(ui.answeredYes, ui.answeredCard) {
@@ -420,7 +432,7 @@ fun Stage(
         }
         item.choices.isNotEmpty() && !signing && !settled -> { m ->
             Column(m, verticalArrangement = Arrangement.spacedBy(Space.md)) {
-                ChoiceGrid(item.choices, item.numbers, ui.answeredCard, content, lang, pick, Modifier.weight(1f), picked)
+                ChoiceGrid(item.choices, item.numbers, ui.answeredCard, content, lang, pick, Modifier.weight(1f), picked, switchAccess = switchAccess, onEscape = escape)
                 pauseRow()
             }
         }
@@ -451,6 +463,8 @@ fun Stage(
             onCameraRead = onCameraRead,
             onNeed = onNeed,
             onMessages = onOfficer,
+            switchAccess = switchAccess,
+            onEscape = escape,
             cameraOn = cameraOn,
             onNext = onNextRule.takeIf { rule != null },
             statement = statement,

@@ -14,6 +14,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -47,9 +48,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -73,6 +78,7 @@ import app.signsetu.camera.LandmarkFrame
 import app.signsetu.camera.LandmarkTracker
 import app.signsetu.camera.countOpenFingers
 import app.signsetu.data.content.or
+import app.signsetu.data.settings.SwitchAccess
 import app.signsetu.data.content.AnswerType
 import app.signsetu.data.content.ContentBundle
 import androidx.compose.material.icons.Icons
@@ -144,6 +150,10 @@ internal fun VideoCallStage(
     onExpandPanel: () -> Unit = {},
     /** A nod, shake, thumb, point, held fingers, palm, shrug or courtesy the camera read, sent to the officer to accept. */
     onCameraRead: (card: String, cue: String?) -> Unit = { _, _ -> },
+    /** How the subject steps through the answers with one switch; off means the keyboard only. */
+    switchAccess: SwitchAccess = SwitchAccess.OFF,
+    /** Escape out of the answer flow, for a panel this stage does not own. */
+    onEscape: () -> Unit = {},
 ) {
     val lang = ui.session.subjectLang
     val pending = ui.pending
@@ -194,13 +204,45 @@ internal fun VideoCallStage(
     val context = LocalContext.current
     val explore = remember { (context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager).isTouchExplorationEnabled }
     var tapped by remember { mutableStateOf(false) }
+    // A keyboard or a switch also counts as reaching for the controls; once used, they stay put for this item.
+    var keyboard by remember(pending) { mutableStateOf(false) }
+    // A key on the stage itself (not inside a panel) opens the bar and lands on its first answer.
+    var reveal by remember(pending) { mutableStateOf(false) }
+    // The stage itself is the first Tab stop; a key there opens the controls before any of them can be reached.
+    val gate = remember { FocusRequester() }
+    var atGate by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { runCatching { gate.requestFocus() } }
     LaunchedEffect(touches) {
         if (touches == 0) return@LaunchedEffect
         tapped = true
         delay(CONTROLS_MS)
         tapped = false
     }
-    val controls = tapped || explore
+    val controls = tapped || explore || keyboard || switchAccess != SwitchAccess.OFF
+    // The answer bar's stops, in the order the row draws them, so Tab order is what the eye sees.
+    val barIds = if (signing || controls) answerBarIds(signing, statement, onNext != null, rightsNotice != null, controls, moreAnswers) else emptyList()
+    val bar = rememberAnswerFlow(
+        ids = barIds,
+        columns = 7,
+        switch = switchAccess,
+        onKeyboard = { keyboard = true },
+        onLeave = {
+            when {
+                moreAnswers -> moreAnswers = false
+                sheetFor != null -> sheetFor = null
+                else -> onEscape()
+            }
+        },
+    )
+    // A picture question opens on its tiles, so a key there must not jump to the bar's Yes instead.
+    val pictureOpen = panel != null && !panelCollapsed && pictureCards.isNotEmpty()
+    // The first key that opens the bar also lands on its first answer, so Enter answers without another Tab.
+    LaunchedEffect(controls, reveal) {
+        if (!controls || !reveal) return@LaunchedEffect
+        reveal = false
+        if (pictureOpen || barIds.isEmpty()) return@LaunchedEffect
+        bar.focus(barIds.first())
+    }
     LaunchedEffect(touches, signing, pending) {
         guideStep = -1
         if (signing || pending == null) return@LaunchedEffect
@@ -322,6 +364,17 @@ internal fun VideoCallStage(
         modifier = modifier
             .fillMaxSize()
             .background(LocalCall.current.bg)
+            // The first Tab lands here and reveals the controls; a key inside a panel is not the stage's own.
+            .focusRequester(gate)
+            .onFocusChanged { atGate = it.isFocused }
+            .focusable()
+            .onKeyEvent {
+                if (atGate) {
+                    keyboard = true
+                    reveal = true
+                }
+                false
+            }
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
@@ -595,30 +648,52 @@ internal fun VideoCallStage(
             }
 
             // Path one, answers: one primary action and the needs; the unsure trio waits behind More.
+            // [bar] walks this row in the order it is drawn, so Tab and the arrows follow the eye.
             val answers = LocalAnswerColors.current
             if (signing || controls) Column(Modifier.fillMaxWidth().testTag(StagePaths.ANSWERS), verticalArrangement = Arrangement.spacedBy(Space.s6)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6), verticalAlignment = Alignment.CenterVertically) {
+                    val yes = { answer("yes") }
                     when {
-                        signing -> StagePrimaryAction(stringResource(R.string.stage_primary_done), onDoneSigning, Modifier.weight(1.6f))
-                        onNext != null -> StagePrimaryAction(stringResource(R.string.stage_next), onNext, Modifier.weight(1.6f))
-                        !statement -> StagePrimaryAction(content.subjectText("yes", lang) ?: stringResource(R.string.stage_primary_yes), { answer("yes") }, Modifier.weight(1.6f))
+                        signing -> StagePrimaryAction(
+                            stringResource(R.string.stage_primary_done), onDoneSigning,
+                            Modifier.weight(1.6f).answerTarget(bar, "done", onDoneSigning), focused = bar.focused == "done",
+                        )
+                        onNext != null -> StagePrimaryAction(
+                            stringResource(R.string.stage_next), onNext,
+                            Modifier.weight(1.6f).answerTarget(bar, "next", onNext), focused = bar.focused == "next",
+                        )
+                        !statement -> StagePrimaryAction(
+                            content.subjectText("yes", lang) ?: stringResource(R.string.stage_primary_yes), yes,
+                            Modifier.weight(1.6f).answerTarget(bar, "yes", yes), focused = bar.focused == "yes",
+                        )
                     }
                     if (!signing) {
-                        if (!statement && onNext == null) SmallAnswer("no", null, cardLabel(content, "no", lang), StageTones.answerNo, Color.White, false, { answer("no") }, Modifier.weight(1f), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Close))
-                        if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1.6f), height = Space.s52)
+                        val no = { answer("no") }
+                        if (!statement && onNext == null) SmallAnswer("no", null, cardLabel(content, "no", lang), StageTones.answerNo, Color.White, false, no, Modifier.weight(1f).answerTarget(bar, "no", no), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Close), focused = bar.focused == "no")
+                        val unsure = { answer(DONT_UNDERSTAND) }
+                        if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, unsure, Modifier.weight(1.6f).answerTarget(bar, DONT_UNDERSTAND, unsure), height = Space.s52, focused = bar.focused == DONT_UNDERSTAND)
                     }
                     if (controls) {
-                        SmallAnswer("water", null, cardLabel(content, "water", lang), StageTones.answerWater, Color.White, false, { answer("water") }, Modifier.weight(1f), height = Space.s52)
-                        SmallAnswer("food", null, cardLabel(content, "food", lang), StageTones.answerFood, Color.White, false, { answer("food") }, Modifier.weight(1f), height = Space.s52)
-                        SmallAnswer("express", null, cardLabel(content, "help", lang), StageTones.answerExpress, Color.White, false, { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenExpressBoard() }, Modifier.weight(1f), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Favorite))
-                        if (!signing && pending != null && !statement) StageMoreAnswers(moreAnswers, { moreAnswers = !moreAnswers }, Modifier.weight(1f))
+                        val water = { answer("water") }
+                        val food = { answer("food") }
+                        val express = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onOpenExpressBoard() }
+                        SmallAnswer("water", null, cardLabel(content, "water", lang), StageTones.answerWater, Color.White, false, water, Modifier.weight(1f).answerTarget(bar, "water", water), height = Space.s52, focused = bar.focused == "water")
+                        SmallAnswer("food", null, cardLabel(content, "food", lang), StageTones.answerFood, Color.White, false, food, Modifier.weight(1f).answerTarget(bar, "food", food), height = Space.s52, focused = bar.focused == "food")
+                        SmallAnswer("express", null, cardLabel(content, "help", lang), StageTones.answerExpress, Color.White, false, express, Modifier.weight(1f).answerTarget(bar, "express", express), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Favorite), focused = bar.focused == "express")
+                        if (!signing && pending != null && !statement) {
+                            val more = { moreAnswers = !moreAnswers }
+                            StageMoreAnswers(moreAnswers, more, Modifier.weight(1f).answerTarget(bar, MORE, more), focused = bar.focused == MORE)
+                        }
                     }
                 }
                 // The trio keeps its old calls, haptics and selected states; only its visibility now waits on More.
                 if (!signing && pending != null && !statement && moreAnswers) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s6)) {
-                    SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", { answer("dont_know") }, Modifier.weight(1f), height = Space.s64, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know))
-                    SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, { answer(DONT_UNDERSTAND) }, Modifier.weight(1f), height = Space.s64, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand))
-                    SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", { answer("wrong") }, Modifier.weight(1f), height = Space.s64, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong))
+                    val dontKnow = { answer("dont_know") }
+                    val unsure = { answer(DONT_UNDERSTAND) }
+                    val wrong = { answer("wrong") }
+                    SmallAnswer("dont_know", null, content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), answers.unsure, answers.onUnsure, ui.answeredCard == "dont_know", dontKnow, Modifier.weight(1f).answerTarget(bar, "dont_know", dontKnow), height = Space.s64, caption = content.subjectText("dont_know", lang) ?: stringResource(R.string.stage_dont_know), focused = bar.focused == "dont_know")
+                    SmallAnswer(DONT_UNDERSTAND, null, content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, unsure, Modifier.weight(1f).answerTarget(bar, DONT_UNDERSTAND, unsure), height = Space.s64, caption = content.subjectText(DONT_UNDERSTAND, lang) ?: stringResource(R.string.stage_dont_understand), focused = bar.focused == DONT_UNDERSTAND)
+                    SmallAnswer("wrong", null, content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), answers.unsure, answers.onUnsure, ui.answeredCard == "wrong", wrong, Modifier.weight(1f).answerTarget(bar, "wrong", wrong), height = Space.s64, caption = content.subjectText("wrong", lang) ?: stringResource(R.string.stage_wrong), focused = bar.focused == "wrong")
                 }
             }
 

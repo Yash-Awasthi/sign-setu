@@ -128,15 +128,16 @@ internal fun StageToolBar(
 
 /** The one filled action of the stage: Yes, Done while signing, or Next on a ground rule. */
 @Composable
-internal fun StagePrimaryAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun StagePrimaryAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, focused: Boolean = false) {
     val call = LocalCall.current
+    val shape = RoundedCornerShape(Radius.r18)
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(Radius.r18),
+        shape = shape,
         color = call.accent,
         border = BorderStroke(Space.xxs, call.accentDeep),
         shadowElevation = Space.s6,
-        modifier = modifier.heightIn(min = Space.s52).testTag("stage.primary"),
+        modifier = modifier.focusRing(focused, shape).heightIn(min = Space.s52).testTag("stage.primary"),
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = Space.md, vertical = Space.md)) {
             Text(
@@ -154,7 +155,7 @@ internal fun StagePrimaryAction(label: String, onClick: () -> Unit, modifier: Mo
 
 /** The one affordance that opens the unsure answers (do not know, do not understand, wrong). */
 @Composable
-internal fun StageMoreAnswers(expanded: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+internal fun StageMoreAnswers(expanded: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier, focused: Boolean = false) {
     val answer = LocalAnswerColors.current
     val label = stringResource(R.string.stage_more_answers)
     Surface(
@@ -163,6 +164,7 @@ internal fun StageMoreAnswers(expanded: Boolean, onToggle: () -> Unit, modifier:
         color = answer.unsure,
         border = if (expanded) BorderStroke(Space.xxs, answer.onUnsure) else null,
         modifier = modifier
+            .focusRing(focused, Radius.pill)
             .heightIn(min = Space.s48)
             .testTag("stage.more")
             .semantics { contentDescription = label },

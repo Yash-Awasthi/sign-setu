@@ -63,6 +63,11 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -125,7 +130,9 @@ internal fun WritingPanel(
                 keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { send() }),
                 cursorBrush = SolidColor(Ink),
-                modifier = Modifier.fillMaxSize().padding(Space.s20).focusRequester(focus),
+                modifier = Modifier.fillMaxSize().padding(Space.s20).focusRequester(focus)
+                    // Escape closes the writing panel, the same as its Back button.
+                    .onPreviewKeyEvent { e -> if (e.type == KeyEventType.KeyDown && e.key == Key.Escape) { onBack(); true } else false },
             )
         }
         if (text.length > TEXT_CAP - 200) {
@@ -197,7 +204,13 @@ internal fun DrawingPanel(content: ContentBundle, lang: String, strokes: Snapsho
     val shape by rememberUpdatedState(tool)
     val paper = Color.White
     val board = stringResource(R.string.stage_draw_board)
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.md)) {
+    Column(
+        modifier.onPreviewKeyEvent { e ->
+            // Escape backs out of drawing, the same as its Back button.
+            if (e.type == KeyEventType.KeyDown && e.key == Key.Escape && onBack != null) { onBack(); true } else false
+        },
+        verticalArrangement = Arrangement.spacedBy(Space.md),
+    ) {
         Surface(
             shape = RoundedCornerShape(Radius.r20),
             color = paper,

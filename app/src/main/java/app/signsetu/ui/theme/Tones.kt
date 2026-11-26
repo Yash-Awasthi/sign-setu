@@ -143,4 +143,7 @@ object StageTones {
     val answerWater = Color(0xFF0369A1)
     val answerFood = Color(0xFFD97706)
     val answerExpress = Color(0xFF7C3AED)
+
+    /** The keyboard or switch focus ring, paired with white in [AnswerFlow.focusRing]. */
+    val focus = Color(0xFF0B57D0)
 }

@@ -58,6 +58,7 @@ import app.signsetu.ui.components.LocalOnlineAssistant
 import app.signsetu.data.settings.AppSettings
 import app.signsetu.data.settings.InterpreterApp
 import app.signsetu.data.settings.SettingsStore
+import app.signsetu.data.settings.SwitchAccess
 import app.signsetu.ui.theme.Space
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -135,6 +136,11 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
                 SwitchItem(R.string.settings_pin_app, R.string.settings_pin_app_summary, s.pinApp) { guard(it, store::setPinApp) }
                 SwitchItem(R.string.settings_block_screenshots, R.string.settings_block_screenshots_summary, s.blockScreenshots) { guard(it, store::setBlockScreenshots) }
                 SwitchItem(R.string.settings_app_lock, R.string.settings_app_lock_summary, s.appLock) { guard(it, store::setAppLock) }
+            }
+            Group(R.string.settings_access) {
+                SwitchAccess.entries.forEach { mode ->
+                    ChoiceItem(switchName(mode), switchSummary(mode), s.switchAccess == mode) { scope.launch { store.setSwitchAccess(mode) } }
+                }
             }
             Group(R.string.settings_stage) {
                 SwitchItem(R.string.settings_camera, R.string.settings_camera_summary, s.cameraEnabled) { on -> scope.launch { store.setCameraEnabled(on) } }

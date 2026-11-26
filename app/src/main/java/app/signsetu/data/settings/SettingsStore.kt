@@ -24,6 +24,9 @@ enum class InterpreterApp { NONE, WHATSAPP, SANDES }
 /** SYSTEM follows the phone and is the default; the officer can pin Light or Dark. */
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** How the subject steps through the answers with one switch: not at all, on a dwell, or on each press. */
+enum class SwitchAccess { OFF, DWELL, STEP }
+
 /** The officer-side colour theme; each has a light and a dark form. */
 enum class ColorTheme { EMERALD, MOCHA, CERULEAN, AMETHYST, CONTRAST, TEAL_TURQUOISE, TIDAL_WAVE, TOKYO_NIGHT, YIN_YANG, YOTSUBA }
 
@@ -58,6 +61,8 @@ data class AppSettings(
     val amoled: Boolean = false,
     /** The officer's own "less motion" switch; signing still plays, decoration does not. */
     val reduceMotion: Boolean = false,
+    /** One switch for the subject's answers: off, dwell scan, or step per press. */
+    val switchAccess: SwitchAccess = SwitchAccess.OFF,
     /** Pins the app while a subject holds the phone. */
     val pinApp: Boolean = !app.signsetu.BuildConfig.TEST_UNLOCKED,
     /** Blocks screenshots and screen recording; the build switch sets the default. */
@@ -119,6 +124,7 @@ class SettingsStore(private val context: Context) {
         val colorTheme = stringPreferencesKey("color_theme")
         val amoled = booleanPreferencesKey("amoled")
         val reduceMotion = booleanPreferencesKey("reduce_motion")
+        val switchAccess = stringPreferencesKey("switch_access")
         val pinApp = booleanPreferencesKey("pin_app")
         val blockScreenshots = booleanPreferencesKey("block_screenshots")
         val appLock = booleanPreferencesKey("app_lock")
@@ -155,6 +161,7 @@ class SettingsStore(private val context: Context) {
     suspend fun setColorTheme(theme: ColorTheme) = context.store.edit { it[Keys.colorTheme] = theme.name }
     suspend fun setAmoled(on: Boolean) = context.store.edit { it[Keys.amoled] = on }
     suspend fun setReduceMotion(on: Boolean) = context.store.edit { it[Keys.reduceMotion] = on }
+    suspend fun setSwitchAccess(mode: SwitchAccess) = context.store.edit { it[Keys.switchAccess] = mode.name }
     suspend fun setPinApp(on: Boolean) = context.store.edit { it[Keys.pinApp] = on }
     suspend fun setBlockScreenshots(on: Boolean) = context.store.edit { it[Keys.blockScreenshots] = on }
     suspend fun setAppLock(on: Boolean) = context.store.edit { it[Keys.appLock] = on }
@@ -186,6 +193,7 @@ class SettingsStore(private val context: Context) {
         // The AMOLED colour theme became this switch; a phone that had it picked keeps black.
         amoled = this[Keys.amoled] ?: (this[Keys.colorTheme] == "AMOLED"),
         reduceMotion = this[Keys.reduceMotion] ?: false,
+        switchAccess = this[Keys.switchAccess]?.let { runCatching { SwitchAccess.valueOf(it) }.getOrNull() } ?: SwitchAccess.OFF,
         pinApp = this[Keys.pinApp] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
         blockScreenshots = this[Keys.blockScreenshots] ?: app.signsetu.BuildConfig.SECURE_SCREEN,
         appLock = this[Keys.appLock] ?: !app.signsetu.BuildConfig.TEST_UNLOCKED,
