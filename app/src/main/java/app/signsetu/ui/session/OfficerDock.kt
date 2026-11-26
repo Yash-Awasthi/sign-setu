@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -141,17 +140,15 @@ internal fun Dock(
     }
     // Once the subject has answered and nothing is prepared, the next unasked question is one tap away.
     val answeredLast = remember(ui.events) { ui.events.lastOrNull { it.type in AnswerEvents || it.type == EventType.QUESTION_SHOWN }?.type in AnswerEvents }
-    val next = quick.firstOrNull()?.takeIf { answeredLast && pending == null && run.isEmpty() && !typing }
+    // Suggestions name the item ids already on the stage, so a question is never offered twice.
+    val askedIds = remember(ui.events) { ui.events.filter { it.type == EventType.QUESTION_SHOWN }.mapNotNull { it.itemId }.toSet() }
+    val suggestions = remember(content, ui.selectedGroup, ui.session.role, ui.session.profile, askedIds) {
+        nextQuestions(content, ui.selectedGroup, ui.session.role, ui.session.profile, askedIds)
+    }
+    val suggesting = answeredLast && pending == null && run.isEmpty() && !typing
     Surface(color = colors.surfaceContainerLowest, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), shadowElevation = 8.dp) {
         Column(Modifier.navigationBarsPadding().padding(top = Spacing.md)) {
-            next?.let { q ->
-                Button(
-                    onClick = { onAskNow(q) },
-                    modifier = Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm).fillMaxWidth().heightIn(min = 52.dp),
-                ) {
-                    Text(stringResource(R.string.ask_next, q.text.get(officerLang) ?: q.id), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
+            if (suggesting) SuggestionStrip(suggestions, officerLang, onAsk = onAskNow)
             AnimatedVisibility(!typing && quick.isNotEmpty(), enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), contentPadding = PaddingValues(horizontal = Spacing.lg), modifier = Modifier.padding(bottom = Spacing.sm)) {
                     if (noLanguage) item(key = "translate") {

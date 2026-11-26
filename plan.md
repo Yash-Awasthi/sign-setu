@@ -261,7 +261,8 @@ ticked-here: six preset groups (water, food, family, home, toilet, medicine) mat
 ticked-here: NeedRow.kt pins six one-tap tiles (water, food, toilet, pain, help, family) above every state, including an open panel and the faded controls; each calls onNeed(id) and the officer still confirms the need. NeedRowDeviceTest 4 tests exit 0 in 27.9 s; family has no picture asset, so its tile is emoji plus label.
 - [x] A single, obvious way to end a session (owner: "easy the closing of session"), with the other exits demoted to one menu. `[W]`
 ticked-here: the officer header now carries one End session button that opens the existing wrap-up dialog in one tap, the More page no longer offers a second End row, and the overflow menu keeps the only secondary route. EndSessionDeviceTest 4 tests exit 0 in 24.1 s; WrapUpPathsDeviceTest still 4/4; the dialog still holds thank, save and delete by design.
-- [ ] Question-suggestion strip: the next three likely questions for the selected role, one tap each. `[W]`
+- [x] Question-suggestion strip: the next three likely questions for the selected role, one tap each. `[W]`
+ticked-here: SuggestionStrip offers three one-tap questions for the selected role after an answer, drawn from the chosen group then the role's other groups, never repeating a question already shown; QuestionSuggestionsTest 8 tests and SuggestionStripDeviceTest 4 tests exit 0 in 13.9 s; still one strip of three, content order only, no per-role ranking, and nothing while typing or with an item pending.
 
 ### M4.2 The video-call surface (owner: "better ui on video call")
 
