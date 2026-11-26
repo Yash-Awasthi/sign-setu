@@ -43,6 +43,13 @@ jobs:
         run: >-
           ./gradlew --console=plain :app:testStandardDebugUnitTest :app:testNearbyDebugUnitTest
           :app:compileStandardDebugAndroidTestKotlin :app:lintStandardRelease :app:lintStandardDebug
+          :app:verifyCoverage
+      # The coverage report annotates every build, so it is uploaded whether or not the floors passed.
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: coverage
+          path: app/build/reports/coverage
       # The debug SARIF is the one that also covers androidTest; the known list is keyed to it. python3 is on the runner image, the android job installs no Python.
       - name: Lint ratchet
         run: python3 tools/ci/check_lint.py --sarif app/build/reports/lint-results-standardDebug.sarif
@@ -101,7 +108,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install numpy resvg-py pillow soundfile
+      - run: pip install numpy resvg-py pillow soundfile cryptography==50.0.2 pypdf==6.21.4
       - name: Python tool tests
         run: |
           for d in tools/isl tools/security tools/content tools/text2isl tools/docs tools/ci tools/ux; do python -m unittest discover -s "$d" -p 'test_*.py' -v; done
@@ -271,7 +278,7 @@ jobs:
           profile: pixel_6
           # One class per run: given a comma list, the connected task ran only the first class.
           script: |
-            for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest RetentionClockDeviceTest LockedKeystoreDeviceTest VoicePermissionDeviceTest StageHandleTapDeviceTest CallCaptionLightTest OfficerMuteButtonDeviceTest WrapUpPathsDeviceTest SealAgreementDeviceTest ExportFailureDeviceTest; do
+            for c in StageAccessibilityTest StageDeviceAccessibilityTest OverlayTouchTest SessionMigrationTest ReportExportDeviceTest ForensicExportDeviceTest MoreBrowseTest PracticeScreenTest SignPipelineDeviceTest SkeletonOverlayDeviceTest RetentionClockDeviceTest LockedKeystoreDeviceTest VoicePermissionDeviceTest StageHandleTapDeviceTest CallCaptionLightTest OfficerMuteButtonDeviceTest WrapUpPathsDeviceTest SealAgreementDeviceTest ExportFailureDeviceTest VerifierFixtureDeviceTest BodyMapZoomDeviceTest CallLevelsDeviceTest CallSurfaceDeviceTest CaptionLineDeviceTest DatabaseAtRestDeviceTest DrawingBoardDeviceTest EndSessionDeviceTest FamilyCallDeviceTest FeelingsDeviceTest LogPrivacyDeviceTest NeedRowDeviceTest NoNetworkOfflineDeviceTest PrewarmDeviceTest RelatedChipsDeviceTest SessionDockDeviceTest SessionSurvivesRestartDeviceTest SlidePanelDeviceTest StageToolSheetDeviceTest StageToolsDeviceTest SuggestionStripDeviceTest TalkBackPassTest TapToSignDeviceTest TouchTargetsDeviceTest; do
               ./gradlew --console=plain :app:connectedStandardDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.signsetu.$c -Pandroid.testInstrumentationRunnerArguments.numShards=4 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }} || { mkdir -p app/build/reports/androidTests; adb logcat -d > app/build/reports/androidTests/logcat.txt; exit 1; }
             done
             # The same exported report, checked off the phone: the app's seal must satisfy tools/security/verify_seal.py.

@@ -30,6 +30,15 @@ this table is a signing or installer claim. The numbers describe commit `6115f5d
 | SBOM | CycloneDX 1.5 JSON with 234 components, equal to the 234 release-runtime lines of the lockfile; written by `tools/security/sbom_lockfile.py` because Syft is not installed here; sha256 24c8779ed8a2af48754c178771f66aad519716b6bab4b046972d1d8079ed1d7f, 68411 bytes, kept as sign-setu-release.cdx.json beside the APK under `app/build/sbom/` and regenerated from the lockfile, so it is not committed |
 | Dependency verification | `gradle/verification-metadata.xml` sha256 fe3c0eca068688b27d0f15ad1551c5d09ae13c86df04964d57566ab7654bcf78 |
 
+### Unit-test coverage floors
+
+The android job runs `:app:verifyCoverage` together with the unit tests. It reads the JaCoCo report AGP writes to
+`app/build/reports/coverage/test/standard/debug/report.xml` and fails when a package's line coverage is below its
+floor, naming every package that is. The floors are one file a reader can find, `tools/ci/coverage-floors.txt`; it
+covers the session screen, the stored records, the sign readers, the stage shell and the settings store.
+A floor is the value measured when it was set and may only rise: raise the coverage, or say why the floor must move.
+The same directory is uploaded as the android job's `coverage` artefact on every run, so the numbers behind a failure
+can be opened from the run page.
 ## 2. What the release job builds and signs
 
 The `release` job runs only on a push to `master` in the private repository, after the version, build, test, analysis

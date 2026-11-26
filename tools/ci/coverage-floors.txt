@@ -1,0 +1,17 @@
+# JaCoCo line-coverage floors for the standard debug unit tests: one package=percent per line.
+# A floor is the value measured when it was set, and it may only rise: raise it in the change that
+# lifts coverage, never lower it to get a build green. verifyCoverage in app/build.gradle.kts reads
+# the report AGP writes to app/build/reports/coverage/test/standard/debug/report.xml and fails,
+# naming every package, when one falls below its floor. CI uploads that directory as the
+# "coverage" artefact of the android job.
+
+# session: the session screen (Stage, OfficerPane, transcript, quick notes)
+app.signsetu.ui.session=19.83
+# records: the stored session database, seals and retention
+app.signsetu.data.session=18.18
+# sign readers: the format 3 reader, spelling and sentence makers
+app.signsetu.sign=77.76
+# stage: the app shell around the stage (AppRoot, SessionRoute, LockScreen)
+app.signsetu.ui=0.19
+# settings: the settings store behind the screens
+app.signsetu.data.settings=29.28

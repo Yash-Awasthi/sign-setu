@@ -1,6 +1,13 @@
 import com.android.build.api.artifact.SingleArtifact
 import java.time.LocalDate
 import java.util.Properties
+import java.util.Locale
+import javax.xml.parsers.DocumentBuilderFactory
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.TaskAction
+import org.w3c.dom.Element
 
 // Local settings, untracked: -P properties win, then local.properties. Empty is fine and means offline only.
 val local = Properties().apply { rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load) }
@@ -60,7 +67,11 @@ android {
     bundle { language { enableSplit = false } }
 
     buildTypes {
-        debug { buildConfigField("boolean", "TEST_UNLOCKED", "$testUnlocked") }
+        debug {
+            buildConfigField("boolean", "TEST_UNLOCKED", "$testUnlocked")
+            // JaCoCo per-package floors (verifyCoverage below) need the unit tests measured.
+            enableUnitTestCoverage = true
+        }
         release {
             // Universal 64-bit build by default (ARM phones, x86_64 emulators and tablets); -Pabi=arm64-v8a for phones only.
             ndk { abiFilters += (providers.gradleProperty("abi").orNull?.split(",") ?: listOf("arm64-v8a", "x86_64")) }
@@ -232,4 +243,77 @@ dependencies {
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.compose.ui.test.junit4.accessibility)
+}
+
+// The per-package lines each package must keep covered, from tools/ci/coverage-floors.txt.
+// A floor is a floor: missing one fails the build and names every package that did.
+abstract class VerifyCoverage : DefaultTask() {
+    @get:InputFile
+    abstract val floors: RegularFileProperty
+
+    @get:InputFile
+    abstract val report: RegularFileProperty
+
+    @TaskAction
+    fun verify() {
+        val floorFile = floors.get().asFile
+        val floorsByPackage = linkedMapOf<String, Double>()
+        floorFile.readLines().forEachIndexed { index, raw ->
+            val line = raw.substringBefore('#').trim()
+            if (line.isEmpty()) return@forEachIndexed
+            val separator = line.indexOf('=')
+            if (separator <= 0) throw GradleException("${floorFile.name}:${index + 1}: expected package=percent, got \"$line\"")
+            val name = line.substring(0, separator).trim()
+            val percent = line.substring(separator + 1).trim().toDoubleOrNull()
+                ?: throw GradleException("${floorFile.name}:${index + 1}: $name has no percentage")
+            if (percent < 0.0 || percent > 100.0) throw GradleException("${floorFile.name}:${index + 1}: $name floor $percent is outside 0..100")
+            if (floorsByPackage.put(name, percent) != null) throw GradleException("${floorFile.name}:${index + 1}: $name appears twice")
+        }
+        if (floorsByPackage.isEmpty()) throw GradleException("${floorFile.name}: no floors")
+
+        val reportFile = report.get().asFile
+        if (!reportFile.isFile) throw GradleException("no coverage report at $reportFile; run :app:createStandardDebugUnitTestCoverageReport")
+        // report.xml names report.dtd on jacoco.org; never fetch it, and never fail because it is absent.
+        val factory = DocumentBuilderFactory.newInstance()
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        factory.isValidating = false
+        val document = factory.newDocumentBuilder().parse(reportFile)
+        val measured = linkedMapOf<String, Double>()
+        val packages = document.getElementsByTagName("package")
+        for (i in 0 until packages.length) {
+            val element = packages.item(i) as Element
+            var missed = 0L
+            var covered = 0L
+            val children = element.childNodes
+            for (j in 0 until children.length) {
+                val counter = children.item(j)
+                if (counter !is Element || counter.tagName != "counter" || counter.getAttribute("type") != "LINE") continue
+                missed += counter.getAttribute("missed").toLong()
+                covered += counter.getAttribute("covered").toLong()
+            }
+            val total = missed + covered
+            if (total > 0) measured[element.getAttribute("name").replace('/', '.')] = 100.0 * covered / total
+        }
+
+        val below = mutableListOf<String>()
+        floorsByPackage.forEach { (name, floor) ->
+            val value = measured[name]
+            if (value == null) {
+                below += "$name is not in the report"
+            } else {
+                logger.lifecycle("coverage ${String.format(Locale.ROOT, "%.2f", value)}% $name (floor ${String.format(Locale.ROOT, "%.2f", floor)}%)")
+                if (value + 1e-9 < floor) below += "$name ${String.format(Locale.ROOT, "%.2f", value)}% is below its floor ${String.format(Locale.ROOT, "%.2f", floor)}%"
+            }
+        }
+        if (below.isNotEmpty()) throw GradleException("coverage floors missed:\n" + below.joinToString("\n") { "  $it" })
+    }
+}
+
+// The report AGP writes for the standard debug unit tests; CI uploads app/build/reports/coverage.
+tasks.register<VerifyCoverage>("verifyCoverage") {
+    group = "verification"
+    description = "Fails when a package's unit-test line coverage is below its floor."
+    floors.set(rootProject.layout.projectDirectory.file("tools/ci/coverage-floors.txt"))
+    report.set(layout.buildDirectory.file("reports/coverage/test/standard/debug/report.xml"))
+    dependsOn("createStandardDebugUnitTestCoverageReport")
 }
