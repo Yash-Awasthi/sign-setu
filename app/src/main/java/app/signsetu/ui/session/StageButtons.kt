@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -168,11 +169,11 @@ internal fun SmallAnswer(
     ) {
         if (caption != null) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             CardImage(cardId, Modifier.size(Space.s26))
-            Text(caption, fontSize = TypeSize.s11, lineHeight = TypeSize.s12, color = onColor, textAlign = TextAlign.Center, maxLines = 2, modifier = Modifier.padding(horizontal = Space.xs))
+            Text(caption, fontSize = TypeSize.s11, lineHeight = TypeSize.s12, color = onColor, textAlign = TextAlign.Center, maxLines = 2, modifier = Modifier.padding(horizontal = Space.xs), style = LocalTextStyle.current.copy(textDirection = LocalSubjectTextDirection.current))
         } else Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) Icon(icon, null, tint = onColor, modifier = Modifier.size(Space.s30))
             else CardImage(cardId, Modifier.size(if (label != null) Space.s30 else Space.s40))
-            label?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = onColor, modifier = Modifier.padding(start = Space.sm)) }
+            label?.let { Text(it, style = MaterialTheme.typography.labelLarge.copy(textDirection = LocalSubjectTextDirection.current), color = onColor, modifier = Modifier.padding(start = Space.sm)) }
         }
     }
 }
@@ -214,7 +215,7 @@ internal fun PressableSurface(
 internal fun LanguageGrid(content: ContentBundle, chosen: String?, modifier: Modifier, onLanguage: (String) -> Unit) {
     val answer = LocalAnswerColors.current
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Space.sm)) {
-        content.languages.chunked(3).forEach { row ->
+        languageTiles(content).chunked(3).forEach { row ->
             Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
                 row.forEach { l ->
                     val selected = chosen == l.code
@@ -224,7 +225,10 @@ internal fun LanguageGrid(content: ContentBundle, chosen: String?, modifier: Mod
                         color = Color.White,
                         border = if (selected) BorderStroke(Space.xs, answer.selection) else TileEdge,
                         shadowElevation = Space.hair,
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        modifier = Modifier.weight(1f).fillMaxHeight().semantics {
+                            role = Role.Button
+                            this.selected = selected
+                        },
                     ) {
                         Column(Modifier.padding(horizontal = Space.s6), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Text(l.name, fontFamily = Baloo, fontWeight = FontWeight.SemiBold, fontSize = TypeSize.s19, color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)

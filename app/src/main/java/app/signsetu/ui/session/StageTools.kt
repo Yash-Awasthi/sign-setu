@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -92,7 +94,7 @@ internal fun StageToolBar(
                     .heightIn(min = Space.s48)
                     .clickable(role = Role.Button) { onSelect(tool) }
                     .padding(horizontal = Space.xs, vertical = Space.xxs)
-                    .semantics { contentDescription = label },
+                    .semantics { contentDescription = label; this.selected = chosen },
             ) {
                 Surface(
                     shape = CircleShape,
@@ -148,6 +150,7 @@ internal fun StagePrimaryAction(label: String, onClick: () -> Unit, modifier: Mo
                 color = call.bg,
                 maxLines = 1,
                 textAlign = TextAlign.Center,
+                style = LocalTextStyle.current.copy(textDirection = LocalSubjectTextDirection.current),
             )
         }
     }

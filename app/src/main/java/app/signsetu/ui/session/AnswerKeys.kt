@@ -93,6 +93,14 @@ class SwitchScan(val order: AnswerOrder, val mode: SwitchAccess) {
         SwitchAccess.STEP -> state.copy(downAt = state.downAt ?: now) to null
     }
 
+    /**
+     * The scan after a stretch when a sheet covered the surface: move its clock on by the time it was
+     * hidden, so the highlight stays on the control the person last saw instead of jumping or choosing.
+     */
+    fun resume(state: State, coveredMs: Long): State =
+        if (coveredMs <= 0) state
+        else state.copy(since = state.since + coveredMs, downAt = state.downAt?.plus(coveredMs))
+
     /** What the press did when it ended: a tap advances one control, a hold chooses. */
     fun up(state: State, now: Long, holdMs: Long = SWITCH_HOLD_MS): Pair<State, SwitchAction?> = when (mode) {
         SwitchAccess.OFF -> state to null

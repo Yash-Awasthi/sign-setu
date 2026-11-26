@@ -79,6 +79,23 @@ internal class AnswerFlow(
         focus(scan.order.ids.first())
     }
 
+    private var coveredAt: Long? = null
+
+    /**
+     * A sheet covers the stage, or stops covering it. Time under the sheet is cut out of the scan's
+     * clock, so closing it leaves the highlight where the person left it rather than moving or choosing.
+     */
+    fun cover(covering: Boolean, now: Long) {
+        if (covering) {
+            coveredAt = now
+            return
+        }
+        val start = coveredAt ?: return
+        coveredAt = null
+        val state = scanState ?: return
+        scanState = scan.resume(state, (now - start).coerceAtLeast(0))
+    }
+
     /** Move the dwell highlight on when its time is up; called on a timer, never by a key. */
     fun tick(now: Long) {
         val state = scanState ?: scan.start(now).also { scanState = it }
@@ -144,6 +161,8 @@ internal fun rememberAnswerFlow(
     switch: SwitchAccess,
     onKeyboard: () -> Unit,
     onLeave: () -> Unit,
+    /** A sheet or dialog covers the surface: the scan waits, and the time it waits does not count. */
+    paused: Boolean = false,
 ): AnswerFlow {
     val keyboard by rememberUpdatedState(onKeyboard)
     val leave by rememberUpdatedState(onLeave)
@@ -151,9 +170,11 @@ internal fun rememberAnswerFlow(
         AnswerFlow(AnswerOrder(ids, columns), switch, { keyboard() }, { leave() })
     }
     // A switch needs a highlight before it is pressed: dwell then moves it, step leaves it on the first.
-    LaunchedEffect(flow, switch) {
+    LaunchedEffect(flow, switch, paused) {
         if (switch == SwitchAccess.OFF || flow.order.ids.isEmpty()) return@LaunchedEffect
-        flow.startScanning(System.currentTimeMillis())
+        flow.cover(paused, System.currentTimeMillis())
+        if (paused) return@LaunchedEffect
+        if (flow.focused == null) flow.startScanning(System.currentTimeMillis())
         if (switch != SwitchAccess.DWELL) return@LaunchedEffect
         while (true) {
             delay(SWITCH_TICK_MS)

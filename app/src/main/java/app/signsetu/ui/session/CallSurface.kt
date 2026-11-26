@@ -128,7 +128,7 @@ internal fun SlidePanelHandle(
         color = call.surface.copy(alpha = 0.45f + 0.35f * pull),
         modifier = modifier
             .width(Space.s120)
-            .height(Space.s44)
+            .height(Space.s48)
             .clickable(onClickLabel = label, role = Role.Button) { onOpen() }
             .testTag("call.slide")
             .semantics { contentDescription = label },
