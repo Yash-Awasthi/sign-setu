@@ -49,11 +49,16 @@ One row per document: who it is for, and what it holds.
 | [24-deployment-package.md](24-deployment-package.md) | department | Signed APK, SBOM, SHA256SUMS, DPIA, walkthrough, model allow-list procedure and report verification in one release-to-install page |
 | [25-screen-inventory.md](25-screen-inventory.md) | developer | Every screen the app can open, its purpose, its three primary actions and its exit, checked against the navigation in AppRoot.kt |
 | [26-theme-contrast.md](26-theme-contrast.md) | developer | Every colour pair the app draws, measured across the ten themes in light, dark and OLED, with the floors that ContrastTest enforces |
+| [27-build-baseline.md](27-build-baseline.md) | developer | The tree at 402339f built clean: the three commands and exit codes, Gradle and wall times, the 440 unit tests, the debug APK size, and the two warnings that repeat |
 | [30-release-verification.md](30-release-verification.md) | reviewer | The committed 0.8.52 evidence checked offline: the commands and exit codes, the hashes verified against bytes, the red proofs, and what the unsigned APKs do and do not let a verifier conclude |
 | [28-dependency-audit.md](28-dependency-audit.md) | reviewer | The lockfile's 276 shipped triples checked against OSV: what was queried, the two hits, and whether each is fixable by a pin |
 | [29-android-posture.md](29-android-posture.md) | reviewer | Shipped APK security posture: manifest flags, permissions and call sites, exported components, cleartext, backup, logging, WebView, keys, and the gate |
 | [31-test-map.md](31-test-map.md) | developer | Unit test map: what the JVM suite covers on the critical paths |
 | [32-ci-audit.md](32-ci-audit.md) | developer | Every CI job, step and command against the tree: which gate each checker feeds, which gaps were closed, which stay open and why |
+| [33-kotlin-static-findings.md](33-kotlin-static-findings.md) | developer | A static pass over the Kotlin: the compiler's warnings grouped, the two defects found and fixed, the patterns grepped, and what was left and why |
+| [34-accessibility-audit.md](34-accessibility-audit.md) | developer | Static accessibility pass: what a person can operate, what a screen reader is told, the switch path, and what needs a phone to confirm |
+| [35-lifecycle-fixes.md](35-lifecycle-fixes.md) | developer | The six resources a static pass found outliving their screen, the smallest fix for each, and which check needs a phone |
+| [36-concurrency-fixes.md](36-concurrency-fixes.md) | developer | The shared-state defects a coroutine pass found, the five that were fixed, the four left as documentation, and the suite run that proves them |
 | [models/sign_reader_v4.md](models/sign_reader_v4.md) | developer | Model card of the ISL word reader |
 | [models/sign_reader_v3.md](models/sign_reader_v3.md) | developer | Model card of the previous ISL word reader |
 | [../portal/README.md](../portal/README.md) | reviewer | Reviewer portal for content sign-off |
