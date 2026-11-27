@@ -83,6 +83,10 @@ private val UploadIcon = materialIcon("Upload") {
 /** What the info dialog shows: where a session was sent or saved, and the way to do it again. */
 private data class Where(val session: Session, val station: Boolean, val place: String)
 
+/** A copy leaving the phone waits for the officer's own screen lock: [confirm] is `OfficerAuth.confirm` with this
+ * screen's Activity, and [body] runs only from its success callback. */
+internal fun guardedExport(confirm: (onOk: () -> Unit) -> Unit, body: () -> Unit) = confirm(body)
+
 /** Finished sessions under the officer's names for them. A tap opens one. Each row saves it to this phone (the zip
  * and the PDF report) or sends it to the station; a small "i" marks a copy that still holds the whole record, and
  * tapping it shows where that copy is. A long press chooses sessions to delete. */
@@ -117,7 +121,7 @@ internal fun SavedSessions(
             !station.online -> Toast.makeText(context, R.string.saved_send_offline, Toast.LENGTH_LONG).show()
             station.offered?.contains(BrainClient.Feature.ARCHIVE) != true -> Toast.makeText(context, R.string.saved_send_no_inbox, Toast.LENGTH_LONG).show()
             !station.uses(BrainClient.Feature.ARCHIVE) -> Toast.makeText(context, R.string.saved_send_off, Toast.LENGTH_LONG).show()
-            else -> {
+            else -> guardedExport({ OfficerAuth.confirm(activity, it) }) {
                 busy = s.id
                 progress = 0f
                 scope.launch {
@@ -131,12 +135,14 @@ internal fun SavedSessions(
     }
 
     fun download(s: Session) {
-        busy = s.id
-        progress = 0f
-        scope.launch {
-            val r = actions.download(s)
-            busy = null
-            if (r != null) savedHere = r else Toast.makeText(context, R.string.saved_download_failed, Toast.LENGTH_LONG).show()
+        guardedExport({ OfficerAuth.confirm(activity, it) }) {
+            busy = s.id
+            progress = 0f
+            scope.launch {
+                val r = actions.download(s)
+                busy = null
+                if (r != null) savedHere = r else Toast.makeText(context, R.string.saved_download_failed, Toast.LENGTH_LONG).show()
+            }
         }
     }
 

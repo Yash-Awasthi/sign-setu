@@ -132,7 +132,7 @@ fun SettingsScreen(store: SettingsStore, models: ModelStore, sentenceModel: Mode
             }
             Group(R.string.settings_security) {
                 // Turning a protection off needs the officer, so a subject holding the phone cannot.
-                val guard = { on: Boolean, set: suspend (Boolean) -> Any -> if (on) scope.launch { set(true) } else OfficerAuth.confirm(activity, { scope.launch { set(false) } }) }
+                val guard = { on: Boolean, set: suspend (Boolean) -> Any -> if (on) scope.launch { set(true) } else OfficerAuth.confirm(activity, { scope.launch { set(false) } }, force = true) }
                 SwitchItem(R.string.settings_pin_app, R.string.settings_pin_app_summary, s.pinApp) { guard(it, store::setPinApp) }
                 SwitchItem(R.string.settings_block_screenshots, R.string.settings_block_screenshots_summary, s.blockScreenshots) { guard(it, store::setBlockScreenshots) }
                 SwitchItem(R.string.settings_app_lock, R.string.settings_app_lock_summary, s.appLock) { guard(it, store::setAppLock) }

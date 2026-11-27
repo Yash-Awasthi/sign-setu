@@ -21,12 +21,20 @@ object OfficerAuth {
     /** Forget the last confirmation; the app locked. */
     fun reset() { okAt = 0L }
 
-    /** Runs [onOk] once the officer confirms, or at once without a secure lock screen (nothing to ask for). */
-    fun confirm(activity: Activity?, onOk: () -> Unit, onFail: () -> Unit = {}) {
+    /** Whether the officer must be asked before [onOk] runs. Turning a protection off is forced even when
+     * the "Ask for fingerprint" switch is off. Never asked without a secure lock screen or when unlocked for tests. */
+    fun needsCredential(required: Boolean, force: Boolean, deviceSecure: Boolean, testUnlocked: Boolean): Boolean =
+        !testUnlocked && (required || force) && deviceSecure
+
+    /** Runs [onOk] once the officer confirms, or at once without a secure lock screen (nothing to ask for).
+     * [force] asks even when [required] is off, for turning a security switch off. */
+    fun confirm(activity: Activity?, onOk: () -> Unit, onFail: () -> Unit = {}, force: Boolean = false) {
         if (activity == null) { onFail(); return }
-        if (app.signsetu.BuildConfig.TEST_UNLOCKED || !required) { onOk(); return }
+        // Short-circuits before the keyguard lookup in an unlocked test build, as before.
+        val deviceSecure = !app.signsetu.BuildConfig.TEST_UNLOCKED &&
+            activity.getSystemService(KeyguardManager::class.java).isDeviceSecure
+        if (!needsCredential(required, force, deviceSecure, app.signsetu.BuildConfig.TEST_UNLOCKED)) { onOk(); return }
         if (okAt != 0L && SystemClock.elapsedRealtime() - okAt < GRACE_MS) { onOk(); return }
-        if (!activity.getSystemService(KeyguardManager::class.java).isDeviceSecure) { onOk(); return }
         val builder = BiometricPrompt.Builder(activity).setTitle(activity.getString(R.string.auth_title))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             builder.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
