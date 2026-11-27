@@ -219,6 +219,8 @@ Trust boundaries are TB0 to TB3 of the [data flow](README.md#33-trust-boundaries
 | F-9 | The event-log tree carries an odd leaf up to the next level; it is not RFC 6962's tree shape, though it uses its 0x00 and 0x01 prefixes | Info | Left unchanged: changing it would break existing reports; the verifier and the station use the same rule |
 | F-10 | The printed-rows digest is in the seal but outside the signed line, so away from the phone the seal binds the chain head to the key and not the printed pages to the head | Low | Accepted for now: the digest is printed on every page so a re-export reproduces it, and the phone re-walks the chain; signing the digest as well would change the seal line and every report already issued (2.10) |
 | F-11 | Dialog and sheet windows are not covered by the activity's `FLAG_SECURE`, so a screenshot taken while one is open can capture its content | Low | Open; needs a check on a device, then `FLAG_SECURE` set on the dialog windows where content warrants it |
+| F-12 | A build that refuses `setUnlockedDeviceRequired` keeps the data key under the open key even on a phone with a screen lock, and the officer is not told | Low | Accepted for now: the only notice is the no-lock one, and showing it on a phone that has a lock would give wrong advice; a separate notice needs a sentence of its own in every officer language |
+| F-13 | Lock zeroes the database key, but the officer's own service key and the station's pairing token stay in the process's memory until it exits | Low | Accepted for now: clearing the service key mid-process would change which service later requests target, since the key is loaded only at launch; a safe clear needs a reload path at unlock, and the values remain wrapped at rest |
 
 ## 7. Testing plan
 

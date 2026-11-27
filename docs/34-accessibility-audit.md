@@ -88,9 +88,9 @@ tap moves on, a hold of 900 ms chooses. Both are walked by a timer in
 Three defects were found and two of them were fixed:
 
 1. **The dwell scan kept running under a sheet.** Opening the language, pictures,
-   emoji, typing or drawing sheet does not stop the bar's timer. The scan moved on
-   behind the sheet and, in dwell mode, chose a control the person could not see, so
-   closing the sheet could land on an answer they never picked. Fixed: a `paused`
+   emoji, typing or drawing sheet does not stop the bar's timer. The highlight moved on
+   behind the sheet, so closing it landed somewhere the person had not seen. Dwell cannot
+   choose on its own - only a switch press does - so nothing was answered unseen. Fixed: a `paused`
    flag on `rememberAnswerFlow`, set while `sheetFor != null`; time under the sheet is
    cut out of the scan's clock, so the highlight is where they left it.
 2. **Off is only a tap target, not a way out.** With Off the scan never starts, which

@@ -42,7 +42,7 @@ class AccessibilityAuditTest {
         assertEquals("nothing moves before the dwell is up", null, scan.tick(start, 1_150).second)
 
         // Without the rebase the next tick fires at once, which is the bug: the sheet closes and the
-        // highlight has already moved on, or chosen, a control the person never saw.
+        // highlight has already moved on to a control the person never saw.
         assertEquals(SwitchAction.Move("no"), scan.tick(start, 30_100).second)
 
         val covered = scan.resume(start, 30_000)
