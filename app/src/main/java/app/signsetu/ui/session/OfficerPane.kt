@@ -29,6 +29,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import app.signsetu.ui.components.OfficerAuth
 import app.signsetu.ui.components.SubjectSpeech
+import app.signsetu.ui.components.StopOnBackground
+import app.signsetu.voice.WavPlayer
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Edit
@@ -136,9 +138,11 @@ fun OfficerPane(
     var sheet by rememberSaveable { mutableStateOf<Sheet?>(null) }
     var page by rememberSaveable { mutableIntStateOf(0) }
     var replaying by rememberSaveable { mutableStateOf<Long?>(null) }
+    // The answer the officer last asked to hear; a fetch that resolves after a newer tap is stale.
+    var latestAudio by remember { mutableStateOf<Long?>(null) }
     var askSensitive by rememberSaveable { mutableStateOf(false) }
     var askEnd by rememberSaveable { mutableStateOf(false) }
-    var saveAs by rememberSaveable { mutableStateOf("") }
+    var saveAs by rememberSaveable { mutableStateOf<String?>(null) }
     var askLeave by rememberSaveable { mutableStateOf(false) }
     // Sheets and dialogs take Back first; on the page it steps to the first tab, then leaves with the session still
     // open, to resume from the start screen. With a second screen it asks first. Finishing is always a deliberate tap.
@@ -166,6 +170,7 @@ fun OfficerPane(
         scope.launch { if (!cloudConsent && cloud.sendsSessionData()) awaitingConsent = action else action() }
     }
     val res = LocalResources.current
+    val defaultName = ui.session.title ?: defaultTitle(res, ui.session.startedAt)
     val attached = rememberSaveable(saver = stateListSaver()) { mutableStateListOf<String>() }
     // Typed words held by event id ("say:", "sign:") and Show picks ("show"), so dismiss and rotation keep them.
     val drafts = vm.drafts
@@ -215,7 +220,9 @@ fun OfficerPane(
     }
 
     // Leaving the pane silences a recorded answer; without this the static AudioTrack plays on after the screen.
-    DisposableEffect(Unit) { onDispose { app.signsetu.voice.WavPlayer.stop() } }
+    DisposableEffect(Unit) { onDispose { WavPlayer.stop() } }
+    // The pane stays composed while the screen is off, so onDispose alone would leave the take talking behind another app.
+    StopOnBackground { WavPlayer.stop() }
 
     var run by rememberSaveable { mutableStateOf(listOf<String>()) }
     var sayingBackId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -315,7 +322,7 @@ fun OfficerPane(
                 // Muting the person's speech sits on the surface, never in the menu: the owner's rule, the officer must
                 // find it without opening anything.
                 val muted by SubjectSpeech.muted
-                IconButton(onClick = { SubjectSpeech.set(!muted) }) {
+                IconButton(onClick = { SubjectSpeech.set(!muted); WavPlayer.stop() }) {
                     Icon(
                         painterResource(if (muted) R.drawable.ic_volume_off else R.drawable.ic_volume),
                         contentDescription = stringResource(if (muted) R.string.speech_unmute else R.string.speech_mute),
@@ -371,7 +378,14 @@ fun OfficerPane(
         } else {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             Transcript(ui.events, ui.session.profile, ui.signed, onReplay = { replaying = it }, Modifier.fillMaxSize(), onSayBack = { sayingBackId = it.id }, drawing = vm::drawing,
-                onPlayAudio = { id -> scope.launch { vm.audio(id)?.let { app.signsetu.voice.WavPlayer.play(it) } } }, onAskAgain = { if (counsel != Counsel.Off) vm.counsellor.takeOver(); vm.askAgain(it) })
+                onPlayAudio = { id ->
+                    latestAudio = id
+                    scope.launch {
+                        val wav = vm.audio(id) ?: return@launch
+                        // A newer tap replaced this fetch while it was decrypting; its answer is no longer wanted.
+                        if (isLatestTake(id, latestAudio)) WavPlayer.play(context, wav)
+                    }
+                }, onAskAgain = { if (counsel != Counsel.Off) vm.counsellor.takeOver(); vm.askAgain(it) })
             // The scope-free overload: inside this Box the Column's AnimatedVisibility does not apply.
             androidx.compose.animation.AnimatedVisibility(
                 lastStop != null && lastStop.id != stopSeen && paired == null,
@@ -412,7 +426,7 @@ fun OfficerPane(
                     scope.launch {
                         // A caption for text since edited would go out with the new words on Send.
                         val got = try {
-                            assistant.suggest(asked, language)
+                            assistant.suggest(asked, language, subjectNames(ui.events, content, officerLang), subjectDetails(ui.events, content, officerLang))
                         } catch (e: kotlin.coroutines.cancellation.CancellationException) {
                             throw e
                         } catch (e: Exception) {
@@ -531,7 +545,6 @@ fun OfficerPane(
         onDismiss = { voiceOpen = false },
     )
     if (askEnd) {
-        if (saveAs.isEmpty()) saveAs = ui.session.title ?: defaultTitle(res, ui.session.startedAt)
         val startExport: () -> Unit = {
             askEnd = false
             OfficerAuth.confirm(activity, {
@@ -553,14 +566,14 @@ fun OfficerPane(
         WrapUpDialog(
             historyOff = historyOff,
             summary = remember(ui.events) { wrapUp(ui.events, ui.session.startedAt, System.currentTimeMillis()) },
-            title = saveAs,
+            title = saveAs ?: defaultName,
             onTitle = { saveAs = it },
             onThank = thanks?.takeIf { paired?.allowShow?.invoke() != false }?.let { q -> { askEnd = false; vm.prepare(Pending.Ask(q)); vm.show() } },
             aiOffer = aiOffer,
             includeSummary = includeSummary,
             onIncludeSummary = { includeSummary = it },
             onExport = startExport,
-            onSave = { askEnd = false; onEndSession(saveAs) },
+            onSave = { askEnd = false; onEndSession(saveAs ?: defaultName) },
             onDelete = { askEnd = false; onEndSession(null) },
             reopened = ui.session.savedThrough != null,
             onDismiss = { askEnd = false },
@@ -582,11 +595,14 @@ fun OfficerPane(
         ExportDialog(
             state = state,
             onShare = { (state as? ExportState.Ready)?.let { onShare(it.file) } },
-            onFinish = { (state as? ExportState.Ready)?.file?.delete(); export = null; onEndSession(saveAs) },
+            onFinish = { (state as? ExportState.Ready)?.file?.delete(); export = null; onEndSession(saveAs ?: defaultName) },
             onDismiss = { export = null },
         )
     }
 }
+
+/** A fetched answer plays only while its id is still the one the officer last tapped; a slower earlier tap is dropped. */
+internal fun isLatestTake(requested: Long, latest: Long?) = requested == latest
 
 /** Typing pause after which the station brain is asked for the text's sign order. */
 private const val GLOSS_PAUSE_MS = 700L
