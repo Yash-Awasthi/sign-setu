@@ -169,6 +169,23 @@ class InterviewTest {
     }
 
     @Test
+    fun aSecondAutoRunLiftsTheWrapUp() {
+        val log = Log().apply { show("s1"); system(AutoKey.MODE_AUTO); system(AutoKey.WRAP_UP) }
+        assertEquals(listOf("c1", "c2"), candidates(bank, Role.VICTIM, log.events).map { it.q.id })
+        log.system(AutoKey.MODE_AUTO)
+        assertEquals("g1", next(bank, Role.VICTIM, log.events)?.q?.id)
+    }
+
+    @Test
+    fun carryOnIsNotAskedAgainOnceShown() {
+        val shown = Log().apply { show("s1"); ask("k3", "no"); system(AutoKey.PAUSED); system(AutoKey.RESUMED) }
+        assertTrue(candidates(bank, Role.VICTIM, shown.events).none { it.q.id == "k3" })
+        val unseen = Log().apply { show("s1"); system(AutoKey.PAUSED); system(AutoKey.RESUMED) }
+        val p = next(bank, Role.VICTIM, unseen.events)!!
+        assertEquals("k3" to Reason.CARRY_ON, p.q.id to p.reason)
+    }
+
+    @Test
     fun answersPairWithTheItemTheyName() {
         val log = Log().apply {
             val shown = show("s2")
