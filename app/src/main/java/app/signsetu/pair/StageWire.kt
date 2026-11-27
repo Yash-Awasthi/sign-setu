@@ -43,6 +43,8 @@ data class StageView(
     val gestureSpeed: Float,
     val cameraOn: Boolean,
     val signLanguage: String = "ISL",
+    /** The officer's under-18 mark, which the stage cannot derive from its empty event list. */
+    val juvenile: Boolean = false,
 )
 
 @Serializable

@@ -30,6 +30,7 @@ import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.Pending
 import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.SessionViewModel
+import app.signsetu.ui.session.juvenile
 import app.signsetu.ui.session.ruleStep
 import app.signsetu.ui.session.signLanguage
 import kotlinx.coroutines.flow.combine
@@ -246,5 +247,6 @@ fun SessionUi.toStageView(gestureSpeed: Float, cameraOn: Boolean): StageView {
         gestureSpeed = gestureSpeed,
         cameraOn = cameraOn,
         signLanguage = signLanguage.name,
+        juvenile = juvenile,
     )
 }

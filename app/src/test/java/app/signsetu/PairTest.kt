@@ -12,6 +12,7 @@ import app.signsetu.data.session.EventSource
 import app.signsetu.data.session.EventType
 import app.signsetu.data.session.Profile
 import app.signsetu.data.session.Session
+import app.signsetu.data.session.SessionEvent
 import app.signsetu.data.session.SessionRepository
 import app.signsetu.export.SessionReport
 import app.signsetu.pair.Abort
@@ -54,6 +55,7 @@ import app.signsetu.ui.session.Mode
 import app.signsetu.ui.session.Pending
 import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.SessionViewModel
+import app.signsetu.ui.session.SYSTEM_JUVENILE
 import app.signsetu.ui.session.VIA_STAGE_LATE
 import app.signsetu.ui.session.withQuestions
 import app.signsetu.ui.session.Grade
@@ -96,6 +98,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.io.File
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.math.BigInteger
@@ -395,6 +398,34 @@ class PairTest {
         assertTrue(view.live)
         assertEquals(WirePending.Ask("q1"), view.item)
         assertFalse(ui(null, Pending.Ask(question), Mode.OFFICER).toStageView(1f, true).live)
+    }
+
+    @Test
+    fun aJuvenileMarkReachesTheStageThroughTheWireAndADefaultViewStaysAdult() {
+        val officerMark = SessionEvent(1, 0, EventType.SYSTEM, EventSource.OFFICER, "hi", SYSTEM_JUVENILE, null, null, null)
+        val marked = ui(null, null, Mode.SHOW).copy(events = listOf(officerMark)).toStageView(1f, true)
+        assertTrue(marked.juvenile)
+        // The stage rebuilds its SessionUi from an empty event list, so the mark must travel in the view.
+        val shown = ToStage.Show(1, 3L, marked)
+        assertEquals(marked, (app.signsetu.pair.decodeToStage(app.signsetu.pair.encodeToStage(shown)) as ToStage.Show).view)
+        assertFalse(ui(null, null, Mode.SHOW).toStageView(1f, true).juvenile)
+        // With no event, the profile's own young-child default still applies on this phone.
+        val child = ui(null, null, Mode.SHOW).copy(session = Session("s", 0, Profile.YOUNG_CHILD, "hi"))
+        assertTrue(child.toStageView(1f, true).juvenile)
+    }
+
+    @Test
+    fun theStageUsesTheChildMarkPassedInRatherThanTheProfile() {
+        val dir = File("src/main/java/app/signsetu/ui/session")
+        val stage = File(dir, "Stage.kt").readText()
+        assertTrue("the stage takes the mark, defaulting to the event-derived value", stage.contains("child: Boolean = ui.child"))
+        assertTrue("writing is refused for a marked officer", stage.contains("val canWrite = pending != null && !child && rule == null"))
+        assertTrue("the pace is chosen from the mark", stage.contains("initialPace(profile, gestureSpeed, child)"))
+        assertTrue("a marked person gets no buzz", stage.contains("if (!child) buzzPattern"))
+        assertTrue("the mark goes on to the call layout", stage.contains("child = child,"))
+        assertTrue("the call layout reads the mark, not the rebuilt profile", File(dir, "VideoCallStage.kt").readText().contains("if (!child && !statement"))
+        val device = File("src/main/java/app/signsetu/ui/pair/StageDevice.kt").readText()
+        assertTrue("the second screen passes the mark from the view", device.contains("child = view.juvenile,"))
     }
 
     @Test

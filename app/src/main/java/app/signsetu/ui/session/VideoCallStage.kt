@@ -156,6 +156,8 @@ internal fun VideoCallStage(
     onEscape: () -> Unit = {},
     /** A full-stage overlay from the caller (a break, the express board) covers this bar: the dwell clock must not move. */
     covered: Boolean = false,
+    /** The officer's under-18 mark; defaults to the event-derived value for callers on this phone. */
+    child: Boolean = ui.child,
 ) {
     val lang = ui.session.subjectLang
     val pending = ui.pending
@@ -656,7 +658,7 @@ internal fun VideoCallStage(
                         Text(it, fontSize = TypeSize.s13, color = LocalCall.current.accentSoft, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Space.xs))
                     }
                     // A young child is not made to read instructions; the character and the guide show them.
-                    if (!ui.child && !statement && caption != null) (idleLine ?: hint)?.let {
+                    if (!child && !statement && caption != null) (idleLine ?: hint)?.let {
                         // Lit and larger while the character acts it out, and the reassurance takes its place when idle.
                         val lit = hintLit || idleLine != null
                         Text(litWord(it, idleHighlight?.inText(it).takeIf { lit }), fontSize = if (lit) TypeSize.s15 else TypeSize.s11, color = if (lit) Color.White else LocalCall.current.muted, fontWeight = if (lit) FontWeight.Bold else null, textAlign = TextAlign.Center, modifier = Modifier.padding(top = Space.xxs))

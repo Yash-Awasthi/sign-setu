@@ -341,6 +341,7 @@ private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkSt
                     tracker = tracker,
                     cameraOn = view.cameraOn && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED,
                     gestureSpeed = view.gestureSpeed,
+                    child = view.juvenile,
                     onCard = onCard,
                     onYesNo = { answeredYes = it; answeredCard = null; send(AnswerBody.YesNo(it, cue.also { cue = null })) },
                     onCue = { cue = it },

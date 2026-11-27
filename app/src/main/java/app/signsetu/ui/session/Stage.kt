@@ -93,6 +93,8 @@ fun Stage(
     onCameraRead: (card: String, cue: String?) -> Unit = { _, _ -> },
     /** How the subject steps through the answers with one switch, from the accessibility settings. */
     switchAccess: SwitchAccess = SwitchAccess.OFF,
+    /** The officer's under-18 mark; defaults to the event-derived value for callers on this phone. */
+    child: Boolean = ui.child,
 ) {
     val lang = ui.session.subjectLang
     val profile = ui.session.profile
@@ -105,7 +107,7 @@ fun Stage(
     val drawn = remember(pending) { mutableStateListOf<DrawStroke>() }
     // A young child is not asked to write; anyone else, signers above all, can answer in their own words.
     // A ground rule asks for no answer, so it opens no other way to answer.
-    val canWrite = pending != null && !ui.child && rule == null
+    val canWrite = pending != null && !child && rule == null
     // A Yes under a right would read as the person accepting or waiving it; it is only shown.
     val rightsNotice = (pending as? Pending.Ask)?.question?.takeIf(content::isRights)?.let { content.subjectText("rights_interpreter", lang) }
     // The introduction, ground rules and rights only tell; Yes and No under them would ask for an answer nobody asked for.
@@ -117,7 +119,7 @@ fun Stage(
     var replays by remember(pending) { mutableIntStateOf(0) }
     // Each time the character finishes an item it waits, then signs it again, a few times at most.
     var finishedPlays by remember(pending) { mutableIntStateOf(0) }
-    StagePace.forSession(ui.session.id, initialPace(profile, gestureSpeed, ui.child))
+    StagePace.forSession(ui.session.id, initialPace(profile, gestureSpeed, child))
     val pace = StagePace.speed.floatValue
     // A tapped word plays alone at half speed; the sentence clock waits until it is done.
     var focus by remember(pending) { mutableStateOf<WordBeat?>(null) }
@@ -146,7 +148,7 @@ fun Stage(
 
     // A young child is not startled by a buzz in the hand.
     LaunchedEffect(ui.answeredYes, ui.answeredCard) {
-        if (!ui.child) buzzPattern(ui.answeredYes, ui.answeredCard)?.let { buzz(context, it) }
+        if (!child) buzzPattern(ui.answeredYes, ui.answeredCard)?.let { buzz(context, it) }
     }
 
     val speech = rememberSpeechPlayer()
@@ -469,6 +471,7 @@ fun Stage(
             covered = paused || showExpressBoard,
             onEscape = escape,
             cameraOn = cameraOn,
+            child = child,
             onNext = onNextRule.takeIf { rule != null },
             statement = statement,
             rightsNotice = rightsNotice,
