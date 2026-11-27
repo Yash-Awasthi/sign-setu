@@ -43,7 +43,8 @@ sealed interface Counsel {
 class Counsellor(
     private val scope: CoroutineScope,
     private val ui: StateFlow<SessionUi?>,
-    private val send: (CounselLine) -> Unit,
+    /** Shows the line and returns the row it logged; null when another show holds the stage guard. */
+    private val send: suspend (CounselLine) -> Long?,
     private val holdMs: Long = 2_000,
     private val maxTurns: Int = 30,
 ) {
@@ -70,20 +71,43 @@ class Counsellor(
                 state.value = Counsel.Holding(line, System.currentTimeMillis() + holdMs)
                 // true: Send; false: Skip, and write another line. After the hold the line goes on its own, so the
                 // conversation keeps its pace with the officer watching; Take over cancels the job outright.
-                val go = withTimeoutOrNull(holdMs) { decided.first { it != null } } ?: true
+                var go = withTimeoutOrNull(holdMs) { decided.first { it != null } } ?: true
+                decided.value = null
                 if (!go) continue
                 // Taken at send time: an answer that came in while the line was written answered the line before.
-                val mark = ui.value?.events.orEmpty().maxOfOrNull { it.id } ?: 0L
-                send(line)
+                // The officer's item stays on the stage until they close it: the line waits, held, rather than
+                // closing it, and a Send or Skip while it waits still counts.
+                var mine: Long? = null
+                while (mine == null) {
+                    if (free()) {
+                        mine = send(line)
+                        // Another show took the guard first: the same line waits in hand, never Waiting.
+                        if (mine == null) { state.value = Counsel.Holding(line, System.currentTimeMillis() + holdMs); delay(SEND_RETRY_MS) }
+                        continue
+                    }
+                    state.value = Counsel.Holding(line, System.currentTimeMillis() + holdMs)
+                    go = withTimeoutOrNull(holdMs) { decided.first { it != null } } ?: true
+                    decided.value = null
+                    if (!go) break
+                }
+                if (mine == null) continue
                 if (line.handoff) { state.value = Counsel.Paused(Counsel.Why.HANDOFF); return@launch }
                 state.value = Counsel.Waiting
-                val answer = ui.first { s -> s?.events.orEmpty().any { it.id > mark && it.type in AnswerEvents } }
-                    ?.events?.firstOrNull { it.id > mark && it.type in AnswerEvents }
+                // Only the answer to this line's own row advances the conversation.
+                val answer = ui.first { s -> s?.events.orEmpty().any { it.shownId == mine && it.type in AnswerEvents } }
+                    ?.events?.firstOrNull { it.shownId == mine && it.type in AnswerEvents }
                 if (answer?.cardId in PauseCards) { state.value = Counsel.Paused(Counsel.Why.STOP); return@launch }
                 // A moment to read the answer before the next line arrives.
                 delay(800)
             }
         }
+    }
+
+    /** The stage is free, or holds the counsellor's own line: the officer's item is never closed by a counsellor line. */
+    private fun free(): Boolean {
+        val s = ui.value ?: return false
+        if (s.mode != Mode.SHOW) return true
+        return s.events.lastOrNull { it.type == EventType.QUESTION_SHOWN }?.reason == SHOWN_AI
     }
 
     fun sendNow() { decided.value = true }
@@ -98,6 +122,9 @@ class Counsellor(
 
 /** Longer than the assistant's own 60 s wait with its one retry, so this only catches a request that never returns. */
 private const val WRITE_MS = 150_000L
+
+/** The line waits this long before asking the stage again after another show took its guard. */
+private const val SEND_RETRY_MS = 250L
 
 private val lenient = Json { ignoreUnknownKeys = true; isLenient = true }
 

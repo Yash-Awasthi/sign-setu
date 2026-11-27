@@ -30,11 +30,11 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class CounsellorTest {
 
-    private fun ev(id: Long, type: EventType, text: String? = null, card: String? = null, reason: String? = null, source: EventSource = EventSource.SUBJECT) =
-        SessionEvent(id, id, type, source, "hi", text, card, null, null, reason = reason)
+    private fun ev(id: Long, type: EventType, text: String? = null, card: String? = null, reason: String? = null, source: EventSource = EventSource.SUBJECT, shown: Long? = null) =
+        SessionEvent(id, id, type, source, "hi", text, card, null, null, reason = reason, shownId = shown)
 
-    private fun ui(events: List<SessionEvent>) = SessionUi(
-        Session("s", 0, Profile.ISL_USER, "hi"), "", false, null, Mode.OFFICER, false, null, null, null, events, null, emptyMap(),
+    private fun ui(events: List<SessionEvent>, mode: Mode = Mode.OFFICER) = SessionUi(
+        Session("s", 0, Profile.ISL_USER, "hi"), "", false, null, mode, false, null, null, null, events, null, emptyMap(),
     )
 
     @Test
@@ -65,8 +65,8 @@ class CounsellorTest {
     fun anAnswerGivenWhileTheLineWasWrittenDoesNotAnswerIt() = runTest {
         val flow = MutableStateFlow<SessionUi?>(ui(emptyList()))
         val sent = mutableListOf<String>()
-        val c = Counsellor(this, flow, send = { sent += it.say }, holdMs = 1_000)
-        val late = ui(listOf(ev(5, EventType.ANSWER_CARD, card = "yes")))
+        val c = Counsellor(this, flow, send = { sent += it.say; 1L }, holdMs = 1_000)
+        val late = ui(listOf(ev(5, EventType.ANSWER_CARD, card = "yes", shown = 99)))
         c.start("system", write = { _, _ -> flow.value = late; """{"say": "Line."}""" }, transcript = { "" })
         advanceTimeBy(5_000)
         runCurrent()
@@ -79,7 +79,8 @@ class CounsellorTest {
     fun aLineWaitsForTheOfficerThenTheAnswerStartsTheNextTurnAndStopHandsBack() = runTest {
         val flow = MutableStateFlow<SessionUi?>(ui(emptyList()))
         val sent = mutableListOf<String>()
-        val c = Counsellor(this, flow, send = { sent += it.say }, holdMs = 6_000)
+        var mine = 0L
+        val c = Counsellor(this, flow, send = { sent += it.say; ++mine }, holdMs = 6_000)
         var n = 0
         c.start("system", write = { _, _ -> """{"say": "Line ${++n}."}""" }, transcript = { "" })
         runCurrent()
@@ -93,16 +94,73 @@ class CounsellorTest {
         runCurrent()
         assertEquals(listOf("Line 2."), sent)
         assertEquals(Counsel.Waiting, c.counsel.value)
-        flow.value = ui(listOf(ev(10, EventType.ANSWER_CARD, card = "yes")))
+        flow.value = ui(listOf(ev(10, EventType.ANSWER_CARD, card = "yes", shown = 1)))
         advanceTimeBy(900)
         runCurrent()
         c.sendNow()
         runCurrent()
         assertEquals(listOf("Line 2.", "Line 3."), sent)
-        flow.value = ui(listOf(ev(10, EventType.ANSWER_CARD, card = "yes"), ev(11, EventType.ANSWER_CARD, card = "stop")))
+        flow.value = ui(listOf(ev(10, EventType.ANSWER_CARD, card = "yes", shown = 1), ev(11, EventType.ANSWER_CARD, card = "stop", shown = 2)))
         runCurrent()
         assertEquals(Counsel.Paused(Counsel.Why.STOP), c.counsel.value)
         c.takeOver()
         assertEquals(Counsel.Off, c.counsel.value)
+    }
+
+    @Test
+    fun aLineWaitsWhileTheOfficersItemIsOnTheStage() = runTest {
+        val officer = ev(1, EventType.QUESTION_SHOWN, "Are you hurt?", source = EventSource.PRESET)
+        val flow = MutableStateFlow<SessionUi?>(ui(listOf(officer), mode = Mode.SHOW))
+        val sent = mutableListOf<String>()
+        val c = Counsellor(this, flow, send = { sent += it.say; 1L }, holdMs = 1_000)
+        c.start("system", write = { _, _ -> """{"say": "Hello."}""" }, transcript = { "" })
+        advanceTimeBy(10_000)
+        runCurrent()
+        assertTrue("the officer's item is not closed", sent.isEmpty())
+        assertTrue("the line stays held", c.counsel.value is Counsel.Holding)
+        assertEquals(listOf(officer), flow.value!!.events)
+        c.takeOver()
+    }
+
+    @Test
+    fun anAnswerToAnotherItemDoesNotAnswerTheCounsellorsLine() = runTest {
+        val flow = MutableStateFlow<SessionUi?>(ui(emptyList()))
+        val sent = mutableListOf<String>()
+        val c = Counsellor(this, flow, send = { sent += it.say; sent.size.toLong() }, holdMs = 1_000)
+        var n = 0
+        c.start("system", write = { _, _ -> """{"say": "Line ${++n}."}""" }, transcript = { "" })
+        advanceTimeBy(1_500)
+        runCurrent()
+        assertEquals(listOf("Line 1."), sent)
+        assertEquals(Counsel.Waiting, c.counsel.value)
+
+        flow.value = ui(listOf(ev(5, EventType.ANSWER_CARD, card = "yes", shown = 99)))
+        advanceTimeBy(5_000)
+        runCurrent()
+        assertEquals("an answer to another row gets no next line", listOf("Line 1."), sent)
+        assertEquals(Counsel.Waiting, c.counsel.value)
+
+        flow.value = ui(listOf(ev(5, EventType.ANSWER_CARD, card = "yes", shown = 99), ev(6, EventType.ANSWER_CARD, card = "yes", shown = 1)))
+        advanceTimeBy(2_500)
+        runCurrent()
+        assertEquals("its own answer starts the next turn", listOf("Line 1.", "Line 2."), sent)
+        c.takeOver()
+    }
+
+    @Test
+    fun aLineTheStageDidNotTakeIsHeldNotWaiting() = runTest {
+        val flow = MutableStateFlow<SessionUi?>(ui(emptyList()))
+        var calls = 0
+        val c = Counsellor(this, flow, send = { calls++; if (calls < 3) null else 7L }, holdMs = 1_000)
+        c.start("system", write = { _, _ -> """{"say": "Line."}""" }, transcript = { "" })
+        advanceTimeBy(1_400)
+        runCurrent()
+        assertEquals("the line was tried again", 2, calls)
+        assertTrue("it waits in hand, not on an answer", c.counsel.value is Counsel.Holding)
+
+        advanceTimeBy(1_500)
+        runCurrent()
+        assertEquals(Counsel.Waiting, c.counsel.value)
+        c.takeOver()
     }
 }

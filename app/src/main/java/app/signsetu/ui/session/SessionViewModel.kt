@@ -238,10 +238,25 @@ class SessionViewModel(
     private var showing = false
 
     /** The AI counsellor; its lines go to the stage as the officer's own would (OfficerPane starts it). */
-    val counsellor = Counsellor(viewModelScope, ui, send = { line ->
-        prepare(Pending.FreeText(line.say, emptyList(), setOf(SignMode.SIGNS, SignMode.GESTURES, SignMode.PICTURES), line.caption, byAi = true))
-        show()
-    })
+    val counsellor = Counsellor(viewModelScope, ui, send = { line -> showLine(line) })
+
+    /** A counsellor line on the stage; the row it logs, or null when another show holds the guard,
+     * so the counsellor waits for its own line instead of advancing on somebody else's answer. */
+    internal suspend fun showLine(line: CounselLine): Long? {
+        val state = ui.value ?: return null
+        if (showing) return null
+        showing = true
+        ShowTiming.start()
+        return try {
+            if (local.value.mode == Mode.SHOW) finishShown()
+            val pending = Pending.FreeText(line.say, emptyList(), setOf(SignMode.SIGNS, SignMode.GESTURES, SignMode.PICTURES), line.caption, byAi = true)
+            prepare(pending)
+            auto.onManualShow(pending)
+            present(pending, state.session.subjectLang)
+        } finally {
+            showing = false
+        }
+    }
 
     /** Officer-side drafts and sign modes; the officer pane leaves composition while the stage is shown. */
     val drafts = androidx.compose.runtime.mutableStateMapOf<String, String>()
@@ -456,7 +471,7 @@ class SessionViewModel(
     // The same item with the pictures [offered] left out, shown if the subject answers "Something else".
     private var more: Pending? = null
 
-    private suspend fun present(prepared: Pending, lang: String) {
+    private suspend fun present(prepared: Pending, lang: String): Long {
         flushGiven()
         val pending = when (prepared) {
             // A lesson-sheet input offers every picture it lists, so the subject can pick several.
@@ -483,6 +498,7 @@ class SessionViewModel(
                 pending = if (paired && it.pending == prepared) null else it.pending,
             )
         }
+        return id
     }
 
     // A proposal the subject's next tap matched, for the record; used once.
@@ -505,14 +521,17 @@ class SessionViewModel(
             }
             when (cardId) {
                 "stop" -> endRun()
-                // The pictures did not hold the answer: the ones not yet seen come next, then the drawing pad, never a forced choice.
-                SOMETHING_ELSE -> ui.value?.let { u ->
-                    val next = more
-                    if (next != null) present(next, u.session.subjectLang) else { endRun(); present(Pending.Drawing, u.session.subjectLang) }
-                }
+                SOMETHING_ELSE -> somethingElse()
                 else -> advanceRun()
             }
         }
+    }
+
+    /** The pictures did not hold the answer: the ones not yet seen come next, then the drawing pad, never a forced choice. */
+    internal suspend fun somethingElse() {
+        val lang = ui.value?.session?.subjectLang ?: return
+        val next = more
+        if (next != null) present(next, lang) else { endRun(); present(Pending.Drawing, lang) }
     }
 
     /** Water, food and the like, asked for by the subject at any moment: logged as a request, so it neither answers
@@ -540,10 +559,17 @@ class SessionViewModel(
     fun nextRule() {
         val step = ((if (paired) local.value.onStage else local.value.pending) as? Pending.GroundRules)?.step ?: return
         val lang = ui.value?.session?.subjectLang ?: return
+        // Shares show()'s guard: a second tap before the first step is written would present it twice.
+        if (showing) return
+        showing = true
         viewModelScope.launch {
-            if (step < RuleSteps.lastIndex) present(Pending.GroundRules(step + 1), lang)
-            else if (paired) local.update { it.copy(onStage = null, itemId = null) }
-            else local.update { it.copy(pending = null, answeredCard = null, answeredYes = null) }
+            try {
+                if (step < RuleSteps.lastIndex) present(Pending.GroundRules(step + 1), lang)
+                else if (paired) local.update { it.copy(onStage = null, itemId = null) }
+                else local.update { it.copy(pending = null, answeredCard = null, answeredYes = null) }
+            } finally {
+                showing = false
+            }
         }
     }
 
@@ -563,6 +589,12 @@ class SessionViewModel(
         viewModelScope.launch {
             repo.log(sessionId, EventType.LANGUAGE_CHOSEN, EventSource.SUBJECT, code, text = content.language(code)?.english, shownId = local.value.itemId)
         }
+        settleLanguage(code)
+    }
+
+    /** The pick stands once no other follows for [LANGUAGE_SETTLE_MS]; logged by the caller, so a second screen's
+     * pick gets the opening too without a second LANGUAGE_CHOSEN row. */
+    internal fun settleLanguage(code: String) {
         languageSettle?.cancel()
         languageSettle = viewModelScope.launch {
             delay(LANGUAGE_SETTLE_MS)
@@ -653,6 +685,8 @@ class SessionViewModel(
         val sensitive = content.groups.filter { it.sensitive }.map { it.id }.toSet()
         val run = items.filterNot { it.question.group in sensitive }.take(RUN_MAX)
         val first = run.firstOrNull() ?: return
+        // A step left waiting by the run before this one would present this run's second item over its first.
+        step?.cancel()
         local.update { it.copy(queue = run.drop(1), runTotal = run.size) }
         ShowTiming.start()
         viewModelScope.launch { present(first, state.session.subjectLang) }
@@ -671,10 +705,11 @@ class SessionViewModel(
         }
     }
 
-    private suspend fun endRun() {
+    internal suspend fun endRun() {
         step?.cancel()
         val l = local.value
-        if (l.queue.isNotEmpty()) {
+        // A run that reached its last question still says so; a session with no run says nothing.
+        if (l.runTotal > 0) {
             repo.log(sessionId, EventType.SYSTEM, EventSource.OFFICER, text = "$SYSTEM_RUN_ENDED${l.runTotal - l.queue.size}/${l.runTotal}")
         }
         local.update { it.copy(queue = emptyList(), runTotal = 0) }
@@ -755,6 +790,8 @@ class SessionViewModel(
         auto.halt()
         val reopened = ui.value?.session?.takeIf { it.savedThrough != null }?.title
         viewModelScope.launch {
+            // An answer still waiting for its confirmation belongs to the session before the seal closes it.
+            flushGiven()
             auto.drain()
             when {
                 title != null -> repo.end(sessionId, title)

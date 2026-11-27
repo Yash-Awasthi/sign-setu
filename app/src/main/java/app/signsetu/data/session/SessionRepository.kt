@@ -125,7 +125,8 @@ class SessionRepository(
     suspend fun eventsNow(sessionId: String): List<SessionEvent> = events(sessionId).first()
 
     // Reading the last seal and writing the next must not interleave, or two rows would seal the same predecessor.
-    private val sealing = Mutex()
+    // Internal so a test can hold it and prove a log that loses the race with end() is refused.
+    internal val sealing = Mutex()
 
     // Sessions ended here: an answer that arrives now is refused, never written outside the sealed root.
     private val ended = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
@@ -149,8 +150,9 @@ class SessionRepository(
         audioWav: ByteArray? = null,
         landmarksJson: ByteArray? = null,
     ): Long = unlessClosed(-1L) {
-        if (sessionId in ended) return@unlessClosed -1L
         sealing.withLock {
+            // Checked under the lock: a log that lost its race with end() must not insert after the root is fixed.
+            if (sessionId in ended) return@withLock -1L
             // Retention may delete an open session under its screen; its later rows are dropped, not a crash.
             val startedAt = dao.startedAt(sessionId) ?: return@withLock -1L
             val ts = clock()

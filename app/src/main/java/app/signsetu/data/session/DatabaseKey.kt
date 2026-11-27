@@ -53,7 +53,9 @@ class DatabaseKey(private val context: Context) {
         val bound = if (secure || keystore().containsAlias(ALIAS)) existingOrNew(ALIAS, unlockedOnly = true) else null
         if (bound != null && wrapped.exists()) rewrapFromOpenKey(bound)
         val kek = bound ?: existingOrNew(OPEN_ALIAS, unlockedOnly = false)!!
-        unbound = !secure || bound == null
+        // The notice is only the no-lock one, so it is only raised for a phone without a lock screen. A build that
+        // refuses the unlocked-only flag keeps the records under the open key, which docs/04 records as a gap.
+        unbound = !secure
         if (!wrapped.exists()) {
             // A new DEK cannot read a database written under an old one.
             val lost = context.deleteDatabase(DB_NAME)

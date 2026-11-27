@@ -30,6 +30,9 @@ interface SessionDao {
     /** A drawing and the row that names it are written together or not at all, so a crash leaves no orphan. */
     @Transaction
     suspend fun insertSealed(event: EventEntity, drawing: DrawingEntity?, audio: AudioEntity? = null, landmarks: LandmarksEntity? = null): Long {
+        // The caller's check is outside this transaction: retention or Discard may delete the session before the
+        // children land, and with the foreign keys on the insert would throw. -1 means the session went.
+        if (startedAt(event.sessionId) == null) return -1L
         val drawingId = drawing?.let { insertDrawing(it) }
         val audioId = audio?.let { insertAudio(it) }
         val landmarksId = landmarks?.let { insertLandmarks(it) }
