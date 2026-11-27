@@ -100,8 +100,8 @@ internal class CaptionLight(val text: String, val range: IntRange) {
  * [english]; [plan], when set, is already in [shown]'s positions. */
 internal data class CaptionLine(val shown: String?, val english: String, val plan: TextPlan? = null)
 
-/** [english] planned, each word's range moved onto the word of [shown] it lights. A word with nothing to light in
- * [shown] is not signed at all, so the hands only ever move for a lit word. */
+/** [english] planned, each word's range moved onto the word of [shown] it lights. When some words light, only those
+ * are signed; when none do, the whole plan is signed and no word is lit. */
 internal fun linePlan(
     content: ContentBundle, english: String, shown: String, modes: Set<SignMode>,
     /** Where in [shown] the signed wording starts: a repeated question carries a lead-in line first. */
@@ -116,9 +116,12 @@ internal fun linePlan(
         val mark = end.lastIndex.takeIf { word.length == 1 && word[0] in QUESTION_MARKS && end.lastOrNull() in QUESTION_MARKS }
         b to (mark?.let { it..it } ?: captionRange(content, word, part))?.let { it.first + from..it.last + from }
     }
-    if (lit.all { it.second != null } || !again) return plan.copy(beats = lit.map { (b, r) -> b.copy(range = r ?: IntRange.EMPTY) })
+    fun withLights() = plan.copy(beats = lit.map { (b, r) -> b.copy(range = r ?: IntRange.EMPTY) })
+    if (lit.all { it.second != null } || !again) return withLights()
     val kept = lit.filter { it.second != null }.sortedBy { it.first.range.first }.joinToString(" ") { english.substring(it.first.range) }
-    return if (kept.isBlank()) TextPlan(null, emptyList()) else linePlan(content, kept, shown, modes, from, again = false)
+    // No word of the caption is in words.json (Bengali, Tamil, Urdu...): sign the English wording and light nothing,
+    // rather than throwing the gesture away and signing nothing at all.
+    return if (kept.isBlank()) withLights() else linePlan(content, kept, shown, modes, from, again = false)
 }
 
 /** Read words signed back as they were read, then "Is this it?" from its wording; the caption is the words and the

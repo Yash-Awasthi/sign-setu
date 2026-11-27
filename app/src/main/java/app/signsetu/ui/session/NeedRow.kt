@@ -46,10 +46,14 @@ private val NeedGlyphs = mapOf(
     "family" to "\uD83D\uDC6A",
 )
 
-/** The card's own name where the item has that card; otherwise the row's own label, never a bare id. */
+/** The item's name in the subject's language: its card's, else the bundle's own word for an item with no card (family). */
+internal fun needWord(id: String, content: ContentBundle, lang: String): String? =
+    content.cards[id]?.label?.get(lang) ?: content.subjectText(id, lang)
+
+/** The card's own name where the item has that card; otherwise the bundle's word, then the row's own label, never a bare id. */
 @Composable
 internal fun needLabel(id: String, content: ContentBundle, lang: String): String =
-    content.cards[id]?.label?.get(lang) ?: when (id) {
+    needWord(id, content, lang) ?: when (id) {
         "family" -> stringResource(R.string.need_family)
         "toilet" -> stringResource(R.string.need_toilet)
         "help" -> stringResource(R.string.need_help)
@@ -71,7 +75,12 @@ internal fun NeedRow(
     val call = LocalCall.current
     val answer = LocalAnswerColors.current
     Column(modifier.height(NEED_ROW_HEIGHT), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-        Text(stringResource(R.string.need_row_title), fontSize = TypeSize.s11, color = call.muted, maxLines = 1)
+        Text(
+            content.subjectText("need_row_title", lang) ?: stringResource(R.string.need_row_title),
+            fontSize = TypeSize.s11,
+            color = call.muted,
+            maxLines = 1,
+        )
         Row(
             modifier = Modifier.fillMaxWidth().weight(1f).testTag("stage.needs"),
             horizontalArrangement = Arrangement.spacedBy(Space.xs),

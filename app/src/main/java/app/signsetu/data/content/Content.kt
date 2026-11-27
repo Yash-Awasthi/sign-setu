@@ -347,9 +347,10 @@ class ContentRepository(private val open: (String) -> InputStream) {
     }.getOrNull()
 }
 
-private val PRELOADED_CARDS = listOf(
-    "yes", "no", "stop", "dont_know", "unclear", "wrong", "water", "food", "help", "pain_arm", "pain_head", "pain_chest",
-    "pain_stomach", "safe", "hurt",
+/** Answers every session paints on its first frame: the fixed row, and the body cards the pain question offers. */
+internal val PRELOADED_CARDS = listOf(
+    "yes", "no", "stop", "dont_know", "wrong", "water", "food", "help", "pain", "head", "arm", "stomach", "leg",
+    "mouth", "back",
 )
 
 /** How the character performs a fixed caption: signs, and fingerspelling for any word without one. */
