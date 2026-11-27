@@ -27,14 +27,47 @@ internal object RiveCharacter {
     const val FILE = "avatar/signer.riv"
     const val MACHINE = "Signer"
 
+    /** A signer character is a few hundred KB of vectors; anything past this is not that file, and reading it would
+     *  only spend RAM the parser cannot use. */
+    const val MAX_RIV_BYTES = 4L * 1024 * 1024
+
+    /** Which copy is shown: the department's in files, else the one a build put in assets, else none. */
+    enum class Source { PRIVATE, ASSET, NONE }
+
     /** Hand shapes in the order the file's handR and handL inputs number them; measured shapes snap to the nearest. */
     val SHAPES: List<String> = HandShape.ALL.keys.toList()
 
     private var started = false
 
-    fun fileIn(context: Context): ByteArray? =
-        File(context.filesDir, FILE).takeIf { it.isFile }?.readBytes()
-            ?: runCatching { context.assets.open(FILE).use { it.readBytes() } }.getOrNull()
+    /** [length] is the private copy's size, or null when there is no such file. */
+    fun usable(length: Long?): Boolean = length != null && length <= MAX_RIV_BYTES
+
+    fun source(privateLength: Long?, assetExists: Boolean): Source = when {
+        usable(privateLength) -> Source.PRIVATE
+        assetExists -> Source.ASSET
+        else -> Source.NONE
+    }
+
+    /** Only a size and an open/close here: this runs during composition, so it must never read the file. */
+    fun present(context: Context): Boolean = source(privateLength(context), assetExists(context)) != Source.NONE
+
+    fun fileIn(context: Context): ByteArray? {
+        val copy = source(privateLength(context), assetExists(context))
+        return when (copy) {
+            Source.PRIVATE -> runCatching { privateFile(context).readBytes() }.getOrNull()
+            Source.ASSET -> runCatching { context.assets.open(FILE).use { it.readBytes() } }.getOrNull()
+            Source.NONE -> null
+        }
+    }
+
+    private fun privateFile(context: Context) = File(context.filesDir, FILE)
+
+    private fun privateLength(context: Context): Long? =
+        privateFile(context).let { if (it.isFile) it.length() else null }
+
+    /** An absent entry fails to open; no byte of a present one is read. */
+    private fun assetExists(context: Context): Boolean =
+        runCatching { context.assets.open(FILE).close() }.isSuccess
 
     /** The runtime's native library loads only when a Rive character is first shown, never at app start. */
     fun start(context: Context) {

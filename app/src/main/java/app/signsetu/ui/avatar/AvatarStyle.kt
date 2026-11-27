@@ -34,7 +34,7 @@ object AvatarRenderer {
     /** False on phones with no usable WebView provider, where constructing one throws. */
     fun webViewAvailable(): Boolean = webViewChecked ?: runCatching { WebView.getCurrentWebViewPackage() != null }.getOrDefault(false).also { webViewChecked = it }
 
-    fun riveAvailable(context: Context): Boolean = RiveCharacter.fileIn(context) != null
+    fun riveAvailable(context: Context): Boolean = RiveCharacter.present(context)
 }
 
 /** The signing character: plays [gesture], or [clip] when given, each time [playKey] changes; speed below 1 plays

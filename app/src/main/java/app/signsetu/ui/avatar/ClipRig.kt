@@ -85,22 +85,31 @@ internal fun framePose(v: FloatArray, build: Build): Pose {
 /** Finger curls from how far each fingertip falls short of its finger's full length; spread from the angle between
  * index and pinky; the thumb is across when its tip is nearer the little finger's knuckle than the index's. */
 internal fun shapeOf(v: FloatArray, base: Int): HandShape {
-    fun p(k: Int) = floatArrayOf(v[(base + k) * 3], v[(base + k) * 3 + 1], v[(base + k) * 3 + 2])
-    fun d(a: FloatArray, b: FloatArray) = sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]))
+    // Indexed straight into the frame: a hand is read element by element, so no point array is built per joint.
+    fun p(k: Int, axis: Int) = (base + k) * 3 + axis
+    fun d(a: Int, b: Int): Float {
+        val dx = v[p(a, 0)] - v[p(b, 0)]
+        val dy = v[p(a, 1)] - v[p(b, 1)]
+        val dz = v[p(a, 2)] - v[p(b, 2)]
+        return sqrt(dx * dx + dy * dy + dz * dz)
+    }
     fun curl(first: Int): Float {
-        val joints = (first..first + 3).map(::p)
-        val path = d(joints[0], joints[1]) + d(joints[1], joints[2]) + d(joints[2], joints[3])
+        val path = d(first, first + 1) + d(first + 1, first + 2) + d(first + 2, first + 3)
         if (path < 1e-5f) return 0.3f
-        val straight = d(joints[0], joints[3]) / path
+        val straight = d(first, first + 3) / path
         // A straight finger is near 1; a closed fist folds the tip back to about 0.35 of the path.
         return ((1f - straight) / 0.6f).coerceIn(0f, 1f)
     }
-    val wrist = p(0)
-    fun dir(k: Int) = p(k).let { floatArrayOf(it[0] - wrist[0], it[1] - wrist[1]) }
-    val i = dir(8); val l = dir(20)
-    val cos = (i[0] * l[0] + i[1] * l[1]) / ((hypot(i[0], i[1]) * hypot(l[0], l[1])).takeIf { it > 1e-6f } ?: 1f)
+    val wristX = v[p(0, 0)]
+    val wristY = v[p(0, 1)]
+    val ix = v[p(8, 0)] - wristX
+    val iy = v[p(8, 1)] - wristY
+    val lx = v[p(20, 0)] - wristX
+    val ly = v[p(20, 1)] - wristY
+    val cos = (ix * lx + iy * ly) / ((hypot(ix, iy) * hypot(lx, ly)).takeIf { it > 1e-6f } ?: 1f)
     val spread = ((1f - cos) / 0.3f - 0.3f).coerceIn(-1f, 1f)
-    val across = (d(p(4), p(5)) / (d(p(4), p(17)) + d(p(4), p(5))).coerceAtLeast(1e-5f)).let { ((it - 0.35f) / 0.4f).coerceIn(0f, 1f) }
+    val thumbAcross = d(4, 5)
+    val across = (thumbAcross / (d(4, 17) + thumbAcross).coerceAtLeast(1e-5f)).let { ((it - 0.35f) / 0.4f).coerceIn(0f, 1f) }
     return HandShape(curl(1), curl(5), curl(9), curl(13), curl(17), across, spread)
 }
 

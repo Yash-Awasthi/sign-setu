@@ -19,12 +19,15 @@ import kotlin.math.sin
 class Timeline(val gesture: Gesture?, private val build: Build) {
     private val keys: List<Key> = gesture?.keys.orEmpty().sortedBy { it.t }
     val duration: Float = if (keys.isEmpty()) 0f else LEAD_IN + keys.last().t + LEAD_OUT
+    // The draw asks for a pose every frame and a gesture's keys never change, so its frames are built once.
+    private val rest = Frame(0f, RestKey, RestKey, Face(), HeadKey(), BodyKey())
+    private val frames: List<Frame> by lazy {
+        listOf(rest.copy(t = -LEAD_IN)) + filled() + rest.copy(t = keys.last().t + LEAD_OUT)
+    }
 
     fun pose(seconds: Float): Pose {
         if (keys.isEmpty()) return restPose(build)
         val t = seconds - LEAD_IN
-        val rest = restFrame()
-        val frames = listOf(rest.copy(t = -LEAD_IN)) + filled() + rest.copy(t = keys.last().t + LEAD_OUT)
         val i = frames.indexOfLast { it.t <= t }.coerceAtLeast(0)
         val a = frames[i]
         val b = frames.getOrElse(i + 1) { a }
@@ -39,11 +42,9 @@ class Timeline(val gesture: Gesture?, private val build: Build) {
         val t: Float, val r: HandKey, val l: HandKey, val face: Face, val head: HeadKey, val body: BodyKey,
     )
 
-    private fun restFrame() = Frame(0f, RestKey, RestKey, Face(), HeadKey(), BodyKey())
-
     /** Each key holds the previous key's values for anything it leaves out. */
     private fun filled(): List<Frame> {
-        var prev = restFrame()
+        var prev = rest
         return keys.map { k ->
             Frame(
                 t = k.t,
