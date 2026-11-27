@@ -60,8 +60,13 @@ class AccessibilityAuditTest {
 
         val call = File(session, "VideoCallStage.kt").readText()
         assertTrue(
-            "the stage pauses the scan while a tool sheet covers it",
-            call.contains("paused = sheetFor != null"),
+            "the stage pauses the scan while a tool sheet, a break or the board covers it",
+            call.contains("paused = covered || sheetFor != null"),
+        )
+        val stage = File(session, "Stage.kt").readText()
+        assertTrue(
+            "a break layer or the open board tells the stage its bar is covered",
+            stage.contains("covered = paused || showExpressBoard"),
         )
         assertTrue(
             "a paused flow runs no dwell timer",
