@@ -22,6 +22,8 @@ class SpeechPlayer(private val context: Context, private val intact: (String) ->
     fun play(path: String, speed: Float = 1f) {
         // Muted, or a recording that fails its manifest check: nothing is played.
         if (SubjectSpeech.muted.value || !intact(path)) return
+        // A typed line talking through the phone's voice must not run under the recording.
+        voice.peek()?.stop()
         player.setPlaybackSpeed(speed)
         player.setMediaItem(MediaItem.fromUri("asset:///content/$path"))
         player.prepare()
@@ -31,6 +33,7 @@ class SpeechPlayer(private val context: Context, private val intact: (String) ->
     /** Speech made on the fly for typed text; held in one cache file that release() deletes. */
     fun playBytes(audio: ByteArray, speed: Float = 1f) {
         if (SubjectSpeech.muted.value) return
+        voice.peek()?.stop()
         val file = java.io.File(context.cacheDir, SPOKEN).apply { writeBytes(audio) }
         player.setPlaybackSpeed(speed)
         player.setMediaItem(MediaItem.fromUri(android.net.Uri.fromFile(file)))
@@ -40,8 +43,13 @@ class SpeechPlayer(private val context: Context, private val intact: (String) ->
 
     private val voice = LazyResource { OfflineVoice(context) }
 
-    /** Typed text with no recording and no online voice: the phone's own Hindi or English voice, if it has one. */
-    fun speakOffline(text: String, lang: String?, speed: Float = 1f) = !SubjectSpeech.muted.value && voice.get().speak(text, lang, speed)
+    /** Typed text with no recording and no online voice: the phone's own Hindi or English voice, if it has one.
+     * True when it is said now or kept until the voice starts; the next recorded clip stops it. */
+    fun speakOffline(text: String, lang: String?, speed: Float = 1f): Boolean {
+        player.stop()
+        if (SubjectSpeech.muted.value) return false
+        return voice.get().speak(text, lang, speed)
+    }
 
     fun stop() { player.stop(); voice.peek()?.stop() }
 

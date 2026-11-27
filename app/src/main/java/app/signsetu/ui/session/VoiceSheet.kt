@@ -23,7 +23,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -68,7 +67,12 @@ internal fun VoiceSheet(
     var heard by remember { mutableStateOf<BrainClient.Live?>(null) }
     val mic = app.signsetu.ui.components.rememberPermission(Manifest.permission.RECORD_AUDIO, askNow = consented)
     val granted = mic.granted
-    LaunchedEffect(Unit) { while (true) withFrameMillis { level = capture.level } }
+    // The bar is driven only while a take is live: a frame-driven loop for the whole open sheet recomposed it at the
+    // display's refresh rate with nothing to show, so the app never went idle.
+    LaunchedEffect(recording) {
+        if (!recording) { level = 0f; return@LaunchedEffect }
+        while (true) { level = capture.level; delay(LEVEL_MS) }
+    }
     DisposableEffect(capture) { onDispose { capture.clear() } }
     // The sheet stays composed while the app is backgrounded; a take there is silence (or refused) with the
     // microphone indicator still on, so it is dropped instead.
@@ -160,6 +164,8 @@ internal fun VoiceSheet(
 /** What the sheet says about the microphone: how to record, or the one line that asks for the permission. */
 internal fun voiceHint(granted: Boolean): Int = if (granted) R.string.voice_hold else R.string.voice_no_permission
 
+/** How often the level bar is refreshed during a take; 20 a second reads smooth and costs no frames between. */
+private const val LEVEL_MS = 50L
 /** How often the words heard so far are asked for while the person talks. */
 private const val LIVE_MS = 400L
 /** One second of 16 kHz 16-bit audio, half of what the brain takes in one piece. */

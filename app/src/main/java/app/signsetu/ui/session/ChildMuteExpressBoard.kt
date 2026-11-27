@@ -62,6 +62,7 @@ import app.signsetu.R
 import app.signsetu.data.content.ContentBundle
 import app.signsetu.data.content.or
 import app.signsetu.ui.components.CardImage
+import app.signsetu.ui.components.StopOnBackground
 import app.signsetu.ui.theme.Baloo
 import app.signsetu.ui.theme.Space
 import app.signsetu.ui.theme.TypeSize
@@ -139,6 +140,7 @@ private val ExpressCards = listOf(
 private class CardVoice(context: Context) {
     private val voice = app.signsetu.ui.components.OfflineVoice(context)
     fun speak(text: String, lang: String) { voice.speak(text, lang) }
+    fun stop() = voice.stop()
     fun shutdown() = voice.shutdown()
 }
 
@@ -164,6 +166,9 @@ fun FullChildMuteCommunicationBoard(
     val context = LocalContext.current
     val voice = remember(context) { CardVoice(context) }
     DisposableEffect(voice) { onDispose { voice.shutdown() } }
+    // The board stays composed behind another activity or a locked screen, so a card keeps talking until the app is
+    // told it left the foreground; only the engine is kept for when it comes back.
+    StopOnBackground { voice.stop() }
     val boardName = stringResource(R.string.board_name)
     val closeName = stringResource(R.string.close)
     fun label(id: String) = content.cards[id]?.label?.or(lang) ?: id

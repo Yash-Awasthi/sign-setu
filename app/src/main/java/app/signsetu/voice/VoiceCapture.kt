@@ -36,8 +36,9 @@ class VoiceCapture(private val context: Context) {
         if (record != null) stop()?.fill(0)
         val min = AudioRecord.getMinBufferSize(RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         // VOICE_RECOGNITION: no automatic gain, the input speech models are trained on.
-        val r = runCatching { AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, RATE)) }.getOrNull()
-            ?.takeIf { it.state == AudioRecord.STATE_INITIALIZED } ?: return false
+        val r = runCatching { AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, RATE)) }.getOrNull() ?: return false
+        // The constructor can return a recorder that never initialized; it still owns native memory, so release() is required here too.
+        if (r.state != AudioRecord.STATE_INITIALIZED) { r.release(); return false }
         // Permission revoked or the mic held by a call: startRecording throws, and the native recorder must still be freed.
         if (runCatching { r.startRecording() }.isFailure || r.recordingState != AudioRecord.RECORDSTATE_RECORDING) { r.release(); return false }
         if (NoiseSuppressor.isAvailable()) suppressor = runCatching { NoiseSuppressor.create(r.audioSessionId)?.apply { enabled = true } }.getOrNull()
@@ -48,10 +49,14 @@ class VoiceCapture(private val context: Context) {
             val buf = ShortArray(RATE / 10)
             val bytes = ByteBuffer.allocate(buf.size * 2).order(ByteOrder.LITTLE_ENDIAN)
             while (running) {
-                val n = r.read(buf, 0, buf.size)
+                // Non-blocking: a blocking read can still be inside the native call when stop() joins and releases, which crashes.
+                val n = r.read(buf, 0, buf.size, AudioRecord.READ_NON_BLOCKING)
                 // A negative count is a dead or invalid recorder that will never read again; retrying would spin a core.
                 if (n < 0) { running = false; break }
-                if (n == 0) continue
+                if (n == 0) {
+                    try { Thread.sleep(10) } catch (_: InterruptedException) { break }
+                    continue
+                }
                 var sum = 0.0
                 bytes.clear()
                 for (i in 0 until n) { sum += buf[i] * buf[i].toDouble(); bytes.putShort(buf[i]) }
