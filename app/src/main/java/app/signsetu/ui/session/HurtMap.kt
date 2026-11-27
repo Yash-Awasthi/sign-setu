@@ -16,6 +16,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -120,6 +121,11 @@ internal fun bodyHit(side: BodySide, x: Float, y: Float): BodyTouch? {
     return null
 }
 
+/** The index of the mark a close-up corrects: the last touch on the close-up's own part and side, not the last mark
+ *  in the list, which may belong to the other side. -1 when that close-up has no mark yet. */
+internal fun markToRefine(marks: List<BodyTouch>, part: BodyPart, side: BodySide): Int =
+    marks.indexOfLast { it.part == part && it.side == side }
+
 /** The body for a frightened person to show where it hurts: front and back, any point on the figure. Every touch
  * is kept with its exact place, so the record shows where the finger went, not only a named part. A part too small to
  * hit exactly (hand, foot, chest, belly) opens a close-up under the figure, where the same finger lands on the exact
@@ -129,6 +135,8 @@ internal fun bodyHit(side: BodySide, x: Float, y: Float): BodyTouch? {
 fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subjectText: (String) -> String? = { null }) {
     var side by rememberSaveable { mutableStateOf(BodySide.FRONT) }
     var zoom by remember { mutableStateOf<Pair<BodyPart, Rect>?>(null) }
+    // A close-up belongs to the side it was opened on; the other view must not keep it, nor correct its mark.
+    LaunchedEffect(side) { zoom = null }
     val marks = remember { mutableStateListOf<BodyTouch>() }
     val ink = StageScheme.onSurfaceVariant
     val skin = StageTones.bodySkin
@@ -167,7 +175,8 @@ fun HurtMap(onTouch: (BodyTouch) -> Unit, modifier: Modifier = Modifier, subject
                 val p = zoomPoint(box, zx, zy)
                 bodyHit(side, p.x, p.y)?.let { refined ->
                     // The close-up corrects the coarse touch: one place per part, so the record keeps the exact point.
-                    if (marks.isNotEmpty()) marks.removeAt(marks.lastIndex)
+                    val at = markToRefine(marks, part, side)
+                    if (at >= 0) marks.removeAt(at)
                     marks += refined
                     touch(refined)
                 }

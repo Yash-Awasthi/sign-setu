@@ -113,8 +113,8 @@ internal fun rememberReading(
                     alternatives.clear()
                     alternatives += matches.filter { it != shown && faithful(it, l) && it.posterior >= ALTERNATIVE_FLOOR }.take(2)
                         .map { m -> SentenceGuess(segments.mapIndexed { i, s -> m.fills.firstOrNull { it.token == i }?.label ?: s.word ?: "?" }, b.english(m)) }
-                    // Debug builds only: the lattice and the rung, the start of the gloss-to-text decision log.
-                    if (BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "q=$question rung=${r::class.simpleName} lattice=${l.toJson()}")
+                    // Debug builds only: the question, the rung and the token count, never the words the subject signed.
+                    if (BuildConfig.DEBUG) android.util.Log.d("SignSetuGloss", "q=$question rung=${r::class.simpleName} tokens=${l.tokens.size}")
                     DebugRecorder.decision(eventId, "rung", "${r::class.simpleName}: ${(r as? Rung.Sentence)?.en ?: (r as? Rung.FixWords)?.en ?: ""}")
                 }
             }

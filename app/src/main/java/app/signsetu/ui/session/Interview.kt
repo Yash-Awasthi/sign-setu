@@ -63,8 +63,11 @@ fun candidates(content: ContentBundle, role: Role, events: List<SessionEvent>): 
     val log = SessionLog(content, events)
     val allowed = content.groupsFor(role).filterNot { it.sensitive || it.rights }.map { it.id }.toSet()
     val usable = content.questions.filter { q -> q.phase in AUTO_PHASES && q.group in allowed && !log.endedUnsure(q.id) }
+    // A wrap-up narrows the run that logged it, not every later run after auto is switched off and on again.
+    val wrapUp = events.indexOfLast { it.type == EventType.SYSTEM && it.text == AutoKey.WRAP_UP }
+    val auto = events.indexOfLast { it.type == EventType.SYSTEM && it.text == AutoKey.MODE_AUTO }
     val phases = when {
-        events.any { it.type == EventType.SYSTEM && it.text == AutoKey.WRAP_UP } -> listOf(Phase.CLOSING)
+        wrapUp > auto -> listOf(Phase.CLOSING)
         events.any { it.reason == SHOWN_OPENING } && events.none { it.type == EventType.SYSTEM && it.text == SYSTEM_RULES_SKIPPED } ->
             IN_ORDER - Phase.GROUND_RULES
         else -> IN_ORDER
@@ -77,7 +80,7 @@ fun candidates(content: ContentBundle, role: Role, events: List<SessionEvent>): 
 
     val out = mutableListOf<Proposal>()
     // R4b: after a resume, ask first whether to carry on.
-    if (log.justResumed()) breakItems[K_CARRY_ON]?.let { out += Proposal(it, Reason.CARRY_ON) }
+    if (log.justResumed() && !log.shown(K_CARRY_ON)) breakItems[K_CARRY_ON]?.let { out += Proposal(it, Reason.CARRY_ON) }
     // R3: two unsure answers in a row: offer a break.
     if (log.twoUnsure()) (breakItems[K_BREAK] ?: breakItems[K_SLOW])?.let { out += Proposal(it, Reason.BREAK_AFTER_UNSURE) }
     // R6: a follow-up whose condition holds goes before the rest.

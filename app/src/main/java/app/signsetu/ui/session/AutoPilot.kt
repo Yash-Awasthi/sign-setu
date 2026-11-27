@@ -257,8 +257,10 @@ class AutoPilot(
                 if (token != pace || state.value != Conv.Planning) return@act
                 val left = gapMs - (System.currentTimeMillis() - started)
                 val pick = got?.let { g -> all.firstOrNull { it.q.id == g.id && choices.any { c -> c.q.id == g.id } } }
+                // A written sentence's id comes from its text, so the same sentence already shown must not return.
+                val repeated = words != null && events.any { it.type == EventType.QUESTION_SHOWN && it.itemId == words.id }
                 when {
-                    got != null && words != null -> offer(Proposal(words, first.reason, got), prior, left, confirm = false, input = last.words, since = last.at)
+                    got != null && words != null && !repeated -> offer(Proposal(words, first.reason, got), prior, left, confirm = false, input = last.words, since = last.at)
                     got == null || pick == null -> offer(first, prior, left, confirm = false)
                     else -> offer(Proposal(pick.q, pick.reason, got), prior, left, confirm = needsOfficer(pick.q), input = last.words, since = last.at)
                 }

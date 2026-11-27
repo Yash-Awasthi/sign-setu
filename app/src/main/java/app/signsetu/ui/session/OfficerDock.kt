@@ -66,6 +66,13 @@ private const val TRANSLATE_APP = "com.google.android.apps.translate"
 /** Pictures carry these before anyone knows the person's language: who we are, safety, help coming, basic needs. */
 private val NoLanguageQuestions = listOf("s1", "s5", "s6", "n1", "n2", "n3", "h2")
 
+/** What the follow-up fetch depends on: the answer it is for, and whether the officer is typing. Both are keys, so an
+ *  answer that landed mid-sentence is fetched once the box is cleared instead of never. */
+internal data class FollowUpKey(val answerId: Long?, val typing: Boolean)
+
+/** Whether a fetch for [key] is due at all: there must be an answer, and the composer must not be busy. */
+internal fun followUpsWanted(key: FollowUpKey): Boolean = key.answerId != null && !key.typing
+
 /** Quick questions and the composer: everything the officer reaches with a thumb. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -147,10 +154,12 @@ internal fun Dock(
             // Keyed on the answer, not the log size: rows logged after an answer must not drop its suggestions.
             var aiFollowUps by remember(lastAnswerEvent?.id) { mutableStateOf<List<String>>(emptyList()) }
 
-            LaunchedEffect(lastAnswerEvent?.id) {
-                if (lastAnswerEvent != null && !typing) {
+            val followUpKey = FollowUpKey(lastAnswerEvent?.id, typing)
+            LaunchedEffect(followUpKey) {
+                val answer = lastAnswerEvent
+                if (answer != null && followUpsWanted(followUpKey)) {
                     val suggestions = cloud.followUps(
-                        lastAnswerEvent.text ?: lastAnswerEvent.cardId ?: "answered",
+                        answer.text ?: answer.cardId ?: "answered",
                         ui.child,
                         subjectNames(ui.events, content, officerLang),
                         subjectDetails(ui.events, content, officerLang),

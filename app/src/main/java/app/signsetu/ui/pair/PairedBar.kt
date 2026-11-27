@@ -72,6 +72,8 @@ fun PairedBar(pane: PairedPane, ui: SessionUi, content: ContentBundle, officerLa
             )
         }
         if (pane.breakPending) Alert(stringResource(R.string.second_screen_break), stringResource(R.string.second_screen_break_given) to pane.onBreakGiven)
+        // The stage reported it could not resolve or show the item; the last real reading stays in the chip above.
+        pane.lastError?.let { Alert(stringResource(R.string.link_display_not_confirmed)) }
         pane.askedAt?.let {
             Text(stringResource(R.string.second_screen_asked_before, clockTime(it)), style = MaterialTheme.typography.bodySmall, color = colors.tertiary)
         }

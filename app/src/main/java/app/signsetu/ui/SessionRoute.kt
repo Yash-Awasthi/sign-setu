@@ -61,6 +61,7 @@ import androidx.lifecycle.viewModelScope
 import app.signsetu.ui.session.OfficerPane
 import app.signsetu.ui.session.SessionDock
 import app.signsetu.ui.session.SessionShape
+import app.signsetu.ui.session.SessionUi
 import app.signsetu.ui.session.sessionShape
 import app.signsetu.ui.session.titleToKeep
 import app.signsetu.ui.session.SessionViewModel
@@ -193,6 +194,30 @@ internal fun SessionRoute(
             )
         }
     }
+    // Docked beside the officer pane the stage is a preview of the live item: a tap here answers nothing, starts no
+    // sign window and takes nothing back, and the officer's own camera stays the only one reading hands.
+    val stagePreview: @Composable () -> Unit = {
+        SubjectTheme {
+            Stage(
+                ui = dockStageUi(state),
+                content = signContent,
+                tracker = null,
+                cameraOn = false,
+                gestureSpeed = settings.gestureSpeed,
+                askModes = typedModes(vm.modesFor(state.session.profile, defaultModes(state.session.profile)), settings.islReorder),
+                onCard = {},
+                onYesNo = {},
+                onLanguage = {},
+                onDrawing = {},
+                onWritten = {},
+                onSignFrame = {},
+                onStartSigning = {},
+                onDoneSigning = {},
+                onOfficer = null,
+                switchAccess = settings.switchAccess,
+            )
+        }
+    }
     val officerSurface: @Composable () -> Unit = {
         OfficerPane(
             ui = state,
@@ -233,7 +258,7 @@ internal fun SessionRoute(
     when (shown) {
         // A paired phone in landscape docks the stage and the officer side instead of stacking them.
         Mode.OFFICER -> if (shape == SessionShape.DOCK) {
-            SessionDock(stage = stageSurface, officer = officerSurface)
+            SessionDock(stage = stagePreview, officer = officerSurface)
         } else {
             officerSurface()
         }
@@ -252,6 +277,9 @@ internal fun SessionRoute(
     }
     }
 }
+
+/** The docked stage shows what is on the stage now; [SessionUi.pending] is only the officer's unfinished draft. */
+internal fun dockStageUi(state: SessionUi): SessionUi = state.copy(pending = state.onStage)
 
 private fun shareReport(activity: Activity, file: File) {
     val uri = FileProvider.getUriForFile(activity, "${activity.packageName}.exports", file)

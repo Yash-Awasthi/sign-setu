@@ -12,8 +12,12 @@ import app.signsetu.data.session.SessionRepository
 import app.signsetu.ui.session.AutoKey
 import app.signsetu.ui.session.AutoPilot
 import app.signsetu.ui.session.Conv
+import app.signsetu.ui.session.FREE_ID
 import app.signsetu.ui.session.PauseCause
 import app.signsetu.ui.session.Pending
+import app.signsetu.ui.session.Plan
+import app.signsetu.ui.session.PlanRung
+import app.signsetu.ui.session.Planner
 import app.signsetu.ui.session.lastAnswer
 import app.signsetu.ui.session.reportMode
 import app.signsetu.data.session.SessionEvent
@@ -34,7 +38,7 @@ class AutoPilotTest {
 
     /** The view model's side of auto mode, reduced to what the pilot calls. */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    private inner class Phone(private val test: TestScope) {
+    private inner class Phone(private val test: TestScope, private val bank: ContentBundle = this@AutoPilotTest.bank) {
         // Not backgroundScope: advanceUntilIdle does not wait for background work.
         val scope = CoroutineScope(StandardTestDispatcher(test.testScheduler))
         val dao = MemoryDao()
@@ -76,15 +80,15 @@ class AutoPilotTest {
             error("no later question reached the stage")
         }
 
-        fun answerSigned() {
+        fun answerSigned(words: String = "water") {
             val shown = rows.last { it.type == EventType.QUESTION_SHOWN.name }.id
-            answerSignedFor(shown)
+            answerSignedFor(shown, words = words)
         }
 
-        fun answerSignedFor(shown: Long, late: Boolean = false) {
+        fun answerSignedFor(shown: Long, late: Boolean = false, words: String = "water") {
             test.testScheduler.runCurrent()
             kotlinx.coroutines.runBlocking {
-                repo.log(id, EventType.ANSWER_SIGNED, EventSource.MACHINE, "en", "water", shownId = shown, via = if (late) "stage_late" else null)
+                repo.log(id, EventType.ANSWER_SIGNED, EventSource.MACHINE, "en", words, shownId = shown, via = if (late) "stage_late" else null)
             }
             tick(1)
         }
@@ -99,6 +103,11 @@ class AutoPilotTest {
             pilot.onManualShow(Pending.Ask(q))
             present(q, "hi")
             settle()
+        }
+
+        /** A QUESTION_SHOWN row for an item the bank does not hold, such as a planner-written sentence. */
+        suspend fun showWritten(itemId: String) {
+            repo.log(id, EventType.QUESTION_SHOWN, EventSource.PRESET, "en", "already shown", itemId = itemId)
         }
 
         suspend fun answer(card: String) {
@@ -127,8 +136,8 @@ class AutoPilotTest {
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    private fun phone(handsOff: Boolean = false, block: suspend Phone.() -> Unit) = runTest {
-        val phone = Phone(this)
+    private fun phone(handsOff: Boolean = false, bank: ContentBundle = this.bank, block: suspend Phone.() -> Unit) = runTest {
+        val phone = Phone(this, bank)
         try {
             phone.start(handsOff)
             phone.block()
@@ -285,6 +294,36 @@ class AutoPilotTest {
         act { setAuto(true) }
         act { onRoleChanged() }
         assertEquals("role_changed", rows.last { it.type == EventType.SKIPPED.name }.reason)
+    }
+
+    /** The bank with its pictures, so a planned sentence has cue words to be chosen over. */
+    private val planBank = ContentBundle(groups = shipped.groups, questions = shipped.questions, categories = shipped.categories, cards = shipped.cards)
+    private val writtenSay = "Do you want water?"
+    private val writtenId = FREE_ID + ":" + Integer.toHexString(writtenSay.hashCode())
+
+    /** A pilot whose planner writes the same sentence every time. */
+    private fun plannedPhone(block: suspend Phone.() -> Unit) = phone(bank = planBank) {
+        pilot.planner = Planner(listOf(5_000L to PlanRung { _, _ -> Plan(FREE_ID, "", "test", say = writtenSay) }), refuse = { null }, budgetMs = 5_000L)
+        block()
+    }
+
+    @Test
+    fun aWrittenSentenceIsProposedWhileItIsNew() = plannedPhone {
+        throughGroundRules()
+        act { approve() }
+        answerSigned(words = "tired")
+        assertEquals(writtenId, proposed)
+    }
+
+    @Test
+    fun aWrittenSentenceAlreadyShownGivesWayToTheBank() = plannedPhone {
+        throughGroundRules()
+        assertEquals("s2", proposed)
+        showWritten(writtenId)
+        act { approve() }
+        answerSigned(words = "tired")
+        assertEquals("s3", proposed)
+        assertFalse(rows.any { it.type == EventType.SUGGESTED.name && it.itemId == writtenId })
     }
 
     @Test
