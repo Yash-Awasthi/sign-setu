@@ -87,6 +87,8 @@ class ExportFailureDeviceTest {
     fun anOrphanedPartFileFromAKilledExportIsClearedAndTheNextExportIsWhole() = runBlocking<Unit> {
         exports.mkdirs()
         val orphan = File(exports, "sign-setu-report-1.pdf.part").apply { writeText("half a report") }
+        // A part younger than the grace period may be a write in progress, so this one is three minutes old.
+        orphan.setLastModified(System.currentTimeMillis() - 3 * 60_000L)
         val whole = exported()
         assertTrue("the report is a PDF", whole.readBytes().let { it.size > 1000 && String(it, 0, 5) == "%PDF-" })
         assertEquals("no part file survives", emptyList<String>(), exports.list()!!.filter { it.endsWith(".part") })

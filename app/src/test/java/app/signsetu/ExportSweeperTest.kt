@@ -30,13 +30,31 @@ class ExportSweeperTest {
             listOf(
                 ExportFile("old.pdf", "old.pdf", now - 16 * minute),
                 ExportFile("fresh.pdf", "fresh.pdf", now - minute),
-                ExportFile("half.pdf.part", "half.pdf.part", now - 1_000),
+                ExportFile("half.pdf.part", "half.pdf.part", now - 3 * minute),
             ),
         )
 
         assertEquals(2, ExportSweeper.sweep(store, now, ExportSweeper.CACHE_MAX_AGE_MS))
         assertEquals(listOf("old.pdf", "half.pdf.part"), store.deleted)
         assertEquals(listOf("fresh.pdf"), store.live.map { it.name })
+    }
+
+    @Test
+    fun aFreshPartFileSurvivesEvenWhenItsExportIsLongOver() {
+        // A report takes minutes to lay out: a part written a moment ago may still be a live write, so it stays.
+        val store = FakeStore(
+            listOf(
+                ExportFile("live.pdf.part", "live.pdf.part", now - 1_000),
+                ExportFile("dead.pdf.part", "dead.pdf.part", now - 3 * minute),
+            ),
+        )
+
+        assertEquals(1, ExportSweeper.sweep(store, now, ExportSweeper.CACHE_MAX_AGE_MS))
+        assertEquals(listOf("dead.pdf.part"), store.deleted)
+        assertEquals(listOf("live.pdf.part"), store.live.map { it.name })
+        // A deliberate clear-all still takes the fresh part too.
+        assertEquals(1, ExportSweeper.sweep(store, now, 0))
+        assertEquals(0, store.live.size)
     }
 
     @Test
@@ -79,7 +97,7 @@ class ExportSweeperTest {
         try {
             val old = File(dir, "old.pdf").apply { writeText("old"); setLastModified(now - 16 * minute) }
             val fresh = File(dir, "fresh.pdf").apply { writeText("fresh"); setLastModified(now - minute) }
-            val part = File(dir, "half.pdf.part").apply { writeText("half"); setLastModified(now) }
+            val part = File(dir, "half.pdf.part").apply { writeText("half"); setLastModified(now - 3 * minute) }
             val folder = File(dir, "nested").apply { mkdirs() }
 
             assertEquals(2, ExportSweeper.sweep(FileExportStore(dir), now, ExportSweeper.CACHE_MAX_AGE_MS))

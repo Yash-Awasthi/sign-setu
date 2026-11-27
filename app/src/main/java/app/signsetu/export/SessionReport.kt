@@ -52,8 +52,8 @@ class ReportSeal(val qr: String, val lines: List<String>)
 class ReportSection(val title: String, val header: List<String>, val rows: List<List<String>>)
 
 /** Writes the report beside its name and gives it the name only once every byte is on the disk: a full disk, a
- * write that fails or the app being killed mid-export leaves no half PDF for the share sheet to send, and no part file
- * behind once the next export starts (and none at all after a restart, which empties the export folder). */
+ * write that fails or the app being killed mid-export leaves no half PDF for the share sheet to send, and a part left by
+ * a dead write is cleared once it is past its grace period (and every one at a restart, which empties the folder). */
 internal fun writeReport(
     dir: File,
     name: String,
@@ -366,9 +366,16 @@ class SessionReport(private val context: Context) {
 
     /** a report left behind by an earlier export is deleted after 15 minutes. */
     private fun purgeStaleExports() {
-        val cutoff = System.currentTimeMillis() - 15 * 60 * 1000L
-        // A part file is never shareable, so it goes whatever its age: it can only be a write that never finished.
-        exportsDir(context).listFiles()?.forEach { if (it.isFile && (it.name.endsWith(PART) || it.lastModified() < cutoff)) it.delete() }
+        val now = System.currentTimeMillis()
+        val cutoff = now - 15 * 60 * 1000L
+        // A part file can be this export's own write, or another one still running, so only a part older than the grace
+        // period is a write that died.
+        val partCutoff = now - ExportSweeper.PART_GRACE_MS
+        exportsDir(context).listFiles()?.forEach {
+            if (!it.isFile) return@forEach
+            val dead = if (it.name.endsWith(PART)) it.lastModified() < partCutoff else it.lastModified() < cutoff
+            if (dead) it.delete()
+        }
     }
 
     companion object {
@@ -399,7 +406,9 @@ private fun decodeForPage(bytes: ByteArray, width: Int): android.graphics.Bitmap
 fun recordDigest(rows: List<ReportRow>): String {
     val md = MessageDigest.getInstance("SHA-256")
     for (r in rows) with(r.event) {
-        md.update(listOf(id, ts, type, source, lang, text, cardId, lexiconId, drawingId, itemId, reason, shownId, via, r.detail).joinToString("").toByteArray())
+        // Each field carries its length, so ab+c and a+bc cannot hash the same: the boundary is in the bytes.
+        md.update(listOf(id, ts, type, source, lang, text, cardId, lexiconId, drawingId, itemId, reason, shownId, via, r.detail)
+            .joinToString("") { field -> field?.let { "${it.toString().length}:$it" } ?: "-1:" }.toByteArray())
         md.update(byteArrayOf(0x1e))
     }
     return md.digest().copyOf(8).toHexString().chunked(4).joinToString("-")

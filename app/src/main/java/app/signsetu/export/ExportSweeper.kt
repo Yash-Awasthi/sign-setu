@@ -23,15 +23,24 @@ object ExportSweeper {
     /** A PDF in the cache is only needed while the share sheet hands it over. */
     const val CACHE_MAX_AGE_MS = 15 * 60 * 1000L
 
+    /** A part file may be a write still in progress (a report takes minutes to lay out), so it gets a grace period. */
+    const val PART_GRACE_MS = 2 * 60 * 1000L
+
     /**
-     * Deletes every file in [store] older than [maxAgeMs], and every part file. A non-positive age clears all, which
-     * is what Clear all data asks for; [Long.MAX_VALUE] keeps everything, for retention 0 (keep until deleted).
+     * Deletes every file in [store] older than [maxAgeMs], and every part file older than [PART_GRACE_MS]. A non-positive
+     * age clears all, which is what Clear all data asks for; [Long.MAX_VALUE] keeps everything, for retention 0 (keep
+     * until deleted), apart from dead parts, which are never worth keeping.
      */
     fun sweep(store: ExportStore, nowMs: Long, maxAgeMs: Long): Int {
         val files = runCatching { store.files() }.getOrDefault(emptyList())
         var deleted = 0
         for (file in files) {
-            if (!file.part && maxAgeMs > 0 && nowMs - file.modifiedAtMs < maxAgeMs) continue
+            val dead = when {
+                maxAgeMs <= 0 -> true
+                file.part -> nowMs - file.modifiedAtMs >= PART_GRACE_MS
+                else -> nowMs - file.modifiedAtMs >= maxAgeMs
+            }
+            if (!dead) continue
             if (runCatching { store.delete(file) }.getOrDefault(false)) deleted++
         }
         return deleted
