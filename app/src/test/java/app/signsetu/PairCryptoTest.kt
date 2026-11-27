@@ -135,6 +135,6 @@ class PairCryptoTest {
         // At least one side must abort with Abort.VERSION
         val aborted = (officerResult.exceptionOrNull() as? PairAbort)?.reason == Abort.VERSION ||
             (stageResult.exceptionOrNull() as? PairAbort)?.reason == Abort.VERSION
-        assert(aborted)
+        assertTrue(aborted)
     }
 }

@@ -26,6 +26,8 @@ class BluetoothTransport(val adapter: BluetoothAdapter) : StageTransport {
         .map { Peer(it.address, "${it.name ?: it.address} ${it.address.takeLast(5)}") }
 
     override suspend fun connect(peer: String): Pipe {
+        // Android requires this before a connect; discovery left running by BluetoothBonding slows the attempt badly.
+        runCatching { adapter.cancelDiscovery() }
         val socket = adapter.getRemoteDevice(peer).createRfcommSocketToServiceRecord(STAGE_UUID)
         try {
             closing({ runCatching { socket.close() } }) { socket.connect() }

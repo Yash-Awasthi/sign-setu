@@ -42,6 +42,10 @@ class PairedPane(
     val label: String,
     val state: LinkState,
     val status: ToOfficer.Status?,
+    /** The stage could not resolve or show the last item; its own report, kept beside the last real reading. */
+    val lastError: String?,
+    /** The stage's own pin state from its latest report; false raises the unpinned alert. */
+    val pinned: Boolean,
     val breakPending: Boolean,
     /** Set after a first Show of something already asked; the next tap asks again. */
     val askedAt: Long?,
@@ -52,7 +56,33 @@ class PairedPane(
     /** Gate for every Show: false while the link is down or a break is pending, or once for a repeat. */
     val allowShow: () -> Boolean,
 ) {
-    val unpinned get() = (state as? LinkState.Ended)?.reason == ByeReason.UNPINNED
+    val unpinned get() = !pinned || (state as? LinkState.Ended)?.reason == ByeReason.UNPINNED
+}
+
+/** The stage's last real battery reading, its latest error, and its pin state.
+ * An error report carries no reading (it sends 0), so it must not replace the last real one; the next real status
+ * clears the error. */
+@Immutable
+data class StageReadout(
+    val status: ToOfficer.Status? = null,
+    val lastError: String? = null,
+    val pinned: Boolean = true,
+) {
+    fun onStatus(m: ToOfficer.Status): StageReadout =
+        if (m.error == null) StageReadout(m, null, m.pinned) else copy(lastError = m.error, pinned = m.pinned)
+}
+
+/** Holds the newest Show while a break is pending or the link is down, so acknowledging the break sends the officer's
+ * last item rather than losing it. Only the newest snapshot waits; older ones are replaced. */
+class ShowQueue {
+    private var held: Pair<Long?, StageView>? = null
+
+    /** Null while [blocked]; otherwise the newest held Show, if any, which is then forgotten. */
+    fun offer(id: Long?, view: StageView, blocked: Boolean): Pair<Long?, StageView>? {
+        held = id to view
+        if (blocked) return null
+        return held.also { held = null }
+    }
 }
 
 /** When [p] was last shown in this session, if it was. */
@@ -84,12 +114,14 @@ fun rememberPairedStage(
     onFallback: () -> Unit,
 ): PairedPane {
     val state by link.state.collectAsStateWithLifecycle()
-    var status by remember { mutableStateOf<ToOfficer.Status?>(null) }
+    var readout by remember { mutableStateOf(StageReadout()) }
     var breakPending by rememberSaveable { mutableStateOf(false) }
     var asked by remember { mutableStateOf<Long?>(null) }
     var warnedFor by remember { mutableStateOf<Pending?>(null) }
     var wasLive by rememberSaveable { mutableStateOf(false) }
     var logged by rememberSaveable { mutableStateOf("") }
+    var shownItem by remember { mutableStateOf<Long?>(null) }
+    val stageShows = remember { ShowQueue() }
     val confirmed = remember { mutableSetOf<Long>() }
     val look by rememberUpdatedState(Pair(settings.gestureSpeed, cameraOn))
 
@@ -100,9 +132,16 @@ fun rememberPairedStage(
         onDispose { if (vm.paired && activity?.isChangingConfigurations != true) vm.leavePaired() }
     }
     LaunchedEffect(vm, link) {
-        combine(vm.ui.filterNotNull(), snapshotFlow { look }) { ui, (speed, camera) -> ui.itemId to ui.toStageView(speed, camera) }
+        val shows = combine(vm.ui.filterNotNull(), snapshotFlow { look }) { ui, (speed, camera) -> ui.itemId to ui.toStageView(speed, camera) }
             .distinctUntilChanged()
-            .collect { (id, view) -> link.show(id, view) }
+        // A break pending or a link down holds the newest Show rather than handing it to the stage mid-break.
+        combine(shows, snapshotFlow { breakPending to (state == LinkState.Live) }) { (id, view), (pending, live) -> Triple(id, view, pending || !live) }
+            .distinctUntilChanged()
+            .collect { (id, view, blocked) ->
+                val (sentId, sentView) = stageShows.offer(id, view, blocked) ?: return@collect
+                if (sentId != null && sentId != shownItem) { readout = readout.copy(lastError = null); shownItem = sentId }
+                link.show(sentId, sentView)
+            }
     }
     LaunchedEffect(vm, link) {
         link.fromStage.collect { m ->
@@ -115,8 +154,7 @@ fun rememberPairedStage(
                     if (fresh && (m.body as? AnswerBody.Card)?.id == "stop") breakPending = true
                 }
                 is ToOfficer.Displayed -> confirmed += m.itemId
-                // An error report carries no battery reading (it sends 0), so it must not replace the last real one.
-                is ToOfficer.Status -> if (m.error == null) status = m
+                is ToOfficer.Status -> readout = readout.onStatus(m)
                 else -> Unit
             }
         }
@@ -148,7 +186,9 @@ fun rememberPairedStage(
     return PairedPane(
         label = link.peerLabel ?: link.peerModel.orEmpty(),
         state = state,
-        status = status,
+        status = readout.status,
+        lastError = readout.lastError,
+        pinned = readout.pinned,
         breakPending = breakPending,
         askedAt = asked,
         onDone = vm::returnToOfficer,
@@ -169,8 +209,8 @@ fun rememberPairedStage(
 }
 
 fun Pending.toWire(): WirePending = when (this) {
-    is Pending.Ask -> WirePending.Ask(question.id)
-    is Pending.FreeText -> WirePending.FreeText(text, cardIds, modes, caption, meant, order)
+    is Pending.Ask -> WirePending.Ask(question.id, again)
+    is Pending.FreeText -> WirePending.FreeText(text, cardIds, modes, caption, meant, order, sayBack = ref != null)
     is Pending.Cards -> WirePending.Cards(cardIds)
     is Pending.ShowBack -> WirePending.ShowBack(entry.id, choices)
     is Pending.PhraseAsk -> WirePending.PhraseAsk(phrase.id, slot.card)
@@ -181,8 +221,11 @@ fun Pending.toWire(): WirePending = when (this) {
 
 /** Null for an ID this build's content does not have; the stage then shows nothing rather than a guess. */
 fun WirePending.resolve(content: ContentBundle): Pending? = when (this) {
-    is WirePending.Ask -> content.questions.firstOrNull { it.id == questionId }?.let { Pending.Ask(it) }
-    is WirePending.FreeText -> if (cardIds.all { it in content.cards }) Pending.FreeText(text, cardIds, modes, caption, meant = meant?.takeIf { it in cardIds }, order = order?.take(64)) else null
+    // Only a key this content really has may reach the StageText lookup; anything else degrades to no repeat line.
+    is WirePending.Ask -> content.questions.firstOrNull { it.id == questionId }?.let {
+        Pending.Ask(it, again = again?.takeIf { k -> content.subjectUi[k]?.values?.any { v -> v.isNotEmpty() } == true })
+    }
+    is WirePending.FreeText -> if (cardIds.all { it in content.cards }) Pending.FreeText(text, cardIds, modes, caption, ref = if (sayBack) 0L else null, meant = meant?.takeIf { it in cardIds }, order = order?.take(64)) else null
     is WirePending.Cards -> if (cardIds.all { it in content.cards }) Pending.Cards(cardIds) else null
     is WirePending.ShowBack -> content.lexicon[lexiconId]?.takeIf { choices.all { c -> c in content.cards } }?.let { Pending.ShowBack(it, choices) }
     is WirePending.PhraseAsk -> content.phrases.firstOrNull { it.id == phraseId }?.let { p -> p.slots.firstOrNull { it.card == slotCard }?.let { Pending.PhraseAsk(p, it) } }

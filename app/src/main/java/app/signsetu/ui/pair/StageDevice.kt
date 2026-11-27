@@ -60,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -224,7 +225,7 @@ internal fun Ended(onExit: () -> Unit) = Centered {
 }
 
 @Composable
-internal fun Break(text: String) = Centered {
+internal fun Break(text: String, rotated: Boolean = false) = Centered(Modifier.fillMaxSize().graphicsLayer { rotationZ = if (rotated) 180f else 0f }) {
     Text(text, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
 }
 
@@ -239,6 +240,11 @@ fun CheckValue(check: String) {
         modifier = Modifier.semantics { contentDescription = check.toCharArray().joinToString(" ") },
     )
 }
+
+/** The item a stage answer belongs to, null when it must not be sent: a tap between items is not an answer to the one
+ * that closed. Stop alone keeps the item it covered; with none ever shown it names none (row ids start at 1). */
+internal fun answerItem(itemId: Long?, last: Long, body: AnswerBody): Long? =
+    itemId ?: last.takeIf { body is AnswerBody.Card && body.id == "stop" }
 
 @Composable
 private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkState, exit: () -> Unit, scope: CoroutineScope, container: AppContainer) {
@@ -268,9 +274,11 @@ private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkSt
     val pending = remember(view?.item) { view?.item?.resolve(content) }
     var sentFor by remember { mutableStateOf(emptySet<Long>()) }
     val send = { body: AnswerBody ->
-        val id = itemId ?: lastItem[0]
-        link.answer(id, body)
-        sentFor = sentFor + id
+        // A tap that names no item is refused here, so the officer's record cannot show the previous question answered late.
+        answerItem(itemId, lastItem[0], body)?.let { id ->
+            link.answer(id, body)
+            sentFor = sentFor + id
+        }
     }
 
     // Ends the window and sends what was read; a window that has gone quiet ends itself here, like a tap on Done.
@@ -305,7 +313,7 @@ private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkSt
         return
     }
     if (breakFor != null) {
-        Break(content.subjectText("break", view.lang) ?: stringResource(R.string.stage_break))
+        Break(content.subjectText("break", view.lang) ?: stringResource(R.string.stage_break), view.rotated)
         return
     }
     val covered = state != LinkState.Live
@@ -371,15 +379,15 @@ private fun LiveStage(link: StageLink, baseContent: ContentBundle, state: LinkSt
                 modifier = Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(Space.md),
             )
         }
-        if (covered) Cover(state, content, view.lang, onStop = { onCard("stop") }, onUnsure = { onCard("dont_know") }, onExit = exit)
+        if (covered) Cover(state, content, view.lang, onStop = { onCard("stop") }, onUnsure = { onCard("dont_know") }, onExit = exit, rotated = view.rotated)
     }
 }
 
 /** Lost or Hold: the item is hidden; Stop and "I don't know" still work and are sent once the link is back. */
 @Composable
-internal fun Cover(state: LinkState, content: ContentBundle, lang: String, onStop: () -> Unit, onUnsure: () -> Unit, onExit: () -> Unit) {
+internal fun Cover(state: LinkState, content: ContentBundle, lang: String, onStop: () -> Unit, onUnsure: () -> Unit, onExit: () -> Unit, rotated: Boolean = false) {
     val stage = LocalStageColors.current
-    Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize()) {
+    Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = if (rotated) 180f else 0f }) {
         Column(
             Modifier.safeDrawingPadding().padding(Space.xl),
             verticalArrangement = Arrangement.spacedBy(Space.lg, Alignment.CenterVertically),
@@ -455,9 +463,9 @@ private fun StageOutlinedButton(onClick: () -> Unit, content: @Composable RowSco
 }
 
 @Composable
-private fun Centered(body: @Composable () -> Unit) {
+private fun Centered(modifier: Modifier = Modifier.fillMaxSize(), body: @Composable () -> Unit) {
     val stage = LocalStageColors.current
-    Surface(color = stage.skyBottom, contentColor = stage.title, modifier = Modifier.fillMaxSize()) {
+    Surface(color = stage.skyBottom, contentColor = stage.title, modifier = modifier) {
         Column(
             Modifier.safeDrawingPadding().padding(horizontal = Space.lg, vertical = Space.xl).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Space.lg, Alignment.CenterVertically),

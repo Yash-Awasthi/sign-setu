@@ -87,7 +87,9 @@ class StageLink(
     private var check: String? = null
     private var wrong = 0
 
-    private val officerInbox = Channel<ToOfficer>(Channel.UNLIMITED)
+    /** Small on purpose: the collector writes rows and may re-encode a PNG, so a full queue must stall the reader
+     * (and so the socket) rather than buffer a live stage's 1 MiB frames without bound. */
+    private val officerInbox = Channel<ToOfficer>(8)
     /** Answers, display confirmations and status from the stage. */
     val fromStage: Flow<ToOfficer> = officerInbox.receiveAsFlow()
     private var rev = 0L
@@ -387,6 +389,9 @@ class StageLink(
         teardown()
         window?.cancel()
         wipeKeys()
+        // Nothing survives to resume: a later listen() must start over with a code screen, not go Live.
+        everLive = false
+        pinned = null
         outbox.clear()
         _unacked.value = emptyList()
         _view.value = null

@@ -43,6 +43,8 @@ import app.signsetu.pair.fits
 import app.signsetu.pair.officerHandshake
 import app.signsetu.pair.readPlain
 import app.signsetu.ui.pair.resolve
+import app.signsetu.pair.pngSize
+import app.signsetu.pair.reencodeRemotePng
 import app.signsetu.pair.sha256
 import app.signsetu.pair.stageHandshake
 import app.signsetu.ui.pair.toStageView
@@ -350,6 +352,35 @@ class PairTest {
         assertNull(WirePending.Ask("nope").resolve(bundle))
         assertNull(WirePending.Cards(listOf("nope")).resolve(bundle))
         assertNull(WirePending.PhraseAsk("want", "nope").resolve(bundle))
+    }
+
+    private val withReason = bundle.copy(subjectUi = mapOf("ask_again" to mapOf("en" to "I didn't get your answer")))
+
+    private fun WirePending.viaWire() =
+        app.signsetu.pair.WireJson.decodeFromString(WirePending.serializer(), app.signsetu.pair.WireJson.encodeToString(WirePending.serializer(), this))
+
+    @Test
+    fun aRepeatedQuestionKeepsItsReasonOnTheWire() {
+        assertEquals(Pending.Ask(question, "ask_again"), Pending.Ask(question, "ask_again").toWire().viaWire().resolve(withReason))
+        assertEquals(Pending.Ask(question), Pending.Ask(question).toWire().viaWire().resolve(withReason))
+        // A key the content does not have never reaches the StageText lookup, so a link cannot inject a line.
+        assertEquals(Pending.Ask(question), WirePending.Ask("q1", "an injected line").viaWire().resolve(withReason))
+        assertEquals(Pending.Ask(question), WirePending.Ask("q1", "ask_again").viaWire().resolve(bundle))
+    }
+
+    @Test
+    fun aSayBackKeepsItsInputPathOnTheWire() {
+        val said = Pending.FreeText("water", listOf("water"), setOf(SignMode.SIGNS), ref = 7L)
+        val sent = said.toWire() as WirePending.FreeText
+        assertTrue(sent.sayBack)
+        val back = sent.viaWire().resolve(bundle) as Pending.FreeText
+        // The event id itself never crosses; a non-null ref is all the stage needs to reopen the pad on No.
+        assertNotNull(back.ref)
+        assertTrue(app.signsetu.ui.session.reopensInput(back, false))
+        val plain = Pending.FreeText("hello", listOf("water"), setOf(SignMode.SIGNS)).toWire() as WirePending.FreeText
+        assertFalse(plain.sayBack)
+        assertNull((plain.viaWire().resolve(bundle) as Pending.FreeText).ref)
+        assertFalse(app.signsetu.ui.session.reopensInput(plain.viaWire().resolve(bundle), false))
     }
 
     private fun ui(pending: Pending?, onStage: Pending?, mode: Mode) = SessionUi(
@@ -773,5 +804,79 @@ class PairTest {
         assertFalse(a.code == b.code && a.check == b.check)
         val again = app.signsetu.pair.derive(ByteArray(32) { 1 }, transcript, null, true, "m")
         assertTrue(a.send.contentEquals(again.send))
+    }
+
+    /** A PNG header declaring [w] x [h] and no pixel data: enough for the size gate, nothing to decode. */
+    private fun pngHeader(w: Int, h: Int): ByteArray {
+        fun be(v: Int) = byteArrayOf((v ushr 24).toByte(), (v ushr 16).toByte(), (v ushr 8).toByte(), v.toByte())
+        return byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A) +
+            be(13) + "IHDR".toByteArray() + be(w) + be(h) + byteArrayOf(8, 6, 0, 0, 0) + be(0)
+    }
+
+    @Test
+    fun aDrawingAboveTheSaneCapIsRefusedAndOneAtTheCapIsAccepted() {
+        // A 4096 x 4096 ARGB_8888 bitmap is 67 MB, decoded on the officer's collector path; a phone drawing is far smaller.
+        assertFalse(drawingBoundsOk(4097, 4097))
+        assertFalse(drawingBoundsOk(4096, 4096))
+        assertFalse(drawingBoundsOk(2049, 100))
+        assertFalse(drawingBoundsOk(1601, 1601))
+        assertTrue(drawingBoundsOk(1600, 1600))
+        // A portrait phone canvas is a legitimate drawing and must survive the cap.
+        assertTrue(drawingBoundsOk(1080, 1920))
+    }
+
+    @Test
+    fun aBogus4096SquarePayloadIsRefusedAndOneAtTheCapIsNot() {
+        // The declared size is read from the PNG header before any decode, so this refuses a 67 MB answer without
+        // allocating it. The JVM decoder returns null for the pixel-less header, so this asserts the refusal.
+        val bogus = pngHeader(4096, 4096)
+        assertEquals(4096 to 4096, pngSize(bogus))
+        assertNull(reencodeRemotePng(bogus))
+        // A drawing the size the export path makes stays inside the same gate.
+        val (w, h) = pngSize(pngHeader(1600, 1600))!!
+        assertTrue(drawingBoundsOk(w, h))
+    }
+
+    @Test
+    fun anEndedLinkComesBackAsANewCodeScreenNotAResume() = runBlocking {
+        // No caller listens again after Ended today, so this is a broken invariant rather than a live bug: finish()
+        // wipes the resume key, and must also forget that the link was ever Live (and who it was pinned to), because
+        // listen() picks resume-or-code from that flag. Without the reset an ended stage would go Live on a resume
+        // with no code screen and no check-value comparison.
+        val hub = FakeHub()
+        val timing = LinkTiming(connectMs = 3_000, handshakeMs = 3_000, pingMs = 100, lostMs = 2_000, resumeWindowMs = 5_000)
+        val oScope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
+        val sScope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
+        val xScope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
+        val officer = StageLink(LinkRole.OFFICER, hub.side("officer-1"), me, oScope, timing) {}
+        val stage = StageLink(LinkRole.STAGE, hub.side("stage-1"), me, sScope, timing) {}
+        val other = StageLink(LinkRole.OFFICER, hub.side("officer-2"), me, xScope, timing) {}
+        try {
+            withTimeout(15_000) {
+                stage.listen()
+                officer.connect("stage-1")
+                val code = (stage.state.first { it is LinkState.Code } as LinkState.Code).code!!
+                officer.state.first { it is LinkState.Code }
+                officer.submitCode(code) { }.join()
+                stage.state.first { (it as? LinkState.Code)?.check != null }
+                stage.match().join()
+                stage.state.first { it == LinkState.Live }
+                officer.state.first { it == LinkState.Live }
+
+                officer.end("end")
+                stage.state.first { it is LinkState.Ended }
+
+                // The stage starts over: Connecting, then a new code screen from a peer it was never pinned to.
+                stage.listen()
+                other.connect("stage-1")
+                val fresh = stage.state.first { it is LinkState.Code } as LinkState.Code
+                assertNotNull(fresh.code)
+                assertNotEquals(LinkState.Live, stage.state.value)
+            }
+        } finally {
+            oScope.cancel()
+            sScope.cancel()
+            xScope.cancel()
+        }
     }
 }

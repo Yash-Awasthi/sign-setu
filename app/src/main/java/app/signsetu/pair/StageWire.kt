@@ -9,14 +9,21 @@ import kotlinx.serialization.json.Json
 const val TEXT_CAP = 2_000
 /** Raw PNG bytes; base64 and JSON around it stay under the 1 MiB frame cap. */
 const val DRAWING_CAP = 600_000
+/** Longest side accepted from the link. */
+const val DRAWING_MAX_SIDE = 2048
+/** Pixel budget accepted from the link: 1600 x 1600, the shape the export path makes, and one portrait phone
+ * drawing (1080 x 1920) fit; 1600 x 1600 ARGB_8888 is 10 MB instead of 67 MB at 4096. */
+const val DRAWING_MAX_PIXELS = 1600 * 1600
 
 internal val WireJson = Json { classDiscriminator = "t"; ignoreUnknownKeys = false; encodeDefaults = true }
 
 /** Only IDs travel; each side resolves them against its own verified content. */
 @Serializable
 sealed interface WirePending {
-    @Serializable @SerialName("ask") data class Ask(val questionId: String) : WirePending
-    @Serializable @SerialName("text") data class FreeText(val text: String, val cardIds: List<String>, val modes: Set<SignMode>, val caption: String? = null, val meant: String? = null, val order: List<String>? = null) : WirePending
+    /** [again] is a subject_ui key for the line that says why the question is repeated; the stage resolves it. */
+    @Serializable @SerialName("ask") data class Ask(val questionId: String, val again: String? = null) : WirePending
+    /** [sayBack] marks a say-back whose local event id cannot cross; the stage needs only "input reopens". */
+    @Serializable @SerialName("text") data class FreeText(val text: String, val cardIds: List<String>, val modes: Set<SignMode>, val caption: String? = null, val meant: String? = null, val order: List<String>? = null, val sayBack: Boolean = false) : WirePending
     @Serializable @SerialName("cards") data class Cards(val cardIds: List<String>) : WirePending
     @Serializable @SerialName("back") data class ShowBack(val lexiconId: String, val choices: List<String> = emptyList()) : WirePending
     @Serializable @SerialName("phrase") data class PhraseAsk(val phraseId: String, val slotCard: String) : WirePending
@@ -97,7 +104,8 @@ fun AnswerBody.fits(): Boolean = when (this) {
 }
 
 /** A drawing from the link is refused on its declared size, before any pixels are decoded. */
-fun drawingBoundsOk(width: Int, height: Int) = width in 1..4096 && height in 1..4096
+fun drawingBoundsOk(width: Int, height: Int) =
+    width in 1..DRAWING_MAX_SIDE && height in 1..DRAWING_MAX_SIDE && width.toLong() * height <= DRAWING_MAX_PIXELS
 
 /** The first byte of every frame, inside the encryption so it is authenticated with the body: a receiver checks
  * the type against the message before acting, so a frame of one kind cannot pass as another. */

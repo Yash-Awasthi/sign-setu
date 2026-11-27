@@ -27,6 +27,9 @@ import kotlinx.coroutines.withTimeoutOrNull
 class BluetoothBonding(private val context: Context) {
     private val adapter: BluetoothAdapter? = context.getSystemService(BluetoothManager::class.java)?.adapter
 
+    /** A bond's own cancelDiscovery ends discovery, which would otherwise be restarted into the bond. */
+    @Volatile private var bondingInFlight = false
+
     /** Only Android 12 and later can scan without location; the build refuses location in the standard flavor. */
     val supported: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && adapter != null
 
@@ -50,7 +53,7 @@ class BluetoothBonding(private val context: Context) {
                         trySend(seen.values.toList())
                     }
                     // Discovery ends by itself after about 12 s; it runs again for as long as the list is open.
-                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> runCatching { a.startDiscovery() }
+                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> if (!bondingInFlight) runCatching { a.startDiscovery() }
                 }
             }
         }
@@ -67,23 +70,36 @@ class BluetoothBonding(private val context: Context) {
     /** Bonds with [address] and waits for the outcome; true once bonded. The system asks both phones to confirm. */
     suspend fun bond(address: String, timeoutMs: Long = 60_000): Boolean {
         val a = adapter ?: return false
-        runCatching { a.cancelDiscovery() }
-        val d = runCatching { a.getRemoteDevice(address) }.getOrNull() ?: return false
-        if (d.bondState == BluetoothDevice.BOND_BONDED) return true
-        val states = callbackFlow {
-            val r = object : BroadcastReceiver() {
-                override fun onReceive(c: Context, i: Intent) {
-                    if (device(i)?.address != address) return
-                    trySend(i.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE))
+        bondingInFlight = true
+        try {
+            runCatching { a.cancelDiscovery() }
+            val d = runCatching { a.getRemoteDevice(address) }.getOrNull() ?: return false
+            if (d.bondState == BluetoothDevice.BOND_BONDED) return true
+            val states = callbackFlow {
+                val r = object : BroadcastReceiver() {
+                    override fun onReceive(c: Context, i: Intent) {
+                        if (device(i)?.address != address) return
+                        trySend(i.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE))
+                    }
                 }
+                ContextCompat.registerReceiver(context, r, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED), ContextCompat.RECEIVER_EXPORTED)
+                when (bondStart(d.bondState)) {
+                    // A bond that completed before the receiver registered sends no broadcast.
+                    BondStart.Bonded -> trySend(BluetoothDevice.BOND_BONDED)
+                    // Its state change still arrives; asking again would fail and report BOND_NONE.
+                    BondStart.Waits -> Unit
+                    BondStart.Asks -> if (!d.createBond()) trySend(BluetoothDevice.BOND_NONE)
+                }
+                awaitClose { context.unregisterReceiver(r) }
             }
-            ContextCompat.registerReceiver(context, r, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED), ContextCompat.RECEIVER_EXPORTED)
-            // A bond that completed before the receiver registered sends no broadcast.
-            if (d.bondState == BluetoothDevice.BOND_BONDED) trySend(BluetoothDevice.BOND_BONDED)
-            else if (!d.createBond()) trySend(BluetoothDevice.BOND_NONE)
-            awaitClose { context.unregisterReceiver(r) }
+            return withTimeoutOrNull(timeoutMs) { states.first { it != BluetoothDevice.BOND_BONDING } == BluetoothDevice.BOND_BONDED } ?: run {
+                // Ends the dialog too: leaving it up would say "failed" while the bond is still coming, and a retry sees BOND_BONDING.
+                runCatching { d.cancelBondProcess() }
+                false
+            }
+        } finally {
+            bondingInFlight = false
         }
-        return withTimeoutOrNull(timeoutMs) { states.first { it != BluetoothDevice.BOND_BONDING } == BluetoothDevice.BOND_BONDED } ?: false
     }
 
     private companion object {
@@ -94,4 +110,13 @@ class BluetoothBonding(private val context: Context) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
             else i.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
     }
+}
+
+/** What an attempt does first: the state the device already reports decides, since a second createBond fails. */
+internal enum class BondStart { Bonded, Waits, Asks }
+
+internal fun bondStart(state: Int): BondStart = when (state) {
+    BluetoothDevice.BOND_BONDED -> BondStart.Bonded
+    BluetoothDevice.BOND_BONDING -> BondStart.Waits
+    else -> BondStart.Asks
 }
