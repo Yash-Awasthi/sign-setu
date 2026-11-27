@@ -161,7 +161,8 @@ fun Stage(
     LaunchedEffect(pending, lang) {
         val typed = (pending as? Pending.FreeText)?.text
         if (audio == null && typed != null) {
-            val online = cloud.speak(typed, lang)
+            // A sentence with a name or detail the session knows is never sent out to be spoken; it is said offline instead.
+            val online = cloud.speak(typed, lang, subjectNames(ui.events, content, lang), subjectDetails(ui.events, content, lang))
             if (online != null) speech.playBytes(online) else speech.speakOffline(typed, null)
         }
     }
@@ -306,7 +307,9 @@ fun Stage(
             while (true) {
                 val t = withFrameNanos { now -> (now - start) / 1e9f * pace } - LEAD_IN
                 if (t >= end) break
-                idleLit.value = p.beats.lastOrNull { t >= it.start }?.range?.takeIf { !it.isEmpty() }?.let { CaptionLight(idleShown, it) }
+                val lit = p.beats.lastOrNull { t >= it.start }?.range?.takeIf { !it.isEmpty() }?.let { CaptionLight(idleShown, it) }
+                // The light holds for a whole word: a new instance of the same word would recompose the stage every frame.
+                if (!sameLight(lit, idleLit.value)) idleLit.value = lit
             }
             idleLit.value = null
         }
@@ -463,6 +466,7 @@ fun Stage(
             onNeed = onNeed,
             onMessages = onOfficer,
             switchAccess = switchAccess,
+            covered = paused || showExpressBoard,
             onEscape = escape,
             cameraOn = cameraOn,
             onNext = onNextRule.takeIf { rule != null },
@@ -520,6 +524,11 @@ private const val AUTO_REPEATS = 2
 
 /** Recorded speech below normal speed only goes to 0.75: slower than that, words smear. */
 private fun audioRate(pace: Float) = if (pace < 1f) 0.75f else 1f
+
+/** Whether [b] lights the same word of the same text as [a]. [CaptionLight] compares by identity, so the same word
+ * must be recognised by its text and range before it is stored again. */
+internal fun sameLight(a: CaptionLight?, b: CaptionLight?) =
+    a === b || (a != null && b != null && a.text == b.text && a.range == b.range)
 
 /** After the last picture tapped, how long the tiles wait for another before the call comes back. */
 private const val PICK_SETTLE_MS = 5_000L

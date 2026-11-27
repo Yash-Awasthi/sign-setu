@@ -22,7 +22,7 @@ The same images are kept byte for byte in docs/screens/before/ as the baseline a
 
 The stage first shows only the character, the caption and the Stop octagon in the corner; a tap shows the rest for 5 s ([UX](03-ux.md) §2). These captures were taken with the buttons shown.
 
-The captures predate one change to the answer row: Water and Food are no longer drawn there as well as in the pinned needs row, which now holds all six needs, each still one tap and reachable by a key or a switch. The row is now the primary answer, No and More, then the needs; the express board opens from the tool bar's emoji button.
+The captures predate one change to the answer row: Water and Food are no longer drawn there as well as in the pinned needs row, which now holds all six needs, each still one tap and reachable by a key or a switch. The row is now the primary answer, No, Help and More, then the needs; Help opens the express board from the row and from the tool bar's emoji button.
 
 | Screen | File | Notes |
 | --- | --- | --- |

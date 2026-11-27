@@ -36,9 +36,9 @@ class AnswerKeysTest {
 
     @Test
     fun theAnswerBarIsWalkedInTheOrderItIsDrawn() {
-        // Every control VideoCallStage can draw: Yes, No, More and the trio, then the pinned needs row.
+        // Every control VideoCallStage can draw: Yes, No, Help and More, the trio, then the pinned needs row.
         val ids = answerBarIds(signing = false, statement = false, next = false, rights = false, controls = true, moreOpen = true)
-        assertEquals(listOf("yes", "no", MORE, "dont_know", DONT_UNDERSTAND, "wrong") + NEED_IDS, ids)
+        assertEquals(listOf("yes", "no", "express", MORE, "dont_know", DONT_UNDERSTAND, "wrong") + NEED_IDS, ids)
         assertEquals("an id must not appear twice, or two controls share one stop", ids.size, ids.distinct().size)
     }
 
@@ -47,15 +47,24 @@ class AnswerKeysTest {
         assertEquals(listOf("next") + NEED_IDS, answerBarIds(signing = false, statement = true, next = true, rights = false, controls = false, moreOpen = false))
         assertEquals(
             "the needs stay reachable while a ground rule is read",
-            listOf("next") + NEED_IDS,
+            listOf("next", "express") + NEED_IDS,
             answerBarIds(signing = false, statement = true, next = true, rights = false, controls = true, moreOpen = false),
         )
         assertEquals(
             "a statement never offers yes, no or More",
-            NEED_IDS,
+            listOf("express") + NEED_IDS,
             answerBarIds(signing = false, statement = true, next = false, rights = false, controls = true, moreOpen = true),
         )
         assertEquals(listOf("done") + NEED_IDS, answerBarIds(signing = true, statement = false, next = false, rights = false, controls = true, moreOpen = false))
+    }
+
+    @Test
+    fun theExpressBoardKeepsOneSwitchStopAndOnlyWhenTheControlsShow() {
+        val shown = answerBarIds(signing = false, statement = false, next = false, rights = false, controls = true, moreOpen = false)
+        // One step on from No, where the answer row draws it: a dwell or step switch reaches the board.
+        assertEquals("the walk reaches the board from the row", AnswerAction.Move("express"), AnswerOrder(shown, 7).key("no", AnswerKey.NEXT))
+        val hidden = answerBarIds(signing = false, statement = false, next = false, rights = false, controls = false, moreOpen = false)
+        assertTrue("no tile is drawn without the controls, so the walk must not offer it", "express" !in hidden)
     }
 
     @Test
@@ -128,10 +137,10 @@ class AnswerKeysTest {
         val ids = answerBarIds(signing = false, statement = false, next = false, rights = false, controls = true, moreOpen = true)
         val order = AnswerOrder(ids, 7)
         // Tab past the trio to "wrong", then Space chooses it.
-        val keys = List(5) { AnswerKey.NEXT } + listOf(AnswerKey.SELECT)
+        val keys = List(6) { AnswerKey.NEXT } + listOf(AnswerKey.SELECT)
         val actions = walk(order, "yes", keys)
         assertEquals(AnswerAction.Choose("wrong"), actions.last())
-        assertEquals(5, actions.count { it is AnswerAction.Move })
+        assertEquals(6, actions.count { it is AnswerAction.Move })
     }
 
     @Test

@@ -80,8 +80,10 @@ import app.signsetu.data.content.or
 import app.signsetu.data.settings.SwitchAccess
 import app.signsetu.data.content.AnswerType
 import app.signsetu.data.content.ContentBundle
+import app.signsetu.data.content.Language
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.imePadding
@@ -152,13 +154,15 @@ internal fun VideoCallStage(
     switchAccess: SwitchAccess = SwitchAccess.OFF,
     /** Escape out of the answer flow, for a panel this stage does not own. */
     onEscape: () -> Unit = {},
+    /** A full-stage overlay from the caller (a break, the express board) covers this bar: the dwell clock must not move. */
+    covered: Boolean = false,
 ) {
     val lang = ui.session.subjectLang
     val pending = ui.pending
     val signing = ui.reading != null
     val haptic = LocalHapticFeedback.current
-    // The pinned need row's labels, resolved once so its tap can name what was asked for.
-    val needNames = NEED_IDS.associateWith { needLabel(it, content, lang) }
+    // The pinned need row's labels, resolved without composition, so its tap can name what was asked for.
+    val needNames = remember(content, lang) { NEED_IDS.associateWith { needWord(it, content, lang) } }
 
     var pipOffsetX by remember { mutableFloatStateOf(0f) }
     var pipOffsetY by remember { mutableFloatStateOf(0f) }
@@ -224,8 +228,8 @@ internal fun VideoCallStage(
         columns = 7,
         switch = switchAccess,
         onKeyboard = { keyboard = true },
-        // A tool sheet covers the answers: the dwell scan must not move or choose behind it.
-        paused = sheetFor != null,
+        // A tool sheet, a break layer or the express board covers the answers: the dwell scan must not move or choose behind it.
+        paused = covered || sheetFor != null,
         onLeave = {
             when {
                 moreAnswers -> moreAnswers = false
@@ -291,10 +295,14 @@ internal fun VideoCallStage(
     fun courtesyRead(seen: Everyday) = if (seen == Everyday.THANKS) propose("thank_you", "thanks") else propose("namaste", seen.name.lowercase())
 
     val hint = content.subjectText("hint_answer", lang)
-    // Their language is not known yet, so the prompt is in several scripts at once.
-    val promptText = if (pending == Pending.LanguageFinder) LANGUAGE_PROMPT else caption ?: hint ?: stringResource(R.string.call_with_you)
+    // Their language is not known yet, so the prompt greets them in every script the bundle writes.
+    val languages = content.languages
+    val finderLine = remember(languages) { finderPrompt(languages) }
+    val promptText = if (pending == Pending.LanguageFinder) finderLine ?: LANGUAGE_PROMPT else caption ?: hint ?: stringResource(R.string.call_with_you)
     // The preset chips follow the words on the call: what was asked, and what the camera has read so far.
-    val heard = (listOf(promptText) + ui.reading.orEmpty().mapNotNull { it.word }).joinToString(" ")
+    val heard = remember(promptText, ui.reading) {
+        (listOf(promptText) + ui.reading.orEmpty().mapNotNull { it.word }).joinToString(" ")
+    }
     val related = remember(heard, content) { relatedCards(heard, content.cards.keys) }
 
     // Held-up fingers answer an age or count question without opening a keypad.
@@ -559,7 +567,7 @@ internal fun VideoCallStage(
                         "food" -> R.string.call_r_food
                         else -> R.string.call_r_point
                     },
-                    if (id == "water" || id == "food") null else needNames[id],
+                    if (id == "water" || id == "food") null else needNames[id] ?: needFallback(context, id),
                     feel = null, // The row already ticked for this tap.
                 )
             },
@@ -684,6 +692,13 @@ internal fun VideoCallStage(
                             if (rightsNotice != null) SmallAnswer(DONT_UNDERSTAND, content.subjectText(DONT_UNDERSTAND, lang), stringResource(R.string.stage_dont_understand), answers.unsure, answers.onUnsure, ui.answeredCard == DONT_UNDERSTAND, unsure, Modifier.weight(1.6f).answerTarget(bar, DONT_UNDERSTAND, unsure), height = Space.s52, focused = bar.focused == DONT_UNDERSTAND)
                         }
                         if (controls) {
+                            // Here as well as in the tool sheet, so a single switch can reach the board from the row.
+                            val express = {
+                                sheetFor = null
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onOpenExpressBoard()
+                            }
+                            SmallAnswer("express", null, cardLabel(content, "help", lang), StageTones.answerExpress, Color.White, false, express, Modifier.weight(1f).answerTarget(bar, "express", express), height = Space.s52, icon = rememberVectorPainter(Icons.Filled.Favorite), focused = bar.focused == "express")
                             if (!signing && pending != null && !statement) {
                                 val more = { moreAnswers = !moreAnswers }
                                 StageMoreAnswers(moreAnswers, more, Modifier.weight(1f).answerTarget(bar, MORE, more), focused = bar.focused == MORE)
@@ -780,7 +795,30 @@ private val FINGERS = Regex("n\\d+")
 private fun cardLabel(content: ContentBundle, card: String, lang: String): String =
     content.cards[card]?.label?.or(lang) ?: card.removePrefix("n").takeIf { card.matches(FINGERS) } ?: card
 
+/** The row's own word for a need the bundle does not name, never a blank or a bare id; the tap that needs it is not composable. */
+private fun needFallback(context: Context, id: String): String = context.getString(
+    when (id) {
+        "family" -> R.string.need_family
+        "toilet" -> R.string.need_toilet
+        "help" -> R.string.need_help
+        "pain" -> R.string.need_pain
+        else -> return id
+    },
+)
+
 private const val HANDS_HOLD_MS = 800L
 private const val REOPEN_MS = 10_000L
 
 private const val LANGUAGE_PROMPT = "भाषा चुनें · ভাষা বাছুন · மொழி · Choose your language"
+
+/** The script a salutation is written in: greetings sharing one script take one place on the line, not a repeat. */
+internal fun scriptOf(hello: String): Character.UnicodeBlock? =
+    hello.firstOrNull()?.let { Character.UnicodeBlock.of(it) }
+
+/** The finder's one line: a greeting in every script the bundle writes, each language's own word for its script.
+ * Null when no language carries a greeting, so the caller keeps [LANGUAGE_PROMPT]. */
+internal fun finderPrompt(languages: List<Language>): String? =
+    languages.mapNotNull { language -> language.hello.takeIf { it.isNotBlank() }?.let { scriptOf(it) to it } }
+        .distinctBy { it.first }
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(" / ") { it.second }

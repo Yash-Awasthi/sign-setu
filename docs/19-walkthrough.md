@@ -63,7 +63,7 @@ shows notes, the log, or anything typed but not sent.
 - Right: the person's camera window. Drag it, or tap to enlarge. During a video call, tapping the small
   picture-in-picture swaps camera and signer; the choice survives rotation.
 - Below: Next, Yes, No, the honest answers (I don't know, I don't understand, That's wrong), Draw and Write when
-  offered, then the pinned needs row (Water, Food and the rest); Help opens from the tools.
+  offered, then the pinned needs row (Water, Food and the rest); Help opens the express board from the row and the tools.
 - The skeleton badge works as an on/off switch.
 - The officer handle (hold it for a third of a second) returns the phone to the officer page. A screen reader user
   can use its long-press action.

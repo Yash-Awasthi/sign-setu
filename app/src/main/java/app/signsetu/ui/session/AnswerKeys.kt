@@ -122,8 +122,9 @@ internal val NEED_IDS = listOf("water", "food", "toilet", "pain", "help", "famil
 
 /**
  * The controls a key or a switch walks, in the order VideoCallStage draws them: the answer row
- * first, then the pinned needs row, so the walk and the picture agree. Water, food and the express
- * board are drawn once, in the needs row and the tool sheet, not again in the answer row.
+ * first, then the pinned needs row, so the walk and the picture agree. Water and food are drawn
+ * once, in the needs row; the express board has a tile in the answer row as well as the tool
+ * sheet, so one switch still reaches it.
  */
 fun answerBarIds(signing: Boolean, statement: Boolean, next: Boolean, rights: Boolean, controls: Boolean, moreOpen: Boolean): List<String> = buildList {
     if (signing) {
@@ -136,6 +137,7 @@ fun answerBarIds(signing: Boolean, statement: Boolean, next: Boolean, rights: Bo
         }
         if (rights) add(DONT_UNDERSTAND)
         if (controls) {
+            add("express")
             // The trio exists only behind More, and a statement has no More.
             if (!statement) {
                 add(MORE)
