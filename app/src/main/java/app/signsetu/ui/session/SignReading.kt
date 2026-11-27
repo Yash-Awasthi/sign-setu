@@ -55,6 +55,10 @@ internal class SignReading(
     /** Set once the reader is built off the main thread; reads before then get no machine guesses. */
     @Volatile var reader: SignReader? = reader
 
+    /** Test seam: runs on the analysis thread inside the window's monitor, after a segment is cut and before its read
+     * is registered, so a test can put [close] in that gap. Null in the app. */
+    internal var onSegmentCut: (() -> Unit)? = null
+
     /** The station, when paired: it reads each sign first once its heartbeat says it has a reader. */
     @Volatile var station: BrainClient? = null
     private val confirmedNames: MutableSet<String> = ConcurrentHashMap.newKeySet()
@@ -102,6 +106,9 @@ internal class SignReading(
         heads.filter { (ms, _) -> ms in (from - HEAD_MARGIN_MS)..(to + HEAD_MARGIN_MS) }.map { it.second }.toSet()
     }
 
+    /** How many nods and shakes are kept: a wipe must leave none. */
+    internal fun headCount(): Int = synchronized(heads) { heads.size }
+
     /** Opens a window; false when one is already open, or when the reader was wiped: a start already in flight from
      * the camera must not reopen what the wipe cleared. */
     fun start(window: SignWindow, cards: Set<String>): Boolean {
@@ -134,13 +141,12 @@ internal class SignReading(
         prevFrame = frame
         c ?: return false
         // Three seconds with nothing raised, or two since the hands stopped: what was given is ingested, no tap needed.
-        val (segments, done) = synchronized(c) {
+        // A segment's read is registered inside this monitor, so a close right after the cut still awaits it.
+        return synchronized(c) {
             val wasFull = c.full
-            val closed = c.add(frame)
-            closed to (!wasFull && c.full || c.settled())
+            c.add(frame).forEach(::readSegment)
+            !wasFull && c.full || c.settled()
         }
-        segments.forEach(::readSegment)
-        return done
     }
 
     /** Closes the open window; the reads still running, or null when no window was open. */
@@ -179,6 +185,8 @@ internal class SignReading(
         capture = null
         lastBody = null
         prevFrame = null
+        // A face-derived nod or shake is biometric too: the timeline must not outlive the session.
+        synchronized(heads) { heads.clear() }
         synchronized(ring) { ring.clear(); letters.clear() }
         liveFlow.value = LiveRead()
         reads.forEach { it.cancel() }
@@ -229,10 +237,13 @@ internal class SignReading(
         if (job.isCancelled) peeking = false
     }
 
+    /** Reads one cut segment; its job joins [reads] while the capture's monitor is held, so a [close] running right
+     * after the cut still awaits it. */
     private fun readSegment(frames: List<LandmarkFrame>) {
         val cards = context
         val segment = SignSegment(frames, context = cards)
         onSegment(segment)
+        onSegmentCut?.invoke()
         reads += scope.launch(readDispatcher) {
             // The station's reader goes first and this phone's runs beside it, so a slow or failed station costs nothing.
             // Only a connected station with a reader that is answering is waited for; otherwise the phone reads alone, at once.
