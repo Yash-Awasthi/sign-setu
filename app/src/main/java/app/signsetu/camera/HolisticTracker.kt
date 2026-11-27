@@ -58,7 +58,7 @@ class HolisticTracker(private val context: Context) : LandmarkTracker {
         val model = model() ?: return null
         lastTimestampMs = timestampMs
         val r = try {
-            model.detectForVideo(BitmapImageBuilder(frame).build(), timestampMs)
+            BitmapImageBuilder(frame).build().use { model.detectForVideo(it, timestampMs) }
         } catch (e: RuntimeException) {
             // A GPU that opened but cannot run the graph: the next frame reopens it on the CPU.
             if (delegate == Delegate.CPU) throw e

@@ -102,7 +102,11 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
 
     private fun base(model: ByteBuffer, d: Delegate) = BaseOptions.builder().setModelAssetBuffer(model).setDelegate(d).build()
 
-    private fun probe(): MPImage = BitmapImageBuilder(context.assets.open("content/$PROBE").use(BitmapFactory::decodeStream)).build()
+    // detectForVideo copies nothing, so the bitmap goes once the builder has wrapped it.
+    private fun probe(): MPImage {
+        val bmp = context.assets.open("content/$PROBE").use(BitmapFactory::decodeStream)
+        return try { BitmapImageBuilder(bmp).build() } finally { bmp.recycle() }
+    }
 
     /** The task on the GPU, kept only if it finds the person in the bundled photo (some GPUs run the graph yet find
      * nothing), else the CPU; once a task has failed on the GPU it stays on the CPU. Null when its file is missing or
@@ -126,7 +130,6 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
         open()
         val h = hands?.takeIf { pose != null } ?: return instead?.track(frame, timestampMs)
         last = timestampMs
-        val image = BitmapImageBuilder(frame).build()
         frameNo++
         // The face reads its own smaller copy, since the caller reuses [frame] once this returns.
         val f = face
@@ -136,14 +139,14 @@ class SplitTracker(private val context: Context, private val fallback: () -> Lan
             faceThread.execute {
                 try {
                     val ms = maxOf(timestampMs, faceLast + 1).also { faceLast = it }
-                    readFaceOr(f, BitmapImageBuilder(copy).build(), ms)?.let { lastFace = it }
+                    BitmapImageBuilder(copy).build().use { readFaceOr(f, it, ms) }?.let { lastFace = it }
                 } finally { copy.recycle(); faceBusy = false }
             }
         }
         // The body beside the hands, on the same frame, so the arms never trail them.
         val p = pose
-        val body = p?.let { poseThread.submit<List<Offset>?> { it.detectForVideo(image, timestampMs).landmarks().firstOrNull()?.points() } }
-        val r = runOr(HANDS) { h.detectForVideo(image, timestampMs) }
+        val body = p?.let { poseThread.submit<List<Offset>?> { BitmapImageBuilder(frame).build().use { image -> it.detectForVideo(image, timestampMs).landmarks().firstOrNull()?.points() } } }
+        val r = runOr(HANDS) { BitmapImageBuilder(frame).build().use { h.detectForVideo(it, timestampMs) } }
         // A failure on the body thread is handled here, under the lock this thread already holds.
         lastPose = runOr(POSE) { try { body?.get() } catch (e: java.util.concurrent.ExecutionException) { throw e.cause as? RuntimeException ?: RuntimeException(e.cause) } }
         if (r == null) return null

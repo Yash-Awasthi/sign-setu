@@ -242,6 +242,9 @@ fun CameraMirror(
         return
     }
     val labels = rememberTextMeasurer()
+    // The skeleton's paths and strokes, held for the life of this mirror: the overlay draws in the draw phase once per
+    // analysed frame, so building them there would churn the heap and the native path behind each Path.
+    val ink = remember { SkeletonInk() }
     // No new picture for a while: the tracker slowed or stopped, so the live picture shows again.
     // Watched outside composition, so a new picture each frame redraws the canvas only.
     LaunchedEffect(Unit) { snapshotFlow { picture }.collectLatest { if (it != null) { delay(FRESH_NS / 1_000_000); picture = null } } }
@@ -255,20 +258,21 @@ fun CameraMirror(
             if (analysing && shown?.pose == null) {
                 val c = Offset(size.width / 2, size.height * 0.38f)
                 val r = size.minDimension * 0.12f
-                val guide = Color.White.copy(alpha = 0.35f)
-                val line = Stroke(size.minDimension / 80f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 14f)))
-                drawCircle(guide, r, c, style = line)
-                drawPath(Path().apply {
+                val faint = Color.White.copy(alpha = 0.35f)
+                ink.fit(size.minDimension)
+                drawCircle(faint, r, c, style = ink.guide)
+                drawPath(ink.guidePath.apply {
+                    reset()
                     moveTo(c.x - r * 2.6f, size.height * 0.85f)
                     quadraticTo(c.x - r * 2.4f, c.y + r * 1.6f, c.x, c.y + r * 1.4f)
                     quadraticTo(c.x + r * 2.4f, c.y + r * 1.6f, c.x + r * 2.6f, size.height * 0.85f)
-                }, guide, style = line)
+                }, faint, style = ink.guide)
             }
             // The tracked picture covers the live one while it keeps coming, so the skeleton sits on the very hands it
             // was read from; when the tracker slows to save power, the live picture shows again.
             picture?.let { drawTracked(it, front, fill) }
             val seen = shown ?: return@Canvas
-            drawLandmarks(seen, front, analysing, showFace, handColor, labels, fill)
+            drawLandmarks(seen, front, analysing, showFace, handColor, labels, fill, ink)
         }
     }
 }
@@ -290,9 +294,68 @@ private fun DrawScope.drawTracked(image: ImageBitmap, front: Boolean, fill: Bool
     }
 }
 
+/** Everything the skeleton overlay reuses from frame to frame. Paths are reset and rebuilt, strokes are rebuilt only
+ * when the canvas resizes, and the hand lists and point buffer are refilled, so a drawn frame allocates nothing. */
+internal class SkeletonInk {
+    /** One path per face outline, in [FaceOutlines.all] order: an outline is drawn again only through its own path. */
+    val facePath: List<Path> = List(FaceOutlines.all.size) { Path() }
+
+    /** The faint head and shoulders shown while a body is missing. */
+    val guidePath = Path()
+
+    /** Wide enough for the longest face outline, as x,y pairs. */
+    val scratch = FloatArray(FaceOutlines.all.maxOf { it.size } * 2)
+
+    /** The hands of a frame with their side tags, refilled each frame instead of rebuilt. */
+    val handTags = ArrayList<String>(2)
+    val handPoints = ArrayList<List<Offset>>(2)
+
+    var face: Stroke = Stroke(1f); private set
+    var thin: Stroke = Stroke(1f); private set
+    var thick: Stroke = Stroke(1f); private set
+    var guide: Stroke = Stroke(1f); private set
+    private var minDimension = Float.NaN
+
+    /** The strokes for a canvas whose shorter side is [minDimension]; cheap after the first call for a given size. */
+    fun fit(minDimension: Float) {
+        if (minDimension == this.minDimension) return
+        this.minDimension = minDimension
+        val stroke = max(4f, minDimension / 90f)
+        face = Stroke(stroke * 0.5f)
+        thin = Stroke(stroke * 0.6f)
+        thick = Stroke(stroke * 0.9f)
+        guide = Stroke(minDimension / 80f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 14f)))
+    }
+
+    /** [line] through [face] as a path, [crop] and [mirrored] as the overlay draws it: the same instance every call. */
+    fun outlinePath(line: List<Int>, face: List<Offset>, frameAspect: Float, viewW: Float, viewH: Float, mirrored: Boolean, crop: Boolean): Path {
+        val path = facePath[FaceOutlines.all.indexOf(line)].apply { reset() }
+        val n = outlinePoints(line, face, frameAspect, viewW, viewH, mirrored, crop, scratch)
+        var i = 0
+        while (i < n) {
+            if (i == 0) path.moveTo(scratch[0], scratch[1]) else path.lineTo(scratch[i], scratch[i + 1])
+            i += 2
+        }
+        return path
+    }
+}
+
+/** The mapped points of the face [line] through [face], as x,y pairs in [out]; returns how many were written. Fills a
+ * supplied buffer so a frame builds no list per outline, and is pure so a test can check the geometry. */
+internal fun outlinePoints(line: List<Int>, face: List<Offset>, frameAspect: Float, viewW: Float, viewH: Float, mirrored: Boolean, crop: Boolean, out: FloatArray): Int {
+    var n = 0
+    for (i in line.indices) {
+        val p = overlayPoint(face[line[i]], frameAspect, viewW, viewH, mirrored, crop = crop)
+        out[n++] = p.x
+        out[n++] = p.y
+    }
+    return n
+}
+
 /** The traced skeleton, brows and lips of [seen] over a frame drawn Fit and centred; the camera overlay and its device test both draw this. */
-internal fun DrawScope.drawLandmarks(seen: LandmarkFrame, front: Boolean, analysing: Boolean, showFace: Boolean, handColor: Color, labels: TextMeasurer, fill: Boolean = false) {
+internal fun DrawScope.drawLandmarks(seen: LandmarkFrame, front: Boolean, analysing: Boolean, showFace: Boolean, handColor: Color, labels: TextMeasurer, fill: Boolean = false, ink: SkeletonInk = SkeletonInk()) {
     fun map(p: Offset) = overlayPoint(p, seen.aspect, size.width, size.height, front, crop = fill)
+    ink.fit(size.minDimension)
     val a = map(Offset.Zero)
     val b = map(Offset(1f, 1f))
     val stroke = max(4f, size.minDimension / 90f)
@@ -315,22 +378,23 @@ internal fun DrawScope.drawLandmarks(seen: LandmarkFrame, front: Boolean, analys
     // Points beyond the frame edge would otherwise sit in the letterbox band as stray dots.
     clipRect(minOf(a.x, b.x), a.y, max(a.x, b.x), b.y) {
         seen.face?.takeIf { it.size >= 468 }?.let { face ->
-            fun outline(line: List<Int>, color: Color, width: Float) {
-                val path = Path().apply { line.forEachIndexed { i, n -> map(face[n]).let { if (i == 0) moveTo(it.x, it.y) else lineTo(it.x, it.y) } } }
-                drawPath(path, color, style = Stroke(width))
-            }
-            if (showFace) for (line in FaceOutlines.all) outline(line, Color.White.copy(alpha = 0.5f), stroke * 0.5f)
+            fun outline(line: List<Int>, color: Color, style: Stroke) =
+                drawPath(ink.outlinePath(line, face, seen.aspect, size.width, size.height, front, fill), color, style = style)
+            if (showFace) for (line in FaceOutlines.all) outline(line, Color.White.copy(alpha = 0.5f), ink.face)
             // Brows and lips carry facial grammar; they light up when raised or open.
             val brow = if (seen.browsUp) handColor else Color.White.copy(alpha = 0.7f)
-            outline(FaceOutlines.leftBrow, brow, stroke * if (seen.browsUp) 0.9f else 0.6f)
-            outline(FaceOutlines.rightBrow, brow, stroke * if (seen.browsUp) 0.9f else 0.6f)
-            outline(FaceOutlines.lips, if (seen.mouthOpen) handColor else Color.White.copy(alpha = 0.7f), stroke * if (seen.mouthOpen) 0.9f else 0.6f)
+            outline(FaceOutlines.leftBrow, brow, if (seen.browsUp) ink.thick else ink.thin)
+            outline(FaceOutlines.rightBrow, brow, if (seen.browsUp) ink.thick else ink.thin)
+            outline(FaceOutlines.lips, if (seen.mouthOpen) handColor else Color.White.copy(alpha = 0.7f), if (seen.mouthOpen) ink.thick else ink.thin)
         }
         seen.pose?.takeIf { it.size >= 33 }?.let { pose ->
             for ((i, j) in ArmBones) drawLine(handColor.copy(alpha = 0.6f), map(pose[i]), map(pose[j]), stroke * 1.6f, StrokeCap.Round)
             for (i in 11..16) drawCircle(handColor, stroke * 1.2f, map(pose[i]))
         }
-        for ((label, hand) in labelledHands(seen)) {
+        labelledHands(seen, ink.handTags, ink.handPoints)
+        for (n in ink.handPoints.indices) {
+            val label = ink.handTags[n]
+            val hand = ink.handPoints[n]
             for ((i, j) in HandBones) drawLine(handColor, map(hand[i]), map(hand[j]), stroke * 1.3f, StrokeCap.Round)
             for (p in hand) { drawCircle(Color.Black.copy(alpha = 0.5f), stroke * 1.4f, map(p)); drawCircle(Color.White, stroke * 1.1f, map(p)) }
             drawText(labels, label, map(hand[0]) + Offset(stroke * 1.5f, stroke), HandLabelStyle)
@@ -367,8 +431,20 @@ internal fun outOfView(p: Offset): Edge? = when {
 }
 
 /** The subject's own sides, as Holistic names them: on the mirrored front camera their left hand shows on the left. */
-internal fun labelledHands(frame: LandmarkFrame): List<Pair<String, List<Offset>>> =
-    listOfNotNull(frame.leftHand?.takeIf { it.size >= 21 }?.let { "L" to it }, frame.rightHand?.takeIf { it.size >= 21 }?.let { "R" to it })
+internal fun labelledHands(frame: LandmarkFrame): List<Pair<String, List<Offset>>> {
+    val tags = ArrayList<String>(2)
+    val hands = ArrayList<List<Offset>>(2)
+    labelledHands(frame, tags, hands)
+    return List(tags.size) { tags[it] to hands[it] }
+}
+
+/** Fills [tags] and [hands] with the frame's hands, so the draw phase refills two lists instead of building them. */
+internal fun labelledHands(frame: LandmarkFrame, tags: MutableList<String>, hands: MutableList<List<Offset>>) {
+    tags.clear()
+    hands.clear()
+    frame.leftHand?.takeIf { it.size >= 21 }?.let { tags += "L"; hands += it }
+    frame.rightHand?.takeIf { it.size >= 21 }?.let { tags += "R"; hands += it }
+}
 
 /** Where a normalised landmark lands in a [viewW] x [viewH] view showing the frame letterboxed (Fit) and
  * centred. */

@@ -1,7 +1,9 @@
 package app.signsetu.camera
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.Rect
 import androidx.camera.core.ImageProxy
 import androidx.compose.ui.geometry.Offset
 import androidx.core.graphics.createBitmap
@@ -130,6 +132,19 @@ internal class FrameConverter(ring: Int = 1) {
     private val bitmaps = arrayOfNulls<Bitmap>(ring)
     private var next = 0
 
+    // The fallback's upright frame, kept from frame to frame: only drawn into, never handed out.
+    private var scratch: Bitmap? = null
+    private val turn = Matrix()
+    private val canvas = Canvas()
+    private val from = Rect()
+    private val to = Rect()
+
+    /** A whole upright frame as wide and tall as asked, reusing the scratch until the camera changes size. */
+    private fun upright(w: Int, h: Int): Bitmap = scratch?.takeIf { it.width == w && it.height == h } ?: run {
+        scratch?.recycle()
+        createBitmap(w, h).also { scratch = it }
+    }
+
     private fun target(w: Int, h: Int): Bitmap {
         val b = bitmaps[next]?.takeIf { it.width == w && it.height == h } ?: createBitmap(w, h).also { bitmaps[next] = it }
         next = (next + 1) % bitmaps.size
@@ -157,17 +172,47 @@ internal class FrameConverter(ring: Int = 1) {
             if (YuvFrames.convert(yp.buffer, up.buffer, vp.buffer, yp.rowStride, up.rowStride, up.pixelStride,
                     image.width, image.height, rot, c.x, c.y, c.w, c.h, b)) return b
         }
-        // No native library: CameraX converts, then one matrix pass turns and crops.
-        val raw = image.toBitmap()
-        val m = Matrix().apply { postRotate(rot.toFloat()) }
-        val upright = Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, m, true)
-        if (upright !== raw) raw.recycle()
-        val out = if (c.w == upright.width && c.h == upright.height) upright else Bitmap.createBitmap(upright, c.x, c.y, c.w, c.h).also { upright.recycle() }
-        return target(c.w, c.h).also { android.graphics.Canvas(it).drawBitmap(out, 0f, 0f, null); out.recycle() }
+        // No native library: CameraX converts, then one matrix pass turns the frame into the scratch bitmap and the
+        // focus window is drawn straight out of it, so only the raw frame CameraX makes is allocated per frame.
+        // The scratch never leaves this class; the ring's bitmap is the only one handed out.
+        // Everything made here is recycled before the return, whether or not a step throws.
+        val made = ArrayList<Bitmap>(1)
+        try {
+            val raw = image.toBitmap().also { made += it }
+            val turned = rot == 90 || rot == 270
+            val uprightFrame = upright(if (turned) raw.height else raw.width, if (turned) raw.width else raw.height)
+            // A rotation about the origin leaves the turned frame on the negative axes; the same shifts
+            // Bitmap.createBitmap applies keep every pixel inside the scratch.
+            turn.reset()
+            turn.postRotate(rot.toFloat())
+            when (rot) {
+                90 -> turn.postTranslate(raw.height.toFloat(), 0f)
+                180 -> turn.postTranslate(raw.width.toFloat(), raw.height.toFloat())
+                270 -> turn.postTranslate(0f, raw.width.toFloat())
+            }
+            canvas.setBitmap(uprightFrame)
+            canvas.drawBitmap(raw, turn, null)
+            raw.recycle()
+            // The crop window, copied a pixel for a pixel into the ring's bitmap, as the crop bitmap used to be.
+            from.set(c.x, c.y, c.x + c.w, c.y + c.h)
+            to.set(0, 0, c.w, c.h)
+            return target(c.w, c.h).also {
+                canvas.setBitmap(it)
+                canvas.drawBitmap(uprightFrame, from, to, null)
+            }
+        } finally {
+            canvas.setBitmap(null)
+            made.forEach { if (!it.isRecycled) it.recycle() }
+        }
     }
 
-    /** Never recycled here: the screen may still be drawing one; the collector frees them. */
-    fun close() { bitmaps.fill(null) }
+    /** The ring's bitmaps are never recycled here: the screen may still be drawing one; the collector frees them. The
+     * scratch is never handed out, so it is freed here. */
+    fun close() {
+        bitmaps.fill(null)
+        scratch?.recycle()
+        scratch = null
+    }
 }
 
 /** Maps landmarks the tracker found in a crop back to the whole upright frame. */
