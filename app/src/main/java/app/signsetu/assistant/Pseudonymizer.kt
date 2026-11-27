@@ -44,7 +44,8 @@ class Pseudonymizer(
         for ((re, tag) in map) out = re.replace(out, tag)
         for ((re, label) in PATTERNS) {
             out = re.replace(out) { m ->
-                if (label == "number" && m.value.count(Char::isDigit) < MIN_DIGITS) return@replace m.value
+                // A day-month-year shaped token (2026-11-20, 20/11/2026) survives; every other long digit run is masked.
+                if (label == "number" && (DATE.matches(m.value.trim()) || m.value.count(Char::isDigit) < MIN_DIGITS)) return@replace m.value
                 val tag = "[$label ${back.size + 1}]"
                 back[tag] = m.value
                 tag
@@ -66,6 +67,8 @@ class Pseudonymizer(
         val STAND_INS = listOf("Ravi", "Arun", "Kiran", "Gopal", "Mohan")
         fun word(text: String, vararg options: RegexOption) =
             Regex("""(?<![\p{L}\p{M}\p{N}])""" + Regex.escape(text) + """(?![\p{L}\p{M}\p{N}])""", options.toSet())
+        // A date has the hyphens the digit rule allows, so it would read as one long number; its shape is kept as it is.
+        val DATE = Regex("""\d{1,4}[-/]\d{1,2}[-/]\d{1,4}""")
         // Order matters: an email or address is masked before the digit rule can cut into it. \p{Nd} covers Devanagari digits.
         val PATTERNS = listOf(
             Regex("""[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.\p{L}{2,}""") to "email",

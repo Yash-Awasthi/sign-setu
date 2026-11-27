@@ -122,6 +122,8 @@ internal fun BrainItems(brain: BrainClient, off: Set<String>, onOff: (Set<String
                     // A ticket names the brain's key itself; only a LAN address needs the certificate pin.
                     if (url.startsWith("https://")) OutlinedTextField(pin, { pin = it.trim() }, singleLine = true, label = { Text(stringResource(R.string.brain_pin)) })
                     if (failed) Text(stringResource(R.string.brain_pair_failed))
+                    // Only the exception's type and a sentence of this app's (IrohBrain.failureNotice); a ticket's or a
+                    // station's own text is never shown here as the app's, at the moment trust is decided.
                     if (failed && url.startsWith("endpoint")) app.signsetu.net.IrohBrain.lastError?.let {
                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }

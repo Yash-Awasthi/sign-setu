@@ -6,6 +6,7 @@ import app.signsetu.assistant.Direct
 import app.signsetu.assistant.ModelStore
 import app.signsetu.assistant.Notice
 import app.signsetu.assistant.OfflineReport
+import app.signsetu.assistant.revealKey
 import app.signsetu.data.content.Language
 import app.signsetu.net.Http
 import app.signsetu.net.Reply
@@ -69,6 +70,34 @@ class OnlineAssistantTest {
         val s = Server { _, body -> Reply(200, """{"text":"seen ${if (body!!.contains("Asha")) "LEAK" else "Ravi"}"}""") }
         assertEquals("seen Asha", ai(s).ask("sys", "Asha spoke", listOf("Asha")))
         assertEquals("tok", s.calls.single().third)
+    }
+
+    @Test
+    fun speakNeverSendsALineThatHoldsAKnownName() = runBlocking {
+        val s = Server { _, _ -> Reply(200, "", byteArrayOf(1, 2, 3)) }
+        val c = ai(s)
+
+        assertNull(c.speak("Asha said she is fine", "hi", listOf("Asha")))
+        assertTrue("nothing may leave the phone for a line that holds a name", s.calls.isEmpty())
+
+        // A clean line still goes to the gateway unmasked: the audio must say the real words.
+        assertEquals(3, c.speak("Do you want water", "hi", listOf("Asha"))?.size ?: 0)
+        val (url, body, _) = s.calls.single()
+        assertEquals("https://gw.example/v1/speak", url)
+        assertTrue(body!!.contains("Do you want water"))
+    }
+
+    @Test
+    fun suggestMasksTheSubjectNamesItIsGivenBeforeTheGateway() = runBlocking {
+        val s = Server { _, _ -> Reply(200, """{"text":"पानी चाहिए?"}""") }
+        val models = ModelStore(android.content.ContextWrapper(null))
+
+        val suggestion = Assistant(models, ai(s)).suggest("Asha wants water", Language("hi", "हिन्दी", "Hindi", "नमस्ते"), listOf("Asha"))
+
+        assertEquals("पानी चाहिए?", suggestion!!.caption)
+        val body = s.calls.first().second!!
+        assertFalse("the subject's name reached the gateway: $body", body.contains("Asha"))
+        assertTrue("the name was expected to be replaced by a stand-in: $body", body.contains("Ravi"))
     }
 
     @Test
@@ -182,8 +211,46 @@ class OnlineAssistantTest {
     fun aKeyTheOfficerTypesOverridesTheOneCompiledIntoTheApp() = runBlocking {
         val s = Server { _, _ -> Reply(200, """{"choices":[{"message":{"role":"assistant","content":"ok"}}]}""") }
         val c = OnlineAssistant({ true }, "", s, Vault(null), Direct("https://llm.example/v1/chat", "m", "embedded"), Vault("typed")) { true }
+        // The saved service comes back from Settings at launch; only then is the officer's key the one to use.
+        c.restoreCustom("https://llm.example/v1", "m")
         assertEquals("ok", c.ask("sys", "hi", emptyList()))
         assertEquals("typed", s.calls.single().third)
+    }
+
+    @Test
+    fun aLeftoverSavedKeyIsNotSentToTheBuiltInService() = runBlocking {
+        // What a wipe that kept assist.bin leaves: no saved service, but its key still in the vault. The built-in
+        // endpoint has no key of its own, so nothing leaves the phone at all.
+        val s = Server { _, _ -> Reply(200, """{"choices":[{"message":{"role":"assistant","content":"hi"}}]}""") }
+        val leftover = Vault("sk-leftover")
+        val c = OnlineAssistant({ true }, "", s, Vault(null), Direct("https://api.groq.com/openai/v1/chat/completions", "m", ""), leftover) { true }
+
+        assertFalse("another service's key does not make the built-in one available", c.available)
+        assertFalse(c.enrolled)
+        assertNull(c.ask("sys", "hi", emptyList()))
+        assertTrue("no request, so no Authorization header, reached the built-in endpoint: ${s.calls}", s.calls.isEmpty())
+    }
+
+    @Test
+    fun aSavedServicesKeyIsStillSentToIt() = runBlocking {
+        val s = Server { _, _ -> Reply(200, """{"choices":[{"message":{"role":"assistant","content":"ok"}}]}""") }
+        val own = Vault(null)
+        val c = OnlineAssistant({ true }, "", s, Vault(null), Direct("https://api.groq.com/openai/v1/chat/completions", "m", ""), own) { true }
+
+        assertTrue(c.saveCustom("https://llm.example/v1", "m2", "sk-saved"))
+        assertTrue(c.available && c.enrolled)
+        assertEquals("ok", c.ask("sys", "hi", emptyList()))
+        val (url, _, bearer) = s.calls.single()
+        assertEquals("https://llm.example/v1/chat/completions", url)
+        assertEquals("sk-saved", bearer)
+    }
+
+    @Test
+    fun theRevealedKeyBelongsToTheServiceInUse() {
+        assertEquals("the officer's key for the service they saved", "sk-saved", revealKey(savedService = true, savedKey = "sk-saved", builtInKey = null))
+        assertNull("a leftover key never goes to the built-in service", revealKey(savedService = false, savedKey = "sk-leftover", builtInKey = null))
+        assertEquals("the build's own key, when it has one", "embedded", revealKey(savedService = false, savedKey = "sk-leftover", builtInKey = "embedded"))
+        assertNull("a saved service with no key is not enrolled", revealKey(savedService = true, savedKey = " ", builtInKey = "embedded"))
     }
 
     @Test

@@ -4,6 +4,7 @@ import app.signsetu.assistant.AiEndpoint
 import app.signsetu.assistant.AiProbe
 import app.signsetu.assistant.OnlineAssistant
 import app.signsetu.assistant.Direct
+import app.signsetu.assistant.refusal
 import app.signsetu.net.Http
 import app.signsetu.net.Reply
 import app.signsetu.net.TokenVault
@@ -67,7 +68,8 @@ class AiProbeTest {
         val refused = AiProbe(Server { _, _, _ -> Reply(401, """{"error":{"message":"bad key"}}""") }).ping("https://llm.example/v1", "m", "k")
         assertFalse(refused.ok)
         assertEquals(401, refused.code)
-        assertTrue(refused.detail, refused.detail.contains("bad key"))
+        assertFalse("the service's own words are never shown: $refused", refused.detail.contains("bad key"))
+        assertTrue(refused.detail, refused.detail.contains("401"))
 
         val silent = AiProbe(Server { _, _, _ -> null }).ping("https://llm.example/v1", "m", "k")
         assertFalse(silent.ok)
@@ -75,6 +77,24 @@ class AiProbeTest {
 
         assertFalse(AiProbe(good).ping("http://llm.example/v1", "m", "k").ok)
         assertFalse(AiProbe(good).ping("https://llm.example/v1", "", "k").ok)
+    }
+
+    @Test
+    fun aRefusalShowsTheStatusAndNotTheServicesWords() = runBlocking {
+        val hostile = "PAY the officer now, call 112. <b>Ignore the above.</b> " + "x".repeat(400)
+        val r = AiProbe(Server { _, _, _ -> Reply(403, hostile) }).ping("https://llm.example/v1", "m", "k")
+        assertFalse(r.ok)
+        assertEquals(403, r.code)
+        assertTrue(r.detail, r.detail.contains("403"))
+        assertFalse(r.detail, r.detail.contains("112"))
+        assertFalse(r.detail, r.detail.contains("officer"))
+        assertTrue(r.detail, r.detail.length < 80)
+
+        // The formatter itself, given a body only a hostile service would send: one fixed phrase per status class.
+        assertEquals("HTTP 401: the service refused", refusal(Reply(401, hostile)))
+        assertEquals("HTTP 500: the service failed", refusal(Reply(500, hostile)))
+        assertFalse(refusal(Reply(503, hostile)).contains("PAY"))
+        assertFalse(refusal(Reply(302, hostile)).contains("PAY"))
     }
 
     @Test

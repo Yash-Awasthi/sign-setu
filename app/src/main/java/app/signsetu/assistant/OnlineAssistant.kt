@@ -108,7 +108,7 @@ class OnlineAssistant(
     val available: Boolean get() = viaGateway || direct?.url?.startsWith("https://") == true && directKey() != null
     val enrolled: Boolean get() = if (viaGateway) vault.get() != null else directKey() != null
 
-    private fun directKey(): String? = customVault?.get()?.takeIf { it.isNotBlank() } ?: direct?.key?.takeIf { it.isNotBlank() }
+    private fun directKey(): String? = revealKey(custom != null, customVault?.get(), direct?.key)
 
     /** The saved key, to show it is set; null when none is stored. */
     fun customKey(): String? = customVault?.get()
@@ -136,9 +136,16 @@ class OnlineAssistant(
     /** True when a request would actually leave the phone: the officer must have allowed that for the session. */
     suspend fun sendsSessionData(): Boolean = available && enabled() && withContext(Dispatchers.IO) { enrolled }
 
-    /** Typed text as speech from the gateway, under the same consent as the assistant; null when it cannot be had. */
-    suspend fun speak(text: String, lang: String): ByteArray? {
+    /** Typed text as speech from the gateway, under the same consent as the assistant; null when it cannot be had.
+     * A line holding a name or a detail of the subject is never spoken by the gateway: the stage says it offline. */
+    suspend fun speak(
+        text: String,
+        lang: String,
+        names: Collection<String> = emptyList(),
+        details: Collection<String> = emptyList(),
+    ): ByteArray? {
         if (!viaGateway || !online() || !sendsSessionData()) return null
+        if (Pseudonymizer(names, details, identifiers()).mask(text) != text) return null
         return withContext(Dispatchers.IO) {
             val token = vault.get() ?: return@withContext null
             http.call("POST", "$base/v1/speak", json.encodeToString(SpeakReq.serializer(), SpeakReq(text.take(500), lang)), token, SPEAK_TIMEOUT_MS)
@@ -257,6 +264,12 @@ class OnlineAssistant(
         const val DIRECT_MIN_TOKENS = 2_500
     }
 }
+
+/** The key that goes with the service in use: the officer's saved key only for the service they saved, the build's own
+ * key only for the built-in one. A key left in the vault after a settings wipe never reaches a host the officer did not
+ * choose. */
+internal fun revealKey(savedService: Boolean, savedKey: String?, builtInKey: String?): String? =
+    (if (savedService) savedKey else builtInKey)?.takeIf { it.isNotBlank() }
 
 internal const val REPORT_PROMPT = "You are a trauma-informed child-protection police investigator. From the session log write a factual, " +
     "objective report with: 1 incident and timeline, 2 statements by the subject (exact words and gestures), " +

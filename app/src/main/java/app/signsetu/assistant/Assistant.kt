@@ -13,7 +13,12 @@ data class Suggestion(val caption: String, val meaning: String?)
  * never answers, judges or adds anything, and the officer decides whether the caption is used. */
 class Assistant(private val models: ModelStore, private val cloud: OnlineAssistant? = null) {
     /** The station's model first, then this phone's, then the gateway (docs/18-station.md). */
-    suspend fun suggest(text: String, language: Language): Suggestion? {
+    suspend fun suggest(
+        text: String,
+        language: Language,
+        names: Collection<String> = emptyList(),
+        details: Collection<String> = emptyList(),
+    ): Suggestion? {
         if (!needsTranslation(text, language.code)) return null
         cloud?.let { c ->
             val caption = c.askStation(toLanguage(language), text, 120, CAPTION_WAIT_MS)?.firstLine()
@@ -25,9 +30,9 @@ class Assistant(private val models: ModelStore, private val cloud: OnlineAssista
             Suggestion(caption, meaning)
         }
         if (local != null) return local
-        // Only the officer's own sentence goes out; it holds no subject details.
-        val caption = cloud?.ask(toLanguage(language), text, emptyList(), 200, timeoutMs = CAPTION_WAIT_MS, retry = false, viaStation = false)?.firstLine() ?: return null
-        return Suggestion(caption, cloud.ask(BACK_TO_ENGLISH, caption, emptyList(), 120, timeoutMs = CAPTION_WAIT_MS, retry = false, viaStation = false)?.firstLine())
+        // Only the officer's own sentence goes out, with every name and detail the session knows replaced before it leaves the phone.
+        val caption = cloud?.ask(toLanguage(language), text, names, 200, details, timeoutMs = CAPTION_WAIT_MS, retry = false, viaStation = false)?.firstLine() ?: return null
+        return Suggestion(caption, cloud.ask(BACK_TO_ENGLISH, caption, names, 120, details, timeoutMs = CAPTION_WAIT_MS, retry = false, viaStation = false)?.firstLine())
     }
 
     private fun toLanguage(language: Language) = translatePrompt(language)

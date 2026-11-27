@@ -99,6 +99,15 @@ class PseudonymizerTest {
     }
 
     @Test
+    fun aDateSurvivesTheNumberRuleWhileEveryOtherLongDigitRunIsMasked() {
+        val p = Pseudonymizer(emptyList())
+        val text = "She was brought in on 2026-11-20, contact 9876543210"
+        val sent = p.mask(text)
+        assertEquals("She was brought in on 2026-11-20, contact [number 1]", sent)
+        assertEquals(text, p.restore(sent))
+    }
+
+    @Test
     fun aStandInInTheReplyIsRestoredToTheRightPerson() {
         val p = Pseudonymizer(listOf("Sita", "Mohan"))
         p.mask("Sita and Mohan")

@@ -1,6 +1,7 @@
 package app.signsetu.assistant
 
 import app.signsetu.net.Http
+import app.signsetu.net.Reply
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -45,6 +46,15 @@ object AiEndpoint {
 
 class PingResult(val ok: Boolean, val code: Int?, val ms: Long, val detail: String)
 
+/** What the officer is told when the service refuses: its status code and that it refused, never a word of the reply.
+ * The reply's text belongs to whoever answers at that address, and this detail is shown as the app's own and kept in
+ * saved state, so a service can put nothing of its own on the screen through it. */
+internal fun refusal(reply: Reply): String = "HTTP ${reply.code}: " + when (reply.code) {
+    in 400..499 -> "the service refused"
+    in 500..599 -> "the service failed"
+    else -> "the service did not take the request"
+}
+
 @Serializable private data class ProbeMsg(val role: String, val content: String)
 @Serializable private data class ProbeChat(val model: String, val messages: List<ProbeMsg>, val max_tokens: Int)
 @Serializable private data class ProbeResponses(val model: String, val input: String, val max_output_tokens: Int, val store: Boolean = false)
@@ -74,7 +84,7 @@ class AiProbe(private val http: Http) {
         return when {
             reply == null -> PingResult(false, null, ms, "No reply: check the address and the network")
             reply.ok -> PingResult(true, reply.code, ms, "Answered in $ms ms")
-            else -> PingResult(false, reply.code, ms, "HTTP ${reply.code}: ${reply.body.replace(Regex("\\s+"), " ").take(160)}")
+            else -> PingResult(false, reply.code, ms, refusal(reply))
         }
     }
 

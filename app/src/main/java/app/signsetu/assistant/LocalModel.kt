@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.security.DigestInputStream
 import java.security.MessageDigest
@@ -44,38 +45,59 @@ class LocalModel private constructor(private var handle: Long) {
 /** A model file on this phone. It is imported once from a file the department hands out, and accepted only if
  * its hash is in [known], so a swapped or damaged file is never parsed. Each store ([name]) has its own file and its
  * own import: the assistant's is for the automation agents, the sentence helper's for reading signed answers. */
-class ModelStore(private val context: Context, private val name: String = "assistant", private val known: Set<String> = KNOWN_MODELS) {
+class ModelStore(
+    private val context: Context,
+    private val name: String = "assistant",
+    private val known: Set<String> = KNOWN_MODELS,
+    private val maxBytes: Long = MAX_MODEL_BYTES,
+) {
     private val file = File(context.noBackupFilesDir, "models/$name.gguf")
     private val lock = Mutex()
     private var model: LocalModel? = null
+    // Digest checks already paid for this process, keyed by path, size and modified time; see [intact].
+    private val verified = HashMap<String, Boolean>()
 
     enum class State { NOT_INSTALLED, READY, TOO_LITTLE_MEMORY, UNSUPPORTED }
 
-    fun state(): State = when {
-        !LocalModel.supported -> State.UNSUPPORTED
-        !enoughMemory() -> State.TOO_LITTLE_MEMORY
-        !file.exists() -> State.NOT_INSTALLED
-        else -> State.READY
-    }
+    fun state(): State = if (!LocalModel.supported) State.UNSUPPORTED else stateOf(true, enoughMemory(), file.exists())
 
     /** Copies and checks the picked file; returns false, keeping nothing, if it is not a known model. */
     suspend fun import(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         lock.withLock {
             unload()
-            runCatching { context.contentResolver.openInputStream(uri)!!.use { acceptLocked(it, file, known) } }.getOrDefault(false)
+            runCatching {
+                val declared = lengthOf(uri)
+                context.contentResolver.openInputStream(uri)!!.use { acceptLocked(it, file, known, declared) }
+            }.getOrDefault(false)
         }
     }
 
     /** The hashing and allow-list decision behind [import], reachable in JVM tests without a real Uri. */
-    internal suspend fun accept(input: InputStream, target: File = file, known: Set<String> = this.known): Boolean =
-        withContext(Dispatchers.IO) { lock.withLock { acceptLocked(input, target, known) } }
+    internal suspend fun accept(input: InputStream, target: File = file, known: Set<String> = this.known, declaredLength: Long = -1L): Boolean =
+        withContext(Dispatchers.IO) { lock.withLock { acceptLocked(input, target, known, declaredLength) } }
 
-    private fun acceptLocked(input: InputStream, target: File, known: Set<String>): Boolean {
-        val partial = File(target.parentFile, "${target.name}.part").apply { parentFile?.mkdirs() }
+    private fun acceptLocked(input: InputStream, target: File, known: Set<String>, declaredLength: Long): Boolean {
+        val partial = partialOf(target).apply { parentFile?.mkdirs(); delete() }
+        // A provider that reports an oversized file, or a phone with too little room, is refused before any byte is copied.
+        if (declaredLength > maxBytes) return false
+        if (declaredLength > 0 && declaredLength > (partial.parentFile?.usableSpace ?: Long.MAX_VALUE)) return false
         val digest = MessageDigest.getInstance("SHA-256")
         // A copy that dies partway leaves no partial file: the digest was never compared, so nothing is installed.
         val ok = try {
-            DigestInputStream(input, digest).use { s -> partial.outputStream().use { s.copyTo(it, 1 shl 20) } }
+            DigestInputStream(input, digest).use { s ->
+                partial.outputStream().use { out ->
+                    val buffer = ByteArray(1 shl 20)
+                    var total = 0L
+                    while (true) {
+                        val n = s.read(buffer)
+                        if (n < 0) break
+                        total += n
+                        // A stream that never ends cannot fill internal storage or hold the store's lock forever.
+                        if (total > maxBytes) throw IOException("over $maxBytes bytes")
+                        out.write(buffer, 0, n)
+                    }
+                }
+            }
             digest.digest().toHexString() in known
         } catch (_: Exception) {
             false
@@ -83,13 +105,49 @@ class ModelStore(private val context: Context, private val name: String = "assis
         return (ok && partial.renameTo(target)).also { if (!it) partial.delete() }
     }
 
-    suspend fun remove() = withContext(Dispatchers.IO) { lock.withLock { unload(); file.delete() } }
+    private fun lengthOf(uri: Uri): Long = runCatching {
+        context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
+    }.getOrDefault(-1L)
+
+    private fun partialOf(target: File) = File(target.parentFile, "${target.name}.part")
+
+    /** Whether [candidate] is still the file that was imported: its SHA-256 is on [allowed]. Hashed once per process
+     * and cached, so only the first load after a start pays for it; a mismatch deletes the file, as a failed import
+     * leaves nothing, so no swapped or damaged bytes reach the native parser (docs/10-on-device-assistant.md §3). */
+    internal fun intact(candidate: File = file, allowed: Set<String> = known): Boolean {
+        if (!candidate.exists()) return false
+        val key = "${candidate.absolutePath}:${candidate.length()}:${candidate.lastModified()}"
+        verified[key]?.let { return it }
+        val ok = runCatching {
+            val digest = MessageDigest.getInstance("SHA-256")
+            candidate.inputStream().use { s ->
+                val buffer = ByteArray(1 shl 20)
+                while (true) {
+                    val n = s.read(buffer)
+                    if (n < 0) break
+                    digest.update(buffer, 0, n)
+                }
+            }
+            digest.digest().toHexString() in allowed
+        }.getOrDefault(false)
+        verified[key] = ok
+        if (!ok) candidate.delete()
+        return ok
+    }
+
+    suspend fun remove() = removeAt(file)
+
+    /** Deletes a model file and any stale partial beside it; reachable in JVM tests without a real Context. */
+    internal suspend fun removeAt(target: File) = withContext(Dispatchers.IO) {
+        lock.withLock { unload(); target.delete(); partialOf(target).delete(); verified.clear() }
+    }
 
     /** Runs [block] with the model, loading it on first use. */
     suspend fun <T> use(block: (LocalModel) -> T): T? = withContext(Dispatchers.Default) {
         lock.withLock {
             if (state() != State.READY) return@withLock null
-            val m = model ?: (if (roomToLoad()) LocalModel.load(file)?.also { model = it } else null) ?: return@withLock null
+            // The bytes are re-checked before the first native load: a file swapped or damaged since import is absent.
+            val m = model ?: (if (roomToLoad() && intact()) LocalModel.load(file)?.also { model = it } else null) ?: return@withLock null
             block(m)
         }
     }
@@ -113,6 +171,17 @@ class ModelStore(private val context: Context, private val name: String = "assis
         // A 3 GB phone reports well under 3 GB; whether 0.9 GB is free for the model is checked when it loads.
         private const val MIN_MEMORY_BYTES = 2_400L * 1024 * 1024
         private const val MIN_FREE_BYTES = 1_200L * 1024 * 1024
+        // Larger than any allowed model (1.5 GB) and larger than the shipped 806 MB one, so an oversized pick or a
+        // stream that never ends cannot fill internal storage before the digest refuses it.
+        internal const val MAX_MODEL_BYTES = 1_600_000_000L
+
+        /** The install decision behind [state], reachable in JVM tests without an ActivityManager. */
+        internal fun stateOf(supported: Boolean, enoughMemory: Boolean, present: Boolean): State = when {
+            !supported -> State.UNSUPPORTED
+            !enoughMemory -> State.TOO_LITTLE_MEMORY
+            !present -> State.NOT_INSTALLED
+            else -> State.READY
+        }
 
         /** SHA-256 of the model files the department may install; see docs/10-on-device-assistant.md. */
         /** SHA-256 of the sentence helper files the department may install (docs/15-gloss-to-text.md). */
