@@ -38,6 +38,10 @@ class Contributions(
     private var flusher: Job? = null
     private val uploadLock = Any()
 
+    /** Test seam, null in the app: runs after the batch is built and before the consent re-check, so a withdrawal or a
+     * wipe can be landed inside that window. */
+    @Volatile internal var beforeConsentRecheck: (() -> Unit)? = null
+
     /** False in release builds: they record nothing and send nothing, even if a debug install left files behind. */
     @Volatile private var enabled = true
 
@@ -52,9 +56,17 @@ class Contributions(
 
     val consented: Boolean get() = enabled && consentFile.exists() && consentFile.readText().trim() == CONSENT_VERSION
 
-    // Same monitor as save's write, so a queued record cannot land after withdrawal clears the queue.
-    fun setConsent(on: Boolean) {
-        if (!enabled) return
+    /** False when sharing could not be turned on: a delete latch left by an earlier failure still stops the writer, so
+     * the switch must not be told sharing resumed. Same monitor as save's write, so a queued record cannot land after
+     * withdrawal clears the queue. */
+    fun setConsent(on: Boolean): Boolean {
+        if (!enabled) return false
+        // A failed Delete my shared recordings leaves the latch that every upload respects; retry it before going on.
+        if (on && deletionPendingFile.exists() && !deleteMine()) {
+            // The latch stays, so the writer stays stopped: sharing is off, whatever the file said before.
+            synchronized(this) { consentFile.delete() }
+            return false
+        }
         synchronized(this) {
             root.mkdirs()
             if (on) {
@@ -67,6 +79,7 @@ class Contributions(
                 queue.listFiles()?.forEach { it.delete() }
             }
         }
+        return true
     }
 
     /** Saves one record locally, and queues it when the signer has opted in. */
@@ -145,6 +158,10 @@ class Contributions(
             put("records", JsonArray(records.map { it.second }))
             put("record_ids", JsonArray(records.map { JsonPrimitive(recordId(it.first)) }))
         }
+        beforeConsentRecheck?.invoke()
+        // Consent or Clear all data can land between the check at the top and this call: the body is built but nothing
+        // has left the phone, so both are read again immediately before sending.
+        if (!consented || deletionPendingFile.exists()) return false
         val reply = http.call("POST", "$base/v1/contrib", body.toString(), token, UPLOAD_TIMEOUT_MS) ?: return false
         return when {
             // Stored, or refused by the schema check: either way these records leave the queue.
@@ -178,35 +195,60 @@ class Contributions(
         }
     }
 
-    /** Removes every local record, queued upload, consent and signer id (Clear all data). */
-    fun discardAll(): Int = synchronized(this) {
-        flusher?.cancel()
-        flusher = null
-        app.signsetu.data.session.LocalRetention.purgeAll(root)
+    /** Removes every local record, queued upload and the consent (Clear all data). The signer id goes only once the
+     * gateway has confirmed the delete: it is the only key that names this volunteer's rows, so a wipe on an unreachable
+     * gateway keeps the file and the latch instead of making the rows undeletable. Returns files durably removed. */
+    fun discardAll(): Int {
+        val signerFile = File(root, "signer.txt")
+        val signerId = signerFile.takeIf { it.exists() }?.readText()?.trim()?.takeIf { it.isNotEmpty() }
+        synchronized(this) {
+            flusher?.cancel()
+            flusher = null
+            // Off before the remote delete: no record is queued while that call is in flight.
+            consentFile.delete()
+        }
+        val remoteGone = signerId == null || !enabled || deleteMine()
+        // The purge waits for any batch already inside its check, so none can send after the wipe returns. Only
+        // uploadLock is taken here: taking the object monitor too would park the consent switch behind that wait.
+        return synchronized(uploadLock) {
+            val before = root.walkTopDown().count { it.isFile }
+            app.signsetu.data.session.LocalRetention.purgeAll(root)
+            if (!remoteGone && signerId != null) {
+                // A 16-byte random id names nothing on its own; keeping it is what still lets the volunteer ask
+                // the gateway to erase their rows, and the latch keeps the writer stopped until that succeeds.
+                root.mkdirs()
+                signerFile.writeText(signerId)
+                deletionPendingFile.writeText("v1")
+            }
+            before - root.walkTopDown().count { it.isFile }
+        }
     }
 
-    /** Asks the gateway to delete everything this signer sent; true once it has. */
-    fun deleteMine(): Boolean = synchronized(this) outer@{
-        val token = vault.get() ?: return@outer false
-        root.mkdirs()
-        try {
-            deletionPendingFile.writeText("v1")
-        } catch (_: java.io.IOException) {
-            return@outer false
-        }
-        synchronized(uploadLock) inner@{
-            if (http.call("DELETE", "$base/v1/contrib/$signer", null, token, UPLOAD_TIMEOUT_MS)?.ok != true) {
-                return@inner false
+    /** Asks the gateway to delete everything this signer sent; true once it has. The pending file is written before the
+     * call, so a slow gateway holds only [uploadLock] and never this object's monitor: the consent switch stays live. */
+    fun deleteMine(): Boolean {
+        val token = vault.get() ?: return false
+        synchronized(this) {
+            root.mkdirs()
+            try {
+                deletionPendingFile.writeText("v1")
+            } catch (_: java.io.IOException) {
+                return false
             }
+        }
+        if (synchronized(uploadLock) { http.call("DELETE", "$base/v1/contrib/$signer", null, token, UPLOAD_TIMEOUT_MS)?.ok != true }) {
+            return false
+        }
+        return synchronized(this) {
             flusher?.cancel()
             flusher = null
             val files = queue.listFiles()
             val cleared = (files != null || !queue.exists()) && files.orEmpty().all { it.delete() || !it.exists() }
             if (!cleared) {
                 consentFile.delete()
-                return@inner false
+                return false
             }
-            if (!deletionPendingFile.delete() && deletionPendingFile.exists()) return@inner false
+            if (!deletionPendingFile.delete() && deletionPendingFile.exists()) return false
             true
         }
     }

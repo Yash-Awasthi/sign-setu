@@ -12,6 +12,8 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /** Debug builds only (docs/15-gloss-to-text.md): each sign window as one JSON record of landmarks,
  * the reader's top 5, face and head cues and the lattice, and each decision (the rung shown, what the officer took)
@@ -39,7 +41,21 @@ object DebugRecorder {
             val fix = buildJsonObject {
                 put("gloss", JsonArray(gloss.map(::JsonPrimitive))); put("text", text); put("at", System.currentTimeMillis())
             }
-            f.writeText(JsonObject(old + ("correction" to fix)).toString())
+            writeAtomic(f, JsonObject(old + ("correction" to fix)).toString())
+        }
+    }
+
+    /** Beside and then renamed, as Contributions.writeAtomic does: a kill mid-write leaves a .part to clear, never a
+     * short record under the window's own name. */
+    private fun writeAtomic(target: File, text: String) {
+        val part = File(target.parentFile, target.name + ".part")
+        try {
+            part.writeText(text)
+            // File.renameTo cannot replace an existing file on every platform; the move keeps the same rename-and-replace.
+            Files.move(part.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        } catch (e: Exception) {
+            part.delete()
+            throw e
         }
     }
 

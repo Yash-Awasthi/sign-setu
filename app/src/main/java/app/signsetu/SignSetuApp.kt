@@ -22,6 +22,7 @@ import app.signsetu.data.content.ContentRepository
 import app.signsetu.data.session.DatabaseKey
 import app.signsetu.data.session.DeviceSeal
 import app.signsetu.net.BrainClient
+import app.signsetu.net.IrohBrain
 import app.signsetu.data.session.RetentionJob
 import app.signsetu.data.session.SessionDatabase
 import app.signsetu.data.session.SessionRepository
@@ -87,13 +88,16 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     val models = ModelStore(app)
     /** The optional sentence helper, imported separately from the assistant's model. */
     val sentenceModel = ModelStore(app, "sentence", ModelStore.KNOWN_SENTENCE_MODELS)
+    /** The gateway enrolment token and the officer's own service key, held as fields so Clear all data can erase them. */
+    private val gatewayVault = KeystoreVault(app)
+    private val assistVault = KeystoreVault(app, "assist.bin", "signsetu.assist.key")
     val onlineAssistant = OnlineAssistant(
         { settings.current().onlineAssistant },
         BuildConfig.GATEWAY_URL,
         UrlHttp(),
-        KeystoreVault(app),
+        gatewayVault,
         Direct(BuildConfig.ASSIST_URL, BuildConfig.ASSIST_MODEL, ""),
-        KeystoreVault(app, "assist.bin", "signsetu.assist.key"),
+        assistVault,
         online = { isOnline(app) },
         identifiers = { listOfNotNull(officerId.takeIf { it.isNotBlank() }, deviceKeyId) },
     )
@@ -172,6 +176,9 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
             settings.settings.collect { s ->
                 officerId = s.officerId
                 brain.setAllowed(BrainClient.Feature.entries.filter { it == BrainClient.Feature.GLOSS || (if (it == BrainClient.Feature.PLAN) "llm" else it.key) !in s.stationOff }.toSet())
+                // The store is the truth for the officer's switch too: Clear all data resets it, so a live client must
+                // not keep sending. Only on a real change, because setOn restarts the heartbeat.
+                if (brain.state.value.on != s.stationLink) brain.setOn(s.stationLink)
             }
         }
         onlineAssistant.station = { system, user, maxTokens, timeoutMs, names, details -> brain.chat(system, user, maxTokens, timeoutMs, names, details) }
@@ -186,11 +193,11 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
                 }
             })
         }
-        // A release build records nothing; a queue left by a debug install is discarded rather than sent.
-        contributions.restrictToDebug(BuildConfig.DEBUG)
-        contributions.kick()
-        // Plaintext copies and local captures are swept at launch, not only when the next export runs.
+        // A release build records nothing; a queue left by a debug install is discarded rather than sent. Both touch
+        // files, so they start off the main thread; plaintext copies and local captures are swept with them.
         scope.launch(Dispatchers.IO) {
+            contributions.restrictToDebug(BuildConfig.DEBUG)
+            contributions.kick()
             sweepExports(settings.current().retentionHours)
             sweepLocalCaptures()
         }
@@ -257,8 +264,8 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         if (unwrapped.reset) _keyReset.value = true
         // Once per process: an officer without a lock screen is not stopped at every unlock.
         if (databaseKey.unbound && !unboundTold) { unboundTold = true; _keyUnbound.value = true }
-        // SQLCipher clears the key bytes itself once the database is open.
-        SessionDatabase.open(app, unwrapped.key, onDestructiveMigration = { _downgraded.value = true }).also { db ->
+        // SQLCipher keeps this array to key any later connection, so it gets its own copy; `use` then zeroes ours.
+        SessionDatabase.open(app, unwrapped.key.copyOf(), onDestructiveMigration = { _downgraded.value = true }).also { db ->
             runCatching { db.openHelper.writableDatabase }.onFailure { db.close(); throw it }
         }
     }
@@ -316,6 +323,8 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         _sessions.value = null
         officerLink?.let { endLink() }
         scope.launch { models.release() }
+        // The raw station identity is not left in memory for the rest of the process; key() reads it back from the vault.
+        scope.launch(Dispatchers.IO) { IrohBrain.dropKey() }
         landmarkTrackerOrNull()?.let { scope.launch(Dispatchers.Default) { it.close() } }
         val db = database
         database = null
@@ -323,17 +332,31 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         scope.launch { delay(1_000); db?.close() }
     }
 
-    fun clearAllData() {
+    /** The wipe in Settings. [credentials] also erases the gateway enrolment token, the officer's own service key and the
+     * station pairing; the automatic retention wipe passes false, so it never forces the officer to enrol again. */
+    fun clearAllData(credentials: Boolean = true) {
         val open = database
         lock()
         // Delete the file only once nothing has it open: an unlinked SQLite file stays readable until it is closed.
         runCatching { open?.close() }
         databaseKey.destroy()
+        // A wipe destroys the key, so the next unlock may create an unbound one and must warn again.
+        unboundTold = false
+        _keyUnbound.value = false
         SessionReport.exportsDir(app).deleteRecursively()
         // The stores outside the database are swept off the main thread; the saved Documents copies need MediaStore.
         val now = System.currentTimeMillis()
         scope.launch(Dispatchers.IO) {
             settings.clear()
+            // After the settings store, so its collector cannot turn the station back on between the two clears.
+            if (credentials) {
+                gatewayVault.clear()
+                assistVault.clear()
+                onlineAssistant.clearCustom()
+                brain.forget()
+                // Last: the phone's own station identity goes too, so the station no longer knows the wiped phone.
+                IrohBrain.forget()
+            }
             ExportSweeper.sweep(MediaStoreExportStore(app), now, 0)
             contributions.discardAll()
             DebugRecorder.folder(app)?.let { LocalRetention.purgeAll(it) }
@@ -353,7 +376,11 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
     /** Training landmarks and debug captures sit outside the encrypted database, so retention has to reach them here. */
     private fun sweepLocalCaptures(nowMs: Long = System.currentTimeMillis()) {
         contributions.purgeExpired(nowMs)
-        DebugRecorder.folder(app)?.let { LocalRetention.purge(it, nowMs, LocalRetention.DEBUG_RECORDING_MAX_AGE_MS) }
+        DebugRecorder.folder(app)?.let {
+            // A release build over an old debug install clears the landmark captures it will never read.
+            if (BuildConfig.DEBUG) LocalRetention.purge(it, nowMs, LocalRetention.DEBUG_RECORDING_MAX_AGE_MS)
+            else LocalRetention.purgeAll(it)
+        }
     }
 
     /** What every record says about the phone and the officer, as named fields; the same line is stored and exported. */
@@ -418,7 +445,7 @@ class AppContainer(private val app: Application) : DefaultLifecycleObserver, Com
         }
         if (allSessionsExpired(System.currentTimeMillis(), current.newestSessionAt, current.retentionHours)) {
             // lock() touches the link and the UI's state, which live on the main thread.
-            withContext(Dispatchers.Main) { clearAllData() }
+            withContext(Dispatchers.Main) { clearAllData(credentials = false) }
             settings.setNewestSessionAt(0L)
         }
     }

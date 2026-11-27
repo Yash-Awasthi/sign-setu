@@ -138,7 +138,15 @@ fun RecordSignsScreen(tracker: LandmarkTracker?, contributions: Contributions, o
                         Text(stringResource(R.string.record_consent_en), style = MaterialTheme.typography.bodyMedium)
                         Text(stringResource(R.string.record_consent_hi), style = MaterialTheme.typography.bodyMedium)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-                            Switch(checked = consent, onCheckedChange = { consent = it; contributions.setConsent(it) })
+                            Switch(checked = consent, onCheckedChange = { on ->
+                                // The switch answers at once; the file work waits behind any in-flight upload instead.
+                                consent = on
+                                scope.launch(Dispatchers.IO) {
+                                    // A failed delete can latch the writer, so turning sharing on can refuse; the
+                                    // card says so rather than leaving the switch claiming sharing resumed.
+                                    if (!contributions.setConsent(on)) withContext(Dispatchers.Main) { consent = false; deleted = false }
+                                }
+                            })
                             Text(stringResource(if (consent) R.string.record_consent_on else R.string.record_consent_off))
                         }
                         OutlinedButton(onClick = { scope.launch { deleted = withContext(Dispatchers.IO) { contributions.deleteMine() } } }) {

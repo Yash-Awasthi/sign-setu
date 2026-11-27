@@ -12,6 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.buildJsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -62,6 +63,80 @@ class ContributionsTest {
     }
 
     @Test
+    fun aBatchIsNotSentWhenConsentIsWithdrawnBeforeTheCall() = runBlocking {
+        val root = Files.createTempDirectory("contributions-withdraw").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val calls = Collections.synchronizedList(mutableListOf<String>())
+        val http = Http { method, _, _, _, _ -> calls += method; Reply(200, "{}") }
+        val contributions = Contributions(root, "https://gateway.test", http, TestVault, { true }, scope)
+        seedQueuedRecord(root)
+        try {
+            val withdrawn = CountDownLatch(1)
+            // Runs inside the batch, after its first consent check and body build, before the call.
+            contributions.beforeConsentRecheck = { contributions.setConsent(false); withdrawn.countDown() }
+            assertTrue(contributions.setConsent(true))
+            assertTrue("no batch reached the window", withdrawn.await(5, TimeUnit.SECONDS))
+            delay(300)
+            assertTrue("a batch was posted after withdrawal: $calls", calls.none { it == "POST" })
+            assertEquals(0, contributions.pending())
+        } finally {
+            scope.cancel()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun aBatchIsNotSentWhileTheDeletionLatchStands() = runBlocking {
+        val root = Files.createTempDirectory("contributions-latch").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val calls = Collections.synchronizedList(mutableListOf<String>())
+        val http = Http { method, _, _, _, _ -> calls += method; Reply(200, "{}") }
+        val contributions = Contributions(root, "https://gateway.test", http, TestVault, { true }, scope)
+        seedQueuedRecord(root)
+        try {
+            val latched = CountDownLatch(1)
+            // The latch appears inside the window, after the batch's first check passed with none set.
+            contributions.beforeConsentRecheck = { File(root, "delete.pending").writeText("v1"); latched.countDown() }
+            assertTrue(contributions.setConsent(true))
+            assertTrue("no batch reached the window", latched.await(5, TimeUnit.SECONDS))
+            delay(300)
+            assertTrue("a batch was posted while the latch stood: $calls", calls.none { it == "POST" })
+            assertEquals("the record waits on the phone", 1, contributions.pending())
+            assertTrue(File(root, "delete.pending").exists())
+        } finally {
+            scope.cancel()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun turningSharingOnWithAStaleLatchRetriesTheDeleteAndRefusesWhenItFails() {
+        val root = Files.createTempDirectory("contributions-stale-latch").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val calls = Collections.synchronizedList(mutableListOf<String>())
+        var reachable = false
+        val http = Http { method, _, _, _, _ -> calls += method; if (reachable) Reply(200, "{}") else null }
+        File(root, "signer.txt").writeText("s-0123456789abcdef")
+        File(root, "delete.pending").writeText("v1")
+        val contributions = Contributions(root, "https://gateway.test", http, TestVault, { true }, scope)
+        try {
+            assertFalse("sharing claimed on while the writer is latched", contributions.setConsent(true))
+            assertFalse(contributions.consented)
+            assertEquals(listOf("DELETE"), calls)
+            assertTrue("a network failure keeps the latch for the next attempt", File(root, "delete.pending").exists())
+
+            reachable = true
+            assertTrue(contributions.setConsent(true))
+            assertTrue(contributions.consented)
+            assertFalse("a confirmed delete clears the latch", File(root, "delete.pending").exists())
+            assertEquals(listOf("DELETE", "DELETE"), calls)
+        } finally {
+            scope.cancel()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun failedDeletionKeepsTheQueuedRecord() = runBlocking {
         val root = Files.createTempDirectory("contributions-test").toFile()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -78,9 +153,11 @@ class ContributionsTest {
             val restartedScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
             try {
                 val restarted = Contributions(root, "https://gateway.test", http, TestVault, { true }, restartedScope)
-                restarted.setConsent(true)
+                // The latch left by the failure is retried rather than overridden, and the retry fails here too.
+                assertFalse(restarted.setConsent(true))
                 delay(100)
-                assertEquals(listOf("DELETE"), calls)
+                assertEquals("no batch is posted while the latch stands", listOf("DELETE", "DELETE"), calls)
+                assertFalse("sharing must not be claimed on while the writer is latched", restarted.consented)
                 assertEquals(1, restarted.pending())
             } finally {
                 restartedScope.cancel()
@@ -154,6 +231,48 @@ class ContributionsTest {
             assertFalse(queued.exists())
             assertTrue("consent is a setting, not a record", contributions.consented)
         } finally {
+            scope.cancel()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun slowDeletionDoesNotBlockConsentOrSave() = runBlocking {
+        val root = Files.createTempDirectory("contributions-slow-delete").toFile()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val deleteEntered = CountDownLatch(1)
+        val releaseDelete = CountDownLatch(1)
+        // A gateway that takes its time answering the delete: the wait must not hold the object monitor.
+        val http = Http { method, _, _, _, _ ->
+            when (method) {
+                "DELETE" -> {
+                    deleteEntered.countDown()
+                    check(releaseDelete.await(5, TimeUnit.SECONDS))
+                    Reply(200, "{}")
+                }
+                else -> null
+            }
+        }
+        val contributions = Contributions(root, "https://gateway.test", http, TestVault, { false }, scope)
+        try {
+            contributions.setConsent(true)
+            val deletion = async(Dispatchers.IO) { contributions.deleteMine() }
+            assertTrue("delete did not start", deleteEntered.await(5, TimeUnit.SECONDS))
+
+            val consentDone = CountDownLatch(1)
+            Thread { contributions.setConsent(false); consentDone.countDown() }.start()
+            assertTrue("setConsent waited for the gateway", consentDone.await(2, TimeUnit.SECONDS))
+            assertFalse("the withdrawal did not land", contributions.consented)
+
+            val saved = contributions.save("prompt", buildJsonObject { }, buildJsonObject { }, listOf("hello"))
+            withTimeout(2_000) { saved.join() }
+            assertTrue("save waited for the gateway", File(root, "sessions").listFiles().orEmpty().isNotEmpty())
+
+            releaseDelete.countDown()
+            assertTrue(withTimeout(5_000) { deletion.await() })
+            assertEquals(0, contributions.pending())
+        } finally {
+            releaseDelete.countDown()
             scope.cancel()
             root.deleteRecursively()
         }
